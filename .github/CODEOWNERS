@@ -1,0 +1,14 @@
+# Default owner for all paths.
+* @raven-dev-ops
+
+# Critical runtime/gameplay scripts.
+Assets/Scripts/Core/ @raven-dev-ops
+Assets/Scripts/Save/ @raven-dev-ops
+Assets/Scripts/Fishing/ @raven-dev-ops
+Assets/Scripts/Steam/ @raven-dev-ops
+
+# Build/release/operations docs and workflows.
+Assets/Editor/ @raven-dev-ops
+.github/workflows/ @raven-dev-ops
+.github/CODEOWNERS @raven-dev-ops
+docs/ @raven-dev-ops

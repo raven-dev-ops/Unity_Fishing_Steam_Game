@@ -1,0 +1,132 @@
+name: Release SteamPipe
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Semver tag to release (example: v1.0.0)
+        required: true
+        type: string
+      dry_run:
+        description: Skip upload and run checks only
+        required: true
+        default: true
+        type: boolean
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-steampipe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Release preflight
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+      dry_run: ${{ steps.mode.outputs.dry_run }}
+    steps:
+      - id: tag
+        name: Resolve and validate release tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="${{ github.event.inputs.release_tag }}"
+          fi
+
+          if [[ -z "$TAG" || ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.].*)?$ ]]; then
+            echo "::error::release_tag must be semver and start with v (example: v1.0.0)."
+            exit 1
+          fi
+
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - id: mode
+        name: Resolve run mode
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Guard protected context for tag pushes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_protected }}" != "true" ]; then
+            echo "::error::Release tag pushes must originate from protected refs."
+            exit 1
+          fi
+
+  secret_scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  steampipe_upload:
+    name: SteamPipe upload
+    needs:
+      - preflight
+      - secret_scan
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    environment:
+      name: steam-release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        env:
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
+        run: |
+          if [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_CONFIG_VDF" ]; then
+            echo "::error::Required Steam release secrets are missing."
+            exit 1
+          fi
+
+      - name: Release summary
+        shell: bash
+        run: |
+          echo "Release tag: ${{ needs.preflight.outputs.release_tag }}"
+          echo "Dry run: ${{ needs.preflight.outputs.dry_run }}"
+
+      - name: SteamPipe upload (guarded)
+        if: ${{ needs.preflight.outputs.dry_run != 'true' }}
+        shell: bash
+        env:
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
+        run: |
+          if [ ! -f "scripts/release/steam_upload.sh" ]; then
+            echo "::error::Missing scripts/release/steam_upload.sh upload script."
+            exit 1
+          fi
+
+          chmod +x scripts/release/steam_upload.sh
+          scripts/release/steam_upload.sh "${{ needs.preflight.outputs.release_tag }}"

@@ -1,0 +1,64 @@
+name: CI Build Windows
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_windows:
+    name: Build Windows x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity license secret
+        run: |
+          if [ -z "${UNITY_LICENSE}" ]; then
+            echo "::error::UNITY_LICENSE secret is required for Unity CI jobs."
+            exit 1
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Build-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          restore-keys: |
+            Library-Build-${{ runner.os }}-
+
+      - name: Build project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode
+          customParameters: >-
+            -buildOutput=Builds/Windows
+            -buildExeName=UnityFishingSteamGame.exe
+            -buildNumber=${{ github.run_number }}
+            -buildCommit=${{ github.sha }}
+            -buildBranch=${{ github.ref_name }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-${{ github.sha }}
+          path: |
+            Builds/Windows/**
+          if-no-files-found: warn

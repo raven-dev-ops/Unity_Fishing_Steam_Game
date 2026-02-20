@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using RavenDevOps.Fishing.Data;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ namespace RavenDevOps.Fishing.Tools
 {
     public static class ContentValidator
     {
+        private static readonly Regex IdPattern = new Regex("^[a-z0-9_]+$");
+
         public static List<string> Validate(GameConfigSO config)
         {
             var messages = new List<string>();
@@ -17,6 +20,7 @@ namespace RavenDevOps.Fishing.Tools
 
             var ids = new HashSet<string>();
 
+            ValidateCatalogPresence(config, messages);
             ValidateFish(config, ids, messages);
             ValidateShips(config, ids, messages);
             ValidateHooks(config, ids, messages);
@@ -24,9 +28,50 @@ namespace RavenDevOps.Fishing.Tools
             return messages;
         }
 
+        public static int CountErrors(List<string> messages)
+        {
+            if (messages == null || messages.Count == 0)
+            {
+                return 0;
+            }
+
+            var errorCount = 0;
+            foreach (var message in messages)
+            {
+                if (message != null && message.StartsWith("ERROR"))
+                {
+                    errorCount++;
+                }
+            }
+
+            return errorCount;
+        }
+
+        private static void ValidateCatalogPresence(GameConfigSO config, List<string> messages)
+        {
+            if (config.fishDefinitions == null || config.fishDefinitions.Length == 0)
+            {
+                messages.Add("WARN: No fish definitions configured.");
+            }
+
+            if (config.shipDefinitions == null || config.shipDefinitions.Length == 0)
+            {
+                messages.Add("WARN: No ship definitions configured.");
+            }
+
+            if (config.hookDefinitions == null || config.hookDefinitions.Length == 0)
+            {
+                messages.Add("WARN: No hook definitions configured.");
+            }
+        }
+
         private static void ValidateFish(GameConfigSO config, HashSet<string> ids, List<string> messages)
         {
-            if (config.fishDefinitions == null) return;
+            if (config.fishDefinitions == null)
+            {
+                return;
+            }
+
             foreach (var fish in config.fishDefinitions)
             {
                 if (fish == null)
@@ -52,16 +97,45 @@ namespace RavenDevOps.Fishing.Tools
                     messages.Add($"ERROR: Fish '{fish.id}' invalid depth range.");
                 }
 
+                if (fish.minDistanceTier < 0)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has negative minDistanceTier.");
+                }
+
+                if (fish.maxDistanceTier < 0)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has negative maxDistanceTier.");
+                }
+
+                if (fish.minDepth < 0f)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has negative minDepth.");
+                }
+
+                if (fish.maxDepth < 0f)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has negative maxDepth.");
+                }
+
                 if (fish.baseValue <= 0)
                 {
-                    messages.Add($"WARN: Fish '{fish.id}' baseValue <= 0.");
+                    messages.Add($"ERROR: Fish '{fish.id}' has non-positive baseValue.");
+                }
+
+                if (fish.rarityWeight <= 0)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has non-positive rarityWeight.");
                 }
             }
         }
 
         private static void ValidateShips(GameConfigSO config, HashSet<string> ids, List<string> messages)
         {
-            if (config.shipDefinitions == null) return;
+            if (config.shipDefinitions == null)
+            {
+                return;
+            }
+
             foreach (var ship in config.shipDefinitions)
             {
                 if (ship == null)
@@ -81,12 +155,26 @@ namespace RavenDevOps.Fishing.Tools
                 {
                     messages.Add($"ERROR: Ship '{ship.id}' has non-positive moveSpeed.");
                 }
+
+                if (ship.price < 0)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has negative price.");
+                }
+
+                if (ship.maxDistanceTier < 0)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has negative maxDistanceTier.");
+                }
             }
         }
 
         private static void ValidateHooks(GameConfigSO config, HashSet<string> ids, List<string> messages)
         {
-            if (config.hookDefinitions == null) return;
+            if (config.hookDefinitions == null)
+            {
+                return;
+            }
+
             foreach (var hook in config.hookDefinitions)
             {
                 if (hook == null)
@@ -106,6 +194,11 @@ namespace RavenDevOps.Fishing.Tools
                 {
                     messages.Add($"ERROR: Hook '{hook.id}' has non-positive maxDepth.");
                 }
+
+                if (hook.price < 0)
+                {
+                    messages.Add($"ERROR: Hook '{hook.id}' has negative price.");
+                }
             }
         }
 
@@ -115,6 +208,11 @@ namespace RavenDevOps.Fishing.Tools
             {
                 messages.Add($"ERROR: {label} has empty id.");
                 return;
+            }
+
+            if (!IdPattern.IsMatch(id))
+            {
+                messages.Add($"ERROR: {label} id '{id}' must match pattern ^[a-z0-9_]+$.");
             }
 
             if (!ids.Add(id))

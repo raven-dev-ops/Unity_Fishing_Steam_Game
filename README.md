@@ -2,49 +2,66 @@
 
 Keyboard-first single-player fishing loop for Steam.
 
-## Current Status
-- GitHub tracker is fully closed: `109 closed / 0 open` (as of `2026-02-20` UTC).
-- Core loop scaffolding is in place for Boot -> Cinematic -> Main Menu -> Harbor -> Fishing.
+## Developer Quick Start
 
-## Project Setup
-- Unity version: `2022.3.16f1` (LTS)
-- Rendering pipeline: `URP`
-- Key packages (from `Packages/manifest.json`):
-  - `com.unity.render-pipelines.universal`
-  - `com.unity.textmeshpro`
-  - `com.unity.inputsystem`
-  - `com.unity.timeline`
-  - `com.unity.ugui`
+### Prerequisites
+- Unity `2022.3.16f1` (LTS)
+- Git LFS
+- Windows 10/11 for local Windows player builds
 
-## Scene Order
-1. `Assets/Scenes/00_Boot.unity`
-2. `Assets/Scenes/01_Cinematic.unity`
-3. `Assets/Scenes/02_MainMenu.unity`
-4. `Assets/Scenes/03_Harbor.unity`
-5. `Assets/Scenes/04_Fishing.unity`
+### Clone and Open
+1. Clone repository and pull LFS assets.
+2. Open project in Unity Hub with `2022.3.16f1`.
+3. Let Unity import and compile scripts.
+4. Open `Assets/Scenes/00_Boot.unity` and press Play.
 
-## Input Baseline
-- Input actions asset: `Assets/Resources/InputActions_Gameplay.inputactions`
-- UI: arrows navigate, Enter submit, Esc cancel
-- Harbor: WASD move, Enter interact, Esc pause
-- Fishing: Left/Right move ship, Up/Down move hook, Space action, Esc pause
+### Validate Before PR
+1. Run content validator: `Raven > Validate Content Catalog`.
+2. Run smoke checklist in `docs/QA_SMOKE_TEST.md`.
+3. If build-related changes exist, run `Raven > Build > Build Windows x64`.
 
-## Build and Validation
-- Windows build command in Unity menu: `Raven > Build > Build Windows x64`
-- Content validator command in Unity menu: `Raven > Validate Content Catalog`
-- Smoke test checklist: `docs/QA_SMOKE_TEST.md`
+## Build and CI
+- Local menu build: `Raven > Build > Build Windows x64`
+- Batch build entrypoint: `RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode`
+- Batch content validator: `RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode`
+- CI workflows are defined under `.github/workflows/`.
+
+## Project Structure
+- `Assets/Scenes/`: gameplay scenes (Boot -> Cinematic -> MainMenu -> Harbor -> Fishing)
+- `Assets/Scripts/Core/`: runtime bootstrap and flow state orchestration
+- `Assets/Scripts/Fishing/`: fishing loop runtime systems
+- `Assets/Scripts/Save/`: profile/save persistence
+- `Assets/Scripts/Input/`: input routing and action-map context switching
+- `Assets/Editor/`: Unity editor tooling for build/validation
+- `docs/`: operations, QA, release, and content pipeline documentation
+- `.github/`: CI workflows, CODEOWNERS, issue templates, PR template
+
+## Troubleshooting
+- Compile errors after pull:
+  - Reimport project and verify Unity version is `2022.3.16f1`.
+- Missing assets or pink materials:
+  - Run `git lfs pull`, then reopen project.
+- Input not responding in play mode:
+  - Verify `Assets/Resources/InputActions_Gameplay.inputactions` exists and is assigned.
+- Content validator failures:
+  - Fix duplicate IDs, missing icons, or invalid value ranges in ScriptableObject definitions.
+- Save issues during local testing:
+  - Delete local save file at `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/save_v1.json` and rerun smoke flow.
 
 ## Documentation Index
-- Content workflow: `docs/CONTENT_PIPELINE.md`, `docs/ADD_CONTENT_GUIDE.md`
-- Input and controls: `docs/INPUT_MAP.md`
-- Build and Steam: `docs/BUILD_PIPELINE_WINDOWS.md`, `docs/STEAMWORKS_BASELINE.md`, `docs/STEAMPIPE_UPLOAD_TEST.md`
-- Release and operations: `docs/RELEASE_TAGGING.md`, `docs/HOTFIX_PROCESS.md`
-
-## Known Limitation
-- Day progression uses local system date (`careerStartLocalDate` to current local date).
-- Manual system clock changes can affect displayed day count until an online time source is introduced.
+- Architecture: `docs/ARCHITECTURE.md`
+- Contribution workflow: `CONTRIBUTING.md`
+- Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
+- CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
+- Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Input baseline: `docs/INPUT_MAP.md`
+- Steam baseline: `docs/STEAMWORKS_BASELINE.md`
+- SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
+- Release tagging/checklist: `docs/RELEASE_TAGGING.md`
+- Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
+- QA smoke checklist: `docs/QA_SMOKE_TEST.md`
 
 ## Repository Rules
-- Commit Unity `.meta` files with their assets.
-- Replace assets in-place to preserve GUID references.
-- Large binary assets (audio/video/textures/models) are tracked with Git LFS.
+- Commit Unity `.meta` files with associated assets.
+- Replace assets in-place when possible to preserve GUID references.
+- Track large binary assets (audio/video/textures/models) with Git LFS.

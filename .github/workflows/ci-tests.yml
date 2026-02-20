@@ -1,0 +1,64 @@
+name: CI Unity Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Unity ${{ matrix.testMode }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode:
+          - editmode
+          - playmode
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity license secret
+        run: |
+          if [ -z "${UNITY_LICENSE}" ]; then
+            echo "::error::UNITY_LICENSE secret is required for Unity CI jobs."
+            exit 1
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          restore-keys: |
+            Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-
+
+      - name: Run Unity tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: artifacts/${{ matrix.testMode }}
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results-${{ matrix.testMode }}-${{ github.sha }}
+          path: artifacts/${{ matrix.testMode }}/**
+          if-no-files-found: warn

@@ -1,0 +1,46 @@
+name: Content Drop
+description: Add fish/ship/hook/content assets with validator-ready metadata.
+title: "content: <drop name>"
+labels:
+  - type:feature
+  - system:fishing
+body:
+  - type: input
+    id: drop_name
+    attributes:
+      label: Drop Name
+      placeholder: e.g. arctic_pack_01
+    validations:
+      required: true
+  - type: checkboxes
+    id: content_type
+    attributes:
+      label: Content Type
+      options:
+        - label: Fish definitions
+        - label: Ship definitions
+        - label: Hook definitions
+        - label: Audio assets
+        - label: UI/content copy
+  - type: textarea
+    id: ids
+    attributes:
+      label: Stable IDs
+      description: List all IDs introduced by this drop.
+      placeholder: |
+        fish_arctic_cod
+        ship_tier2_ice
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Evidence
+      description: Include content validator output and smoke checks touched.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Risks, balancing notes, and migration implications.

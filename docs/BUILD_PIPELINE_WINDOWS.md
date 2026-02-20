@@ -2,18 +2,57 @@
 
 ## Build Method
 - Unity menu: `Raven > Build > Build Windows x64`
-- Builder script: `Assets/Editor/BuildWindows.cs`
+- Builder entrypoint: `Assets/Editor/BuildCommandLine.cs`
+
+## Headless CI/CLI Build
+Use Unity batch mode with the static build method:
+
+```powershell
+Unity.exe -batchmode -nographics -quit `
+  -projectPath "C:\path\to\Unity_Fishing_Steam_Game" `
+  -executeMethod RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode `
+  -buildOutput=Builds/Windows `
+  -buildExeName=UnityFishingSteamGame.exe `
+  -buildVersion=0.1.0 `
+  -buildNumber=123 `
+  -buildCommit=abcdef1234567890 `
+  -buildBranch=main `
+  -logFile build_windows.log
+```
+
+### Command Arguments
+- `-buildOutput` optional output folder (default `Builds/Windows`)
+- `-buildExeName` optional executable filename (default `UnityFishingSteamGame.exe`)
+- `-buildVersion` optional version override (falls back to `PlayerSettings.bundleVersion`)
+- `-buildNumber` optional CI build number (falls back to `GITHUB_RUN_NUMBER` or `local`)
+- `-buildCommit` optional commit SHA (falls back to `GITHUB_SHA` or `local`)
+- `-buildBranch` optional branch name (falls back to `GITHUB_REF_NAME` or `local`)
+
+### Deterministic Scene Source
+- Scenes are read from enabled entries in `EditorBuildSettings`.
+- Keep scene ordering managed in Unity Build Settings only.
 
 ## Build Output
 - Folder: `Builds/Windows`
 - Executable: `Builds/Windows/UnityFishingSteamGame.exe`
+- Metadata: `Builds/Windows/build_metadata.json`
 
-## Scenes Included
-- `Assets/Scenes/00_Boot.unity`
-- `Assets/Scenes/01_Cinematic.unity`
-- `Assets/Scenes/02_MainMenu.unity`
-- `Assets/Scenes/03_Harbor.unity`
-- `Assets/Scenes/04_Fishing.unity`
+## Metadata Fields
+- `productName`
+- `companyName`
+- `bundleVersion`
+- `unityVersion`
+- `buildNumber`
+- `commitSha`
+- `branch`
+- `buildTimestampUtc`
+- `outputExecutable`
+
+## Failure Behavior
+- Build method exits non-zero on failures in batch mode.
+- Common hard failures:
+  - no enabled scenes in `EditorBuildSettings`
+  - Unity build pipeline result is not `Succeeded`
 
 ## Validation After Build
 1. Launch build and run smoke checklist (`docs/QA_SMOKE_TEST.md`).

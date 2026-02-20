@@ -1,0 +1,59 @@
+name: CI Content Validator
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-validator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate_content:
+    name: Validate content catalog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity license secret
+        run: |
+          if [ -z "${UNITY_LICENSE}" ]; then
+            echo "::error::UNITY_LICENSE secret is required for Unity CI jobs."
+            exit 1
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Validator-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          restore-keys: |
+            Library-Validator-${{ runner.os }}-
+
+      - name: Run content validator
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode
+
+      - name: Upload validator artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-validator-${{ github.sha }}
+          path: |
+            build/**
+            Builds/**
+          if-no-files-found: warn
