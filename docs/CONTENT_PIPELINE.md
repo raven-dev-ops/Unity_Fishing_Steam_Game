@@ -22,9 +22,10 @@
 ## Validation Gate
 1. Add new definitions to `GameConfigSO`.
 2. Run `Raven > Validate Content Catalog`.
-3. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
-4. Fix any duplicate ID, missing icon, or invalid range errors.
-5. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
+3. Run `Raven > Validate Asset Import Compliance`.
+4. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
+5. Fix any duplicate ID, missing icon, invalid range, or import audit warnings.
+6. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
 
 ## Headless Validation (CI)
 Run catalog validation in Unity batch mode:
@@ -42,10 +43,20 @@ Project wrapper (recommended):
 .\scripts\unity-cli.ps1 -Task validate -LogFile validate_content.log
 ```
 
+Run asset import audit in Unity batch mode:
+
+```powershell
+Unity.exe -batchmode -nographics -quit `
+  -projectPath "C:\path\to\Unity_Fishing_Steam_Game" `
+  -executeMethod RavenDevOps.Fishing.EditorTools.AssetImportComplianceRunner.ValidateAssetImportsBatchMode `
+  -logFile validate_imports.log
+```
+
 ### CI Gate Policy
 - Any validator `ERROR` fails the job and blocks merge.
+- Import audit runs in warning-first mode and uploads audit report artifacts.
 - `WARN` output is allowed for merge, but should be triaged.
-- Manual menu validation and batch validation use the same validator code path.
+- Manual menu validation and batch validation use shared validator/audit code paths.
 
 ## Post-1.0 Addressables Pilot
 - Reference: `docs/ADDRESSABLES_PILOT.md`

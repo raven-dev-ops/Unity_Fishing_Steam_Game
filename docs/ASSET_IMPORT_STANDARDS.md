@@ -64,6 +64,15 @@ Define stable texture/audio import defaults to reduce memory and performance reg
 3. Record intentional exceptions in PR description.
 4. Reject content drops that add avoidable import-memory overhead.
 
-## Post-1.0 Automation Proposal
-- Add editor audit utility to report non-compliant texture/audio import settings.
-- Integrate report into CI as warning-first, fail-later policy.
+## Automation Workflow
+- Menu command: `Raven > Validate Asset Import Compliance`
+- Batch method: `RavenDevOps.Fishing.EditorTools.AssetImportComplianceRunner.ValidateAssetImportsBatchMode`
+- Default report output:
+  - `Artifacts/AssetImportAudit/asset_import_audit_report.txt`
+- CI integration:
+  - `.github/workflows/ci-content-validator.yml` runs the audit in warning-first mode and uploads report artifacts.
+
+## Fail-Later Path
+- Default behavior is warning-first to avoid blocking cleanup-in-progress content drops.
+- To fail CI on warnings once baseline is clean, run batch mode with:
+  - `-assetImportAuditFailOnWarnings=true`

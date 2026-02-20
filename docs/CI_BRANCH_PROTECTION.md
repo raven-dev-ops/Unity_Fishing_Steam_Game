@@ -24,4 +24,5 @@ These checks should be required on `main`:
 
 ## Notes
 - Unity workflows use `UNITY_LICENSE` when available. Without it, workflows complete with warnings and skip Unity-dependent steps.
+- Content validator workflow also runs asset import audit in warning-first mode and uploads `Artifacts/AssetImportAudit/*` report artifacts.
 - Release workflow is environment-gated via `steam-release`.
