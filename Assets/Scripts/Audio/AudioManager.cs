@@ -1,14 +1,51 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Audio;
 
 namespace RavenDevOps.Fishing.Audio
 {
     public sealed class AudioManager : MonoBehaviour
     {
+        public const string MusicVolumeParam = "MusicVolume";
+        public const string SfxVolumeParam = "SFXVolume";
+        public const string VoVolumeParam = "VOVolume";
+
         [SerializeField] private AudioMixer _mixer;
         [SerializeField] private AudioSource _musicSource;
         [SerializeField] private AudioSource _sfxSource;
         [SerializeField] private AudioSource _voSource;
+
+        private void Awake()
+        {
+            EnsureDefaultSources();
+        }
+
+        private void EnsureDefaultSources()
+        {
+            if (_musicSource == null)
+            {
+                _musicSource = CreateSource("MusicSource", true);
+            }
+
+            if (_sfxSource == null)
+            {
+                _sfxSource = CreateSource("SfxSource", false);
+            }
+
+            if (_voSource == null)
+            {
+                _voSource = CreateSource("VoSource", false);
+            }
+        }
+
+        private AudioSource CreateSource(string name, bool loop)
+        {
+            var sourceGo = new GameObject(name);
+            sourceGo.transform.SetParent(transform, false);
+            var source = sourceGo.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = loop;
+            return source;
+        }
 
         public void PlayMusic(AudioClip clip, bool loop = true)
         {
@@ -42,6 +79,21 @@ namespace RavenDevOps.Fishing.Audio
             _voSource.clip = clip;
             _voSource.loop = false;
             _voSource.Play();
+        }
+
+        public void SetMusicVolume(float linearValue)
+        {
+            SetMixerVolume(MusicVolumeParam, linearValue);
+        }
+
+        public void SetSfxVolume(float linearValue)
+        {
+            SetMixerVolume(SfxVolumeParam, linearValue);
+        }
+
+        public void SetVoVolume(float linearValue)
+        {
+            SetMixerVolume(VoVolumeParam, linearValue);
         }
 
         public void SetMixerVolume(string parameterName, float linearValue)

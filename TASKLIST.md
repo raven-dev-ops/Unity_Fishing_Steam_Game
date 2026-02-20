@@ -1,359 +1,339 @@
-﻿# Unity Fishing Project Tasklist
+# Unity Fishing Project Tasklist
 
-Generated from all GitHub issues on 2026-02-20.
+Generated from all GitHub issues on 2026-02-20 (UTC).
+
+Summary: **0 open** / **109 closed** / **109 total**.
 
 Legend: `[ ]` open, `[x]` closed.
 
-## M0 - Project Setup
-- [ ] #1 CORE-000 - Project foundation & repo hygiene (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/1
-- [x] #2 CORE-001 - Choose Unity LTS + pipeline and document (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/2
-- [x] #3 CORE-002 - Repo hygiene: .gitignore + LFS + meta file rules (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/3
-- [x] #4 CORE-003 - Package baseline install (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/4
-- [x] #5 CORE-004 - Scene stubs + Build Settings (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/5
-- [x] #6 DOCS-001 - Add docs structure + baseline standards (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/6
+## Open Issues
+- None.
 
-## M1 - Core Services
-- [-] #7 CORE-010 - GameFlow services (boot - state - scenes) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/7
-- [-] #8 CORE-011 - GameFlowManager (state machine) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/8
-- [-] #9 CORE-012 - SceneLoader + transitions (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/9
-- [-] #10 INPUT-011 - Input System action maps (UI/Harbor/Fishing) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/10
-- [-] #11 SAVE-011 - SaveManager v1 (versioned) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/11
-- [-] #12 AUDIO-011 - AudioManager + AudioMixer scaffolding (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/12
-
-## M2 - UI Foundation
-- [ ] #13 UI-010 - Keyboard-first UI + aura selection everywhere (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/13
-- [ ] #14 UI-011 - Main Menu (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/14
-- [ ] #15 UI-012 - Aura highlight for selected UI elements (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/15
-- [ ] #16 UI-013 - Settings menu (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/16
-- [ ] #17 UI-014 - Profile menu (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/17
-- [ ] #18 UI-015 - Pause Menu (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/18
-- [ ] #19 UI-016 - Dialogue bubbles UI (tutorial) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/19
-
-## M3 - Harbor Slice
-- [ ] #20 HARBOR-010 - Harbor scene core loop (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/20
-- [ ] #21 HARBOR-011 - Player movement and boundaries (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/21
-- [ ] #22 HARBOR-012 - World interactables + aura selection (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/22
-- [ ] #23 SHOP-010 - Hook Shop UI (Lv1-Lv3) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/23
-- [ ] #24 SHOP-011 - Boat Shop UI (Lv1-Lv3) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/24
-- [ ] #25 SHOP-012 - Fish Shop UI (Sell All) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/25
-- [ ] #26 NARR-010 - Mermaid tutorial (first-time only) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/26
-
-## M4 - Fishing Slice
-- [ ] #27 FISH-010 - Fishing mode playable loop (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/27
-- [ ] #28 FISH-011 - Waves (2-layer animation) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/28
-- [ ] #29 FISH-012 - Ship movement (horizontal) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/29
-- [ ] #30 FISH-013 - Hook movement (vertical) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/30
-- [ ] #31 FISH-014 - Space key state machine (Cast/Reel/Resolve) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/31
-- [ ] #32 FISH-015 - Fish spawner (distance + depth filters) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/32
-- [ ] #33 FISH-016 - Catch resolver + inventory add (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/33
-- [ ] #34 FISH-017 - Pause/Exit flow to Harbor (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/34
-- [x] #81 FISH-015 ? Fish spawner (filter by distance + depth) (P0-blocker)
+## Closed Issues
+- [x] #109 DROP-004 - Save migration policy (version bumps + tests) (P2-medium)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/81
-- [x] #82 FISH-016 ? Catch ? inventory add + audio triggers (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/109
+- [x] #108 DROP-003 - Balance pass checklist + validator gates (P2-medium)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/82
-- [x] #83 FISH-017 ? Pause/exit to Town Harbor (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/108
+- [x] #107 DROP-002 - Add a ship/hook checklist (no code changes) (P2-medium)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/83
-
-## M5 - MVP Loop Complete
-- [ ] #35 LOOP-010 - End-to-end MVP loop with progression + persistence (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/35
-- [ ] #36 ECON-020 - Distance-based sell formula + summary (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/36
-- [ ] #37 SAVE-020 - Day counter based on local date (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/37
-- [ ] #38 UI-020 - HUD overlay (Harbor + Fishing) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/38
-- [ ] #39 DATA-010 - ScriptableObject definitions (Fish/Ship/Hook) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/39
-- [ ] #40 DATA-011 - Catalog loading (GameConfig) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/40
-- [x] #84 ECON-020 ? Pricing model (distance multiplier) + sell total summary (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/107
+- [x] #106 DROP-001 - Add a fish checklist (no code changes) (P2-medium)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/84
-- [x] #85 SAVE-020 ? Day counter (local date) + display in Profile/HUD (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/106
+- [x] #105 DOCS-020 - Post-launch hotfix process + branch strategy (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/85
-- [x] #86 UI-020 ? HUD overlay (copecs/day/distance/depth) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/105
+- [x] #104 STEAM-022 - Release tagging (`v1.0.0`) + build upload (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/86
-- [x] #87 DATA-010 ? ScriptableObject content definitions (fish/ships/hooks) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/104
+- [x] #103 STEAM-021 - Store page assets checklist (capsules/screens/trailer) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/87
-- [x] #88 DATA-011 ? Catalog loading + references used everywhere (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/88
-- [ ] #89 NARR-020 - Tutorial skip + replay placeholder (optional) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/89
-
-## M6 - Content Pipeline and Tools
-- [ ] #41 TOOLS-010 - Data-driven scaling and validation (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/41
-- [ ] #42 TOOLS-011 - TuningConfig (all key variables) (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/42
-- [ ] #43 TOOLS-012 - Debug panel (DEV only) (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/43
-- [ ] #44 TOOLS-013 - Editor validator (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/44
-- [ ] #45 DOCS-010 - Content pipeline guide (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/45
-- [x] #90 TOOLS-011 ? TuningConfig ScriptableObject (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/90
-- [x] #91 TOOLS-012 ? DEV debug panel (F1) for tuning and spawn tests (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/91
-- [x] #92 TOOLS-013 ? Editor validator (duplicate IDs, missing assets, invalid ranges) (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/92
-- [x] #93 DOCS-010 ? ?How to add a fish/ship/hook? step-by-step (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/93
-
-## M7 - Audio and Narrative Pass
-- [ ] #46 AUDIO-010 - Audio triggers + mixing + tutorial VO (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/46
-- [ ] #47 AUDIO-011 - SFX trigger map (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/47
-- [ ] #48 AUDIO-012 - Music + ambience loops (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/48
-- [ ] #49 AUDIO-013 - VO + subtitles in tutorial (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/49
-- [x] #94 AUDIO-011 ? Implement required SFX trigger map (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/94
-- [x] #95 AUDIO-012 ? Music + ambience loops per scene (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/95
-- [x] #96 AUDIO-013 ? VO playback + subtitle sync in tutorial (P1-high)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/96
-
-## M8 - QA and Steam RC
-- [ ] #50 QA-000 - Release candidate hardening (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/50
-- [ ] #51 QA-010 - Smoke test checklist (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/51
-- [ ] #52 BUILD-010 - Windows build pipeline (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/52
-- [ ] #53 STEAM-010 - Steamworks.NET baseline integration (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/53
-- [ ] #54 STEAM-011 - SteamPipe upload test (P1-high)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/54
-- [x] #97 QA-010 ? Smoke test checklist + regression pass (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/97
-- [ ] #98 QA-011 - Keyboard-only UX audit (menus/shops/fishing/pause) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/98
-- [ ] #99 PERF-010 - Performance sanity (spawn + UI) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/99
-- [x] #100 BUILD-010 ? Build pipeline (Windows) + release settings (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/100
-- [x] #101 STEAM-010 ? Steamworks integration baseline (overlay/launch) (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/101
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/103
 - [x] #102 STEAM-011 ? SteamPipe upload test (beta branch) (P0-blocker)
   - State: CLOSED
   - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/102
-
-## M9 - Steam Launch 1.0
-- [ ] #55 STEAM-020 - Launch readiness checklist (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/55
-- [ ] #103 STEAM-021 - Store page assets checklist (capsules/screens/trailer) (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/103
-- [ ] #104 STEAM-022 - Release tagging (`v1.0.0`) + build upload (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/104
-- [ ] #105 DOCS-020 - Post-launch hotfix process + branch strategy (P0-blocker)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/105
-
-## M10 - Monthly Content Drop Template
-- [ ] #56 DROP-000 - Monthly content drops (fish/ships/hooks) (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/56
-- [ ] #106 DROP-001 - Add a fish checklist (no code changes) (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/106
-- [ ] #107 DROP-002 - Add a ship/hook checklist (no code changes) (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/107
-- [ ] #108 DROP-003 - Balance pass checklist + validator gates (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/108
-- [ ] #109 DROP-004 - Save migration policy (version bumps + tests) (P2-medium)
-  - State: OPEN
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/109
-
-## No Milestone
-- [x] #57 CORE-001 ? Choose Unity LTS + pipeline (URP/Built-in) and document (P0-blocker)
+- [x] #101 STEAM-010 ? Steamworks integration baseline (overlay/launch) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/57
-- [x] #58 CORE-003 ? Package baseline (TMP/Input/Timeline/etc.) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/101
+- [x] #100 BUILD-010 ? Build pipeline (Windows) + release settings (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/58
-- [x] #59 CORE-004 ? Scene stubs + Build Settings (Boot/Cinematic/Menu/Harbor/Fishing) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/100
+- [x] #99 PERF-010 - Performance sanity (spawn + UI) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/59
-- [x] #60 DOCS-001 ? Add `docs/` structure + spec alignment docs (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/99
+- [x] #98 QA-011 - Keyboard-only UX audit (menus/shops/fishing/pause) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/60
-- [x] #61 CORE-011 ? GameFlowManager state machine (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/98
+- [x] #97 QA-010 ? Smoke test checklist + regression pass (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/61
-- [x] #62 CORE-012 ? SceneLoader + fade transitions (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/97
+- [x] #96 AUDIO-013 ? VO playback + subtitle sync in tutorial (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/62
-- [x] #63 INPUT-011 ? Input action maps + context switching (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/96
+- [x] #95 AUDIO-012 ? Music + ambience loops per scene (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/63
-- [x] #64 SAVE-011 ? SaveManager v1 + versioned data model (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/95
+- [x] #94 AUDIO-011 ? Implement required SFX trigger map (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/64
-- [x] #65 AUDIO-011 ? AudioManager + AudioMixer groups (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/94
+- [x] #93 DOCS-010 ? ?How to add a fish/ship/hook? step-by-step (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/65
-- [x] #66 UI-011 ? Main Menu (Start/Profile/Settings/Exit) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/93
+- [x] #92 TOOLS-013 ? Editor validator (duplicate IDs, missing assets, invalid ranges) (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/66
-- [x] #67 UI-012 ? Aura highlight for UI selection (EventSystem) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/92
+- [x] #91 TOOLS-012 ? DEV debug panel (F1) for tuning and spawn tests (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/67
-- [x] #68 UI-013 ? Settings (audio sliders + display basics) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/91
+- [x] #90 TOOLS-011 ? TuningConfig ScriptableObject (P1-high)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/68
-- [x] #69 UI-014 ? Profile (career stats from save) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/90
+- [x] #89 NARR-020 - Tutorial skip + replay placeholder (optional) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/69
-- [x] #70 UI-015 ? Pause Menu (Resume/Town Harbor/Settings/Exit) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/89
+- [x] #88 DATA-011 ? Catalog loading + references used everywhere (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/70
-- [x] #71 UI-016 ? Dialogue bubbles UI component (for tutorial) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/88
+- [x] #87 DATA-010 ? ScriptableObject content definitions (fish/ships/hooks) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/71
-- [x] #72 HARBOR-012 ? Interactables + world aura (shops + sail) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/87
+- [x] #86 UI-020 ? HUD overlay (copecs/day/distance/depth) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/72
-- [x] #73 SHOP-010 ? Hook Shop UI (buy/equip) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/86
+- [x] #85 SAVE-020 ? Day counter (local date) + display in Profile/HUD (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/73
-- [x] #74 SHOP-011 ? Boat Shop UI (buy/equip) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/85
+- [x] #84 ECON-020 ? Pricing model (distance multiplier) + sell total summary (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/74
-- [x] #75 SHOP-012 ? Fish Shop UI (sell all) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/84
+- [x] #83 FISH-017 ? Pause/exit to Town Harbor (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/75
-- [x] #76 NARR-010 ? Mermaid tutorial trigger (first-time only) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/83
+- [x] #82 FISH-016 ? Catch ? inventory add + audio triggers (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/76
-- [x] #77 FISH-011 ? Wave animation system (2-layer) (P0-blocker)
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/82
+- [x] #81 FISH-015 ? Fish spawner (filter by distance + depth) (P0-blocker)
   - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/77
-- [x] #78 FISH-012 ? Ship movement (left/right) with bounds (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/78
-- [x] #79 FISH-013 ? Hook movement (up/down) with bounds (P0-blocker)
-  - State: CLOSED
-  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/79
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/81
 - [x] #80 FISH-014 ? Fishing action state machine (Space) (P0-blocker)
   - State: CLOSED
   - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/80
-
-
-
+- [x] #79 FISH-013 ? Hook movement (up/down) with bounds (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/79
+- [x] #78 FISH-012 ? Ship movement (left/right) with bounds (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/78
+- [x] #77 FISH-011 ? Wave animation system (2-layer) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/77
+- [x] #76 NARR-010 ? Mermaid tutorial trigger (first-time only) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/76
+- [x] #75 SHOP-012 ? Fish Shop UI (sell all) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/75
+- [x] #74 SHOP-011 ? Boat Shop UI (buy/equip) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/74
+- [x] #73 SHOP-010 ? Hook Shop UI (buy/equip) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/73
+- [x] #72 HARBOR-012 ? Interactables + world aura (shops + sail) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/72
+- [x] #71 UI-016 ? Dialogue bubbles UI component (for tutorial) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/71
+- [x] #70 UI-015 ? Pause Menu (Resume/Town Harbor/Settings/Exit) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/70
+- [x] #69 UI-014 ? Profile (career stats from save) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/69
+- [x] #68 UI-013 ? Settings (audio sliders + display basics) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/68
+- [x] #67 UI-012 ? Aura highlight for UI selection (EventSystem) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/67
+- [x] #66 UI-011 ? Main Menu (Start/Profile/Settings/Exit) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/66
+- [x] #65 AUDIO-011 ? AudioManager + AudioMixer groups (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/65
+- [x] #64 SAVE-011 ? SaveManager v1 + versioned data model (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/64
+- [x] #63 INPUT-011 ? Input action maps + context switching (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/63
+- [x] #62 CORE-012 ? SceneLoader + fade transitions (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/62
+- [x] #61 CORE-011 ? GameFlowManager state machine (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/61
+- [x] #60 DOCS-001 ? Add `docs/` structure + spec alignment docs (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/60
+- [x] #59 CORE-004 ? Scene stubs + Build Settings (Boot/Cinematic/Menu/Harbor/Fishing) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/59
+- [x] #58 CORE-003 ? Package baseline (TMP/Input/Timeline/etc.) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/58
+- [x] #57 CORE-001 ? Choose Unity LTS + pipeline (URP/Built-in) and document (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/57
+- [x] #56 DROP-000 - Monthly content drops (fish/ships/hooks) (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/56
+- [x] #55 STEAM-020 - Launch readiness checklist (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/55
+- [x] #54 STEAM-011 - SteamPipe upload test (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/54
+- [x] #53 STEAM-010 - Steamworks.NET baseline integration (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/53
+- [x] #52 BUILD-010 - Windows build pipeline (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/52
+- [x] #51 QA-010 - Smoke test checklist (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/51
+- [x] #50 QA-000 - Release candidate hardening (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/50
+- [x] #49 AUDIO-013 - VO + subtitles in tutorial (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/49
+- [x] #48 AUDIO-012 - Music + ambience loops (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/48
+- [x] #47 AUDIO-011 - SFX trigger map (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/47
+- [x] #46 AUDIO-010 - Audio triggers + mixing + tutorial VO (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/46
+- [x] #45 DOCS-010 - Content pipeline guide (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/45
+- [x] #44 TOOLS-013 - Editor validator (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/44
+- [x] #43 TOOLS-012 - Debug panel (DEV only) (P2-medium)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/43
+- [x] #42 TOOLS-011 - TuningConfig (all key variables) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/42
+- [x] #41 TOOLS-010 - Data-driven scaling and validation (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/41
+- [x] #40 DATA-011 - Catalog loading (GameConfig) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/40
+- [x] #39 DATA-010 - ScriptableObject definitions (Fish/Ship/Hook) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/39
+- [x] #38 UI-020 - HUD overlay (Harbor + Fishing) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/38
+- [x] #37 SAVE-020 - Day counter based on local date (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/37
+- [x] #36 ECON-020 - Distance-based sell formula + summary (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/36
+- [x] #35 LOOP-010 - End-to-end MVP loop with progression + persistence (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/35
+- [x] #34 FISH-017 - Pause/Exit flow to Harbor (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/34
+- [x] #33 FISH-016 - Catch resolver + inventory add (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/33
+- [x] #32 FISH-015 - Fish spawner (distance + depth filters) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/32
+- [x] #31 FISH-014 - Space key state machine (Cast/Reel/Resolve) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/31
+- [x] #30 FISH-013 - Hook movement (vertical) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/30
+- [x] #29 FISH-012 - Ship movement (horizontal) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/29
+- [x] #28 FISH-011 - Waves (2-layer animation) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/28
+- [x] #27 FISH-010 - Fishing mode playable loop (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/27
+- [x] #26 NARR-010 - Mermaid tutorial (first-time only) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/26
+- [x] #25 SHOP-012 - Fish Shop UI (Sell All) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/25
+- [x] #24 SHOP-011 - Boat Shop UI (Lv1-Lv3) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/24
+- [x] #23 SHOP-010 - Hook Shop UI (Lv1-Lv3) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/23
+- [x] #22 HARBOR-012 - World interactables + aura selection (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/22
+- [x] #21 HARBOR-011 - Player movement and boundaries (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/21
+- [x] #20 HARBOR-010 - Harbor scene core loop (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/20
+- [x] #19 UI-016 - Dialogue bubbles UI (tutorial) (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/19
+- [x] #18 UI-015 - Pause Menu (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/18
+- [x] #17 UI-014 - Profile menu (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/17
+- [x] #16 UI-013 - Settings menu (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/16
+- [x] #15 UI-012 - Aura highlight for selected UI elements (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/15
+- [x] #14 UI-011 - Main Menu (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/14
+- [x] #13 UI-010 - Keyboard-first UI + aura selection everywhere (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/13
+- [x] #12 AUDIO-011 - AudioManager + AudioMixer scaffolding (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/12
+- [x] #11 SAVE-011 - SaveManager v1 (versioned) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/11
+- [x] #10 INPUT-011 - Input System action maps (UI/Harbor/Fishing) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/10
+- [x] #9 CORE-012 - SceneLoader + transitions (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/9
+- [x] #8 CORE-011 - GameFlowManager (state machine) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/8
+- [x] #7 CORE-010 - GameFlow services (boot - state - scenes) (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/7
+- [x] #6 DOCS-001 - Add docs structure + baseline standards (P1-high)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/6
+- [x] #5 CORE-004 - Scene stubs + Build Settings (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/5
+- [x] #4 CORE-003 - Package baseline install (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/4
+- [x] #3 CORE-002 - Repo hygiene: .gitignore + LFS + meta file rules (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/3
+- [x] #2 CORE-001 - Choose Unity LTS + pipeline and document (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/2
+- [x] #1 CORE-000 - Project foundation & repo hygiene (P0-blocker)
+  - State: CLOSED
+  - URL: https://github.com/raven-dev-ops/Unity_Fishing_Steam_Game/issues/1

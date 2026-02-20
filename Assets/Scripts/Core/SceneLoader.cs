@@ -14,9 +14,19 @@ namespace RavenDevOps.Fishing.Core
 
         public bool IsTransitioning => _isTransitioning;
 
+        public void SetFadeCanvas(CanvasGroup fadeCanvas)
+        {
+            _fadeCanvas = fadeCanvas;
+        }
+
         public IEnumerator LoadSceneWithFade(string scenePath, Action onBeforeLoad = null)
         {
             if (_isTransitioning)
+            {
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(scenePath))
             {
                 yield break;
             }

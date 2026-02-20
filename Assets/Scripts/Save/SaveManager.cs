@@ -1,4 +1,3 @@
-﻿using System;
 using System;
 using System.IO;
 using UnityEngine;
@@ -14,6 +13,24 @@ namespace RavenDevOps.Fishing.Save
         public SaveDataV1 Current => _current;
 
         private string SavePath => Path.Combine(Application.persistentDataPath, FileName);
+
+        private void Awake()
+        {
+            LoadOrCreate();
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                Save();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            Save();
+        }
 
         public void LoadOrCreate()
         {
@@ -38,6 +55,12 @@ namespace RavenDevOps.Fishing.Save
         public void AddCopecs(int value)
         {
             _current.copecs += Mathf.Max(0, value);
+            Save();
+        }
+
+        public void MarkTripCompleted()
+        {
+            _current.stats.totalTrips += 1;
             Save();
         }
     }

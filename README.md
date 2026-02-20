@@ -19,6 +19,10 @@ Keyboard-first single-player fishing loop for Steam.
 - Harbor: WASD/arrows move, Enter interact, Esc pause
 - Fishing: Left/Right move ship, Up/Down move hook, Space action, Esc pause
 
+## Day Counter Limitation
+- Day progression uses local system date (`careerStartLocalDate` to current local date).
+- Manual system clock changes can affect displayed day count until an online time source is introduced.
+
 ## Repository Rules
 - Commit Unity `.meta` files with their assets.
 - Replace assets in-place to preserve GUID references.
