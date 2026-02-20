@@ -38,6 +38,7 @@ Unity.exe -batchmode -nographics -quit `
 ## Current Coverage Baseline
 - EditMode:
   - Content validator rule checks
+  - Fish encounter model behavior checks (land, escape, tension state mapping)
   - Economy sell-summary multiplier behavior
   - Save fixture deserialization
   - Input context map activation and rebinding override persistence

@@ -38,13 +38,10 @@ namespace RavenDevOps.Fishing.Fishing
                     SetState(FishingActionState.InWater);
                     break;
                 case FishingActionState.InWater:
-                    SetState(FishingActionState.Reel);
+                    SetState(FishingActionState.Cast);
                     break;
                 case FishingActionState.Hooked:
                     SetState(FishingActionState.Reel);
-                    break;
-                case FishingActionState.Reel:
-                    SetState(FishingActionState.Resolve);
                     break;
                 case FishingActionState.Resolve:
                     SetState(FishingActionState.Cast);
@@ -63,6 +60,11 @@ namespace RavenDevOps.Fishing.Fishing
         public void ResetToCast()
         {
             SetState(FishingActionState.Cast);
+        }
+
+        public void SetResolve()
+        {
+            SetState(FishingActionState.Resolve);
         }
 
         private void SetState(FishingActionState next)

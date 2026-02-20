@@ -1,6 +1,7 @@
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
+using RavenDevOps.Fishing.Steam;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -32,6 +33,7 @@ namespace RavenDevOps.Fishing.Core
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
+            var steamBootstrap = servicesGo.AddComponent<SteamBootstrap>();
             var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
             var inputDriver = servicesGo.AddComponent<KeyboardFlowInputDriver>();
             var structuredLogger = servicesGo.AddComponent<Logging.StructuredLogService>();
@@ -47,6 +49,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(audioManager);
+            RuntimeServiceRegistry.Register(steamBootstrap);
             RuntimeServiceRegistry.Register(orchestrator);
             RuntimeServiceRegistry.Register(structuredLogger);
 

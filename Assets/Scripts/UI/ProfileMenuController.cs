@@ -1,3 +1,5 @@
+using System;
+using System.Text;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
 using TMPro;
@@ -11,6 +13,8 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _copecsText;
         [SerializeField] private TMP_Text _totalFishText;
         [SerializeField] private TMP_Text _farthestDistanceText;
+        [SerializeField] private TMP_Text _catchLogText;
+        [SerializeField] private int _maxCatchLogEntries = 8;
 
         [SerializeField] private SaveManager _saveManager;
 
@@ -52,6 +56,7 @@ namespace RavenDevOps.Fishing.UI
             if (_copecsText != null) _copecsText.text = $"Copecs: {save.copecs}";
             if (_totalFishText != null) _totalFishText.text = $"Total Fish Caught: {save.stats.totalFishCaught}";
             if (_farthestDistanceText != null) _farthestDistanceText.text = $"Farthest Distance Tier: {save.stats.farthestDistanceTier}";
+            RefreshCatchLogText(save);
         }
 
         public void ResetProfile()
@@ -65,11 +70,69 @@ namespace RavenDevOps.Fishing.UI
             if (_copecsText != null) _copecsText.text = "Copecs: -";
             if (_totalFishText != null) _totalFishText.text = "Total Fish Caught: -";
             if (_farthestDistanceText != null) _farthestDistanceText.text = "Farthest Distance Tier: -";
+            if (_catchLogText != null) _catchLogText.text = "Catch Log: -";
         }
 
         private void OnSaveDataChanged(SaveDataV1 data)
         {
             Refresh();
+        }
+
+        private void RefreshCatchLogText(SaveDataV1 save)
+        {
+            if (_catchLogText == null)
+            {
+                return;
+            }
+
+            if (save == null || _saveManager == null)
+            {
+                _catchLogText.text = "Catch Log: No entries";
+                return;
+            }
+
+            var recentEntries = _saveManager.GetRecentCatchLogSnapshot(Mathf.Max(1, _maxCatchLogEntries));
+            if (recentEntries == null || recentEntries.Count == 0)
+            {
+                _catchLogText.text = "Catch Log: No entries";
+                return;
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("Catch Log");
+            for (var i = recentEntries.Count - 1; i >= 0; i--)
+            {
+                var entry = recentEntries[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                var timeLabel = FormatTime(entry.timestampUtc);
+                var fishId = string.IsNullOrWhiteSpace(entry.fishId) ? "unknown" : entry.fishId;
+                if (entry.landed)
+                {
+                    builder.AppendLine($"[{timeLabel}] {fishId} {entry.weightKg:0.0}kg +{entry.valueCopecs}c");
+                }
+                else
+                {
+                    var reason = string.IsNullOrWhiteSpace(entry.failReason) ? "failed" : entry.failReason;
+                    builder.AppendLine($"[{timeLabel}] {fishId} - {reason}");
+                }
+
+            }
+
+            _catchLogText.text = builder.ToString().TrimEnd();
+        }
+
+        private static string FormatTime(string timestampUtc)
+        {
+            if (DateTime.TryParse(timestampUtc, out var parsed))
+            {
+                return parsed.ToLocalTime().ToString("HH:mm");
+            }
+
+            return "--:--";
         }
     }
 }

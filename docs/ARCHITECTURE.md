@@ -16,6 +16,7 @@ flowchart LR
     IAMC[InputActionMapController]
     SM[SaveManager]
     AM[AudioManager]
+    ST[SteamBootstrap]
   end
 
   GS --> GFM
@@ -24,6 +25,7 @@ flowchart LR
   GS --> IAMC
   GS --> SM
   GS --> AM
+  GS --> ST
 
   GFM --> GFO
   GFO --> Boot
@@ -45,6 +47,8 @@ flowchart LR
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
 - UI update pathways prefer event-driven refresh (`SaveDataChanged`, flow state events) over always-on polling for menu/profile/HUD data.
+- Fishing combat uses data-driven bite/fight parameters with `FishEncounterModel`.
+- Catch history is persisted in `SaveDataV1.catchLog` and surfaced in profile UI.
 
 ## Data/Content Notes
 - Fish/ship/hook definitions are ScriptableObject-driven.

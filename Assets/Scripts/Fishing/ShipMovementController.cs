@@ -16,9 +16,12 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private float _speedMultiplier = 1f;
+        [SerializeField] private float _inputDeadzone = 0.12f;
+        [SerializeField] private float _axisSmoothing = 10f;
 
         public int DistanceTierCap { get; private set; } = 1;
         private InputAction _moveShipAction;
+        private float _smoothedAxis;
 
         private void Awake()
         {
@@ -64,10 +67,16 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var speed = ResolveMoveSpeed();
-            var axis = Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f);
+            var rawAxis = Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f);
+            if (Mathf.Abs(rawAxis) < Mathf.Clamp01(_inputDeadzone))
+            {
+                rawAxis = 0f;
+            }
+
+            _smoothedAxis = Mathf.MoveTowards(_smoothedAxis, rawAxis, Mathf.Max(0.01f, _axisSmoothing) * Time.deltaTime);
 
             var p = transform.position;
-            p.x += axis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
+            p.x += _smoothedAxis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
             p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
             transform.position = p;
         }

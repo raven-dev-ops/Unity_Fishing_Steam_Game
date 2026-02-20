@@ -16,6 +16,7 @@ namespace RavenDevOps.Fishing.Save
         public List<string> ownedHooks = new List<string> { "hook_lv1" };
 
         public List<FishInventoryEntry> fishInventory = new List<FishInventoryEntry>();
+        public List<CatchLogEntry> catchLog = new List<CatchLogEntry>();
 
         public TutorialFlags tutorialFlags = new TutorialFlags();
 
@@ -31,6 +32,19 @@ namespace RavenDevOps.Fishing.Save
         public string fishId;
         public int distanceTier;
         public int count;
+    }
+
+    [Serializable]
+    public sealed class CatchLogEntry
+    {
+        public string fishId;
+        public int distanceTier;
+        public float weightKg;
+        public int valueCopecs;
+        public string timestampUtc;
+        public string sessionId;
+        public bool landed;
+        public string failReason;
     }
 
     [Serializable]

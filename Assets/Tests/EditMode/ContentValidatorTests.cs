@@ -89,6 +89,41 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(ContentValidator.CountErrors(messages), Is.EqualTo(0));
         }
 
+        [Test]
+        public void Validate_ReturnsErrors_ForInvalidFishBehaviorFields()
+        {
+            var config = Create<GameConfigSO>();
+            var fish = Create<FishDefinitionSO>();
+
+            fish.id = "fish_behavior_invalid";
+            fish.icon = BuildSprite();
+            fish.minDistanceTier = 0;
+            fish.maxDistanceTier = 1;
+            fish.minDepth = 0f;
+            fish.maxDepth = 5f;
+            fish.rarityWeight = 1;
+            fish.baseValue = 5;
+            fish.minBiteDelaySeconds = 3f;
+            fish.maxBiteDelaySeconds = 1f;
+            fish.fightStamina = 0f;
+            fish.pullIntensity = -1f;
+            fish.escapeSeconds = 0f;
+            fish.minCatchWeightKg = 2f;
+            fish.maxCatchWeightKg = 1f;
+
+            config.fishDefinitions = new[] { fish };
+            config.shipDefinitions = new ShipDefinitionSO[0];
+            config.hookDefinitions = new HookDefinitionSO[0];
+
+            var messages = ContentValidator.Validate(config);
+
+            Assert.That(messages, Has.Some.Contains("invalid bite delay range"));
+            Assert.That(messages, Has.Some.Contains("non-positive fightStamina"));
+            Assert.That(messages, Has.Some.Contains("non-positive pullIntensity"));
+            Assert.That(messages, Has.Some.Contains("non-positive escapeSeconds"));
+            Assert.That(messages, Has.Some.Contains("invalid catch weight range"));
+        }
+
         private T Create<T>() where T : ScriptableObject
         {
             var instance = ScriptableObject.CreateInstance<T>();

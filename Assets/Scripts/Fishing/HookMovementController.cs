@@ -17,6 +17,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private float _speedMultiplier = 1f;
+        [SerializeField] private float _inputDeadzone = 0.12f;
+        [SerializeField] private float _axisSmoothing = 10f;
 
         public float MaxDepth
         {
@@ -25,7 +27,9 @@ namespace RavenDevOps.Fishing.Fishing
         }
 
         public float CurrentDepth => Mathf.Abs(transform.position.y);
+        public Transform ShipTransform => _shipTransform;
         private InputAction _moveHookAction;
+        private float _smoothedAxis;
 
         private void Awake()
         {
@@ -79,10 +83,16 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var axis = Mathf.Clamp(_moveHookAction.ReadValue<float>(), -1f, 1f);
+            var rawAxis = Mathf.Clamp(_moveHookAction.ReadValue<float>(), -1f, 1f);
+            if (Mathf.Abs(rawAxis) < Mathf.Clamp01(_inputDeadzone))
+            {
+                rawAxis = 0f;
+            }
+
+            _smoothedAxis = Mathf.MoveTowards(_smoothedAxis, rawAxis, Mathf.Max(0.01f, _axisSmoothing) * Time.deltaTime);
 
             var p = transform.position;
-            p.y += axis * _verticalSpeed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
+            p.y += _smoothedAxis * _verticalSpeed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
             p.y = Mathf.Clamp(p.y, Mathf.Min(_depthBounds.x, _depthBounds.y), Mathf.Max(_depthBounds.x, _depthBounds.y));
             transform.position = p;
         }

@@ -56,7 +56,9 @@ Keyboard-first single-player fishing loop for Steam.
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
 - Build profiles: `docs/BUILD_PROFILES.md`
 - CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
+- Catch log baseline: `docs/CATCH_LOG.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Fishing combat model: `docs/FISHING_COMBAT_MODEL.md`
 - Input baseline: `docs/INPUT_MAP.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
 - Settings system: `docs/SETTINGS_SYSTEM.md`

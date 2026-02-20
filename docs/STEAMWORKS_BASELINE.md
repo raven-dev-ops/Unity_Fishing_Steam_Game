@@ -1,19 +1,36 @@
-# Steamworks Baseline Integration
+# Steamworks Runtime Baseline
 
-## Current Implementation
-- Bootstrap script: `Assets/Scripts/Steam/SteamBootstrap.cs`
-- Uses compile symbol `STEAMWORKS_NET` to gate Steamworks-specific startup.
-- When symbol is absent, app runs in non-Steam fallback mode with diagnostic logs.
+## Runtime Script
+- `Assets/Scripts/Steam/SteamBootstrap.cs`
 
-## App ID Handling
-- Default dev App ID is configurable in inspector (`_steamAppId`, default `480`).
-- Production builds must use the real App ID and Steam launch path.
+## Behavior
+- Uses `STEAMWORKS_NET` symbol to compile Steamworks.NET calls.
+- Performs guarded init on boot:
+  - `Packsize.Test()`
+  - `DllCheck.Test()`
+  - `SteamAPI.Init()`
+- Runs `SteamAPI.RunCallbacks()` every frame while initialized.
+- Shuts down cleanly (`SteamAPI.Shutdown()`) on destroy/quit.
+- Prevents duplicate initialization across scene transitions.
 
-## Baseline Validation
-1. Install Steamworks.NET package in project.
-2. Define `STEAMWORKS_NET` scripting symbol.
-3. Launch via Steam client.
-4. Verify overlay (`Shift+Tab`) and startup logs.
+## Fallback Mode
+Fallback is explicit and non-crashing when:
+- `STEAMWORKS_NET` is not defined
+- Steamworks DLL checks fail
+- `SteamAPI.Init()` fails (for example launching outside Steam)
 
-## Notes
-- This is a baseline integration layer, not a full achievement/stats/cloud implementation.
+Runtime state can be inspected:
+- `SteamBootstrap.IsSteamInitialized`
+- `SteamBootstrap.LastFallbackReason`
+
+## App ID Notes
+- Inspector `_steamAppId` defaults to `480` for local/dev validation.
+- Runtime log includes requested app ID and runtime Steam app ID after init.
+- Production release should use the real app ID and Steam-launched execution path.
+
+## Validation Steps
+1. Install Steamworks.NET and define `STEAMWORKS_NET`.
+2. Launch build through Steam client.
+3. Verify init log and overlay (`Shift+Tab`).
+4. Close game and verify no repeated init/shutdown errors.
+5. Launch outside Steam and verify fallback warning is explicit and gameplay remains stable.

@@ -117,7 +117,14 @@ namespace RavenDevOps.Fishing.Fishing
                         minDepth = so.minDepth,
                         maxDepth = so.maxDepth,
                         rarityWeight = so.rarityWeight,
-                        baseValue = so.baseValue
+                        baseValue = so.baseValue,
+                        minBiteDelaySeconds = so.minBiteDelaySeconds,
+                        maxBiteDelaySeconds = so.maxBiteDelaySeconds,
+                        fightStamina = so.fightStamina,
+                        pullIntensity = so.pullIntensity,
+                        escapeSeconds = so.escapeSeconds,
+                        minCatchWeightKg = so.minCatchWeightKg,
+                        maxCatchWeightKg = so.maxCatchWeightKg
                     });
                 }
             }

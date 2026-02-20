@@ -11,6 +11,7 @@
   - `VO`
 - Persist volume settings (`master/music/sfx/vo`) across sessions.
 - Apply basic VO-over-music ducking when voice playback is active.
+- Reserve short SFX cues for fishing tension transitions and fail outcomes.
 
 ## File Naming
 - Format: `<type>_<event>_<variant>_<vNN>`
@@ -33,3 +34,9 @@
 - Audio settings are loaded from user settings on boot.
 - Music ducks to a reduced multiplier while VO source is playing.
 - In the absence of a mixer, source-volume fallback is applied directly.
+- Fishing runtime can map dedicated clips to:
+  - tension warning
+  - tension critical
+  - line snap fail
+  - fish escaped fail
+  - missed hook fail

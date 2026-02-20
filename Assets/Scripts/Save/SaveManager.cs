@@ -11,10 +11,12 @@ namespace RavenDevOps.Fishing.Save
         private const string FileName = "save_v1.json";
         private const string TempFileSuffix = ".tmp";
         private const string BackupFileSuffix = ".bak";
+        private const int MaxCatchLogEntries = 200;
 
         private static SaveManager _instance;
 
         [SerializeField] private SaveDataV1 _current = new SaveDataV1();
+        [SerializeField] private string _sessionId = string.Empty;
 
         public static SaveManager Instance => _instance;
         public SaveDataV1 Current => _current;
@@ -31,6 +33,7 @@ namespace RavenDevOps.Fishing.Save
             }
 
             _instance = this;
+            _sessionId = Guid.NewGuid().ToString("N");
             RuntimeServiceRegistry.Register(this);
             LoadOrCreate();
         }
@@ -189,7 +192,7 @@ namespace RavenDevOps.Fishing.Save
             }
         }
 
-        public void RecordCatch(string fishId, int distanceTier)
+        public void RecordCatch(string fishId, int distanceTier, float weightKg = 0f, int valueCopecs = 0)
         {
             if (string.IsNullOrWhiteSpace(fishId))
             {
@@ -221,7 +224,23 @@ namespace RavenDevOps.Fishing.Save
 
             _current.stats.totalFishCaught += 1;
             _current.stats.farthestDistanceTier = Mathf.Max(_current.stats.farthestDistanceTier, clampedDistanceTier);
+            AppendCatchLog(fishId, clampedDistanceTier, landed: true, weightKg, valueCopecs, failReason: string.Empty);
             Save();
+        }
+
+        public void RecordCatchFailure(string fishId, int distanceTier, string failReason)
+        {
+            var clampedDistanceTier = Mathf.Max(1, distanceTier);
+            AppendCatchLog(fishId, clampedDistanceTier, landed: false, 0f, 0, failReason ?? string.Empty);
+            Save();
+        }
+
+        public List<CatchLogEntry> GetRecentCatchLogSnapshot(int maxEntries)
+        {
+            _current.catchLog ??= new List<CatchLogEntry>();
+            var count = Mathf.Max(1, maxEntries);
+            var start = Mathf.Max(0, _current.catchLog.Count - count);
+            return _current.catchLog.GetRange(start, _current.catchLog.Count - start);
         }
 
         private void OnDestroy()
@@ -282,6 +301,7 @@ namespace RavenDevOps.Fishing.Save
             save.ownedShips ??= new List<string>();
             save.ownedHooks ??= new List<string>();
             save.fishInventory ??= new List<FishInventoryEntry>();
+            save.catchLog ??= new List<CatchLogEntry>();
             save.tutorialFlags ??= new TutorialFlags();
             save.stats ??= new SaveStats();
 
@@ -314,6 +334,8 @@ namespace RavenDevOps.Fishing.Save
             {
                 save.lastLoginLocalDate = save.careerStartLocalDate;
             }
+
+            TrimCatchLog(save.catchLog);
         }
 
         private void BackupCorruptSaveFile(string reason)
@@ -357,6 +379,40 @@ namespace RavenDevOps.Fishing.Save
         private static string CurrentLocalDate()
         {
             return DateTime.Now.ToString("yyyy-MM-dd");
+        }
+
+        private void AppendCatchLog(string fishId, int distanceTier, bool landed, float weightKg, int valueCopecs, string failReason)
+        {
+            _current.catchLog ??= new List<CatchLogEntry>();
+            _current.catchLog.Add(new CatchLogEntry
+            {
+                fishId = fishId ?? string.Empty,
+                distanceTier = Mathf.Max(1, distanceTier),
+                weightKg = Mathf.Max(0f, weightKg),
+                valueCopecs = Mathf.Max(0, valueCopecs),
+                timestampUtc = DateTime.UtcNow.ToString("O"),
+                sessionId = _sessionId,
+                landed = landed,
+                failReason = failReason ?? string.Empty
+            });
+
+            TrimCatchLog(_current.catchLog);
+        }
+
+        private static void TrimCatchLog(List<CatchLogEntry> log)
+        {
+            if (log == null)
+            {
+                return;
+            }
+
+            if (log.Count <= MaxCatchLogEntries)
+            {
+                return;
+            }
+
+            var removeCount = log.Count - MaxCatchLogEntries;
+            log.RemoveRange(0, removeCount);
         }
     }
 }

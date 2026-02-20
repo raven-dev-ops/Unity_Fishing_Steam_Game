@@ -1,6 +1,6 @@
 # TASKLIST
 
-Updated from open GitHub issues on 2026-02-20 after additional closures: #112, #125, #147, #149.
+Updated from open GitHub issues on 2026-02-20 after additional closures: #111, #135, #136, #137, #138.
 
 ## Completed This Session
 - [x] #113 REVIEW-003 - Eliminate avoidable GC allocations in FishSpawner roll path
@@ -23,21 +23,22 @@ Updated from open GitHub issues on 2026-02-20 after additional closures: #112, #
 - [x] #134 BACKLOG-002 - Settings system completeness (graphics/audio/input persistence)
 - [x] #147 BACKLOG-015 - UI architecture decoupling and lifecycle safety
 - [x] #149 BACKLOG-017 - Build configuration separation for Dev, QA, and Release
+- [x] #111 REVIEW-001 - Steamworks initialization and runtime safety
+- [x] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline
+- [x] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic)
+- [x] #137 BACKLOG-005 - Tension and line feedback system with readable fail states
+- [x] #138 BACKLOG-006 - Catch log and inventory UI baseline
 
 ## Next Focus
-- [ ] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline
-- [ ] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic)
-- [ ] #111 REVIEW-001 - Steamworks initialization and runtime safety
-- [ ] #138 BACKLOG-006 - Catch log and inventory UI baseline
-- [ ] #137 BACKLOG-005 - Tension and line feedback system with readable fail states
+- [ ] #139 BACKLOG-007 - Single polished fishing environment slice
+- [ ] #140 BACKLOG-008 - Fishing loop tutorialization (cast/hook/reel) with recovery
+- [ ] #141 BACKLOG-009 - Progression system baseline (XP, levels, unlocks)
+- [ ] #127 REVIEW-017 - Implement Steam achievements and stats MVP
+- [ ] #128 REVIEW-018 - Rehearse SteamPipe beta uploads with secure deployment scripts
 
 ## Open Issues
 
-### M1 - Vertical Slice (Core Fishing Loop) (6)
-- [ ] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline (P0-blocker)
-- [ ] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic) (P0-blocker)
-- [ ] #137 BACKLOG-005 - Tension and line feedback system with readable fail states (P1-high)
-- [ ] #138 BACKLOG-006 - Catch log and inventory UI baseline (P1-high)
+### M1 - Vertical Slice (Core Fishing Loop) (2)
 - [ ] #139 BACKLOG-007 - Single polished fishing environment slice (P1-high)
 - [ ] #140 BACKLOG-008 - Fishing loop tutorialization (cast/hook/reel) with recovery (P1-high)
 
@@ -47,9 +48,8 @@ Updated from open GitHub issues on 2026-02-20 after additional closures: #112, #
 - [ ] #143 BACKLOG-011 - In-game objectives system (non-Steam) (P2-medium)
 - [ ] #148 BACKLOG-016 - Accessibility baseline pass (subtitles, UI scale, readable cues) (P2-medium)
 
-### M3 - Steam Release Candidate (7)
+### M3 - Steam Release Candidate (6)
 - [ ] #110 REVIEW-000 - Deep research recommendations backlog import (P1-high)
-- [ ] #111 REVIEW-001 - Steamworks initialization and runtime safety (P0-blocker)
 - [ ] #127 REVIEW-017 - Implement Steam achievements and stats MVP (P1-high)
 - [ ] #128 REVIEW-018 - Rehearse SteamPipe beta uploads with secure deployment scripts (P1-high)
 - [ ] #144 BACKLOG-012 - Steam Cloud saves integration and conflict strategy (P1-high)

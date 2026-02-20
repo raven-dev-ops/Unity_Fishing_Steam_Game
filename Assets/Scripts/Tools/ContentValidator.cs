@@ -126,6 +126,31 @@ namespace RavenDevOps.Fishing.Tools
                 {
                     messages.Add($"ERROR: Fish '{fish.id}' has non-positive rarityWeight.");
                 }
+
+                if (fish.minBiteDelaySeconds < 0f || fish.maxBiteDelaySeconds < 0f || fish.minBiteDelaySeconds > fish.maxBiteDelaySeconds)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' invalid bite delay range.");
+                }
+
+                if (fish.fightStamina <= 0f)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has non-positive fightStamina.");
+                }
+
+                if (fish.pullIntensity <= 0f)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has non-positive pullIntensity.");
+                }
+
+                if (fish.escapeSeconds <= 0f)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' has non-positive escapeSeconds.");
+                }
+
+                if (fish.minCatchWeightKg <= 0f || fish.maxCatchWeightKg <= 0f || fish.minCatchWeightKg > fish.maxCatchWeightKg)
+                {
+                    messages.Add($"ERROR: Fish '{fish.id}' invalid catch weight range.");
+                }
             }
         }
 
