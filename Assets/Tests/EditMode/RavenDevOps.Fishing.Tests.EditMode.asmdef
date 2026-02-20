@@ -1,0 +1,22 @@
+{
+  "name": "RavenDevOps.Fishing.Tests.EditMode",
+  "rootNamespace": "RavenDevOps.Fishing.Tests.EditMode",
+  "references": [
+    "RavenDevOps.Fishing.Runtime",
+    "RavenDevOps.Fishing.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

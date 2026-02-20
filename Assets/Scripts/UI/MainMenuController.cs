@@ -18,7 +18,7 @@ namespace RavenDevOps.Fishing.UI
 
         private void Awake()
         {
-            _orchestrator ??= FindObjectOfType<GameFlowOrchestrator>();
+            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
         }
 
         private void OnEnable()

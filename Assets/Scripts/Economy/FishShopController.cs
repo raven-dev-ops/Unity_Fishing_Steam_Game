@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
 
@@ -10,8 +11,8 @@ namespace RavenDevOps.Fishing.Economy
 
         private void Awake()
         {
-            _saveManager ??= FindObjectOfType<SaveManager>();
-            _sellSummaryCalculator ??= FindObjectOfType<SellSummaryCalculator>();
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _sellSummaryCalculator, this, warnIfMissing: false);
         }
 
         public int SellAll()

@@ -13,8 +13,8 @@ namespace RavenDevOps.Fishing.UI
 
         private void Awake()
         {
-            _gameFlowManager ??= FindObjectOfType<GameFlowManager>();
-            _orchestrator ??= FindObjectOfType<GameFlowOrchestrator>();
+            RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -43,8 +43,7 @@ namespace RavenDevOps.Fishing.UI
 
         public void OnTownHarborPressed()
         {
-            _gameFlowManager?.ReturnToHarborFromFishingPause();
-            _orchestrator?.RequestReturnToHarbor();
+            _orchestrator?.RequestReturnToHarborFromPause();
         }
 
         public void OnSettingsPressed()

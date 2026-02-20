@@ -1,4 +1,5 @@
-﻿using RavenDevOps.Fishing.Save;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,7 +17,7 @@ namespace RavenDevOps.Fishing.Harbor
 
         private void Awake()
         {
-            _saveManager ??= FindObjectOfType<SaveManager>();
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
         }
 
         private void Start()

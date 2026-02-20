@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
@@ -24,9 +25,15 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
-            _saveManager ??= FindObjectOfType<SaveManager>();
-            _catalogService ??= FindObjectOfType<CatalogService>();
+            RuntimeServiceRegistry.Register(this);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RefreshHookStats();
+        }
+
+        private void OnDestroy()
+        {
+            RuntimeServiceRegistry.Unregister(this);
         }
 
         public void RefreshHookStats()

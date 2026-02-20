@@ -27,10 +27,17 @@ namespace RavenDevOps.Fishing.Core
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            RuntimeServiceRegistry.Register(this);
         }
 
         public void SetState(GameFlowState nextState)
         {
+            if (!Enum.IsDefined(typeof(GameFlowState), nextState))
+            {
+                Debug.LogError($"GameFlowManager: Attempted to set invalid state value {(int)nextState}.");
+                return;
+            }
+
             if (nextState == _currentState)
             {
                 return;
@@ -52,6 +59,7 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_currentState != GameFlowState.Harbor && _currentState != GameFlowState.Fishing && _currentState != GameFlowState.Pause)
             {
+                Debug.LogWarning($"GameFlowManager: TogglePause ignored from state {_currentState}.");
                 return;
             }
 
@@ -80,6 +88,11 @@ namespace RavenDevOps.Fishing.Core
 
         public void ReturnToHarborFromFishingPause()
         {
+            if (_currentState != GameFlowState.Pause)
+            {
+                Debug.LogWarning($"GameFlowManager: ReturnToHarborFromFishingPause called while in state {_currentState}.");
+            }
+
             _isPaused = false;
             Time.timeScale = 1f;
             SetState(GameFlowState.Harbor);
@@ -88,6 +101,16 @@ namespace RavenDevOps.Fishing.Core
         private void OnApplicationQuit()
         {
             Time.timeScale = 1f;
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+
+            RuntimeServiceRegistry.Unregister(this);
         }
     }
 }

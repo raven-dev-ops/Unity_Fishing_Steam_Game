@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RavenDevOps.Fishing.Save
@@ -19,8 +19,8 @@ namespace RavenDevOps.Fishing.Save
 
         public TutorialFlags tutorialFlags = new TutorialFlags();
 
-        public string careerStartLocalDate = DateTime.Now.ToString("yyyy-MM-dd");
-        public string lastLoginLocalDate = DateTime.Now.ToString("yyyy-MM-dd");
+        public string careerStartLocalDate = string.Empty;
+        public string lastLoginLocalDate = string.Empty;
 
         public SaveStats stats = new SaveStats();
     }

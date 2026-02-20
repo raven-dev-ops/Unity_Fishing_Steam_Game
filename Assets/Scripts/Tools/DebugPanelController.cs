@@ -1,4 +1,5 @@
-﻿using RavenDevOps.Fishing.Economy;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
@@ -19,9 +20,9 @@ namespace RavenDevOps.Fishing.Tools
 
         private void Awake()
         {
-            _waveAnimator ??= FindObjectOfType<WaveAnimator>();
-            _fishSpawner ??= FindObjectOfType<FishSpawner>();
-            _saveManager ??= FindObjectOfType<SaveManager>();
+            RuntimeServiceRegistry.Resolve(ref _waveAnimator, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
         }
 
         private void Update()

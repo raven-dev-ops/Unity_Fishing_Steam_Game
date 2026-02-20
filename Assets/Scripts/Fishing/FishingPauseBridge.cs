@@ -10,7 +10,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
-            _orchestrator ??= FindObjectOfType<GameFlowOrchestrator>();
+            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
         }
 
         private void Update()
@@ -18,7 +18,7 @@ namespace RavenDevOps.Fishing.Fishing
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.hKey.wasPressedThisFrame)
             {
-                _orchestrator?.RequestReturnToHarbor();
+                _orchestrator?.RequestReturnToHarborFromPause();
             }
         }
     }

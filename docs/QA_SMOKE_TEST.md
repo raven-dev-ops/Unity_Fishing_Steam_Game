@@ -7,6 +7,7 @@ End-to-end regression checklist for the MVP loop.
 - Use a clean profile (remove or back up existing save if needed).
 - Start from `00_Boot` and follow normal flow.
 - Keep Console visible and clear between major phases.
+- In dev/editor builds, toggle in-game log console with backquote key (<code>`</code>) if needed.
 
 ## Run Order
 1. Launch and verify no boot errors.
@@ -24,6 +25,8 @@ End-to-end regression checklist for the MVP loop.
 - No blocker regressions in core gameplay loop.
 - No repeating Console error spam in normal flow.
 - All keyboard-first actions are reachable without mouse.
+- Runtime log file is generated and readable at:
+  - `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/raven_runtime.log`
 
 ## Report Format
 - Scene:

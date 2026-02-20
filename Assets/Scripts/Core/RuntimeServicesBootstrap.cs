@@ -16,7 +16,7 @@ namespace RavenDevOps.Fishing.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureBootstrap()
         {
-            if (Object.FindObjectOfType<GameFlowOrchestrator>() != null)
+            if (GameFlowOrchestrator.Instance != null || GameObject.Find(ServicesObjectName) != null)
             {
                 return;
             }
@@ -29,9 +29,22 @@ namespace RavenDevOps.Fishing.Core
             var inputRouter = servicesGo.AddComponent<InputContextRouter>();
             var inputMapController = servicesGo.AddComponent<InputActionMapController>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
-            servicesGo.AddComponent<AudioManager>();
+            var audioManager = servicesGo.AddComponent<AudioManager>();
             var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
             var inputDriver = servicesGo.AddComponent<KeyboardFlowInputDriver>();
+            var structuredLogger = servicesGo.AddComponent<Logging.StructuredLogService>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            servicesGo.AddComponent<Logging.DevelopmentLogConsole>();
+#endif
+
+            RuntimeServiceRegistry.Register(gameFlow);
+            RuntimeServiceRegistry.Register(sceneLoader);
+            RuntimeServiceRegistry.Register(inputRouter);
+            RuntimeServiceRegistry.Register(inputMapController);
+            RuntimeServiceRegistry.Register(saveManager);
+            RuntimeServiceRegistry.Register(audioManager);
+            RuntimeServiceRegistry.Register(orchestrator);
+            RuntimeServiceRegistry.Register(structuredLogger);
 
             var inputActions = Resources.Load<InputActionAsset>(InputActionsResourcePath);
             if (inputActions == null)

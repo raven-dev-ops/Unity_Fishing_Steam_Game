@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Data
@@ -17,7 +18,13 @@ namespace RavenDevOps.Fishing.Data
 
         private void Awake()
         {
+            RuntimeServiceRegistry.Register(this);
             Rebuild();
+        }
+
+        private void OnDestroy()
+        {
+            RuntimeServiceRegistry.Unregister(this);
         }
 
         public void Rebuild()

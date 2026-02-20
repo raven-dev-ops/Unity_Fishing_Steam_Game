@@ -8,6 +8,8 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class GameFlowOrchestrator : MonoBehaviour
     {
+        private static GameFlowOrchestrator _instance;
+
         [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private SceneLoader _sceneLoader;
         [SerializeField] private InputContextRouter _inputContextRouter;
@@ -16,6 +18,8 @@ namespace RavenDevOps.Fishing.Core
 
         private Coroutine _activeLoadRoutine;
         private bool _eventsBound;
+
+        public static GameFlowOrchestrator Instance => _instance;
 
         public void Initialize(
             GameFlowManager gameFlowManager,
@@ -35,17 +39,20 @@ namespace RavenDevOps.Fishing.Core
 
         private void Awake()
         {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            RuntimeServiceRegistry.Register(this);
             ResolveDependencies();
             BindEvents();
         }
 
         private void Start()
         {
-            if (_saveManager != null)
-            {
-                _saveManager.LoadOrCreate();
-            }
-
             if (_gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.None)
             {
                 _gameFlowManager.SetState(GameFlowState.MainMenu);
@@ -55,10 +62,23 @@ namespace RavenDevOps.Fishing.Core
         private void OnDestroy()
         {
             UnbindEvents();
+
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+
+            RuntimeServiceRegistry.Unregister(this);
         }
 
         private void ResolveDependencies()
         {
+            RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _sceneLoader, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputContextRouter, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+
             _gameFlowManager ??= GetComponent<GameFlowManager>();
             _sceneLoader ??= GetComponent<SceneLoader>();
             _inputContextRouter ??= GetComponent<InputContextRouter>();
@@ -97,10 +117,17 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var context = GetContextForState(next);
-            var targetScenePath = ScenePathConstants.GetScenePathForState(next);
-
-            if (string.IsNullOrWhiteSpace(targetScenePath))
+            if (!ScenePathConstants.TryGetScenePathForState(next, out var targetScenePath))
             {
+                if (ScenePathConstants.IsSceneBackedState(next))
+                {
+                    Debug.LogError($"GameFlowOrchestrator: Missing scene mapping for state {next}.");
+                }
+                else
+                {
+                    Debug.Log($"GameFlowOrchestrator: State {next} does not require scene load.");
+                }
+
                 SetInputContext(context);
                 return;
             }
@@ -160,6 +187,7 @@ namespace RavenDevOps.Fishing.Core
                 case GameFlowState.Pause:
                     return InputContext.UI;
                 default:
+                    Debug.LogWarning($"GameFlowOrchestrator: No explicit input-context mapping for state {state}.");
                     return InputContext.None;
             }
         }
@@ -182,6 +210,22 @@ namespace RavenDevOps.Fishing.Core
         public void RequestReturnToHarbor()
         {
             _gameFlowManager?.SetState(GameFlowState.Harbor);
+        }
+
+        public void RequestReturnToHarborFromPause()
+        {
+            if (_gameFlowManager == null)
+            {
+                return;
+            }
+
+            if (_gameFlowManager.CurrentState == GameFlowState.Pause)
+            {
+                _gameFlowManager.ReturnToHarborFromFishingPause();
+                return;
+            }
+
+            _gameFlowManager.SetState(GameFlowState.Harbor);
         }
 
         public void RequestExitGame()

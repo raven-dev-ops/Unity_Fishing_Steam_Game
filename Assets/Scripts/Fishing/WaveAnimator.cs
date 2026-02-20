@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using RavenDevOps.Fishing.Core;
+using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
 {
@@ -8,6 +9,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Transform _waveLayerB;
         [SerializeField] private float _waveSpeedA = 0.3f;
         [SerializeField] private float _waveSpeedB = 0.6f;
+
+        private void Awake()
+        {
+            RuntimeServiceRegistry.Register(this);
+        }
+
+        private void OnDestroy()
+        {
+            RuntimeServiceRegistry.Unregister(this);
+        }
 
         public void SetWaveSpeeds(float waveSpeedA, float waveSpeedB)
         {

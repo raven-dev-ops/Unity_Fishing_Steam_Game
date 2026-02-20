@@ -17,6 +17,9 @@ namespace RavenDevOps.Fishing.Input
 
         private void Awake()
         {
+            RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
+
             _gameFlowManager ??= GetComponent<GameFlowManager>();
             _orchestrator ??= GetComponent<GameFlowOrchestrator>();
         }
@@ -36,8 +39,7 @@ namespace RavenDevOps.Fishing.Input
 
             if (_gameFlowManager.CurrentState == GameFlowState.Pause && keyboard.hKey.wasPressedThisFrame)
             {
-                _gameFlowManager.ReturnToHarborFromFishingPause();
-                _orchestrator?.RequestReturnToHarbor();
+                _orchestrator?.RequestReturnToHarborFromPause();
             }
         }
     }

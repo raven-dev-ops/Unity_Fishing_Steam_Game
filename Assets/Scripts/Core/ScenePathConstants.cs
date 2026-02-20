@@ -8,21 +8,46 @@ namespace RavenDevOps.Fishing.Core
         public const string Harbor = "Assets/Scenes/03_Harbor.unity";
         public const string Fishing = "Assets/Scenes/04_Fishing.unity";
 
-        public static string GetScenePathForState(GameFlowState state)
+        public static bool IsSceneBackedState(GameFlowState state)
         {
             switch (state)
             {
                 case GameFlowState.Cinematic:
-                    return Cinematic;
                 case GameFlowState.MainMenu:
-                    return MainMenu;
                 case GameFlowState.Harbor:
-                    return Harbor;
                 case GameFlowState.Fishing:
-                    return Fishing;
+                    return true;
                 default:
-                    return null;
+                    return false;
             }
+        }
+
+        public static bool TryGetScenePathForState(GameFlowState state, out string scenePath)
+        {
+            switch (state)
+            {
+                case GameFlowState.Cinematic:
+                    scenePath = Cinematic;
+                    return true;
+                case GameFlowState.MainMenu:
+                    scenePath = MainMenu;
+                    return true;
+                case GameFlowState.Harbor:
+                    scenePath = Harbor;
+                    return true;
+                case GameFlowState.Fishing:
+                    scenePath = Fishing;
+                    return true;
+                default:
+                    scenePath = null;
+                    return false;
+            }
+        }
+
+        public static string GetScenePathForState(GameFlowState state)
+        {
+            TryGetScenePathForState(state, out var scenePath);
+            return scenePath;
         }
     }
 }

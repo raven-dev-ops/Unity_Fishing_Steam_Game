@@ -38,6 +38,7 @@ flowchart LR
 
 ## Runtime Notes
 - `RuntimeServicesBootstrap` creates persistent services before scene load.
+- `RuntimeServiceRegistry` provides explicit runtime dependency wiring and replaces scene-search based lookups.
 - `GameFlowManager` owns flow state and pause transitions.
 - `GameFlowOrchestrator` maps states to scenes and input contexts.
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).

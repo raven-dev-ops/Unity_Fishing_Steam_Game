@@ -50,6 +50,7 @@ Keyboard-first single-player fishing loop for Steam.
 
 ## Documentation Index
 - Architecture: `docs/ARCHITECTURE.md`
+- Assembly boundaries: `docs/ASSEMBLY_BOUNDARIES.md`
 - Contribution workflow: `CONTRIBUTING.md`
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
 - CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
@@ -59,6 +60,7 @@ Keyboard-first single-player fishing loop for Steam.
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
+- Testing baseline: `docs/TESTING_BASELINE.md`
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`
 
 ## Repository Rules

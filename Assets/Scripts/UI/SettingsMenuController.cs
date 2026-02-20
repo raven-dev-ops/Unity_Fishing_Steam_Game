@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Audio;
+using RavenDevOps.Fishing.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,7 +17,7 @@ namespace RavenDevOps.Fishing.UI
 
         private void Awake()
         {
-            _audioManager ??= FindObjectOfType<AudioManager>();
+            RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
         }
 
         private void OnEnable()

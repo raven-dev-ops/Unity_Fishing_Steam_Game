@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
 using TMPro;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace RavenDevOps.Fishing.UI
 
         private void Awake()
         {
-            _saveManager ??= FindObjectOfType<SaveManager>();
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
         }
 
         private void OnEnable()

@@ -1,0 +1,18 @@
+{
+  "name": "RavenDevOps.Fishing.Editor",
+  "rootNamespace": "RavenDevOps.Fishing.EditorTools",
+  "references": [
+    "RavenDevOps.Fishing.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

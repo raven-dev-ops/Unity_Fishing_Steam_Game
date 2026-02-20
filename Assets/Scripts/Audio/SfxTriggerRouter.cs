@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Audio
@@ -22,7 +23,7 @@ namespace RavenDevOps.Fishing.Audio
 
         private void Awake()
         {
-            _audioManager ??= FindObjectOfType<AudioManager>();
+            RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
         }
 
         public void Play(SfxEvent eventType)

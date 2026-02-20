@@ -1,4 +1,5 @@
-﻿using RavenDevOps.Fishing.Economy;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using UnityEngine;
 
@@ -20,11 +21,11 @@ namespace RavenDevOps.Fishing.Tools
                 return;
             }
 
-            _waveAnimator ??= FindObjectOfType<WaveAnimator>();
-            _shipMovement ??= FindObjectOfType<ShipMovementController>();
-            _hookMovement ??= FindObjectOfType<HookMovementController>();
-            _fishSpawner ??= FindObjectOfType<FishSpawner>();
-            _sellSummaryCalculator ??= FindObjectOfType<SellSummaryCalculator>();
+            RuntimeServiceRegistry.Resolve(ref _waveAnimator, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _shipMovement, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _hookMovement, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _sellSummaryCalculator, this, warnIfMissing: false);
 
             _waveAnimator?.SetWaveSpeeds(_config.waveSpeedA, _config.waveSpeedB);
             _shipMovement?.SetSpeedMultiplier(_config.shipSpeedMultiplier);

@@ -1,35 +1,33 @@
 # TASKLIST
 
-Updated from open GitHub issues on 2026-02-20 after closing #115, #118, #124, #129, #130, #131.
+Updated from open GitHub issues on 2026-02-20 after additional closure: #114.
 
-## Completed This Pass
+## Completed This Session
+- [x] #114 REVIEW-004 - Harden save system initialization and atomic write path
 - [x] #115 REVIEW-005 - Add command-line Windows build entrypoint and metadata injection
+- [x] #116 REVIEW-006 - Introduce assembly definitions for runtime/editor/test boundaries
+- [x] #117 REVIEW-007 - Implement Unity Test Framework suites (EditMode and PlayMode)
 - [x] #118 REVIEW-008 - Expand content validator rules and enforce headless CI gate
+- [x] #119 REVIEW-009 - Replace pervasive FindObjectOfType usage with explicit wiring
+- [x] #120 REVIEW-010 - Harden game flow state/scene mapping and transition rules
 - [x] #124 REVIEW-014 - Add CI/CD workflows, code quality gates, and reproducible release pipeline
 - [x] #129 REVIEW-019 - Improve developer onboarding docs and contribution workflow
 - [x] #130 REVIEW-020 - Add LICENSE and third-party notices for compliance
 - [x] #131 REVIEW-021 - Enforce CI secret hygiene and protected release/upload workflows
+- [x] #133 BACKLOG-001 - Structured logging and in-game debug console (dev builds)
 
 ## Next Focus
-- [ ] #116 REVIEW-006 - Introduce assembly definitions for runtime/editor/test boundaries
-- [ ] #117 REVIEW-007 - Implement Unity Test Framework suites (EditMode and PlayMode)
-- [ ] #119 REVIEW-009 - Replace pervasive FindObjectOfType usage with explicit wiring
-- [ ] #120 REVIEW-010 - Harden game flow state/scene mapping and transition rules
-- [ ] #133 BACKLOG-001 - Structured logging and in-game debug console (dev builds)
+- [ ] #112 REVIEW-002 - Unify input architecture on Input System action maps
+- [ ] #113 REVIEW-003 - Eliminate avoidable GC allocations in FishSpawner roll path
+- [ ] #122 REVIEW-012 - Bring audio pipeline to production readiness
+- [ ] #134 BACKLOG-002 - Settings system completeness (graphics/audio/input persistence)
+- [ ] #121 REVIEW-011 - Clarify distance-tier economy multiplier policy and add tests
 
 ## Open Issues
 
-### M0 - Foundation (Repo + Build + Baseline Play) (5)
-- [ ] #116 REVIEW-006 - Introduce assembly definitions for runtime/editor/test boundaries (P1-high)
-- [ ] #117 REVIEW-007 - Implement Unity Test Framework suites (EditMode and PlayMode) (P1-high)
-- [ ] #119 REVIEW-009 - Replace pervasive FindObjectOfType usage with explicit wiring (P1-high)
-- [ ] #120 REVIEW-010 - Harden game flow state/scene mapping and transition rules (P2-medium)
-- [ ] #133 BACKLOG-001 - Structured logging and in-game debug console (dev builds) (P0-blocker)
-
-### M1 - Vertical Slice (Core Fishing Loop) (10)
+### M1 - Vertical Slice (Core Fishing Loop) (9)
 - [ ] #112 REVIEW-002 - Unify input architecture on Input System action maps (P0-blocker)
 - [ ] #113 REVIEW-003 - Eliminate avoidable GC allocations in FishSpawner roll path (P0-blocker)
-- [ ] #114 REVIEW-004 - Harden save system initialization and atomic write path (P0-blocker)
 - [ ] #122 REVIEW-012 - Bring audio pipeline to production readiness (P2-medium)
 - [ ] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline (P0-blocker)
 - [ ] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic) (P0-blocker)

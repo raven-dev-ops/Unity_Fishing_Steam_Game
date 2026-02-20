@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Core;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -5,6 +6,8 @@ namespace RavenDevOps.Fishing.Audio
 {
     public sealed class AudioManager : MonoBehaviour
     {
+        private static AudioManager _instance;
+
         public const string MusicVolumeParam = "MusicVolume";
         public const string SfxVolumeParam = "SFXVolume";
         public const string VoVolumeParam = "VOVolume";
@@ -14,8 +17,18 @@ namespace RavenDevOps.Fishing.Audio
         [SerializeField] private AudioSource _sfxSource;
         [SerializeField] private AudioSource _voSource;
 
+        public static AudioManager Instance => _instance;
+
         private void Awake()
         {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            RuntimeServiceRegistry.Register(this);
             EnsureDefaultSources();
         }
 
@@ -105,6 +118,16 @@ namespace RavenDevOps.Fishing.Audio
 
             var clamped = Mathf.Clamp(linearValue, 0.0001f, 1f);
             _mixer.SetFloat(parameterName, Mathf.Log10(clamped) * 20f);
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+
+            RuntimeServiceRegistry.Unregister(this);
         }
     }
 }

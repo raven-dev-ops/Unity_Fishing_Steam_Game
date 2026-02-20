@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Data;
 using UnityEngine;
 
@@ -12,7 +13,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
-            _catalogService ??= FindObjectOfType<CatalogService>();
+            RuntimeServiceRegistry.Register(this);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+        }
+
+        private void OnDestroy()
+        {
+            RuntimeServiceRegistry.Unregister(this);
         }
 
         public float SpawnRatePerMinute => _spawnRatePerMinute;
