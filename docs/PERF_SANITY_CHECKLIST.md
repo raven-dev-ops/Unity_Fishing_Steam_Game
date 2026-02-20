@@ -19,3 +19,10 @@
 
 ## Failure Logging
 Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SANITY_BUDGET_FAIL` lines.
+
+## CI Integration Path
+1. Save the captured perf log under `PerfLogs/perf_sanity.log` (or another path provided to workflow dispatch).
+2. Trigger `.github/workflows/ci-perf-budget.yml` (automatically via `PerfLogs/**` change or manual dispatch).
+3. Review uploaded artifacts:
+   - `Artifacts/Perf/perf_budget_summary.json`
+   - `Artifacts/Perf/perf_budget_summary.txt`

@@ -19,10 +19,12 @@ These checks should be required on `main`:
 - `.github/workflows/ci-build.yml`
 - `.github/workflows/ci-tests.yml`
 - `.github/workflows/ci-content-validator.yml`
+- `.github/workflows/ci-perf-budget.yml`
 - `.github/workflows/secret-scan.yml`
 - `.github/workflows/release-steampipe.yml`
 
 ## Notes
 - Unity workflows use `UNITY_LICENSE` when available. Without it, workflows complete with warnings and skip Unity-dependent steps.
 - Content validator workflow also runs asset import audit in warning-first mode and uploads `Artifacts/AssetImportAudit/*` report artifacts.
+- Perf budget workflow is path-gated (`PerfLogs/**`) and manual-dispatch capable for supplied performance logs.
 - Release workflow is environment-gated via `steam-release`.

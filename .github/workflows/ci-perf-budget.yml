@@ -1,0 +1,87 @@
+name: CI Perf Budget Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      log_file:
+        description: "Perf log path in repo workspace"
+        required: false
+        default: "PerfLogs/perf_sanity.log"
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-perf-budget.yml"
+      - "scripts/perf-budget-check.ps1"
+      - "docs/PERF_BASELINE.md"
+      - "docs/PERF_SANITY_CHECKLIST.md"
+      - "PerfLogs/**"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-perf-budget.yml"
+      - "scripts/perf-budget-check.ps1"
+      - "docs/PERF_BASELINE.md"
+      - "docs/PERF_SANITY_CHECKLIST.md"
+      - "PerfLogs/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-perf-budget-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perf_budget_gate:
+    name: Validate perf budgets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve perf log path
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.log_file }}" ]; then
+            LOG_FILE="${{ github.event.inputs.log_file }}"
+          else
+            LOG_FILE="PerfLogs/perf_sanity.log"
+          fi
+          echo "log_file=$LOG_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Detect perf log availability
+        id: detect
+        shell: bash
+        run: |
+          LOG_FILE="${{ steps.resolve.outputs.log_file }}"
+          if [ -f "$LOG_FILE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No perf log found at '$LOG_FILE'. Skipping perf budget gate."
+          fi
+
+      - name: Run perf budget parser
+        if: steps.detect.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          ./scripts/perf-budget-check.ps1 `
+            -LogFile "${{ steps.resolve.outputs.log_file }}" `
+            -SummaryJsonPath "Artifacts/Perf/perf_budget_summary.json" `
+            -SummaryTextPath "Artifacts/Perf/perf_budget_summary.txt"
+
+      - name: Upload perf artifacts
+        if: always() && steps.detect.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-budget-${{ github.sha }}
+          path: |
+            Artifacts/Perf/**
+          if-no-files-found: warn
+
+      - name: Report skipped perf gate
+        if: steps.detect.outputs.available != 'true'
+        shell: bash
+        run: echo "Perf budget gate skipped because no perf log was supplied in repository paths."

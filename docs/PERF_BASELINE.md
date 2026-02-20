@@ -13,6 +13,9 @@ Baseline covers worst-case MVP loop checks in:
 4. Capture `PERF_SANITY` lines from player/editor log.
 5. Run parser gate:
    - `scripts/perf-budget-check.ps1 -LogFile <path-to-log>`
+   - Optional summary artifacts:
+     - `-SummaryJsonPath Artifacts/Perf/perf_budget_summary.json`
+     - `-SummaryTextPath Artifacts/Perf/perf_budget_summary.txt`
 
 `PerfSanityRunner` emits structured lines in this format:
 `PERF_SANITY scene=<name> frames=<n> avg_fps=<v> min_fps=<v> max_fps=<v> avg_frame_ms=<v> p95_frame_ms=<v> gc_delta_kb=<v>`
@@ -34,3 +37,12 @@ Record one row per scenario and keep the latest approved run:
 ## Variance Guidance
 - Treat <=10% drift as normal variance across comparable runs.
 - Anything beyond thresholds or repeated >10% drift is a regression candidate and requires triage.
+
+## CI Budget Gate
+- Workflow: `.github/workflows/ci-perf-budget.yml`
+- Trigger paths: `PerfLogs/**` (plus workflow/script/doc changes) and manual dispatch.
+- Manual dispatch input:
+  - `log_file` (default `PerfLogs/perf_sanity.log`)
+- Behavior:
+  - If log exists, parser runs and fails job on budget violations.
+  - If log is missing, workflow emits warning and exits without failing.
