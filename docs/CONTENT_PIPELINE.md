@@ -34,6 +34,12 @@ Unity.exe -batchmode -nographics -quit `
   -logFile validate_content.log
 ```
 
+Project wrapper (recommended):
+
+```powershell
+.\scripts\unity-cli.ps1 -Task validate -LogFile validate_content.log
+```
+
 ### CI Gate Policy
 - Any validator `ERROR` fails the job and blocks merge.
 - `WARN` output is allowed for merge, but should be triaged.

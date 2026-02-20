@@ -20,6 +20,12 @@ Unity.exe -batchmode -nographics -quit `
   -logFile build_windows.log
 ```
 
+Project wrapper (recommended):
+
+```powershell
+.\scripts\unity-cli.ps1 -Task build -LogFile build_windows.log
+```
+
 ### Command Arguments
 - `-buildOutput` optional output folder (default `Builds/Windows`)
 - `-buildExeName` optional executable filename (default `UnityFishingSteamGame.exe`)

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using RavenDevOps.Fishing.Core;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace RavenDevOps.Fishing.Harbor
@@ -8,6 +9,12 @@ namespace RavenDevOps.Fishing.Harbor
         [SerializeField] private float _moveSpeed = 4f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-8f, 8f);
         [SerializeField] private Vector2 _zBounds = new Vector2(-4f, 4f);
+        [SerializeField] private UserSettingsService _settingsService;
+
+        private void Awake()
+        {
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+        }
 
         private void Update()
         {
@@ -23,7 +30,8 @@ namespace RavenDevOps.Fishing.Harbor
             if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) move.x -= 1f;
             if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) move.x += 1f;
 
-            move = move.normalized * (_moveSpeed * Time.deltaTime);
+            var sensitivity = _settingsService != null ? _settingsService.InputSensitivity : 1f;
+            move = move.normalized * (_moveSpeed * sensitivity * Time.deltaTime);
             transform.position += move;
 
             var p = transform.position;

@@ -28,6 +28,7 @@ namespace RavenDevOps.Fishing.Core
             var sceneLoader = servicesGo.AddComponent<SceneLoader>();
             var inputRouter = servicesGo.AddComponent<InputContextRouter>();
             var inputMapController = servicesGo.AddComponent<InputActionMapController>();
+            var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
             var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
@@ -41,6 +42,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(sceneLoader);
             RuntimeServiceRegistry.Register(inputRouter);
             RuntimeServiceRegistry.Register(inputMapController);
+            RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(audioManager);
             RuntimeServiceRegistry.Register(orchestrator);

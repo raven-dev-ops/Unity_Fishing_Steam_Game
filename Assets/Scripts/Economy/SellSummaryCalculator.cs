@@ -27,6 +27,13 @@ namespace RavenDevOps.Fishing.Economy
             _distanceTierStep = Mathf.Max(0f, distanceTierStep);
         }
 
+        public float CalculateDistanceMultiplier(int distanceTier)
+        {
+            var normalizedTier = Mathf.Max(1, distanceTier);
+            var tierOffset = normalizedTier - 1;
+            return 1f + tierOffset * _distanceTierStep;
+        }
+
         public SellSummary Calculate(List<FishInventoryEntry> inventory)
         {
             var summary = new SellSummary();
@@ -43,7 +50,7 @@ namespace RavenDevOps.Fishing.Economy
                     baseValue = Mathf.Max(1, fishDef.baseValue);
                 }
 
-                var multiplier = 1f + Mathf.Max(0, stack.distanceTier) * _distanceTierStep;
+                var multiplier = CalculateDistanceMultiplier(stack.distanceTier);
                 var stackValue = Mathf.RoundToInt(baseValue * multiplier) * Mathf.Max(0, stack.count);
                 summary.totalEarned += stackValue;
                 summary.itemCount += Mathf.Max(0, stack.count);

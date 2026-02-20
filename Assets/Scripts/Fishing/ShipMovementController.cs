@@ -12,6 +12,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _xBounds = new Vector2(-9f, 9f);
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _speedMultiplier = 1f;
 
         public int DistanceTierCap { get; private set; } = 1;
@@ -21,6 +22,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RefreshShipStats();
         }
 
@@ -63,7 +65,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (keyboard.rightArrowKey.isPressed) axis += 1f;
 
             var p = transform.position;
-            p.x += axis * speed * _speedMultiplier * Time.deltaTime;
+            p.x += axis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
             p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
             transform.position = p;
         }
@@ -82,6 +84,11 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return _fallbackSpeed;
+        }
+
+        private float ResolveInputSensitivity()
+        {
+            return _settingsService != null ? _settingsService.InputSensitivity : 1f;
         }
     }
 }

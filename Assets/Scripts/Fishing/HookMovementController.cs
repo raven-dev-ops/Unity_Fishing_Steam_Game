@@ -13,6 +13,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _depthBounds = new Vector2(-8f, -1f);
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _speedMultiplier = 1f;
 
         public float MaxDepth
@@ -28,6 +29,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RefreshHookStats();
         }
 
@@ -78,9 +80,14 @@ namespace RavenDevOps.Fishing.Fishing
             if (keyboard.upArrowKey.isPressed) axis += 1f;
 
             var p = transform.position;
-            p.y += axis * _verticalSpeed * _speedMultiplier * Time.deltaTime;
+            p.y += axis * _verticalSpeed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
             p.y = Mathf.Clamp(p.y, Mathf.Min(_depthBounds.x, _depthBounds.y), Mathf.Max(_depthBounds.x, _depthBounds.y));
             transform.position = p;
+        }
+
+        private float ResolveInputSensitivity()
+        {
+            return _settingsService != null ? _settingsService.InputSensitivity : 1f;
         }
     }
 }

@@ -14,6 +14,13 @@
 ## Headless CI Run
 The CI workflow `.github/workflows/ci-tests.yml` runs both test modes using GameCI.
 
+Project wrapper (recommended):
+
+```powershell
+.\scripts\unity-cli.ps1 -Task test-edit -LogFile editmode_tests.log
+.\scripts\unity-cli.ps1 -Task test-play -LogFile playmode_tests.log
+```
+
 Equivalent command pattern (Unity batch mode):
 
 ```powershell

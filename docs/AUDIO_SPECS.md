@@ -4,6 +4,13 @@
 - Prioritize responsive gameplay feedback over cinematic layering.
 - Keep SFX short and clear for keyboard-driven interactions.
 - Avoid frequency conflicts with dialogue and tutorial VO.
+- Route runtime audio into distinct mixer lanes where available:
+  - `Master`
+  - `Music`
+  - `SFX`
+  - `VO`
+- Persist volume settings (`master/music/sfx/vo`) across sessions.
+- Apply basic VO-over-music ducking when voice playback is active.
 
 ## File Naming
 - Format: `<type>_<event>_<variant>_<vNN>`
@@ -21,3 +28,8 @@
 - SFX: around -14 LUFS integrated baseline.
 - Music: around -18 LUFS integrated baseline.
 - VO: around -16 LUFS integrated baseline.
+
+## Runtime Behavior Baseline
+- Audio settings are loaded from user settings on boot.
+- Music ducks to a reduced multiplier while VO source is playing.
+- In the absence of a mixer, source-volume fallback is applied directly.

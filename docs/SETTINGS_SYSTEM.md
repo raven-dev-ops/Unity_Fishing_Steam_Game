@@ -1,0 +1,35 @@
+# Settings System
+
+## Persisted Settings
+Settings are stored via `UserSettingsService` and persisted in `PlayerPrefs`.
+
+Persisted keys:
+- Master volume
+- Music volume
+- SFX volume
+- VO volume
+- Input sensitivity
+- Fullscreen/window mode
+- Resolution (width/height/refresh)
+
+## Runtime Integration
+- Service: `Assets/Scripts/Core/UserSettingsService.cs`
+- UI controller: `Assets/Scripts/UI/SettingsMenuController.cs`
+- Audio runtime: `Assets/Scripts/Audio/AudioManager.cs`
+- Input sensitivity consumers:
+  - `Assets/Scripts/Harbor/HarborPlayerController.cs`
+  - `Assets/Scripts/Fishing/ShipMovementController.cs`
+  - `Assets/Scripts/Fishing/HookMovementController.cs`
+
+## Display Controls
+- Fullscreen toggle switches between `FullScreenWindow` and `Windowed`.
+- Resolution can be cycled from supported platform resolutions.
+
+## Audio Controls
+- Master/music/sfx/vo controls are applied immediately and persisted.
+- VO playback applies ducking to music lane for intelligibility.
+
+## Validation Checklist
+1. Change settings in Main Menu and relaunch.
+2. Verify settings in Pause Menu reflect persisted values.
+3. Confirm display/audio/input behavior is restored on boot.

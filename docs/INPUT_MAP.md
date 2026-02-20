@@ -27,3 +27,8 @@
 - Keyboard-only flow must be possible in all gameplay states.
 - UI focus must be visible on open and never dead-end.
 - `Esc` behavior must stay consistent for cancel/pause.
+
+## Input Settings
+- Input sensitivity is configurable in `SettingsMenuController`.
+- Sensitivity persists across sessions via runtime user settings service.
+- Current sensitivity affects movement speed scaling in Harbor and Fishing movement controllers.
