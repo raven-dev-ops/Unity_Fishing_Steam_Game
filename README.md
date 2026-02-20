@@ -83,6 +83,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Steam achievements/stats: `docs/STEAM_ACHIEVEMENTS_STATS.md`
 - Steam Cloud sync: `docs/STEAM_CLOUD_SYNC.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`
+- Steam Workshop feasibility: `docs/STEAM_WORKSHOP_FEASIBILITY.md`
 - Steam rich presence: `docs/STEAM_RICH_PRESENCE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
