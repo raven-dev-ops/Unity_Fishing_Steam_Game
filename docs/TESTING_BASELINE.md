@@ -16,6 +16,14 @@ The CI workflow `.github/workflows/ci-tests.yml` runs both test modes using Game
 Trusted contexts (protected refs or manual dispatch) require `UNITY_LICENSE`.
 Untrusted contexts without `UNITY_LICENSE` report warnings and skip Unity test execution.
 
+Headless scene screenshots:
+- Workflow: `.github/workflows/ci-scene-capture.yml`
+- Uses PlayMode test `Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs`
+- Enables screenshot test with env var `RAVEN_SCENE_CAPTURE_ENABLED=1`
+- Uploads artifacts:
+  - `scene-capture-playmode-<sha>`
+  - `scene-captures-<sha>` (PNG scene screenshots)
+
 Project wrapper (recommended):
 
 ```powershell
@@ -49,3 +57,4 @@ Unity.exe -batchmode -nographics -quit `
 - PlayMode:
   - Game flow pause/resume transitions
   - Pause-to-harbor transition behavior
+  - Headless scene screenshot capture (env-gated in CI)

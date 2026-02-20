@@ -1,0 +1,127 @@
+name: CI Headless Scene Capture
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-scene-capture.yml"
+      - "Assets/Scenes/**"
+      - "Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-scene-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scene_capture:
+    name: Capture Scene Screenshots (PlayMode)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            trusted=true
+          fi
+
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
+        run: |
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+            echo "::error::UNITY_LICENSE secret is required in trusted Unity CI contexts."
+            exit 1
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping scene capture."
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-SceneCapture-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          restore-keys: |
+            Library-SceneCapture-${{ runner.os }}-
+
+      - name: Prepare scene capture output directory
+        if: steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          rm -rf artifacts/scene-captures
+          mkdir -p artifacts/scene-captures
+
+      - name: Run PlayMode tests with scene capture enabled
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          RAVEN_SCENE_CAPTURE_ENABLED: "1"
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          testMode: playmode
+          artifactsPath: artifacts/playmode
+
+      - name: Publish scene capture summary
+        if: always() && steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          echo "## Headless Scene Capture" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d "artifacts/scene-captures" ]; then
+            count=$(find artifacts/scene-captures -type f -name '*.png' | wc -l | tr -d ' ')
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Captured PNG count: $count" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$count" -gt 0 ]; then
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "| File |" >> "$GITHUB_STEP_SUMMARY"
+              echo "|---|" >> "$GITHUB_STEP_SUMMARY"
+              find artifacts/scene-captures -type f -name '*.png' | sort | sed 's#^#| `#; s#$#` |#' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Scene capture folder was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload playmode test artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-capture-playmode-${{ github.sha }}
+          path: artifacts/playmode/**
+          if-no-files-found: warn
+
+      - name: Upload scene screenshots
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-captures-${{ github.sha }}
+          path: artifacts/scene-captures/**
+          if-no-files-found: warn
+
+      - name: Report skipped scene capture
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Scene capture skipped because UNITY_LICENSE is not configured for this untrusted context."

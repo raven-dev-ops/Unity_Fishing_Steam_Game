@@ -28,6 +28,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
+- Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (PlayMode screenshot artifacts for key scenes).
 - Unity workflows enforce `UNITY_LICENSE` in trusted contexts (protected refs or manual dispatch), and warn/skip in untrusted contexts.
 
 ## Project Structure
@@ -86,6 +87,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Steam Workshop feasibility: `docs/STEAM_WORKSHOP_FEASIBILITY.md`
 - Steam rich presence: `docs/STEAM_RICH_PRESENCE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
+- Testing baseline: `docs/TESTING_BASELINE.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
 - Testing baseline: `docs/TESTING_BASELINE.md`
