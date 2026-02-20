@@ -21,15 +21,19 @@ End-to-end regression checklist for the MVP loop.
 8. Trigger safe/warning/critical line tension states and verify readability.
 9. Validate fail reason feedback (missed hook, line snap, fish escape).
 10. Verify fishing tutorial prompts (cast/hook/reel), skip/replay, and failure recovery behavior.
-11. Catch flow to inventory and return to harbor.
-12. Sell-all flow and copecs update.
-13. Verify XP/level progression updates and next unlock text in profile.
-14. Purchase locked/unlocked gear paths behave per progression level.
-15. Pause menu resume/return harbor/exit behavior.
-16. Rebind core actions in Settings, relaunch, and verify persistence.
-17. Save, relaunch, verify continuity and catch log/progression persistence.
-18. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
-19. Cloud run (if available): verify save continuity across two machines.
+11. Switch fishing conditions (time/weather) and verify HUD + behavior changes.
+12. Catch flow to inventory and return to harbor.
+13. Sell-all flow and copecs update.
+14. Verify XP/level progression updates and next unlock text in profile.
+15. Complete objective milestones and verify objective progress/reward updates.
+16. Purchase locked/unlocked gear paths behave per progression level.
+17. Pause menu resume/return harbor/exit behavior.
+18. Rebind core actions in Settings, relaunch, and verify persistence.
+19. Toggle subtitles/high-contrast/UI scale, relaunch, and verify accessibility persistence.
+20. Save, relaunch, verify continuity and catch log/progression/objective persistence.
+21. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
+22. Steam run (if available): verify Rich Presence state updates + disable toggle behavior.
+23. Cloud run (if available): verify save continuity across two machines.
 
 ## Pass Criteria
 - No blocker regressions in core gameplay loop.
@@ -37,6 +41,7 @@ End-to-end regression checklist for the MVP loop.
 - All keyboard-first actions are reachable without mouse.
 - Controller can navigate gameplay UI and core loop actions end-to-end.
 - Fishing HUD shows tension state and explicit fail reasons during reel failures.
+- Fishing HUD shows active condition state and objective status updates.
 - Runtime log file is generated and readable at:
   - `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/raven_runtime.log`
 - Crash artifact file is generated on controlled exception path at:

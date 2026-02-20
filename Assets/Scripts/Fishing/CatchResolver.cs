@@ -23,6 +23,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _autoAttachFishingCameraController = true;
         [SerializeField] private bool _autoAttachFishingTutorialController = true;
         [SerializeField] private bool _autoAttachEnvironmentSliceController = true;
+        [SerializeField] private bool _autoAttachConditionController = true;
 
         [SerializeField] private AudioClip _castSfx;
         [SerializeField] private AudioClip _hookSfx;
@@ -46,6 +47,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _cameraConfigured;
         private bool _tutorialConfigured;
         private bool _environmentConfigured;
+        private bool _conditionConfigured;
 
         private InputAction _reelAction;
 
@@ -80,6 +82,7 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureCameraController();
             EnsureTutorialController();
             EnsureEnvironmentController();
+            EnsureConditionController();
             RefreshReelAction();
 
             if (_stateMachine == null)
@@ -341,6 +344,10 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _hudOverlay.SetFishingTelemetry(_currentDistanceTier, _hook.CurrentDepth);
+            if (_spawner != null)
+            {
+                _hudOverlay.SetFishingConditions(_spawner.GetActiveConditionSummary());
+            }
         }
 
         private void RefreshReelAction()
@@ -414,6 +421,23 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _environmentConfigured = controller != null;
+        }
+
+        private void EnsureConditionController()
+        {
+            if (_conditionConfigured || !_autoAttachConditionController || _spawner == null)
+            {
+                return;
+            }
+
+            var controller = GetComponent<FishingConditionController>();
+            if (controller == null)
+            {
+                controller = gameObject.AddComponent<FishingConditionController>();
+            }
+
+            _spawner.SetConditionController(controller);
+            _conditionConfigured = controller != null;
         }
     }
 }

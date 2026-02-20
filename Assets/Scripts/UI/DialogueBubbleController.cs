@@ -23,6 +23,7 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private List<DialogueLine> _lines = new List<DialogueLine>();
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private UserSettingsService _settingsService;
 
         private int _index;
         private bool _isRunning;
@@ -37,9 +38,26 @@ namespace RavenDevOps.Fishing.UI
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             if (_root != null)
             {
                 _root.SetActive(false);
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (_settingsService != null)
+            {
+                _settingsService.SettingsChanged += OnSettingsChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_settingsService != null)
+            {
+                _settingsService.SettingsChanged -= OnSettingsChanged;
             }
         }
 
@@ -73,11 +91,7 @@ namespace RavenDevOps.Fishing.UI
 
             _index = 0;
             _isRunning = true;
-            if (_root != null)
-            {
-                _root.SetActive(true);
-            }
-
+            RefreshRootVisibility();
             ShowCurrentLine();
         }
 
@@ -112,13 +126,37 @@ namespace RavenDevOps.Fishing.UI
             var line = _lines[_index];
             if (_lineText != null)
             {
-                _lineText.text = line.text;
+                _lineText.text = AreSubtitlesEnabled() ? line.text : string.Empty;
             }
 
             if (line.voiceClip != null)
             {
                 _audioManager?.PlayVoice(line.voiceClip);
             }
+        }
+
+        private void OnSettingsChanged()
+        {
+            RefreshRootVisibility();
+            if (_isRunning)
+            {
+                ShowCurrentLine();
+            }
+        }
+
+        private void RefreshRootVisibility()
+        {
+            if (_root == null)
+            {
+                return;
+            }
+
+            _root.SetActive(_isRunning && AreSubtitlesEnabled());
+        }
+
+        private bool AreSubtitlesEnabled()
+        {
+            return _settingsService == null || _settingsService.SubtitlesEnabled;
         }
 
         private void RefreshActionsIfNeeded()

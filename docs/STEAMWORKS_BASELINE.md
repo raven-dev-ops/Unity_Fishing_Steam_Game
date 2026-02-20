@@ -4,6 +4,7 @@
 - `Assets/Scripts/Steam/SteamBootstrap.cs`
 - `Assets/Scripts/Steam/SteamStatsService.cs`
 - `Assets/Scripts/Steam/SteamCloudSyncService.cs`
+- `Assets/Scripts/Steam/SteamRichPresenceService.cs` (optional)
 
 ## Behavior
 - Uses `STEAMWORKS_NET` symbol to compile Steamworks.NET calls.
@@ -36,5 +37,6 @@ Runtime state can be inspected:
 3. Verify init log and overlay (`Shift+Tab`).
 4. Trigger catch/purchase/trip events and verify Steam stats sync path is active.
 5. Validate save cloud sync pull/push path if Steam Cloud is enabled for app/depot.
-6. Close game and verify no repeated init/shutdown errors.
-7. Launch outside Steam and verify fallback warning is explicit and gameplay remains stable.
+6. Verify rich presence state transitions (menu/harbor/fishing/pause) if enabled.
+7. Close game and verify no repeated init/shutdown errors.
+8. Launch outside Steam and verify fallback warning is explicit and gameplay remains stable.

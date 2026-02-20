@@ -9,16 +9,19 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private List<FishDefinition> _fishDefinitions = new List<FishDefinition>();
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private FishingConditionController _conditionController;
         [SerializeField] private float _spawnRatePerMinute = 6f;
 
         private readonly List<FishDefinition> _runtimeDefinitions = new List<FishDefinition>(64);
         private readonly List<FishDefinition> _candidateBuffer = new List<FishDefinition>(64);
+        private readonly List<int> _candidateWeightBuffer = new List<int>(64);
         private bool _cacheDirty = true;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _conditionController, this, warnIfMissing: false);
             RebuildRuntimeDefinitions();
         }
 
@@ -38,6 +41,18 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _catalogService = catalogService;
             MarkCacheDirty();
+        }
+
+        public void SetConditionController(FishingConditionController conditionController)
+        {
+            _conditionController = conditionController;
+        }
+
+        public string GetActiveConditionSummary()
+        {
+            return _conditionController != null
+                ? _conditionController.GetConditionLabel()
+                : $"{FishingTimeOfDay.Day} | {FishingWeatherState.Clear}";
         }
 
         public void SetFallbackDefinitions(List<FishDefinition> definitions)
@@ -61,7 +76,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var roll = Random.Range(0, totalWeight);
-            return ResolveByWeightedRoll(roll);
+            return ApplyConditionModifiers(ResolveByWeightedRoll(roll));
         }
 
         public FishDefinition RollFishDeterministic(int distanceTier, float depth, int weightedRoll)
@@ -74,7 +89,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var normalizedRoll = Mathf.Abs(weightedRoll) % totalWeight;
-            return ResolveByWeightedRoll(normalizedRoll);
+            return ApplyConditionModifiers(ResolveByWeightedRoll(normalizedRoll));
         }
 
         private void EnsureRuntimeDefinitions()
@@ -142,7 +157,9 @@ namespace RavenDevOps.Fishing.Fishing
         private int BuildCandidates(int distanceTier, float depth)
         {
             _candidateBuffer.Clear();
+            _candidateWeightBuffer.Clear();
             var totalWeight = 0;
+            var modifier = _conditionController != null ? _conditionController.GetCombinedModifier() : FishConditionModifier.Identity;
 
             for (var i = 0; i < _runtimeDefinitions.Count; i++)
             {
@@ -159,9 +176,10 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                var weight = Mathf.Max(1, fish.rarityWeight);
+                var weight = Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(0.1f, fish.rarityWeight) * Mathf.Max(0.1f, modifier.rarityWeightMultiplier)));
                 totalWeight += weight;
                 _candidateBuffer.Add(fish);
+                _candidateWeightBuffer.Add(weight);
             }
 
             return totalWeight;
@@ -173,7 +191,8 @@ namespace RavenDevOps.Fishing.Fishing
             for (var i = 0; i < _candidateBuffer.Count; i++)
             {
                 var fish = _candidateBuffer[i];
-                cursor += Mathf.Max(1, fish.rarityWeight);
+                var weight = i < _candidateWeightBuffer.Count ? _candidateWeightBuffer[i] : Mathf.Max(1, fish.rarityWeight);
+                cursor += Mathf.Max(1, weight);
                 if (roll < cursor)
                 {
                     return fish;
@@ -181,6 +200,52 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return _candidateBuffer[_candidateBuffer.Count - 1];
+        }
+
+        private FishDefinition ApplyConditionModifiers(FishDefinition source)
+        {
+            if (source == null || _conditionController == null)
+            {
+                return source;
+            }
+
+            var modifier = _conditionController.GetCombinedModifier();
+            if (IsIdentityModifier(modifier))
+            {
+                return source;
+            }
+
+            var biteMin = Mathf.Max(0f, source.minBiteDelaySeconds * modifier.biteDelayMultiplier);
+            var biteMax = Mathf.Max(biteMin, source.maxBiteDelaySeconds * modifier.biteDelayMultiplier);
+            var minWeight = Mathf.Max(0.1f, source.minCatchWeightKg);
+            var maxWeight = Mathf.Max(minWeight, source.maxCatchWeightKg);
+
+            return new FishDefinition
+            {
+                id = source.id,
+                minDistanceTier = source.minDistanceTier,
+                maxDistanceTier = source.maxDistanceTier,
+                minDepth = source.minDepth,
+                maxDepth = source.maxDepth,
+                rarityWeight = source.rarityWeight,
+                baseValue = source.baseValue,
+                minBiteDelaySeconds = biteMin,
+                maxBiteDelaySeconds = biteMax,
+                fightStamina = Mathf.Max(0.1f, source.fightStamina * modifier.fightStaminaMultiplier),
+                pullIntensity = Mathf.Max(0.1f, source.pullIntensity * modifier.pullIntensityMultiplier),
+                escapeSeconds = Mathf.Max(0.5f, source.escapeSeconds * modifier.escapeSecondsMultiplier),
+                minCatchWeightKg = minWeight,
+                maxCatchWeightKg = maxWeight
+            };
+        }
+
+        private static bool IsIdentityModifier(FishConditionModifier modifier)
+        {
+            return Mathf.Approximately(modifier.rarityWeightMultiplier, 1f)
+                && Mathf.Approximately(modifier.biteDelayMultiplier, 1f)
+                && Mathf.Approximately(modifier.fightStaminaMultiplier, 1f)
+                && Mathf.Approximately(modifier.pullIntensityMultiplier, 1f)
+                && Mathf.Approximately(modifier.escapeSecondsMultiplier, 1f);
         }
     }
 }

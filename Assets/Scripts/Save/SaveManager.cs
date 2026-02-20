@@ -228,6 +228,21 @@ namespace RavenDevOps.Fishing.Save
             _current.progression.unlockedContentIds ??= new List<string>();
             _current.progression.unlockedContentIds.Clear();
             _current.progression.lastUnlockId = string.Empty;
+            _current.objectiveProgress ??= new ObjectiveProgressData();
+            _current.objectiveProgress.entries ??= new List<ObjectiveProgressEntry>();
+            for (var i = 0; i < _current.objectiveProgress.entries.Count; i++)
+            {
+                var entry = _current.objectiveProgress.entries[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                entry.currentCount = 0;
+                entry.completed = false;
+            }
+
+            _current.objectiveProgress.completedObjectives = 0;
             Save();
         }
 
@@ -493,6 +508,8 @@ namespace RavenDevOps.Fishing.Save
             _current.stats ??= new SaveStats();
             _current.progression ??= new ProgressionData();
             _current.progression.unlockedContentIds ??= new List<string>();
+            _current.objectiveProgress ??= new ObjectiveProgressData();
+            _current.objectiveProgress.entries ??= new List<ObjectiveProgressEntry>();
 
             if (_current.ownedShips.Count == 0)
             {

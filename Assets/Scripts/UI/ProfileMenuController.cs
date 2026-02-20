@@ -16,14 +16,17 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _levelText;
         [SerializeField] private TMP_Text _xpProgressText;
         [SerializeField] private TMP_Text _nextUnlockText;
+        [SerializeField] private TMP_Text _objectiveText;
         [SerializeField] private TMP_Text _catchLogText;
         [SerializeField] private int _maxCatchLogEntries = 8;
 
         [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private ObjectivesService _objectivesService;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _objectivesService, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -75,12 +78,22 @@ namespace RavenDevOps.Fishing.UI
                 _nextUnlockText.text = $"Next Unlock: {_saveManager.GetNextUnlockDescription()}";
             }
 
+            if (_objectiveText != null && _objectivesService != null)
+            {
+                _objectiveText.text = _objectivesService.BuildActiveObjectiveLabel();
+            }
+
             RefreshCatchLogText(save);
         }
 
         public void ResetProfile()
         {
             _saveManager?.ResetProfileStats();
+        }
+
+        public void ResetObjectivesForQa()
+        {
+            _objectivesService?.ResetObjectiveProgressForQA();
         }
 
         private void SetFallbackText()
@@ -92,6 +105,7 @@ namespace RavenDevOps.Fishing.UI
             if (_levelText != null) _levelText.text = "Level: -";
             if (_xpProgressText != null) _xpProgressText.text = "XP: -";
             if (_nextUnlockText != null) _nextUnlockText.text = "Next Unlock: -";
+            if (_objectiveText != null) _objectiveText.text = "Objective: -";
             if (_catchLogText != null) _catchLogText.text = "Catch Log: -";
         }
 

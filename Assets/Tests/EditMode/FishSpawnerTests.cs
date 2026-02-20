@@ -59,5 +59,47 @@ namespace RavenDevOps.Fishing.Tests.EditMode
                 Object.DestroyImmediate(root);
             }
         }
+
+        [Test]
+        public void RollFishDeterministic_AppliesConditionModifierToBehavior()
+        {
+            var root = new GameObject("FishSpawnerConditionTests");
+            try
+            {
+                var conditionController = root.AddComponent<FishingConditionController>();
+                conditionController.SetTimeOfDay(FishingTimeOfDay.Night);
+                conditionController.SetWeather(FishingWeatherState.Storm);
+
+                var spawner = root.AddComponent<FishSpawner>();
+                spawner.SetFallbackDefinitions(new List<FishDefinition>
+                {
+                    new FishDefinition
+                    {
+                        id = "fish_test",
+                        minDistanceTier = 1,
+                        maxDistanceTier = 2,
+                        minDepth = 0f,
+                        maxDepth = 8f,
+                        rarityWeight = 1,
+                        minBiteDelaySeconds = 1f,
+                        maxBiteDelaySeconds = 2f,
+                        fightStamina = 5f,
+                        pullIntensity = 1f,
+                        escapeSeconds = 8f
+                    }
+                });
+                spawner.SetConditionController(conditionController);
+
+                var fish = spawner.RollFishDeterministic(1, 1f, 0);
+
+                Assert.That(fish, Is.Not.Null);
+                Assert.That(fish.minBiteDelaySeconds, Is.LessThan(1f));
+                Assert.That(fish.pullIntensity, Is.GreaterThan(1f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
     }
 }

@@ -15,11 +15,16 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private Slider _sfxSlider;
         [SerializeField] private Slider _voSlider;
         [SerializeField] private Slider _inputSensitivitySlider;
+        [SerializeField] private Slider _uiScaleSlider;
         [SerializeField] private Toggle _fullscreenToggle;
+        [SerializeField] private Toggle _subtitlesToggle;
+        [SerializeField] private Toggle _highContrastFishingCuesToggle;
+        [SerializeField] private Toggle _steamRichPresenceToggle;
 
         [SerializeField] private TMP_Text _displayModeText;
         [SerializeField] private TMP_Text _resolutionText;
         [SerializeField] private TMP_Text _inputSensitivityText;
+        [SerializeField] private TMP_Text _uiScaleText;
         [SerializeField] private TMP_Text _fishingActionBindingText;
         [SerializeField] private TMP_Text _harborInteractBindingText;
         [SerializeField] private TMP_Text _menuCancelBindingText;
@@ -74,11 +79,32 @@ namespace RavenDevOps.Fishing.UI
             RefreshInputSensitivityText(value);
         }
 
+        public void OnUiScaleChanged(float value)
+        {
+            _settingsService?.SetUiScale(value);
+            RefreshUiScaleText(value);
+        }
+
         public void OnFullscreenChanged(bool fullscreen)
         {
             _settingsService?.SetFullscreen(fullscreen);
             RefreshDisplayModeText(fullscreen);
             RefreshResolutionText();
+        }
+
+        public void OnSubtitlesChanged(bool enabled)
+        {
+            _settingsService?.SetSubtitlesEnabled(enabled);
+        }
+
+        public void OnHighContrastFishingCuesChanged(bool enabled)
+        {
+            _settingsService?.SetHighContrastFishingCues(enabled);
+        }
+
+        public void OnSteamRichPresenceChanged(bool enabled)
+        {
+            _settingsService?.SetSteamRichPresenceEnabled(enabled);
         }
 
         public void OnNextResolutionPressed()
@@ -109,6 +135,7 @@ namespace RavenDevOps.Fishing.UI
             {
                 RefreshDisplayModeText(Screen.fullScreenMode != FullScreenMode.Windowed);
                 RefreshResolutionText();
+                RefreshUiScaleText(1f);
                 RefreshBindingTexts();
                 return;
             }
@@ -121,15 +148,32 @@ namespace RavenDevOps.Fishing.UI
             SetSliderValue(_sfxSlider, _settingsService.SfxVolume);
             SetSliderValue(_voSlider, _settingsService.VoVolume);
             SetSliderValue(_inputSensitivitySlider, _settingsService.InputSensitivity);
+            SetSliderValue(_uiScaleSlider, _settingsService.UiScale);
 
             if (_fullscreenToggle != null)
             {
                 _fullscreenToggle.isOn = _settingsService.Fullscreen;
             }
 
+            if (_subtitlesToggle != null)
+            {
+                _subtitlesToggle.isOn = _settingsService.SubtitlesEnabled;
+            }
+
+            if (_highContrastFishingCuesToggle != null)
+            {
+                _highContrastFishingCuesToggle.isOn = _settingsService.HighContrastFishingCues;
+            }
+
+            if (_steamRichPresenceToggle != null)
+            {
+                _steamRichPresenceToggle.isOn = _settingsService.SteamRichPresenceEnabled;
+            }
+
             RefreshDisplayModeText(_settingsService.Fullscreen);
             RefreshResolutionText();
             RefreshInputSensitivityText(_settingsService.InputSensitivity);
+            RefreshUiScaleText(_settingsService.UiScale);
             RefreshBindingTexts();
         }
 
@@ -196,6 +240,14 @@ namespace RavenDevOps.Fishing.UI
             if (_inputSensitivityText != null)
             {
                 _inputSensitivityText.text = $"Input Sensitivity: {value:0.00}x";
+            }
+        }
+
+        private void RefreshUiScaleText(float value)
+        {
+            if (_uiScaleText != null)
+            {
+                _uiScaleText.text = $"UI Scale: {value:0.00}x";
             }
         }
 

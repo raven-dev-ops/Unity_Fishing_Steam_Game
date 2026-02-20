@@ -2,6 +2,7 @@ using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
+using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -32,11 +33,14 @@ namespace RavenDevOps.Fishing.Core
             var inputRebindingService = servicesGo.AddComponent<InputRebindingService>();
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
+            var objectivesService = servicesGo.AddComponent<ObjectivesService>();
+            var uiAccessibilityService = servicesGo.AddComponent<GlobalUiAccessibilityService>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
             var crashDiagnostics = servicesGo.AddComponent<CrashDiagnosticsService>();
             var steamBootstrap = servicesGo.AddComponent<SteamBootstrap>();
             var steamStatsService = servicesGo.AddComponent<SteamStatsService>();
             var steamCloudSyncService = servicesGo.AddComponent<SteamCloudSyncService>();
+            var steamRichPresenceService = servicesGo.AddComponent<SteamRichPresenceService>();
             var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
             var inputDriver = servicesGo.AddComponent<KeyboardFlowInputDriver>();
             var structuredLogger = servicesGo.AddComponent<Logging.StructuredLogService>();
@@ -51,11 +55,14 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(inputRebindingService);
             RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
+            RuntimeServiceRegistry.Register(objectivesService);
+            RuntimeServiceRegistry.Register(uiAccessibilityService);
             RuntimeServiceRegistry.Register(audioManager);
             RuntimeServiceRegistry.Register(crashDiagnostics);
             RuntimeServiceRegistry.Register(steamBootstrap);
             RuntimeServiceRegistry.Register(steamStatsService);
             RuntimeServiceRegistry.Register(steamCloudSyncService);
+            RuntimeServiceRegistry.Register(steamRichPresenceService);
             RuntimeServiceRegistry.Register(orchestrator);
             RuntimeServiceRegistry.Register(structuredLogger);
 

@@ -11,6 +11,10 @@ Persisted keys:
 - Input sensitivity
 - Fullscreen/window mode
 - Resolution (width/height/refresh)
+- Subtitles enabled
+- High-contrast fishing cues
+- UI scale
+- Steam Rich Presence enabled
 - Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
 
 ## Runtime Integration
@@ -22,6 +26,12 @@ Persisted keys:
   - `Assets/Scripts/Harbor/HarborPlayerController.cs`
   - `Assets/Scripts/Fishing/ShipMovementController.cs`
   - `Assets/Scripts/Fishing/HookMovementController.cs`
+- Accessibility consumers:
+  - `Assets/Scripts/UI/DialogueBubbleController.cs` (subtitles)
+  - `Assets/Scripts/UI/HudOverlayController.cs` (high-contrast fishing cues)
+  - `Assets/Scripts/UI/GlobalUiAccessibilityService.cs` (UI scale)
+- Steam Rich Presence consumer:
+  - `Assets/Scripts/Steam/SteamRichPresenceService.cs`
 
 ## Display Controls
 - Fullscreen toggle switches between `FullScreenWindow` and `Windowed`.
@@ -35,3 +45,5 @@ Persisted keys:
 1. Change settings in Main Menu and relaunch.
 2. Verify settings in Pause Menu reflect persisted values.
 3. Confirm display/audio/input behavior is restored on boot.
+4. Toggle subtitles/high-contrast/UI scale and verify immediate + persisted behavior.
+5. Toggle Steam Rich Presence and verify Steam service respects setting.

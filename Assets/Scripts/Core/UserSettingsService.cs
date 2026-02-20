@@ -14,6 +14,10 @@ namespace RavenDevOps.Fishing.Core
         private const string KeyResolutionWidth = "settings.resolutionWidth";
         private const string KeyResolutionHeight = "settings.resolutionHeight";
         private const string KeyResolutionRefresh = "settings.resolutionRefresh";
+        private const string KeySubtitlesEnabled = "settings.subtitlesEnabled";
+        private const string KeyHighContrastFishingCues = "settings.highContrastFishingCues";
+        private const string KeyUiScale = "settings.uiScale";
+        private const string KeySteamRichPresenceEnabled = "settings.steamRichPresenceEnabled";
 
         private static UserSettingsService _instance;
 
@@ -26,6 +30,10 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private int _resolutionWidth;
         [SerializeField] private int _resolutionHeight;
         [SerializeField] private int _resolutionRefresh;
+        [SerializeField] private bool _subtitlesEnabled = true;
+        [SerializeField] private bool _highContrastFishingCues;
+        [SerializeField] private float _uiScale = 1f;
+        [SerializeField] private bool _steamRichPresenceEnabled = true;
 
         public static UserSettingsService Instance => _instance;
 
@@ -38,6 +46,12 @@ namespace RavenDevOps.Fishing.Core
         public int ResolutionWidth => _resolutionWidth;
         public int ResolutionHeight => _resolutionHeight;
         public int ResolutionRefreshRate => _resolutionRefresh;
+        public bool SubtitlesEnabled => _subtitlesEnabled;
+        public bool HighContrastFishingCues => _highContrastFishingCues;
+        public float UiScale => _uiScale;
+        public bool SteamRichPresenceEnabled => _steamRichPresenceEnabled;
+
+        public event Action SettingsChanged;
 
         private void Awake()
         {
@@ -51,6 +65,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(this);
             LoadFromPrefs();
             ApplyDisplaySettings();
+            NotifySettingsChanged();
         }
 
         private void OnDestroy()
@@ -66,30 +81,35 @@ namespace RavenDevOps.Fishing.Core
         {
             _masterVolume = Mathf.Clamp01(value);
             SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public void SetMusicVolume(float value)
         {
             _musicVolume = Mathf.Clamp01(value);
             SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public void SetSfxVolume(float value)
         {
             _sfxVolume = Mathf.Clamp01(value);
             SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public void SetVoVolume(float value)
         {
             _voVolume = Mathf.Clamp01(value);
             SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public void SetInputSensitivity(float value)
         {
             _inputSensitivity = Mathf.Clamp(value, 0.5f, 2f);
             SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public void SetFullscreen(bool fullscreen)
@@ -97,6 +117,7 @@ namespace RavenDevOps.Fishing.Core
             _fullscreen = fullscreen;
             SaveToPrefs();
             ApplyDisplaySettings();
+            NotifySettingsChanged();
         }
 
         public void SetResolution(int width, int height, int refreshRate)
@@ -111,6 +132,35 @@ namespace RavenDevOps.Fishing.Core
             _resolutionRefresh = Mathf.Max(0, refreshRate);
             SaveToPrefs();
             ApplyDisplaySettings();
+            NotifySettingsChanged();
+        }
+
+        public void SetSubtitlesEnabled(bool enabled)
+        {
+            _subtitlesEnabled = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetHighContrastFishingCues(bool enabled)
+        {
+            _highContrastFishingCues = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetUiScale(float scale)
+        {
+            _uiScale = Mathf.Clamp(scale, 0.8f, 1.5f);
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetSteamRichPresenceEnabled(bool enabled)
+        {
+            _steamRichPresenceEnabled = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
         }
 
         public Resolution[] GetSupportedResolutions()
@@ -154,6 +204,10 @@ namespace RavenDevOps.Fishing.Core
             _voVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyVoVolume, 1f));
             _inputSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(KeyInputSensitivity, 1f), 0.5f, 2f);
             _fullscreen = PlayerPrefs.GetInt(KeyFullscreen, 1) == 1;
+            _subtitlesEnabled = PlayerPrefs.GetInt(KeySubtitlesEnabled, 1) == 1;
+            _highContrastFishingCues = PlayerPrefs.GetInt(KeyHighContrastFishingCues, 0) == 1;
+            _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(KeyUiScale, 1f), 0.8f, 1.5f);
+            _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
 
             var current = Screen.currentResolution;
             _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, current.width);
@@ -172,7 +226,23 @@ namespace RavenDevOps.Fishing.Core
             PlayerPrefs.SetInt(KeyResolutionWidth, _resolutionWidth);
             PlayerPrefs.SetInt(KeyResolutionHeight, _resolutionHeight);
             PlayerPrefs.SetInt(KeyResolutionRefresh, _resolutionRefresh);
+            PlayerPrefs.SetInt(KeySubtitlesEnabled, _subtitlesEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(KeyHighContrastFishingCues, _highContrastFishingCues ? 1 : 0);
+            PlayerPrefs.SetFloat(KeyUiScale, _uiScale);
+            PlayerPrefs.SetInt(KeySteamRichPresenceEnabled, _steamRichPresenceEnabled ? 1 : 0);
             PlayerPrefs.Save();
+        }
+
+        private void NotifySettingsChanged()
+        {
+            try
+            {
+                SettingsChanged?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"UserSettingsService: SettingsChanged listener failed ({ex.Message}).");
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ namespace RavenDevOps.Fishing.Save
 
         public SaveStats stats = new SaveStats();
         public ProgressionData progression = new ProgressionData();
+        public ObjectiveProgressData objectiveProgress = new ObjectiveProgressData();
     }
 
     [Serializable]
@@ -76,5 +77,23 @@ namespace RavenDevOps.Fishing.Save
         public int xpToNextLevel = 100;
         public List<string> unlockedContentIds = new List<string>();
         public string lastUnlockId = string.Empty;
+    }
+
+    [Serializable]
+    public sealed class ObjectiveProgressData
+    {
+        public List<ObjectiveProgressEntry> entries = new List<ObjectiveProgressEntry>();
+        public int completedObjectives;
+    }
+
+    [Serializable]
+    public sealed class ObjectiveProgressEntry
+    {
+        public string id;
+        public string description;
+        public int currentCount;
+        public int targetCount;
+        public int rewardCopecs;
+        public bool completed;
     }
 }
