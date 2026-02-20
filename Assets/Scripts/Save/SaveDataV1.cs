@@ -24,6 +24,7 @@ namespace RavenDevOps.Fishing.Save
         public string lastLoginLocalDate = string.Empty;
 
         public SaveStats stats = new SaveStats();
+        public ProgressionData progression = new ProgressionData();
     }
 
     [Serializable]
@@ -51,6 +52,9 @@ namespace RavenDevOps.Fishing.Save
     public sealed class TutorialFlags
     {
         public bool tutorialSeen;
+        public bool fishingLoopTutorialCompleted;
+        public bool fishingLoopTutorialSkipped;
+        public bool fishingLoopTutorialReplayRequested;
     }
 
     [Serializable]
@@ -59,5 +63,18 @@ namespace RavenDevOps.Fishing.Save
         public int totalFishCaught;
         public int farthestDistanceTier;
         public int totalTrips;
+        public int totalPurchases;
+        public int totalCatchValueCopecs;
+    }
+
+    [Serializable]
+    public sealed class ProgressionData
+    {
+        public int level = 1;
+        public int totalXp;
+        public int xpIntoLevel;
+        public int xpToNextLevel = 100;
+        public List<string> unlockedContentIds = new List<string>();
+        public string lastUnlockId = string.Empty;
     }
 }

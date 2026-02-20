@@ -9,6 +9,7 @@
 - Store Steam credentials only in GitHub Actions secrets and protected environments.
 - Required secrets for release workflow:
   - `STEAM_APP_ID`
+  - `STEAM_DEPOT_WINDOWS_ID`
   - `STEAM_USERNAME`
   - `STEAM_CONFIG_VDF`
 - Never commit raw credential files, usernames/passwords, or machine auth blobs.

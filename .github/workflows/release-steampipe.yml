@@ -101,10 +101,11 @@ jobs:
         shell: bash
         env:
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEPOT_WINDOWS_ID: ${{ secrets.STEAM_DEPOT_WINDOWS_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
         run: |
-          if [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_CONFIG_VDF" ]; then
+          if [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_DEPOT_WINDOWS_ID" ] || [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_CONFIG_VDF" ]; then
             echo "::error::Required Steam release secrets are missing."
             exit 1
           fi
@@ -115,11 +116,12 @@ jobs:
           echo "Release tag: ${{ needs.preflight.outputs.release_tag }}"
           echo "Dry run: ${{ needs.preflight.outputs.dry_run }}"
 
-      - name: SteamPipe upload (guarded)
-        if: ${{ needs.preflight.outputs.dry_run != 'true' }}
+      - name: SteamPipe rehearsal/upload (guarded)
         shell: bash
         env:
+          DRY_RUN: ${{ needs.preflight.outputs.dry_run }}
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEPOT_WINDOWS_ID: ${{ secrets.STEAM_DEPOT_WINDOWS_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
         run: |

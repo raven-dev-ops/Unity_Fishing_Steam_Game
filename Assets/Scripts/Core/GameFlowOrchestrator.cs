@@ -209,6 +209,11 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestReturnToHarbor()
         {
+            if (_gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.Fishing)
+            {
+                _saveManager?.MarkTripCompleted();
+            }
+
             _gameFlowManager?.SetState(GameFlowState.Harbor);
         }
 
@@ -221,8 +226,18 @@ namespace RavenDevOps.Fishing.Core
 
             if (_gameFlowManager.CurrentState == GameFlowState.Pause)
             {
+                if (_gameFlowManager.PreviousPlayableState == GameFlowState.Fishing)
+                {
+                    _saveManager?.MarkTripCompleted();
+                }
+
                 _gameFlowManager.ReturnToHarborFromFishingPause();
                 return;
+            }
+
+            if (_gameFlowManager.CurrentState == GameFlowState.Fishing)
+            {
+                _saveManager?.MarkTripCompleted();
             }
 
             _gameFlowManager.SetState(GameFlowState.Harbor);

@@ -6,6 +6,22 @@ using UnityEngine;
 
 namespace RavenDevOps.Fishing.Save
 {
+    public enum ProgressionUnlockType
+    {
+        Content = 0,
+        Ship = 1,
+        Hook = 2
+    }
+
+    [Serializable]
+    public sealed class ProgressionUnlockDefinition
+    {
+        public int level = 2;
+        public ProgressionUnlockType unlockType = ProgressionUnlockType.Content;
+        public string unlockId = string.Empty;
+        public string displayName = string.Empty;
+    }
+
     public sealed class SaveManager : MonoBehaviour
     {
         private const string FileName = "save_v1.json";
@@ -17,10 +33,22 @@ namespace RavenDevOps.Fishing.Save
 
         [SerializeField] private SaveDataV1 _current = new SaveDataV1();
         [SerializeField] private string _sessionId = string.Empty;
+        [SerializeField] private List<int> _levelXpThresholds = new List<int>(ProgressionRules.Defaults);
+        [SerializeField] private List<ProgressionUnlockDefinition> _progressionUnlocks = new List<ProgressionUnlockDefinition>();
 
         public static SaveManager Instance => _instance;
         public SaveDataV1 Current => _current;
+        public int CurrentLevel => _current != null && _current.progression != null ? Mathf.Max(1, _current.progression.level) : 1;
+        public int CurrentTotalXp => _current != null && _current.progression != null ? Mathf.Max(0, _current.progression.totalXp) : 0;
+        public int CurrentXpIntoLevel => _current != null && _current.progression != null ? Mathf.Max(0, _current.progression.xpIntoLevel) : 0;
+        public int CurrentXpToNextLevel => _current != null && _current.progression != null ? Mathf.Max(0, _current.progression.xpToNextLevel) : 0;
+        public string SaveFilePath => SavePath;
+
         public event Action<SaveDataV1> SaveDataChanged;
+        public event Action<CatchLogEntry> CatchRecorded;
+        public event Action<int, int> LevelChanged;
+        public event Action<int> TripCompleted;
+        public event Action<string, int, int> PurchaseRecorded;
 
         private string SavePath => Path.Combine(Application.persistentDataPath, FileName);
 
@@ -34,6 +62,7 @@ namespace RavenDevOps.Fishing.Save
 
             _instance = this;
             _sessionId = Guid.NewGuid().ToString("N");
+            NormalizeProgressionConfig();
             RuntimeServiceRegistry.Register(this);
             LoadOrCreate();
         }
@@ -56,12 +85,13 @@ namespace RavenDevOps.Fishing.Save
             if (!TryLoadExisting(out var loaded))
             {
                 _current = CreateNewSaveData();
+                NormalizeCurrentData();
                 Save();
                 return;
             }
 
             _current = loaded;
-            NormalizeLoadedData(_current);
+            NormalizeCurrentData();
             _current.lastLoginLocalDate = CurrentLocalDate();
             Save();
         }
@@ -132,6 +162,7 @@ namespace RavenDevOps.Fishing.Save
         {
             _current.stats.totalTrips += 1;
             Save();
+            InvokeTripCompleted(_current.stats.totalTrips);
         }
 
         public void SetTutorialSeen(bool tutorialSeen)
@@ -146,13 +177,57 @@ namespace RavenDevOps.Fishing.Save
             Save();
         }
 
+        public bool ShouldRunFishingLoopTutorial()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            return !_current.tutorialFlags.fishingLoopTutorialCompleted || _current.tutorialFlags.fishingLoopTutorialReplayRequested;
+        }
+
+        public void RequestFishingLoopTutorialReplay()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            _current.tutorialFlags.fishingLoopTutorialCompleted = false;
+            _current.tutorialFlags.fishingLoopTutorialSkipped = false;
+            _current.tutorialFlags.fishingLoopTutorialReplayRequested = true;
+            Save();
+        }
+
+        public void MarkFishingLoopTutorialStarted()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            if (_current.tutorialFlags.fishingLoopTutorialReplayRequested)
+            {
+                _current.tutorialFlags.fishingLoopTutorialReplayRequested = false;
+                Save();
+            }
+        }
+
+        public void CompleteFishingLoopTutorial(bool skipped)
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            _current.tutorialFlags.fishingLoopTutorialCompleted = true;
+            _current.tutorialFlags.fishingLoopTutorialSkipped = skipped;
+            _current.tutorialFlags.fishingLoopTutorialReplayRequested = false;
+            Save();
+        }
+
         public void ResetProfileStats()
         {
             _current.stats ??= new SaveStats();
+            _current.progression ??= new ProgressionData();
             _current.copecs = 0;
             _current.stats.totalFishCaught = 0;
             _current.stats.farthestDistanceTier = 0;
             _current.stats.totalTrips = 0;
+            _current.stats.totalPurchases = 0;
+            _current.stats.totalCatchValueCopecs = 0;
+            _current.progression.totalXp = 0;
+            _current.progression.level = 1;
+            _current.progression.xpIntoLevel = 0;
+            _current.progression.xpToNextLevel = _levelXpThresholds.Count > 1 ? _levelXpThresholds[1] : 0;
+            _current.progression.unlockedContentIds ??= new List<string>();
+            _current.progression.unlockedContentIds.Clear();
+            _current.progression.lastUnlockId = string.Empty;
             Save();
         }
 
@@ -224,8 +299,37 @@ namespace RavenDevOps.Fishing.Save
 
             _current.stats.totalFishCaught += 1;
             _current.stats.farthestDistanceTier = Mathf.Max(_current.stats.farthestDistanceTier, clampedDistanceTier);
-            AppendCatchLog(fishId, clampedDistanceTier, landed: true, weightKg, valueCopecs, failReason: string.Empty);
+            _current.stats.totalCatchValueCopecs += Mathf.Max(0, valueCopecs);
+
+            var xpEarned = ProgressionRules.CalculateCatchXp(clampedDistanceTier, weightKg, valueCopecs);
+            var didLevelUp = ApplyProgressionXp(xpEarned, out var previousLevel, out var newLevel);
+
+            var entry = AppendCatchLog(fishId, clampedDistanceTier, landed: true, weightKg, valueCopecs, failReason: string.Empty);
             Save();
+
+            if (didLevelUp)
+            {
+                InvokeLevelChanged(previousLevel, newLevel);
+            }
+
+            InvokeCatchRecorded(entry);
+        }
+
+        public void RecordPurchase(string itemId, int priceCopecs, bool saveAfterRecord = true)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                return;
+            }
+
+            _current.stats ??= new SaveStats();
+            _current.stats.totalPurchases += 1;
+            if (saveAfterRecord)
+            {
+                Save();
+            }
+
+            InvokePurchaseRecorded(itemId, Mathf.Max(0, priceCopecs), _current.stats.totalPurchases);
         }
 
         public void RecordCatchFailure(string fishId, int distanceTier, string failReason)
@@ -241,6 +345,89 @@ namespace RavenDevOps.Fishing.Save
             var count = Mathf.Max(1, maxEntries);
             var start = Mathf.Max(0, _current.catchLog.Count - count);
             return _current.catchLog.GetRange(start, _current.catchLog.Count - start);
+        }
+
+        public string GetNextUnlockDescription()
+        {
+            _current.progression ??= new ProgressionData();
+            _current.progression.unlockedContentIds ??= new List<string>();
+
+            for (var i = 0; i < _progressionUnlocks.Count; i++)
+            {
+                var unlock = _progressionUnlocks[i];
+                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
+                {
+                    continue;
+                }
+
+                if (_current.progression.unlockedContentIds.Contains(unlock.unlockId))
+                {
+                    continue;
+                }
+
+                var label = string.IsNullOrWhiteSpace(unlock.displayName) ? unlock.unlockId : unlock.displayName;
+                return $"Level {Mathf.Max(1, unlock.level)}: {label}";
+            }
+
+            return "All configured unlocks claimed";
+        }
+
+        public bool IsContentUnlocked(string contentId)
+        {
+            if (string.IsNullOrWhiteSpace(contentId))
+            {
+                return false;
+            }
+
+            _current.progression ??= new ProgressionData();
+            _current.progression.unlockedContentIds ??= new List<string>();
+
+            var isTrackedUnlock = false;
+            for (var i = 0; i < _progressionUnlocks.Count; i++)
+            {
+                var unlock = _progressionUnlocks[i];
+                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(unlock.unlockId, contentId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                isTrackedUnlock = true;
+                if (_current.progression.unlockedContentIds.Contains(unlock.unlockId))
+                {
+                    return true;
+                }
+            }
+
+            return !isTrackedUnlock;
+        }
+
+        public int GetUnlockLevel(string contentId)
+        {
+            if (string.IsNullOrWhiteSpace(contentId))
+            {
+                return 1;
+            }
+
+            for (var i = 0; i < _progressionUnlocks.Count; i++)
+            {
+                var unlock = _progressionUnlocks[i];
+                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
+                {
+                    continue;
+                }
+
+                if (string.Equals(unlock.unlockId, contentId, StringComparison.Ordinal))
+                {
+                    return Mathf.Max(1, unlock.level);
+                }
+            }
+
+            return 1;
         }
 
         private void OnDestroy()
@@ -291,51 +478,226 @@ namespace RavenDevOps.Fishing.Save
             };
         }
 
-        private static void NormalizeLoadedData(SaveDataV1 save)
+        private void NormalizeCurrentData()
         {
-            if (save == null)
+            if (_current == null)
+            {
+                _current = CreateNewSaveData();
+            }
+
+            _current.ownedShips ??= new List<string>();
+            _current.ownedHooks ??= new List<string>();
+            _current.fishInventory ??= new List<FishInventoryEntry>();
+            _current.catchLog ??= new List<CatchLogEntry>();
+            _current.tutorialFlags ??= new TutorialFlags();
+            _current.stats ??= new SaveStats();
+            _current.progression ??= new ProgressionData();
+            _current.progression.unlockedContentIds ??= new List<string>();
+
+            if (_current.ownedShips.Count == 0)
+            {
+                _current.ownedShips.Add("ship_lv1");
+            }
+
+            if (_current.ownedHooks.Count == 0)
+            {
+                _current.ownedHooks.Add("hook_lv1");
+            }
+
+            if (string.IsNullOrWhiteSpace(_current.equippedShipId))
+            {
+                _current.equippedShipId = _current.ownedShips[0];
+            }
+
+            if (string.IsNullOrWhiteSpace(_current.equippedHookId))
+            {
+                _current.equippedHookId = _current.ownedHooks[0];
+            }
+
+            if (string.IsNullOrWhiteSpace(_current.careerStartLocalDate))
+            {
+                _current.careerStartLocalDate = CurrentLocalDate();
+            }
+
+            if (string.IsNullOrWhiteSpace(_current.lastLoginLocalDate))
+            {
+                _current.lastLoginLocalDate = _current.careerStartLocalDate;
+            }
+
+            TrimCatchLog(_current.catchLog);
+            NormalizeProgressionData();
+        }
+
+        private void NormalizeProgressionData()
+        {
+            var progression = _current.progression ?? new ProgressionData();
+            progression.totalXp = Mathf.Max(0, progression.totalXp);
+            ProgressionRules.ResolveXpProgress(
+                progression.totalXp,
+                _levelXpThresholds,
+                out var resolvedLevel,
+                out var xpIntoLevel,
+                out var xpToNextLevel);
+
+            progression.level = resolvedLevel;
+            progression.xpIntoLevel = xpIntoLevel;
+            progression.xpToNextLevel = xpToNextLevel;
+            _current.progression = progression;
+            ApplyProgressionUnlocks(minLevelInclusive: 1, maxLevelInclusive: progression.level);
+        }
+
+        private void NormalizeProgressionConfig()
+        {
+            _levelXpThresholds ??= new List<int>();
+            if (_levelXpThresholds.Count == 0)
+            {
+                _levelXpThresholds.AddRange(ProgressionRules.Defaults);
+            }
+
+            for (var i = 0; i < _levelXpThresholds.Count; i++)
+            {
+                _levelXpThresholds[i] = Mathf.Max(0, _levelXpThresholds[i]);
+            }
+
+            _levelXpThresholds.Sort();
+            for (var i = _levelXpThresholds.Count - 1; i > 0; i--)
+            {
+                if (_levelXpThresholds[i] == _levelXpThresholds[i - 1])
+                {
+                    _levelXpThresholds.RemoveAt(i);
+                }
+            }
+
+            if (_levelXpThresholds.Count == 0 || _levelXpThresholds[0] != 0)
+            {
+                _levelXpThresholds.Insert(0, 0);
+            }
+
+            _progressionUnlocks ??= new List<ProgressionUnlockDefinition>();
+            if (_progressionUnlocks.Count == 0)
+            {
+                SeedDefaultProgressionUnlocks();
+            }
+
+            _progressionUnlocks.RemoveAll(IsInvalidUnlockDefinition);
+            _progressionUnlocks.Sort((a, b) => a.level.CompareTo(b.level));
+        }
+
+        private void SeedDefaultProgressionUnlocks()
+        {
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 2,
+                unlockType = ProgressionUnlockType.Hook,
+                unlockId = "hook_lv2",
+                displayName = "Hook Lv2"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 3,
+                unlockType = ProgressionUnlockType.Ship,
+                unlockId = "ship_lv2",
+                displayName = "Ship Lv2"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 4,
+                unlockType = ProgressionUnlockType.Hook,
+                unlockId = "hook_lv3",
+                displayName = "Hook Lv3"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 5,
+                unlockType = ProgressionUnlockType.Ship,
+                unlockId = "ship_lv3",
+                displayName = "Ship Lv3"
+            });
+        }
+
+        private static bool IsInvalidUnlockDefinition(ProgressionUnlockDefinition unlock)
+        {
+            return unlock == null || unlock.level < 2 || string.IsNullOrWhiteSpace(unlock.unlockId);
+        }
+
+        private bool ApplyProgressionXp(int xpAmount, out int previousLevel, out int newLevel)
+        {
+            previousLevel = CurrentLevel;
+            newLevel = previousLevel;
+            if (xpAmount <= 0)
+            {
+                return false;
+            }
+
+            _current.progression ??= new ProgressionData();
+            _current.progression.totalXp = Mathf.Max(0, _current.progression.totalXp + xpAmount);
+            ProgressionRules.ResolveXpProgress(
+                _current.progression.totalXp,
+                _levelXpThresholds,
+                out var resolvedLevel,
+                out var xpIntoLevel,
+                out var xpToNextLevel);
+
+            _current.progression.level = resolvedLevel;
+            _current.progression.xpIntoLevel = xpIntoLevel;
+            _current.progression.xpToNextLevel = xpToNextLevel;
+            newLevel = resolvedLevel;
+
+            if (resolvedLevel > previousLevel)
+            {
+                ApplyProgressionUnlocks(previousLevel + 1, resolvedLevel);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyProgressionUnlocks(int minLevelInclusive, int maxLevelInclusive)
+        {
+            _current.ownedShips ??= new List<string>();
+            _current.ownedHooks ??= new List<string>();
+            _current.progression ??= new ProgressionData();
+            _current.progression.unlockedContentIds ??= new List<string>();
+
+            for (var i = 0; i < _progressionUnlocks.Count; i++)
+            {
+                var unlock = _progressionUnlocks[i];
+                if (unlock == null || unlock.level < minLevelInclusive || unlock.level > maxLevelInclusive)
+                {
+                    continue;
+                }
+
+                if (!_current.progression.unlockedContentIds.Contains(unlock.unlockId))
+                {
+                    _current.progression.unlockedContentIds.Add(unlock.unlockId);
+                    _current.progression.lastUnlockId = unlock.unlockId;
+                }
+
+                ApplyUnlockOwnership(unlock);
+            }
+        }
+
+        private void ApplyUnlockOwnership(ProgressionUnlockDefinition unlock)
+        {
+            if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
             {
                 return;
             }
 
-            save.ownedShips ??= new List<string>();
-            save.ownedHooks ??= new List<string>();
-            save.fishInventory ??= new List<FishInventoryEntry>();
-            save.catchLog ??= new List<CatchLogEntry>();
-            save.tutorialFlags ??= new TutorialFlags();
-            save.stats ??= new SaveStats();
-
-            if (save.ownedShips.Count == 0)
+            if (unlock.unlockType == ProgressionUnlockType.Ship)
             {
-                save.ownedShips.Add("ship_lv1");
+                if (!_current.ownedShips.Contains(unlock.unlockId))
+                {
+                    _current.ownedShips.Add(unlock.unlockId);
+                }
             }
-
-            if (save.ownedHooks.Count == 0)
+            else if (unlock.unlockType == ProgressionUnlockType.Hook)
             {
-                save.ownedHooks.Add("hook_lv1");
+                if (!_current.ownedHooks.Contains(unlock.unlockId))
+                {
+                    _current.ownedHooks.Add(unlock.unlockId);
+                }
             }
-
-            if (string.IsNullOrWhiteSpace(save.equippedShipId))
-            {
-                save.equippedShipId = save.ownedShips[0];
-            }
-
-            if (string.IsNullOrWhiteSpace(save.equippedHookId))
-            {
-                save.equippedHookId = save.ownedHooks[0];
-            }
-
-            if (string.IsNullOrWhiteSpace(save.careerStartLocalDate))
-            {
-                save.careerStartLocalDate = CurrentLocalDate();
-            }
-
-            if (string.IsNullOrWhiteSpace(save.lastLoginLocalDate))
-            {
-                save.lastLoginLocalDate = save.careerStartLocalDate;
-            }
-
-            TrimCatchLog(save.catchLog);
         }
 
         private void BackupCorruptSaveFile(string reason)
@@ -381,10 +743,10 @@ namespace RavenDevOps.Fishing.Save
             return DateTime.Now.ToString("yyyy-MM-dd");
         }
 
-        private void AppendCatchLog(string fishId, int distanceTier, bool landed, float weightKg, int valueCopecs, string failReason)
+        private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float weightKg, int valueCopecs, string failReason)
         {
             _current.catchLog ??= new List<CatchLogEntry>();
-            _current.catchLog.Add(new CatchLogEntry
+            var entry = new CatchLogEntry
             {
                 fishId = fishId ?? string.Empty,
                 distanceTier = Mathf.Max(1, distanceTier),
@@ -394,9 +756,11 @@ namespace RavenDevOps.Fishing.Save
                 sessionId = _sessionId,
                 landed = landed,
                 failReason = failReason ?? string.Empty
-            });
+            };
 
+            _current.catchLog.Add(entry);
             TrimCatchLog(_current.catchLog);
+            return entry;
         }
 
         private static void TrimCatchLog(List<CatchLogEntry> log)
@@ -413,6 +777,64 @@ namespace RavenDevOps.Fishing.Save
 
             var removeCount = log.Count - MaxCatchLogEntries;
             log.RemoveRange(0, removeCount);
+        }
+
+        private void InvokeCatchRecorded(CatchLogEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            try
+            {
+                CatchRecorded?.Invoke(entry);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SaveManager: CatchRecorded listener failed ({ex.Message}).");
+            }
+        }
+
+        private void InvokeLevelChanged(int previousLevel, int newLevel)
+        {
+            if (newLevel <= previousLevel)
+            {
+                return;
+            }
+
+            try
+            {
+                LevelChanged?.Invoke(previousLevel, newLevel);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SaveManager: LevelChanged listener failed ({ex.Message}).");
+            }
+        }
+
+        private void InvokeTripCompleted(int totalTrips)
+        {
+            try
+            {
+                TripCompleted?.Invoke(Mathf.Max(0, totalTrips));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SaveManager: TripCompleted listener failed ({ex.Message}).");
+            }
+        }
+
+        private void InvokePurchaseRecorded(string itemId, int priceCopecs, int totalPurchases)
+        {
+            try
+            {
+                PurchaseRecorded?.Invoke(itemId, Mathf.Max(0, priceCopecs), Mathf.Max(0, totalPurchases));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SaveManager: PurchaseRecorded listener failed ({ex.Message}).");
+            }
         }
     }
 }

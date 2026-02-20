@@ -21,6 +21,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private bool _autoAttachFishingCameraController = true;
+        [SerializeField] private bool _autoAttachFishingTutorialController = true;
+        [SerializeField] private bool _autoAttachEnvironmentSliceController = true;
 
         [SerializeField] private AudioClip _castSfx;
         [SerializeField] private AudioClip _hookSfx;
@@ -42,8 +44,12 @@ namespace RavenDevOps.Fishing.Fishing
         private FishingFailReason _pendingFailReason = FishingFailReason.None;
         private FishingTensionState _lastTensionState = FishingTensionState.None;
         private bool _cameraConfigured;
+        private bool _tutorialConfigured;
+        private bool _environmentConfigured;
 
         private InputAction _reelAction;
+
+        public event System.Action<bool, FishingFailReason, string> CatchResolved;
 
         private void Awake()
         {
@@ -72,6 +78,8 @@ namespace RavenDevOps.Fishing.Fishing
         {
             UpdateHudTelemetry();
             EnsureCameraController();
+            EnsureTutorialController();
+            EnsureEnvironmentController();
             RefreshReelAction();
 
             if (_stateMachine == null)
@@ -247,6 +255,9 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void ResolveOutcome()
         {
+            var resolvedFishId = _hookedFish != null ? _hookedFish.id : string.Empty;
+            var resolvedFailReason = _catchSucceeded ? FishingFailReason.None : _pendingFailReason;
+
             if (_catchSucceeded && _hookedFish != null)
             {
                 var weightKg = Random.Range(
@@ -268,6 +279,8 @@ namespace RavenDevOps.Fishing.Fishing
                 PlayFailureSfx(_pendingFailReason);
             }
 
+            InvokeCatchResolved(_catchSucceeded, resolvedFailReason, resolvedFishId);
+
             _encounterModel.End();
             _targetFish = null;
             _hookedFish = null;
@@ -275,6 +288,18 @@ namespace RavenDevOps.Fishing.Fishing
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
             _stateMachine?.ResetToCast();
+        }
+
+        private void InvokeCatchResolved(bool success, FishingFailReason failReason, string fishId)
+        {
+            try
+            {
+                CatchResolved?.Invoke(success, failReason, fishId ?? string.Empty);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"CatchResolver: CatchResolved listener failed ({ex.Message}).");
+            }
         }
 
         private void PlayFailureSfx(FishingFailReason failReason)
@@ -352,6 +377,43 @@ namespace RavenDevOps.Fishing.Fishing
             var ship = _hook.ShipTransform;
             controller.Configure(ship, _hook.transform);
             _cameraConfigured = true;
+        }
+
+        private void EnsureTutorialController()
+        {
+            if (_tutorialConfigured || !_autoAttachFishingTutorialController)
+            {
+                return;
+            }
+
+            var tutorial = GetComponent<FishingLoopTutorialController>();
+            if (tutorial == null)
+            {
+                tutorial = gameObject.AddComponent<FishingLoopTutorialController>();
+            }
+
+            _tutorialConfigured = tutorial != null;
+        }
+
+        private void EnsureEnvironmentController()
+        {
+            if (_environmentConfigured || !_autoAttachEnvironmentSliceController)
+            {
+                return;
+            }
+
+            var controller = GetComponent<FishingEnvironmentSliceController>();
+            if (controller == null)
+            {
+                controller = gameObject.AddComponent<FishingEnvironmentSliceController>();
+            }
+
+            if (controller != null && _hook != null)
+            {
+                controller.Configure(_hook.ShipTransform, _hook.transform);
+            }
+
+            _environmentConfigured = controller != null;
         }
     }
 }

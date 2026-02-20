@@ -57,11 +57,17 @@ Keyboard-first single-player fishing loop for Steam.
 - Build profiles: `docs/BUILD_PROFILES.md`
 - CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
 - Catch log baseline: `docs/CATCH_LOG.md`
+- Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Fishing environment slice: `docs/FISHING_ENVIRONMENT_SLICE.md`
 - Fishing combat model: `docs/FISHING_COMBAT_MODEL.md`
+- Fishing tutorial flow: `docs/FISHING_TUTORIAL.md`
 - Input baseline: `docs/INPUT_MAP.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
+- Progression system baseline: `docs/PROGRESSION_SYSTEM.md`
 - Settings system: `docs/SETTINGS_SYSTEM.md`
+- Steam achievements/stats: `docs/STEAM_ACHIEVEMENTS_STATS.md`
+- Steam Cloud sync: `docs/STEAM_CLOUD_SYNC.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`

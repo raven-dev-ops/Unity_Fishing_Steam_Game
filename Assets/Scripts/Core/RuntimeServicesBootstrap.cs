@@ -33,7 +33,10 @@ namespace RavenDevOps.Fishing.Core
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
+            var crashDiagnostics = servicesGo.AddComponent<CrashDiagnosticsService>();
             var steamBootstrap = servicesGo.AddComponent<SteamBootstrap>();
+            var steamStatsService = servicesGo.AddComponent<SteamStatsService>();
+            var steamCloudSyncService = servicesGo.AddComponent<SteamCloudSyncService>();
             var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
             var inputDriver = servicesGo.AddComponent<KeyboardFlowInputDriver>();
             var structuredLogger = servicesGo.AddComponent<Logging.StructuredLogService>();
@@ -49,7 +52,10 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(audioManager);
+            RuntimeServiceRegistry.Register(crashDiagnostics);
             RuntimeServiceRegistry.Register(steamBootstrap);
+            RuntimeServiceRegistry.Register(steamStatsService);
+            RuntimeServiceRegistry.Register(steamCloudSyncService);
             RuntimeServiceRegistry.Register(orchestrator);
             RuntimeServiceRegistry.Register(structuredLogger);
 

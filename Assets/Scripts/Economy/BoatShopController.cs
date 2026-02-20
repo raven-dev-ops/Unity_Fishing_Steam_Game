@@ -27,13 +27,21 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var save = _saveManager.Current;
+            if (!_saveManager.IsContentUnlocked(boatId))
+            {
+                var unlockLevel = _saveManager.GetUnlockLevel(boatId);
+                Debug.Log($"BoatShopController: '{boatId}' is locked until level {unlockLevel}.");
+                return false;
+            }
+
             var price = ResolvePrice(boatId);
             if (price <= 0)
             {
                 return false;
             }
 
-            if (!save.ownedShips.Contains(boatId))
+            var wasOwned = save.ownedShips.Contains(boatId);
+            if (!wasOwned)
             {
                 if (save.copecs < price)
                 {
@@ -45,6 +53,11 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             save.equippedShipId = boatId;
+            if (!wasOwned)
+            {
+                _saveManager.RecordPurchase(boatId, price, saveAfterRecord: false);
+            }
+
             _saveManager.Save();
             return true;
         }

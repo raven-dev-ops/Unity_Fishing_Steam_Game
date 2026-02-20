@@ -20,11 +20,16 @@ End-to-end regression checklist for the MVP loop.
 7. Fishing departure and in-scene controls.
 8. Trigger safe/warning/critical line tension states and verify readability.
 9. Validate fail reason feedback (missed hook, line snap, fish escape).
-10. Catch flow to inventory and return to harbor.
-11. Sell-all flow and copecs update.
-12. Pause menu resume/return harbor/exit behavior.
-13. Rebind core actions in Settings, relaunch, and verify persistence.
-14. Save, relaunch, verify continuity and catch log persistence.
+10. Verify fishing tutorial prompts (cast/hook/reel), skip/replay, and failure recovery behavior.
+11. Catch flow to inventory and return to harbor.
+12. Sell-all flow and copecs update.
+13. Verify XP/level progression updates and next unlock text in profile.
+14. Purchase locked/unlocked gear paths behave per progression level.
+15. Pause menu resume/return harbor/exit behavior.
+16. Rebind core actions in Settings, relaunch, and verify persistence.
+17. Save, relaunch, verify continuity and catch log/progression persistence.
+18. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
+19. Cloud run (if available): verify save continuity across two machines.
 
 ## Pass Criteria
 - No blocker regressions in core gameplay loop.
@@ -34,6 +39,8 @@ End-to-end regression checklist for the MVP loop.
 - Fishing HUD shows tension state and explicit fail reasons during reel failures.
 - Runtime log file is generated and readable at:
   - `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/raven_runtime.log`
+- Crash artifact file is generated on controlled exception path at:
+  - `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/last_crash_report.json`
 
 ## Report Format
 - Scene:

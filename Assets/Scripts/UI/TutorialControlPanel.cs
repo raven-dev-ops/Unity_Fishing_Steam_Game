@@ -22,5 +22,15 @@ namespace RavenDevOps.Fishing.UI
         {
             _saveManager?.SetTutorialSeen(false);
         }
+
+        public void SkipFishingTutorial()
+        {
+            _saveManager?.CompleteFishingLoopTutorial(skipped: true);
+        }
+
+        public void ReplayFishingTutorial()
+        {
+            _saveManager?.RequestFishingLoopTutorialReplay();
+        }
     }
 }

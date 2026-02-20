@@ -13,6 +13,9 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _copecsText;
         [SerializeField] private TMP_Text _totalFishText;
         [SerializeField] private TMP_Text _farthestDistanceText;
+        [SerializeField] private TMP_Text _levelText;
+        [SerializeField] private TMP_Text _xpProgressText;
+        [SerializeField] private TMP_Text _nextUnlockText;
         [SerializeField] private TMP_Text _catchLogText;
         [SerializeField] private int _maxCatchLogEntries = 8;
 
@@ -56,6 +59,22 @@ namespace RavenDevOps.Fishing.UI
             if (_copecsText != null) _copecsText.text = $"Copecs: {save.copecs}";
             if (_totalFishText != null) _totalFishText.text = $"Total Fish Caught: {save.stats.totalFishCaught}";
             if (_farthestDistanceText != null) _farthestDistanceText.text = $"Farthest Distance Tier: {save.stats.farthestDistanceTier}";
+            var level = _saveManager.CurrentLevel;
+            var xpIntoLevel = _saveManager.CurrentXpIntoLevel;
+            var xpToNextLevel = _saveManager.CurrentXpToNextLevel;
+            if (_levelText != null) _levelText.text = $"Level: {level}";
+            if (_xpProgressText != null)
+            {
+                _xpProgressText.text = xpToNextLevel > 0
+                    ? $"XP: {xpIntoLevel}/{xpToNextLevel} ({_saveManager.CurrentTotalXp} total)"
+                    : $"XP: {_saveManager.CurrentTotalXp} (max level configured)";
+            }
+
+            if (_nextUnlockText != null)
+            {
+                _nextUnlockText.text = $"Next Unlock: {_saveManager.GetNextUnlockDescription()}";
+            }
+
             RefreshCatchLogText(save);
         }
 
@@ -70,6 +89,9 @@ namespace RavenDevOps.Fishing.UI
             if (_copecsText != null) _copecsText.text = "Copecs: -";
             if (_totalFishText != null) _totalFishText.text = "Total Fish Caught: -";
             if (_farthestDistanceText != null) _farthestDistanceText.text = "Farthest Distance Tier: -";
+            if (_levelText != null) _levelText.text = "Level: -";
+            if (_xpProgressText != null) _xpProgressText.text = "XP: -";
+            if (_nextUnlockText != null) _nextUnlockText.text = "Next Unlock: -";
             if (_catchLogText != null) _catchLogText.text = "Catch Log: -";
         }
 

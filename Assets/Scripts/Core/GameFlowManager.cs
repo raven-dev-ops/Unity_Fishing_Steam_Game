@@ -13,6 +13,7 @@ namespace RavenDevOps.Fishing.Core
 
         public static GameFlowManager Instance => _instance;
         public GameFlowState CurrentState => _currentState;
+        public GameFlowState PreviousPlayableState => _previousPlayableState;
         public bool IsPaused => _isPaused;
 
         public event Action<GameFlowState, GameFlowState> StateChanged;

@@ -27,13 +27,21 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var save = _saveManager.Current;
+            if (!_saveManager.IsContentUnlocked(hookId))
+            {
+                var unlockLevel = _saveManager.GetUnlockLevel(hookId);
+                Debug.Log($"HookShopController: '{hookId}' is locked until level {unlockLevel}.");
+                return false;
+            }
+
             var price = ResolvePrice(hookId);
             if (price <= 0)
             {
                 return false;
             }
 
-            if (!save.ownedHooks.Contains(hookId))
+            var wasOwned = save.ownedHooks.Contains(hookId);
+            if (!wasOwned)
             {
                 if (save.copecs < price)
                 {
@@ -45,6 +53,11 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             save.equippedHookId = hookId;
+            if (!wasOwned)
+            {
+                _saveManager.RecordPurchase(hookId, price, saveAfterRecord: false);
+            }
+
             _saveManager.Save();
             return true;
         }

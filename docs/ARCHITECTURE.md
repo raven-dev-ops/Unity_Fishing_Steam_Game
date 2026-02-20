@@ -16,7 +16,10 @@ flowchart LR
     IAMC[InputActionMapController]
     SM[SaveManager]
     AM[AudioManager]
+    CR[CrashDiagnosticsService]
     ST[SteamBootstrap]
+    SS[SteamStatsService]
+    SC[SteamCloudSyncService]
   end
 
   GS --> GFM
@@ -25,7 +28,10 @@ flowchart LR
   GS --> IAMC
   GS --> SM
   GS --> AM
+  GS --> CR
   GS --> ST
+  GS --> SS
+  GS --> SC
 
   GFM --> GFO
   GFO --> Boot
@@ -46,9 +52,12 @@ flowchart LR
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
+- Crash diagnostics writes local-only artifact files for exception/error logs.
 - UI update pathways prefer event-driven refresh (`SaveDataChanged`, flow state events) over always-on polling for menu/profile/HUD data.
 - Fishing combat uses data-driven bite/fight parameters with `FishEncounterModel`.
 - Catch history is persisted in `SaveDataV1.catchLog` and surfaced in profile UI.
+- Progression state (`XP`, `level`, unlock stubs) is persisted in `SaveDataV1.progression`.
+- Steam stats/achievements mirror local save stats, and Steam Cloud sync follows newest-wins conflict policy.
 
 ## Data/Content Notes
 - Fish/ship/hook definitions are ScriptableObject-driven.

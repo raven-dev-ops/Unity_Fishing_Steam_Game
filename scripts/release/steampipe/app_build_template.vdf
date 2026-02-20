@@ -1,0 +1,12 @@
+"appbuild"
+{
+    "appid" "__APP_ID__"
+    "desc" "Unity_Fishing_Steam_Game __RELEASE_TAG__"
+    "buildoutput" "__BUILD_OUTPUT__"
+    "contentroot" "__CONTENT_ROOT__"
+    "setlive" "__BRANCH__"
+    "depots"
+    {
+        "__DEPOT_ID__" "depot_build_windows.vdf"
+    }
+}
