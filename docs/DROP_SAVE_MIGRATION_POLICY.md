@@ -1,14 +1,24 @@
-﻿# Save Migration Policy
+# Save Migration Policy
 
-## Versioning
-- Increment `saveVersion` when data shape changes.
-- Keep backward-compatible readers for prior known versions.
+## Current Save Baseline
+- Save model: `Assets/Scripts/Save/SaveDataV1.cs`
+- Save manager: `Assets/Scripts/Save/SaveManager.cs`
+- Current schema version: `saveVersion = 1`
 
-## Migration Rules
+## Versioning Rules
+- Increment `saveVersion` when serialized shape changes.
+- Keep backward readers for all shipped versions.
+- Avoid destructive field removal without fallback mapping.
+
+## Migration Requirements
 - Migrations must be deterministic and idempotent.
-- Never delete unknown fields without fallback handling.
+- Migration should occur before gameplay systems consume save data.
+- On migration failure, fail safely and preserve original file for recovery.
 
-## Testing
-- Keep fixture save files for every shipped version.
-- Run migration tests on boot for all fixtures.
-- Validate post-migration gameplay and economy integrity.
+## Test Policy
+- Keep fixture saves for each shipped version.
+- Validate boot-time migration for all fixtures.
+- Validate post-migration gameplay, economy, and inventory integrity.
+
+## Release Gate
+- Any `saveVersion` bump requires migration notes in release documentation.
