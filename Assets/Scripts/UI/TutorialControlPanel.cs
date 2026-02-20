@@ -15,24 +15,12 @@ namespace RavenDevOps.Fishing.UI
 
         public void SkipTutorial()
         {
-            if (_saveManager == null)
-            {
-                return;
-            }
-
-            _saveManager.Current.tutorialFlags.tutorialSeen = true;
-            _saveManager.Save();
+            _saveManager?.SetTutorialSeen(true);
         }
 
         public void ReplayTutorial()
         {
-            if (_saveManager == null)
-            {
-                return;
-            }
-
-            _saveManager.Current.tutorialFlags.tutorialSeen = false;
-            _saveManager.Save();
+            _saveManager?.SetTutorialSeen(false);
         }
     }
 }

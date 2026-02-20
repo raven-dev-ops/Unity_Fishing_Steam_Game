@@ -24,8 +24,44 @@ namespace RavenDevOps.Fishing.UI
             RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
         }
 
-        private void Update()
+        private void OnEnable()
         {
+            if (_saveManager != null)
+            {
+                _saveManager.SaveDataChanged += OnSaveDataChanged;
+            }
+
+            if (_gameFlowManager != null)
+            {
+                _gameFlowManager.StateChanged += OnGameFlowStateChanged;
+            }
+
+            Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (_saveManager != null)
+            {
+                _saveManager.SaveDataChanged -= OnSaveDataChanged;
+            }
+
+            if (_gameFlowManager != null)
+            {
+                _gameFlowManager.StateChanged -= OnGameFlowStateChanged;
+            }
+        }
+
+        public void SetFishingTelemetry(int distanceTier, float depth)
+        {
+            var clampedTier = Mathf.Max(1, distanceTier);
+            if (CurrentDistanceTier == clampedTier && Mathf.Approximately(CurrentDepth, depth))
+            {
+                return;
+            }
+
+            CurrentDistanceTier = clampedTier;
+            CurrentDepth = Mathf.Max(0f, depth);
             Refresh();
         }
 
@@ -57,6 +93,16 @@ namespace RavenDevOps.Fishing.UI
             {
                 _depthText.text = inFishing ? $"Depth: {CurrentDepth:0.0}" : string.Empty;
             }
+        }
+
+        private void OnSaveDataChanged(SaveDataV1 data)
+        {
+            Refresh();
+        }
+
+        private void OnGameFlowStateChanged(GameFlowState previous, GameFlowState next)
+        {
+            Refresh();
         }
     }
 }

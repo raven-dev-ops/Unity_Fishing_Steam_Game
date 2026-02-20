@@ -1,6 +1,7 @@
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
+using RavenDevOps.Fishing.UI;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
@@ -10,6 +11,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private FishSpawner _spawner;
         [SerializeField] private HookMovementController _hook;
+        [SerializeField] private HudOverlayController _hudOverlay;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private AudioManager _audioManager;
 
@@ -32,6 +34,16 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _stateMachine.StateChanged += OnStateChanged;
             }
+        }
+
+        private void Update()
+        {
+            if (_hudOverlay == null || _hook == null)
+            {
+                return;
+            }
+
+            _hudOverlay.SetFishingTelemetry(_currentDistanceTier, _hook.CurrentDepth);
         }
 
         private void OnDisable()
@@ -81,26 +93,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var save = _saveManager.Current;
-            var existing = save.fishInventory.Find(x => x.fishId == _hookedFish.id && x.distanceTier == _currentDistanceTier);
-            if (existing == null)
-            {
-                save.fishInventory.Add(new FishInventoryEntry
-                {
-                    fishId = _hookedFish.id,
-                    distanceTier = _currentDistanceTier,
-                    count = 1
-                });
-            }
-            else
-            {
-                existing.count += 1;
-            }
-
-            save.stats.totalFishCaught += 1;
-            save.stats.farthestDistanceTier = Mathf.Max(save.stats.farthestDistanceTier, _currentDistanceTier);
-
-            _saveManager.Save();
+            _saveManager.RecordCatch(_hookedFish.id, _currentDistanceTier);
             _audioManager?.PlaySfx(_catchSfx);
 
             _hookedFish = null;

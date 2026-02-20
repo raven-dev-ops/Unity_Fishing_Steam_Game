@@ -70,12 +70,7 @@ namespace RavenDevOps.Fishing.Tools
 
             if (GUILayout.Button("Unlock Starter Ship/Hook"))
             {
-                if (_saveManager != null)
-                {
-                    if (!_saveManager.Current.ownedShips.Contains("ship_lv1")) _saveManager.Current.ownedShips.Add("ship_lv1");
-                    if (!_saveManager.Current.ownedHooks.Contains("hook_lv1")) _saveManager.Current.ownedHooks.Add("hook_lv1");
-                    _saveManager.Save();
-                }
+                _saveManager?.EnsureStarterOwnership();
             }
 
             if (GUILayout.Button("Spawn Fish Test (roll only)"))
@@ -85,11 +80,7 @@ namespace RavenDevOps.Fishing.Tools
 
             if (GUILayout.Button("Clear Inventory"))
             {
-                if (_saveManager != null)
-                {
-                    _saveManager.Current.fishInventory.Clear();
-                    _saveManager.Save();
-                }
+                _saveManager?.ClearFishInventory();
             }
 
             GUILayout.EndArea();

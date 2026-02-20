@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -12,7 +13,18 @@ namespace RavenDevOps.Fishing.EditorTools
     {
         private const string DefaultOutputDirectory = "Builds/Windows";
         private const string DefaultExecutableName = "UnityFishingSteamGame.exe";
+        private const string DefaultBuildProfile = "Dev";
         private const string MetadataFileName = "build_metadata.json";
+        private const string BuildProfileDevDefine = "RAVEN_BUILD_PROFILE_DEV";
+        private const string BuildProfileQaDefine = "RAVEN_BUILD_PROFILE_QA";
+        private const string BuildProfileReleaseDefine = "RAVEN_BUILD_PROFILE_RELEASE";
+
+        private enum BuildProfile
+        {
+            Dev = 0,
+            QA = 1,
+            Release = 2
+        }
 
         private sealed class BuildMetadata
         {
@@ -23,6 +35,7 @@ namespace RavenDevOps.Fishing.EditorTools
             public string buildNumber;
             public string commitSha;
             public string branch;
+            public string buildProfile;
             public string buildTimestampUtc;
             public string outputExecutable;
         }
@@ -64,32 +77,52 @@ namespace RavenDevOps.Fishing.EditorTools
 
             var outputDirectory = GetArgumentValue("buildOutput", DefaultOutputDirectory);
             var executableName = GetArgumentValue("buildExeName", DefaultExecutableName);
+            var profileArgument = GetArgumentValue("buildProfile", DefaultBuildProfile);
+            if (!TryParseBuildProfile(profileArgument, out var buildProfile))
+            {
+                return fail($"BuildCommandLine: invalid -buildProfile value '{profileArgument}'. Supported values: Dev, QA, Release.");
+            }
+
             Directory.CreateDirectory(outputDirectory);
 
             var locationPathName = Path.Combine(outputDirectory, executableName);
+            var target = BuildTarget.StandaloneWindows64;
+            var targetGroup = BuildPipeline.GetBuildTargetGroup(target);
+            var previousDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(targetGroup);
+            var profileDefineSymbols = ApplyBuildProfileDefineSymbols(previousDefineSymbols, buildProfile);
+
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
                 locationPathName = locationPathName,
-                target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.None
+                target = target,
+                options = ResolveBuildOptions(buildProfile)
             };
 
-            var report = BuildPipeline.BuildPlayer(options);
-            var summary = report.summary;
-            if (summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+            try
             {
-                return fail($"BuildCommandLine: build failed ({summary.result}).");
-            }
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(targetGroup, profileDefineSymbols);
 
-            var metadataPath = Path.Combine(outputDirectory, MetadataFileName);
-            WriteMetadata(metadataPath, locationPathName);
-            Debug.Log($"BuildCommandLine: build succeeded at '{locationPathName}'.");
-            Debug.Log($"BuildCommandLine: metadata written to '{metadataPath}'.");
-            return BuildResultInfo.Success();
+                var report = BuildPipeline.BuildPlayer(options);
+                var summary = report.summary;
+                if (summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                {
+                    return fail($"BuildCommandLine: build failed ({summary.result}).");
+                }
+
+                var metadataPath = Path.Combine(outputDirectory, MetadataFileName);
+                WriteMetadata(metadataPath, locationPathName, buildProfile);
+                Debug.Log($"BuildCommandLine: build succeeded at '{locationPathName}' with profile {buildProfile}.");
+                Debug.Log($"BuildCommandLine: metadata written to '{metadataPath}'.");
+                return BuildResultInfo.Success();
+            }
+            finally
+            {
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(targetGroup, previousDefineSymbols);
+            }
         }
 
-        private static void WriteMetadata(string metadataPath, string executablePath)
+        private static void WriteMetadata(string metadataPath, string executablePath, BuildProfile buildProfile)
         {
             var metadata = new BuildMetadata
             {
@@ -100,6 +133,7 @@ namespace RavenDevOps.Fishing.EditorTools
                 buildNumber = ResolveBuildNumber(),
                 commitSha = ResolveCommitSha(),
                 branch = ResolveBranchName(),
+                buildProfile = buildProfile.ToString(),
                 buildTimestampUtc = DateTime.UtcNow.ToString("O"),
                 outputExecutable = executablePath
             };
@@ -132,6 +166,85 @@ namespace RavenDevOps.Fishing.EditorTools
         private static string ResolveBranchName()
         {
             return GetArgumentValue("buildBranch", Environment.GetEnvironmentVariable("GITHUB_REF_NAME") ?? "local");
+        }
+
+        private static bool TryParseBuildProfile(string value, out BuildProfile buildProfile)
+        {
+            if (string.Equals(value, "Dev", StringComparison.OrdinalIgnoreCase))
+            {
+                buildProfile = BuildProfile.Dev;
+                return true;
+            }
+
+            if (string.Equals(value, "QA", StringComparison.OrdinalIgnoreCase))
+            {
+                buildProfile = BuildProfile.QA;
+                return true;
+            }
+
+            if (string.Equals(value, "Release", StringComparison.OrdinalIgnoreCase))
+            {
+                buildProfile = BuildProfile.Release;
+                return true;
+            }
+
+            buildProfile = BuildProfile.Dev;
+            return false;
+        }
+
+        private static BuildOptions ResolveBuildOptions(BuildProfile buildProfile)
+        {
+            switch (buildProfile)
+            {
+                case BuildProfile.Dev:
+                    return BuildOptions.Development | BuildOptions.AllowDebugging | BuildOptions.ConnectWithProfiler;
+                case BuildProfile.QA:
+                    return BuildOptions.Development | BuildOptions.ConnectWithProfiler;
+                case BuildProfile.Release:
+                    return BuildOptions.None;
+                default:
+                    return BuildOptions.None;
+            }
+        }
+
+        private static string ApplyBuildProfileDefineSymbols(string existingSymbols, BuildProfile buildProfile)
+        {
+            var symbols = new HashSet<string>(StringComparer.Ordinal);
+            if (!string.IsNullOrWhiteSpace(existingSymbols))
+            {
+                var split = existingSymbols.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                for (var i = 0; i < split.Length; i++)
+                {
+                    var token = split[i].Trim();
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        continue;
+                    }
+
+                    symbols.Add(token);
+                }
+            }
+
+            symbols.Remove(BuildProfileDevDefine);
+            symbols.Remove(BuildProfileQaDefine);
+            symbols.Remove(BuildProfileReleaseDefine);
+            symbols.Add(ToBuildProfileDefine(buildProfile));
+            return string.Join(";", symbols.OrderBy(symbol => symbol, StringComparer.Ordinal));
+        }
+
+        private static string ToBuildProfileDefine(BuildProfile buildProfile)
+        {
+            switch (buildProfile)
+            {
+                case BuildProfile.Dev:
+                    return BuildProfileDevDefine;
+                case BuildProfile.QA:
+                    return BuildProfileQaDefine;
+                case BuildProfile.Release:
+                    return BuildProfileReleaseDefine;
+                default:
+                    return BuildProfileReleaseDefine;
+            }
         }
 
         private static string GetArgumentValue(string argumentName, string fallback)

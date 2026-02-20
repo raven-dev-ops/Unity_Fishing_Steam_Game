@@ -43,6 +43,7 @@ flowchart LR
 - `GameFlowOrchestrator` maps states to scenes and input contexts.
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Save and audio services are global and survive scene changes.
+- UI update pathways prefer event-driven refresh (`SaveDataChanged`, flow state events) over always-on polling for menu/profile/HUD data.
 
 ## Data/Content Notes
 - Fish/ship/hook definitions are ScriptableObject-driven.

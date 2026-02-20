@@ -51,6 +51,7 @@ jobs:
           customParameters: >-
             -buildOutput=Builds/Windows
             -buildExeName=UnityFishingSteamGame.exe
+            -buildProfile=QA
             -buildNumber=${{ github.run_number }}
             -buildCommit=${{ github.sha }}
             -buildBranch=${{ github.ref_name }}

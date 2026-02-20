@@ -21,6 +21,8 @@ namespace RavenDevOps.Fishing.Core.Logging
         [SerializeField] private int _maxBufferedEntries = 250;
         [SerializeField] private string _logFileName = "raven_runtime.log";
         [SerializeField] private bool _captureUnityLogs = true;
+        [SerializeField] private bool _includeInfoLogs = true;
+        [SerializeField] private bool _forceUnityLogCaptureInRelease;
 
         private static StructuredLogService _instance;
         private readonly object _sync = new object();
@@ -41,6 +43,7 @@ namespace RavenDevOps.Fishing.Core.Logging
             _instance = this;
             RuntimeServiceRegistry.Register(this);
             _logFilePath = Path.Combine(Application.persistentDataPath, _logFileName);
+            ApplyBuildProfileDefaults();
 
             if (_captureUnityLogs)
             {
@@ -96,6 +99,11 @@ namespace RavenDevOps.Fishing.Core.Logging
                 return;
             }
 
+            if (!_includeInfoLogs && string.Equals(level, "INFO", StringComparison.Ordinal))
+            {
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(stackTrace) && (type == LogType.Error || type == LogType.Exception || type == LogType.Assert))
             {
                 condition = condition + "\n" + stackTrace;
@@ -106,6 +114,11 @@ namespace RavenDevOps.Fishing.Core.Logging
 
         private void LogInternal(string level, string category, string message)
         {
+            if (!_includeInfoLogs && string.Equals(level, "INFO", StringComparison.Ordinal))
+            {
+                return;
+            }
+
             var entry = new StructuredLogEntry
             {
                 timestampUtc = DateTime.UtcNow.ToString("O"),
@@ -134,6 +147,20 @@ namespace RavenDevOps.Fishing.Core.Logging
                     // Avoid recursive log-callback loops if file I/O fails.
                 }
             }
+        }
+
+        private void ApplyBuildProfileDefaults()
+        {
+#if !UNITY_EDITOR && RAVEN_BUILD_PROFILE_RELEASE
+            if (_forceUnityLogCaptureInRelease)
+            {
+                return;
+            }
+
+            _captureUnityLogs = false;
+            _includeInfoLogs = false;
+            _maxBufferedEntries = Mathf.Min(_maxBufferedEntries, 100);
+#endif
         }
 
         private static string ToLevel(LogType type)

@@ -13,6 +13,7 @@ Unity.exe -batchmode -nographics -quit `
   -executeMethod RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode `
   -buildOutput=Builds/Windows `
   -buildExeName=UnityFishingSteamGame.exe `
+  -buildProfile=QA `
   -buildVersion=0.1.0 `
   -buildNumber=123 `
   -buildCommit=abcdef1234567890 `
@@ -23,16 +24,23 @@ Unity.exe -batchmode -nographics -quit `
 Project wrapper (recommended):
 
 ```powershell
-.\scripts\unity-cli.ps1 -Task build -LogFile build_windows.log
+.\scripts\unity-cli.ps1 -Task build -BuildProfile QA -LogFile build_windows.log
 ```
 
 ### Command Arguments
 - `-buildOutput` optional output folder (default `Builds/Windows`)
 - `-buildExeName` optional executable filename (default `UnityFishingSteamGame.exe`)
+- `-buildProfile` optional profile (`Dev`, `QA`, `Release`; default `Dev` from editor entrypoint)
 - `-buildVersion` optional version override (falls back to `PlayerSettings.bundleVersion`)
 - `-buildNumber` optional CI build number (falls back to `GITHUB_RUN_NUMBER` or `local`)
 - `-buildCommit` optional commit SHA (falls back to `GITHUB_SHA` or `local`)
 - `-buildBranch` optional branch name (falls back to `GITHUB_REF_NAME` or `local`)
+
+### Build Profiles
+- `Dev`: development build with debugging + profiler connection.
+- `QA`: development build with profiler connection for validation sweeps.
+- `Release`: production profile with dev diagnostics disabled by default.
+- Full profile details: `docs/BUILD_PROFILES.md`.
 
 ### Deterministic Scene Source
 - Scenes are read from enabled entries in `EditorBuildSettings`.
@@ -51,6 +59,7 @@ Project wrapper (recommended):
 - `buildNumber`
 - `commitSha`
 - `branch`
+- `buildProfile`
 - `buildTimestampUtc`
 - `outputExecutable`
 

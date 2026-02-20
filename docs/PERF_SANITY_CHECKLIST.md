@@ -7,13 +7,15 @@
 
 ## Tooling
 - Runtime FPS sampling: `Assets/Scripts/Performance/PerfSanityRunner.cs`.
-- Log sample every configured frame window.
+- Structured sample logs (`PERF_SANITY`) every configured frame window.
+- Optional regression parser: `scripts/perf-budget-check.ps1`.
+- Baseline and budgets: `docs/PERF_BASELINE.md`.
 
 ## Metrics
-- Stable average FPS samples across each test case.
-- No runaway frame-time spikes from UI update loops.
-- No abnormal memory growth over 10+ minutes.
+- `avg_fps` should meet baseline budget.
+- `p95_frame_ms` should remain within baseline budget.
+- `gc_delta_kb` should remain within baseline budget.
 - Fish roll hot path should show no avoidable per-roll managed allocations in steady state.
 
 ## Failure Logging
-Capture scene, timestamp, action sequence, and relevant Console output.
+Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SANITY_BUDGET_FAIL` lines.

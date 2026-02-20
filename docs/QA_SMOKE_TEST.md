@@ -7,6 +7,7 @@ End-to-end regression checklist for the MVP loop.
 - Use a clean profile (remove or back up existing save if needed).
 - Start from `00_Boot` and follow normal flow.
 - Keep Console visible and clear between major phases.
+- Use `QA` build profile for routine smoke sweeps and `Release` profile for final release candidate verification.
 - In dev/editor builds, toggle in-game log console with backquote key (<code>`</code>) if needed.
 
 ## Run Order

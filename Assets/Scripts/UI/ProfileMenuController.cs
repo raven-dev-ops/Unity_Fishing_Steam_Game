@@ -21,7 +21,20 @@ namespace RavenDevOps.Fishing.UI
 
         private void OnEnable()
         {
+            if (_saveManager != null)
+            {
+                _saveManager.SaveDataChanged += OnSaveDataChanged;
+            }
+
             Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (_saveManager != null)
+            {
+                _saveManager.SaveDataChanged -= OnSaveDataChanged;
+            }
         }
 
         public void Refresh()
@@ -43,17 +56,7 @@ namespace RavenDevOps.Fishing.UI
 
         public void ResetProfile()
         {
-            if (_saveManager == null)
-            {
-                return;
-            }
-
-            _saveManager.Current.copecs = 0;
-            _saveManager.Current.stats.totalFishCaught = 0;
-            _saveManager.Current.stats.farthestDistanceTier = 0;
-            _saveManager.Current.stats.totalTrips = 0;
-            _saveManager.Save();
-            Refresh();
+            _saveManager?.ResetProfileStats();
         }
 
         private void SetFallbackText()
@@ -62,6 +65,11 @@ namespace RavenDevOps.Fishing.UI
             if (_copecsText != null) _copecsText.text = "Copecs: -";
             if (_totalFishText != null) _totalFishText.text = "Total Fish Caught: -";
             if (_farthestDistanceText != null) _farthestDistanceText.text = "Farthest Distance Tier: -";
+        }
+
+        private void OnSaveDataChanged(SaveDataV1 data)
+        {
+            Refresh();
         }
     }
 }

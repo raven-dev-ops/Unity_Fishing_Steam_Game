@@ -59,11 +59,7 @@ namespace RavenDevOps.Fishing.Harbor
 
         public void CompleteTutorial()
         {
-            if (_saveManager != null)
-            {
-                _saveManager.Current.tutorialFlags.tutorialSeen = true;
-                _saveManager.Save();
-            }
+            _saveManager?.SetTutorialSeen(true);
 
             _isBlockingInteractions = false;
             _dialogue?.Stop();

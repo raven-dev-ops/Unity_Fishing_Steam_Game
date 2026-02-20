@@ -1,6 +1,8 @@
 param(
     [ValidateSet('custom', 'build', 'validate', 'test-edit', 'test-play')]
     [string]$Task = 'custom',
+    [ValidateSet('Dev', 'QA', 'Release')]
+    [string]$BuildProfile = 'QA',
     [string]$Method = '',
     [string]$UnityPath = '',
     [string]$ProjectPath = '',
@@ -93,6 +95,7 @@ switch ($Task) {
     'build' {
         $args.Add('-executeMethod')
         $args.Add('RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode')
+        $args.Add("-buildProfile=$BuildProfile")
     }
     'validate' {
         $args.Add('-executeMethod')

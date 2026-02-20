@@ -24,7 +24,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Local menu build: `Raven > Build > Build Windows x64`
 - Batch build entrypoint: `RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode`
 - Batch content validator: `RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode`
-- Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`)
+- Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
 
 ## Project Structure
@@ -54,15 +54,18 @@ Keyboard-first single-player fishing loop for Steam.
 - Assembly boundaries: `docs/ASSEMBLY_BOUNDARIES.md`
 - Contribution workflow: `CONTRIBUTING.md`
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
+- Build profiles: `docs/BUILD_PROFILES.md`
 - CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
 - Input baseline: `docs/INPUT_MAP.md`
+- Performance baseline and budgets: `docs/PERF_BASELINE.md`
 - Settings system: `docs/SETTINGS_SYSTEM.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
 - Testing baseline: `docs/TESTING_BASELINE.md`
+- UI architecture notes: `docs/UI_ARCHITECTURE.md`
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`
 
 ## Repository Rules

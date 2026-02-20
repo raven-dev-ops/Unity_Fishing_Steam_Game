@@ -18,6 +18,7 @@ namespace RavenDevOps.Fishing.Save
 
         public static SaveManager Instance => _instance;
         public SaveDataV1 Current => _current;
+        public event Action<SaveDataV1> SaveDataChanged;
 
         private string SavePath => Path.Combine(Application.persistentDataPath, FileName);
 
@@ -96,6 +97,15 @@ namespace RavenDevOps.Fishing.Save
                 {
                     File.Delete(tmpPath);
                 }
+
+                try
+                {
+                    SaveDataChanged?.Invoke(_current);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"SaveManager: SaveDataChanged listener failed ({ex.Message}).");
+                }
             }
             catch (Exception ex)
             {
@@ -105,13 +115,112 @@ namespace RavenDevOps.Fishing.Save
 
         public void AddCopecs(int value)
         {
-            _current.copecs += Mathf.Max(0, value);
+            var clamped = Mathf.Max(0, value);
+            if (clamped == 0)
+            {
+                return;
+            }
+
+            _current.copecs += clamped;
             Save();
         }
 
         public void MarkTripCompleted()
         {
             _current.stats.totalTrips += 1;
+            Save();
+        }
+
+        public void SetTutorialSeen(bool tutorialSeen)
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            if (_current.tutorialFlags.tutorialSeen == tutorialSeen)
+            {
+                return;
+            }
+
+            _current.tutorialFlags.tutorialSeen = tutorialSeen;
+            Save();
+        }
+
+        public void ResetProfileStats()
+        {
+            _current.stats ??= new SaveStats();
+            _current.copecs = 0;
+            _current.stats.totalFishCaught = 0;
+            _current.stats.farthestDistanceTier = 0;
+            _current.stats.totalTrips = 0;
+            Save();
+        }
+
+        public void ClearFishInventory()
+        {
+            _current.fishInventory ??= new List<FishInventoryEntry>();
+            if (_current.fishInventory.Count == 0)
+            {
+                return;
+            }
+
+            _current.fishInventory.Clear();
+            Save();
+        }
+
+        public void EnsureStarterOwnership()
+        {
+            _current.ownedShips ??= new List<string>();
+            _current.ownedHooks ??= new List<string>();
+
+            var changed = false;
+            if (!_current.ownedShips.Contains("ship_lv1"))
+            {
+                _current.ownedShips.Add("ship_lv1");
+                changed = true;
+            }
+
+            if (!_current.ownedHooks.Contains("hook_lv1"))
+            {
+                _current.ownedHooks.Add("hook_lv1");
+                changed = true;
+            }
+
+            if (changed)
+            {
+                Save();
+            }
+        }
+
+        public void RecordCatch(string fishId, int distanceTier)
+        {
+            if (string.IsNullOrWhiteSpace(fishId))
+            {
+                return;
+            }
+
+            _current.fishInventory ??= new List<FishInventoryEntry>();
+            _current.stats ??= new SaveStats();
+            var clampedDistanceTier = Mathf.Max(1, distanceTier);
+
+            var existing = _current.fishInventory.Find(x =>
+                x != null &&
+                string.Equals(x.fishId, fishId, StringComparison.Ordinal) &&
+                x.distanceTier == clampedDistanceTier);
+
+            if (existing == null)
+            {
+                _current.fishInventory.Add(new FishInventoryEntry
+                {
+                    fishId = fishId,
+                    distanceTier = clampedDistanceTier,
+                    count = 1
+                });
+            }
+            else
+            {
+                existing.count += 1;
+            }
+
+            _current.stats.totalFishCaught += 1;
+            _current.stats.farthestDistanceTier = Mathf.Max(_current.stats.farthestDistanceTier, clampedDistanceTier);
             Save();
         }
 

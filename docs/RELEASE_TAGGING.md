@@ -16,6 +16,8 @@
    - `git tag -a v1.0.0 -m "Release v1.0.0"`
 5. Push tag:
    - `git push origin v1.0.0`
-6. Build Windows release (`Raven > Build > Build Windows x64` or CI batch build).
+6. Build Windows release using `Release` profile:
+   - CLI: `scripts/unity-cli.ps1 -Task build -BuildProfile Release -LogFile release_build.log`
+   - Or batch arg: `-buildProfile=Release`
 7. Upload build via guarded Steam release workflow (`.github/workflows/release-steampipe.yml`).
 8. Attach build metadata/checksums to release notes.
