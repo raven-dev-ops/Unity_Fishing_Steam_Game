@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "modId": "coastal_pack",
+  "modVersion": "1.0.0",
+  "displayName": "Coastal Pack",
+  "author": "Your Name",
+  "description": "Example data-only mod pack.",
+  "minGameVersion": "1.0.0",
+  "maxGameVersion": "2.0.0",
+  "dataCatalogs": [
+    "Data/catalog.json"
+  ],
+  "assetOverrides": [
+    "Sprites/fish_icon_coastal.png",
+    "Audio/splash_coastal.ogg"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "fishDefinitions": [
+    {
+      "id": "fish_coastal_snapper",
+      "minDistanceTier": 1,
+      "maxDistanceTier": 3,
+      "minDepth": 0.5,
+      "maxDepth": 9.0,
+      "rarityWeight": 2,
+      "baseValue": 28,
+      "minBiteDelaySeconds": 0.9,
+      "maxBiteDelaySeconds": 2.2,
+      "fightStamina": 6.0,
+      "pullIntensity": 1.2,
+      "escapeSeconds": 8.5,
+      "minCatchWeightKg": 0.8,
+      "maxCatchWeightKg": 3.4,
+      "iconPath": "Sprites/fish_icon_coastal.png"
+    }
+  ],
+  "shipDefinitions": [
+    {
+      "id": "ship_coastal_runner",
+      "price": 1200,
+      "maxDistanceTier": 4,
+      "moveSpeed": 7.0,
+      "iconPath": "Sprites/ship_icon_coastal.png"
+    }
+  ],
+  "hookDefinitions": [
+    {
+      "id": "hook_coastal_deep",
+      "price": 680,
+      "maxDepth": 14.0,
+      "iconPath": "Sprites/hook_icon_coastal.png"
+    }
+  ]
+}

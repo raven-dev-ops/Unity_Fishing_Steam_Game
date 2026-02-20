@@ -47,3 +47,7 @@ When safe mode is active, runtime skips mod discovery and uses base catalogs onl
   - deterministic override order
   - reject missing manifest
   - disabled/safe-mode baseline behavior
+
+## Authoring Templates
+- Packaging guide: `docs/MOD_PACKAGING_GUIDE.md`
+- Sample templates: `mods/templates/`

@@ -58,5 +58,5 @@
 1. `MOD-001` Mod manifest/schema spec + validator implementation. (implemented)
 2. `MOD-002` Runtime mod discovery and merge pipeline. (implemented)
 3. `MOD-003` Mod failure reporting UI + safe mode toggle.
-4. `MOD-004` Mod packaging guide and sample templates.
+4. `MOD-004` Mod packaging guide and sample templates. (implemented)
 5. `MOD-005` Workshop feasibility spike and publish/subscription flow.
