@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -21,15 +22,21 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _lineText;
         [SerializeField] private List<DialogueLine> _lines = new List<DialogueLine>();
         [SerializeField] private AudioManager _audioManager;
+        [SerializeField] private InputActionMapController _inputMapController;
 
         private int _index;
         private bool _isRunning;
+        private InputAction _uiSubmitAction;
+        private InputAction _uiCancelAction;
+        private InputAction _harborInteractAction;
+        private InputAction _harborPauseAction;
 
         public bool IsRunning => _isRunning;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             if (_root != null)
             {
                 _root.SetActive(false);
@@ -43,19 +50,15 @@ namespace RavenDevOps.Fishing.UI
                 return;
             }
 
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
+            RefreshActionsIfNeeded();
 
-            if (keyboard.escapeKey.wasPressedThisFrame)
+            if (WasCancelPressedThisFrame())
             {
                 Stop();
                 return;
             }
 
-            if (keyboard.enterKey.wasPressedThisFrame)
+            if (WasSubmitPressedThisFrame())
             {
                 Advance();
             }
@@ -116,6 +119,31 @@ namespace RavenDevOps.Fishing.UI
             {
                 _audioManager?.PlayVoice(line.voiceClip);
             }
+        }
+
+        private void RefreshActionsIfNeeded()
+        {
+            if (_inputMapController == null)
+            {
+                return;
+            }
+
+            _uiSubmitAction ??= _inputMapController.FindAction("UI/Submit");
+            _uiCancelAction ??= _inputMapController.FindAction("UI/Cancel");
+            _harborInteractAction ??= _inputMapController.FindAction("Harbor/Interact");
+            _harborPauseAction ??= _inputMapController.FindAction("Harbor/Pause");
+        }
+
+        private bool WasSubmitPressedThisFrame()
+        {
+            return (_uiSubmitAction != null && _uiSubmitAction.WasPressedThisFrame())
+                || (_harborInteractAction != null && _harborInteractAction.WasPressedThisFrame());
+        }
+
+        private bool WasCancelPressedThisFrame()
+        {
+            return (_uiCancelAction != null && _uiCancelAction.WasPressedThisFrame())
+                || (_harborPauseAction != null && _harborPauseAction.WasPressedThisFrame());
         }
     }
 }

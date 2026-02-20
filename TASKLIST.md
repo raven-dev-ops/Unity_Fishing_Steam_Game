@@ -1,6 +1,6 @@
 # TASKLIST
 
-Updated from open GitHub issues on 2026-02-20 after additional closures: #125, #147, #149.
+Updated from open GitHub issues on 2026-02-20 after additional closures: #112, #125, #147, #149.
 
 ## Completed This Session
 - [x] #113 REVIEW-003 - Eliminate avoidable GC allocations in FishSpawner roll path
@@ -14,6 +14,7 @@ Updated from open GitHub issues on 2026-02-20 after additional closures: #125, #
 - [x] #121 REVIEW-011 - Clarify distance-tier economy multiplier policy and add tests
 - [x] #122 REVIEW-012 - Bring audio pipeline to production readiness
 - [x] #124 REVIEW-014 - Add CI/CD workflows, code quality gates, and reproducible release pipeline
+- [x] #112 REVIEW-002 - Unify input architecture on Input System action maps
 - [x] #125 REVIEW-015 - Establish performance profiling baseline and regression budget
 - [x] #129 REVIEW-019 - Improve developer onboarding docs and contribution workflow
 - [x] #130 REVIEW-020 - Add LICENSE and third-party notices for compliance
@@ -24,16 +25,15 @@ Updated from open GitHub issues on 2026-02-20 after additional closures: #125, #
 - [x] #149 BACKLOG-017 - Build configuration separation for Dev, QA, and Release
 
 ## Next Focus
-- [ ] #112 REVIEW-002 - Unify input architecture on Input System action maps
 - [ ] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline
 - [ ] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic)
 - [ ] #111 REVIEW-001 - Steamworks initialization and runtime safety
 - [ ] #138 BACKLOG-006 - Catch log and inventory UI baseline
+- [ ] #137 BACKLOG-005 - Tension and line feedback system with readable fail states
 
 ## Open Issues
 
-### M1 - Vertical Slice (Core Fishing Loop) (7)
-- [ ] #112 REVIEW-002 - Unify input architecture on Input System action maps (P0-blocker)
+### M1 - Vertical Slice (Core Fishing Loop) (6)
 - [ ] #135 BACKLOG-003 - Fishing controller and camera polish with controller baseline (P0-blocker)
 - [ ] #136 BACKLOG-004 - Fish behavior model depth (bite windows, stamina, escape logic) (P0-blocker)
 - [ ] #137 BACKLOG-005 - Tension and line feedback system with readable fail states (P1-high)

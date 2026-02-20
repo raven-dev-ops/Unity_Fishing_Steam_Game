@@ -1,6 +1,7 @@
 using System;
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,9 +20,14 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _displayModeText;
         [SerializeField] private TMP_Text _resolutionText;
         [SerializeField] private TMP_Text _inputSensitivityText;
+        [SerializeField] private TMP_Text _fishingActionBindingText;
+        [SerializeField] private TMP_Text _harborInteractBindingText;
+        [SerializeField] private TMP_Text _menuCancelBindingText;
+        [SerializeField] private TMP_Text _returnHarborBindingText;
 
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private InputRebindingService _inputRebindingService;
 
         private Resolution[] _resolutions = Array.Empty<Resolution>();
         private int _resolutionIndex;
@@ -30,6 +36,7 @@ namespace RavenDevOps.Fishing.UI
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -102,6 +109,7 @@ namespace RavenDevOps.Fishing.UI
             {
                 RefreshDisplayModeText(Screen.fullScreenMode != FullScreenMode.Windowed);
                 RefreshResolutionText();
+                RefreshBindingTexts();
                 return;
             }
 
@@ -122,6 +130,7 @@ namespace RavenDevOps.Fishing.UI
             RefreshDisplayModeText(_settingsService.Fullscreen);
             RefreshResolutionText();
             RefreshInputSensitivityText(_settingsService.InputSensitivity);
+            RefreshBindingTexts();
         }
 
         private int ResolveCurrentResolutionIndex()
@@ -188,6 +197,72 @@ namespace RavenDevOps.Fishing.UI
             {
                 _inputSensitivityText.text = $"Input Sensitivity: {value:0.00}x";
             }
+        }
+
+        public void OnRebindFishingActionPressed()
+        {
+            StartRebind("Fishing/Action", _fishingActionBindingText, "Action");
+        }
+
+        public void OnRebindHarborInteractPressed()
+        {
+            StartRebind("Harbor/Interact", _harborInteractBindingText, "Interact");
+        }
+
+        public void OnRebindMenuCancelPressed()
+        {
+            StartRebind("UI/Cancel", _menuCancelBindingText, "Cancel");
+        }
+
+        public void OnRebindReturnHarborPressed()
+        {
+            StartRebind("UI/ReturnHarbor", _returnHarborBindingText, "Return Harbor");
+        }
+
+        public void OnResetRebindsPressed()
+        {
+            _inputRebindingService?.ResetAllOverrides();
+            RefreshBindingTexts();
+        }
+
+        private void StartRebind(string actionPath, TMP_Text bindingText, string label)
+        {
+            if (_inputRebindingService == null)
+            {
+                return;
+            }
+
+            if (bindingText != null)
+            {
+                bindingText.text = $"{label}: Listening...";
+            }
+
+            _inputRebindingService.StartRebindForAction(actionPath, _ => RefreshBindingTexts());
+        }
+
+        private void RefreshBindingTexts()
+        {
+            if (_inputRebindingService == null)
+            {
+                return;
+            }
+
+            SetBindingText(_fishingActionBindingText, "Action", _inputRebindingService.GetDisplayBindingForAction("Fishing/Action"));
+            SetBindingText(_harborInteractBindingText, "Interact", _inputRebindingService.GetDisplayBindingForAction("Harbor/Interact"));
+            SetBindingText(_menuCancelBindingText, "Cancel", _inputRebindingService.GetDisplayBindingForAction("UI/Cancel"));
+            SetBindingText(_returnHarborBindingText, "Return Harbor", _inputRebindingService.GetDisplayBindingForAction("UI/ReturnHarbor"));
+        }
+
+        private static void SetBindingText(TMP_Text text, string label, string binding)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.text = string.IsNullOrWhiteSpace(binding)
+                ? $"{label}: Unbound"
+                : $"{label}: {binding}";
         }
 
         private static void SetSliderValue(Slider slider, float value)

@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using RavenDevOps.Fishing.UI;
 
 namespace RavenDevOps.Fishing.Harbor
 {
@@ -12,11 +13,15 @@ namespace RavenDevOps.Fishing.Harbor
         [SerializeField] private Transform _worldAura;
         [SerializeField] private List<WorldInteractable> _interactables = new List<WorldInteractable>();
         [SerializeField] private MermaidTutorialController _tutorial;
+        [SerializeField] private InputActionMapController _inputMapController;
 
         private WorldInteractable _active;
+        private InputAction _interactAction;
 
         private void Awake()
         {
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+
             if (_interactables.Count == 0)
             {
                 _interactables.AddRange(FindObjectsOfType<WorldInteractable>(true));
@@ -32,14 +37,9 @@ namespace RavenDevOps.Fishing.Harbor
             }
 
             RefreshActiveInteractable();
+            RefreshInteractActionIfNeeded();
 
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
-
-            if (keyboard.enterKey.wasPressedThisFrame && _active != null)
+            if (_active != null && _interactAction != null && _interactAction.WasPressedThisFrame())
             {
                 _active.Interact();
             }
@@ -99,6 +99,18 @@ namespace RavenDevOps.Fishing.Harbor
                     _worldAura.position = _active.AuraAnchor.position;
                 }
             }
+        }
+
+        private void RefreshInteractActionIfNeeded()
+        {
+            if (_interactAction != null)
+            {
+                return;
+            }
+
+            _interactAction = _inputMapController != null
+                ? _inputMapController.FindAction("Harbor/Interact")
+                : null;
         }
     }
 }

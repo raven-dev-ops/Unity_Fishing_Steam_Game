@@ -11,11 +11,13 @@ Persisted keys:
 - Input sensitivity
 - Fullscreen/window mode
 - Resolution (width/height/refresh)
+- Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
 
 ## Runtime Integration
 - Service: `Assets/Scripts/Core/UserSettingsService.cs`
 - UI controller: `Assets/Scripts/UI/SettingsMenuController.cs`
 - Audio runtime: `Assets/Scripts/Audio/AudioManager.cs`
+- Input rebind runtime: `Assets/Scripts/Input/InputRebindingService.cs`
 - Input sensitivity consumers:
   - `Assets/Scripts/Harbor/HarborPlayerController.cs`
   - `Assets/Scripts/Fishing/ShipMovementController.cs`

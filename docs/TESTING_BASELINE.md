@@ -40,6 +40,7 @@ Unity.exe -batchmode -nographics -quit `
   - Content validator rule checks
   - Economy sell-summary multiplier behavior
   - Save fixture deserialization
+  - Input context map activation and rebinding override persistence
 - PlayMode:
   - Game flow pause/resume transitions
   - Pause-to-harbor transition behavior

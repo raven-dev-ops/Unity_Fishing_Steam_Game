@@ -1,5 +1,6 @@
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Data;
+using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private float _speedMultiplier = 1f;
 
         public float MaxDepth
@@ -23,6 +25,7 @@ namespace RavenDevOps.Fishing.Fishing
         }
 
         public float CurrentDepth => Mathf.Abs(transform.position.y);
+        private InputAction _moveHookAction;
 
         private void Awake()
         {
@@ -30,6 +33,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RefreshHookStats();
         }
 
@@ -69,15 +73,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
+            RefreshActionsIfNeeded();
+            if (_moveHookAction == null)
             {
                 return;
             }
 
-            var axis = 0f;
-            if (keyboard.downArrowKey.isPressed) axis -= 1f;
-            if (keyboard.upArrowKey.isPressed) axis += 1f;
+            var axis = Mathf.Clamp(_moveHookAction.ReadValue<float>(), -1f, 1f);
 
             var p = transform.position;
             p.y += axis * _verticalSpeed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
@@ -88,6 +90,18 @@ namespace RavenDevOps.Fishing.Fishing
         private float ResolveInputSensitivity()
         {
             return _settingsService != null ? _settingsService.InputSensitivity : 1f;
+        }
+
+        private void RefreshActionsIfNeeded()
+        {
+            if (_moveHookAction != null)
+            {
+                return;
+            }
+
+            _moveHookAction = _inputMapController != null
+                ? _inputMapController.FindAction("Fishing/MoveHook")
+                : null;
         }
     }
 }

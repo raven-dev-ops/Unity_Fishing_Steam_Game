@@ -11,6 +11,7 @@ namespace RavenDevOps.Fishing.Input
         [SerializeField] private string _fishingMapName = "Fishing";
 
         private InputContextRouter _contextRouter;
+        public InputActionAsset InputActions => _inputActions;
 
         public void Initialize(InputContextRouter contextRouter)
         {
@@ -58,6 +59,13 @@ namespace RavenDevOps.Fishing.Input
         {
             _inputActions = inputActions;
             ApplyContext(_contextRouter != null ? _contextRouter.ActiveContext : InputContext.None);
+        }
+
+        public InputAction FindAction(string actionPath)
+        {
+            return _inputActions != null
+                ? _inputActions.FindAction(actionPath, throwIfNotFound: false)
+                : null;
         }
 
         public void ApplyContext(InputContext context)

@@ -1,4 +1,6 @@
-﻿using System;
+using System;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,15 +9,22 @@ namespace RavenDevOps.Fishing.Fishing
     public sealed class FishingActionStateMachine : MonoBehaviour
     {
         [SerializeField] private FishingActionState _state = FishingActionState.Cast;
+        [SerializeField] private InputActionMapController _inputMapController;
+
+        private InputAction _actionInput;
 
         public FishingActionState State => _state;
-
         public event Action<FishingActionState, FishingActionState> StateChanged;
+
+        private void Awake()
+        {
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+        }
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            RefreshActionsIfNeeded();
+            if (_actionInput != null && _actionInput.WasPressedThisFrame())
             {
                 AdvanceByAction();
             }
@@ -66,6 +75,18 @@ namespace RavenDevOps.Fishing.Fishing
             var previous = _state;
             _state = next;
             StateChanged?.Invoke(previous, next);
+        }
+
+        private void RefreshActionsIfNeeded()
+        {
+            if (_actionInput != null)
+            {
+                return;
+            }
+
+            _actionInput = _inputMapController != null
+                ? _inputMapController.FindAction("Fishing/Action")
+                : null;
         }
     }
 }

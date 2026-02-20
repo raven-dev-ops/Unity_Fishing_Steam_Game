@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -15,10 +16,15 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameObject _profilePanel;
         [SerializeField] private GameObject _settingsPanel;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
+        [SerializeField] private InputActionMapController _inputMapController;
+
+        private InputAction _submitAction;
+        private InputAction _cancelAction;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -30,18 +36,14 @@ namespace RavenDevOps.Fishing.UI
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return;
-            }
+            RefreshActionsIfNeeded();
 
-            if (keyboard.enterKey.wasPressedThisFrame)
+            if (_submitAction != null && _submitAction.WasPressedThisFrame())
             {
                 SubmitCurrentSelection();
             }
 
-            if (keyboard.escapeKey.wasPressedThisFrame)
+            if (_cancelAction != null && _cancelAction.WasPressedThisFrame())
             {
                 SetPanel(_profilePanel, false);
                 SetPanel(_settingsPanel, false);
@@ -114,6 +116,23 @@ namespace RavenDevOps.Fishing.UI
             }
 
             EventSystem.current.SetSelectedGameObject(target);
+        }
+
+        private void RefreshActionsIfNeeded()
+        {
+            if (_submitAction == null)
+            {
+                _submitAction = _inputMapController != null
+                    ? _inputMapController.FindAction("UI/Submit")
+                    : null;
+            }
+
+            if (_cancelAction == null)
+            {
+                _cancelAction = _inputMapController != null
+                    ? _inputMapController.FindAction("UI/Cancel")
+                    : null;
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.UI;
 using UnityEngine;
@@ -10,14 +11,17 @@ namespace RavenDevOps.Fishing.Harbor
     {
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private DialogueBubbleController _dialogue;
+        [SerializeField] private InputActionMapController _inputMapController;
 
         [SerializeField] private bool _isBlockingInteractions;
+        private InputAction _cancelAction;
 
         public bool IsBlockingInteractions => _isBlockingInteractions;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
         }
 
         private void Start()
@@ -44,8 +48,8 @@ namespace RavenDevOps.Fishing.Harbor
                 return;
             }
 
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            RefreshActionsIfNeeded();
+            if (_cancelAction != null && _cancelAction.WasPressedThisFrame())
             {
                 CompleteTutorial();
                 return;
@@ -63,6 +67,18 @@ namespace RavenDevOps.Fishing.Harbor
 
             _isBlockingInteractions = false;
             _dialogue?.Stop();
+        }
+
+        private void RefreshActionsIfNeeded()
+        {
+            if (_cancelAction != null)
+            {
+                return;
+            }
+
+            _cancelAction = _inputMapController != null
+                ? _inputMapController.FindAction("Harbor/Pause")
+                : null;
         }
     }
 }

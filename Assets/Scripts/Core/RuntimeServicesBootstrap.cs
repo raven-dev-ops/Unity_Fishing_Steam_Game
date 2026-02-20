@@ -28,6 +28,7 @@ namespace RavenDevOps.Fishing.Core
             var sceneLoader = servicesGo.AddComponent<SceneLoader>();
             var inputRouter = servicesGo.AddComponent<InputContextRouter>();
             var inputMapController = servicesGo.AddComponent<InputActionMapController>();
+            var inputRebindingService = servicesGo.AddComponent<InputRebindingService>();
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
@@ -42,6 +43,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(sceneLoader);
             RuntimeServiceRegistry.Register(inputRouter);
             RuntimeServiceRegistry.Register(inputMapController);
+            RuntimeServiceRegistry.Register(inputRebindingService);
             RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(audioManager);
@@ -60,6 +62,7 @@ namespace RavenDevOps.Fishing.Core
 
             inputMapController.SetInputActions(inputActions);
             inputMapController.Initialize(inputRouter);
+            inputRebindingService.SetInputActions(inputActions);
 
             var fadeCanvas = CreateGlobalFadeCanvas();
             sceneLoader.SetFadeCanvas(fadeCanvas);
