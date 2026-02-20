@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Data;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Audio
@@ -7,6 +8,8 @@ namespace RavenDevOps.Fishing.Audio
     public sealed class SfxTriggerRouter : MonoBehaviour
     {
         [SerializeField] private AudioManager _audioManager;
+        [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private bool _usePhaseTwoAudioOverrides = true;
 
         [SerializeField] private AudioClip _uiNavigate;
         [SerializeField] private AudioClip _uiSelect;
@@ -24,6 +27,7 @@ namespace RavenDevOps.Fishing.Audio
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
         }
 
         public void Play(SfxEvent eventType)
@@ -53,27 +57,72 @@ namespace RavenDevOps.Fishing.Audio
             switch (eventType)
             {
                 case SfxEvent.UiNavigate:
-                    return _uiNavigate;
+                    return ResolvePhaseTwoAudio(eventType, _uiNavigate);
                 case SfxEvent.UiSelect:
-                    return _uiSelect;
+                    return ResolvePhaseTwoAudio(eventType, _uiSelect);
                 case SfxEvent.UiCancel:
-                    return _uiCancel;
+                    return ResolvePhaseTwoAudio(eventType, _uiCancel);
                 case SfxEvent.Cast:
-                    return _cast;
+                    return ResolvePhaseTwoAudio(eventType, _cast);
                 case SfxEvent.Hooked:
-                    return _hooked;
+                    return ResolvePhaseTwoAudio(eventType, _hooked);
                 case SfxEvent.Catch:
-                    return _catch;
+                    return ResolvePhaseTwoAudio(eventType, _catch);
                 case SfxEvent.Sell:
-                    return _sell;
+                    return ResolvePhaseTwoAudio(eventType, _sell);
                 case SfxEvent.Purchase:
-                    return _purchase;
+                    return ResolvePhaseTwoAudio(eventType, _purchase);
                 case SfxEvent.Depart:
-                    return _depart;
+                    return ResolvePhaseTwoAudio(eventType, _depart);
                 case SfxEvent.Return:
-                    return _return;
+                    return ResolvePhaseTwoAudio(eventType, _return);
                 default:
                     return null;
+            }
+        }
+
+        private AudioClip ResolvePhaseTwoAudio(SfxEvent eventType, AudioClip fallback)
+        {
+            if (!_usePhaseTwoAudioOverrides || _catalogService == null)
+            {
+                return fallback;
+            }
+
+            var key = ResolvePhaseTwoKey(eventType);
+            if (!string.IsNullOrWhiteSpace(key) && _catalogService.TryGetPhaseTwoAudioClip(key, out var overrideClip))
+            {
+                return overrideClip;
+            }
+
+            return fallback;
+        }
+
+        private static string ResolvePhaseTwoKey(SfxEvent eventType)
+        {
+            switch (eventType)
+            {
+                case SfxEvent.UiNavigate:
+                    return "sfx_ui_navigate";
+                case SfxEvent.UiSelect:
+                    return "sfx_ui_select";
+                case SfxEvent.UiCancel:
+                    return "sfx_ui_cancel";
+                case SfxEvent.Cast:
+                    return "sfx_cast";
+                case SfxEvent.Hooked:
+                    return "sfx_hooked";
+                case SfxEvent.Catch:
+                    return "sfx_catch";
+                case SfxEvent.Sell:
+                    return "sfx_sell";
+                case SfxEvent.Purchase:
+                    return "sfx_purchase";
+                case SfxEvent.Depart:
+                    return "sfx_depart";
+                case SfxEvent.Return:
+                    return "sfx_return";
+                default:
+                    return string.Empty;
             }
         }
     }

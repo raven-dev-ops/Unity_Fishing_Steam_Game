@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Data;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
@@ -16,9 +17,13 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector3 _playAreaCenter = new Vector3(0f, -4.5f, 0f);
         [SerializeField] private Vector3 _playAreaSize = new Vector3(20f, 9f, 1f);
         [SerializeField] private float _boundaryThickness = 0.5f;
+        [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private bool _usePhaseTwoEnvironmentOverride = true;
+        [SerializeField] private string _phaseTwoSkyboxKey = "fishing_skybox";
 
         private bool _visualBaselineApplied;
         private bool _boundariesReady;
+        private bool _phaseTwoEnvironmentAttempted;
 
         public void Configure(Transform ship, Transform hook)
         {
@@ -29,18 +34,21 @@ namespace RavenDevOps.Fishing.Fishing
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
         }
 
         private void Start()
         {
             EnsureReferences();
             EnsureVisualBaseline();
+            TryApplyPhaseTwoEnvironmentOverride();
             EnsureBoundaryColliders();
         }
 
         private void LateUpdate()
         {
             EnsureReferences();
+            TryApplyPhaseTwoEnvironmentOverride();
             ClampTransformsToPlayArea();
         }
 
@@ -117,6 +125,28 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _visualBaselineApplied = true;
+        }
+
+        private void TryApplyPhaseTwoEnvironmentOverride()
+        {
+            if (_phaseTwoEnvironmentAttempted || !_usePhaseTwoEnvironmentOverride || _catalogService == null || string.IsNullOrWhiteSpace(_phaseTwoSkyboxKey))
+            {
+                return;
+            }
+
+            if (_catalogService.TryGetPhaseTwoEnvironmentMaterial(_phaseTwoSkyboxKey, out var skyboxMaterial))
+            {
+                RenderSettings.skybox = skyboxMaterial;
+                _phaseTwoEnvironmentAttempted = true;
+                Debug.Log($"FishingEnvironmentSliceController: applied phase-two skybox override '{_phaseTwoSkyboxKey}'.");
+                return;
+            }
+
+            if (_catalogService.PhaseTwoEnvironmentLoadCompleted)
+            {
+                _phaseTwoEnvironmentAttempted = true;
+                Debug.Log($"FishingEnvironmentSliceController: phase-two skybox key '{_phaseTwoSkyboxKey}' not found. Keeping fallback skybox.");
+            }
         }
 
         private void EnsureBoundaryColliders()
