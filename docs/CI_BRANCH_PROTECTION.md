@@ -1,19 +1,51 @@
 # CI and Branch Protection Baseline
 
-## Required Workflows
-These checks should be required on `main`:
+## Enforcement Date
+- Branch protection enforced on `main`: **2026-02-20 (UTC)**.
+
+## Required Checks (Enforced)
 - `Build Windows x64`
 - `Unity editmode`
 - `Unity playmode`
 - `Validate content catalog`
 - `Gitleaks`
 
-## Branch Protection Settings
-1. Require a pull request before merging.
-2. Require approvals.
-3. Require review from Code Owners.
-4. Require status checks to pass.
-5. Disable force pushes and deletion.
+## Enforced Protection Policy
+Configured via:
+- `PUT /repos/raven-dev-ops/Unity_Fishing_Steam_Game/branches/main/protection`
+
+Current effective policy (`GET /branches/main/protection`):
+1. Require pull request before merge (direct pushes blocked).
+2. Require status checks and up-to-date branch (`strict=true`).
+3. Require at least 1 approving review.
+4. Require CODEOWNERS review.
+5. Dismiss stale approvals on new commits.
+6. Enforce admins.
+7. Require linear history.
+8. Require conversation resolution.
+9. Disallow force push and branch deletion.
+
+## Verification Evidence
+### API evidence
+`gh api repos/raven-dev-ops/Unity_Fishing_Steam_Game/branches/main/protection` returned:
+- `required_status_checks.strict: true`
+- `required_status_checks.contexts: [Build Windows x64, Unity editmode, Unity playmode, Validate content catalog, Gitleaks]`
+- `required_pull_request_reviews.required_approving_review_count: 1`
+- `required_pull_request_reviews.require_code_owner_reviews: true`
+- `enforce_admins.enabled: true`
+- `allow_force_pushes.enabled: false`
+- `allow_deletions.enabled: false`
+- `required_linear_history.enabled: true`
+- `required_conversation_resolution.enabled: true`
+
+### Merge/push blocking smoke
+Command:
+- `git push origin chore/branch-protection-smoke:main`
+
+Observed server response:
+- `GH006: Protected branch update failed for refs/heads/main`
+- `Changes must be made through a pull request`
+- `5 of 5 required status checks are expected`
 
 ## Workflow Inventory
 - `.github/workflows/ci-build.yml`
@@ -29,5 +61,5 @@ These checks should be required on `main`:
   - manual `workflow_dispatch`
 - In untrusted contexts, missing `UNITY_LICENSE` yields warning + skip for Unity-dependent steps.
 - Content validator workflow also runs asset import audit in warning-first mode and uploads `Artifacts/AssetImportAudit/*` report artifacts.
-- Perf budget workflow is path-gated (`PerfLogs/**`) and manual-dispatch capable for supplied performance logs.
+- Perf budget workflow auto-ingests captured logs and publishes normalized summary artifacts.
 - Release workflow is environment-gated via `steam-release`.
