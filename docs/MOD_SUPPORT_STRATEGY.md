@@ -36,6 +36,11 @@
 4. Build merged runtime catalog with deterministic override order.
 5. Log accepted/rejected mods in support-friendly report.
 
+### Current Baseline (Implemented)
+- Manifest schema model: `Assets/Scripts/Tools/ModManifestV1.cs`
+- Validator: `Assets/Scripts/Tools/ModManifestValidator.cs`
+- Schema reference: `docs/MOD_MANIFEST_SCHEMA.md`
+
 ## Distribution Strategy
 - Phase 1: manual `.zip`/folder install with clear manifest format.
 - Phase 2: optional Steam Workshop publishing/subscribe flow once validation and moderation workflow are mature.

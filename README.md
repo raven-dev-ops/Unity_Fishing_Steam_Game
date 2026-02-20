@@ -71,6 +71,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Fishing tutorial flow: `docs/FISHING_TUTORIAL.md`
 - Input baseline: `docs/INPUT_MAP.md`
 - Mod support strategy: `docs/MOD_SUPPORT_STRATEGY.md`
+- Mod manifest schema: `docs/MOD_MANIFEST_SCHEMA.md`
 - Objectives system: `docs/OBJECTIVES_SYSTEM.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
 - Photo mode and capture: `docs/PHOTO_MODE.md`
