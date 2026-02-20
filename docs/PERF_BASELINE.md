@@ -12,10 +12,9 @@ Baseline covers worst-case MVP loop checks in:
 3. Ensure a `PerfSanityRunner` instance is active in the test scene.
 4. Capture `PERF_SANITY` lines from player/editor log.
 5. Run parser gate:
-   - `scripts/perf-budget-check.ps1 -LogFile <path-to-log>`
-   - Optional summary artifacts:
-     - `-SummaryJsonPath Artifacts/Perf/perf_budget_summary.json`
-     - `-SummaryTextPath Artifacts/Perf/perf_budget_summary.txt`
+   - Single log: `scripts/perf-budget-check.ps1 -LogFile <path-to-log>`
+   - Captured-log ingestion: `scripts/perf-ingest-captured.ps1`
+   - Optional ingestion override: `-ExplicitLogFile <file-or-directory>`
 
 `PerfSanityRunner` emits structured lines in this format:
 `PERF_SANITY scene=<name> frames=<n> avg_fps=<v> min_fps=<v> max_fps=<v> avg_frame_ms=<v> p95_frame_ms=<v> gc_delta_kb=<v>`
@@ -42,7 +41,14 @@ Record one row per scenario and keep the latest approved run:
 - Workflow: `.github/workflows/ci-perf-budget.yml`
 - Trigger paths: `PerfLogs/**` (plus workflow/script/doc changes) and manual dispatch.
 - Manual dispatch input:
-  - `log_file` (default `PerfLogs/perf_sanity.log`)
+  - `explicit_log_file` (optional file or directory override)
 - Behavior:
-  - If log exists, parser runs and fails job on budget violations.
-  - If log is missing, workflow emits warning and exits without failing.
+  - Workflow auto-discovers captured perf logs from:
+    - `PerfLogs/**` with `perf*.log` / `*sanity*.log`
+    - `Artifacts/Perf/Captured/**` with `perf*.log` / `*sanity*.log`
+  - Each discovered log is parsed with `scripts/perf-budget-check.ps1`.
+  - Workflow publishes normalized summary artifacts:
+    - `Artifacts/Perf/perf_ingestion_summary.json`
+    - `Artifacts/Perf/perf_ingestion_summary.md`
+    - `Artifacts/Perf/Ingested/**` (per-log parser outputs)
+  - If no matching logs are found, workflow is marked skipped (warning + summary artifact).

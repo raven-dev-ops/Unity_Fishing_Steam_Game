@@ -9,6 +9,7 @@
 - Runtime FPS sampling: `Assets/Scripts/Performance/PerfSanityRunner.cs`.
 - Structured sample logs (`PERF_SANITY`) every configured frame window.
 - Optional regression parser: `scripts/perf-budget-check.ps1`.
+- Captured-log ingestion wrapper: `scripts/perf-ingest-captured.ps1`.
 - Baseline and budgets: `docs/PERF_BASELINE.md`.
 
 ## Metrics
@@ -21,8 +22,12 @@
 Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SANITY_BUDGET_FAIL` lines.
 
 ## CI Integration Path
-1. Save the captured perf log under `PerfLogs/perf_sanity.log` (or another path provided to workflow dispatch).
+1. Save captured perf logs to one of the standard locations:
+   - `PerfLogs/perf_sanity.log`
+   - `PerfLogs/**/perf*.log`
+   - `Artifacts/Perf/Captured/**/perf*.log`
 2. Trigger `.github/workflows/ci-perf-budget.yml` (automatically via `PerfLogs/**` change or manual dispatch).
 3. Review uploaded artifacts:
-   - `Artifacts/Perf/perf_budget_summary.json`
-   - `Artifacts/Perf/perf_budget_summary.txt`
+   - `Artifacts/Perf/perf_ingestion_summary.json`
+   - `Artifacts/Perf/perf_ingestion_summary.md`
+   - `Artifacts/Perf/Ingested/**`

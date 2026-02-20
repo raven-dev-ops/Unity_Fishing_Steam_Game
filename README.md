@@ -27,7 +27,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Batch asset import audit: `RavenDevOps.Fishing.EditorTools.AssetImportComplianceRunner.ValidateAssetImportsBatchMode`
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
-- Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (path-gated on `PerfLogs/**` or manual dispatch with log path input).
+- Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
 - Unity workflows enforce `UNITY_LICENSE` in trusted contexts (protected refs or manual dispatch), and warn/skip in untrusted contexts.
 
 ## Project Structure

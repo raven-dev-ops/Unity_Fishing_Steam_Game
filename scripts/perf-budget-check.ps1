@@ -5,7 +5,8 @@ param(
     [double]$MaxGcDeltaKb = 64.0,
     [int]$MinSamples = 1,
     [string]$SummaryJsonPath = "",
-    [string]$SummaryTextPath = ""
+    [string]$SummaryTextPath = "",
+    [switch]$NoExit
 )
 
 $ErrorActionPreference = "Stop"
@@ -99,11 +100,11 @@ if ($samples.Count -lt $MinSamples) {
     throw "Perf budget check failed: expected at least $MinSamples PERF_SANITY samples, found $($samples.Count)."
 }
 
-$failures = $samples | Where-Object {
+$failures = @($samples | Where-Object {
     $_.AverageFps -lt $MinAverageFps -or
     $_.P95FrameMs -gt $MaxP95FrameMs -or
     $_.GcDeltaKb -gt $MaxGcDeltaKb
-}
+})
 
 $summary.failure_count = $failures.Count
 if ($failures.Count -gt 0) {
@@ -127,6 +128,10 @@ if ($failures.Count -gt 0) {
     $failures | ForEach-Object {
         Write-Host ("- Scene={0} avg_fps={1} p95_frame_ms={2} gc_delta_kb={3}" -f $_.Scene, $_.AverageFps, $_.P95FrameMs, $_.GcDeltaKb)
     }
+    if ($NoExit) {
+        return 1
+    }
+
     exit 1
 }
 
@@ -136,4 +141,8 @@ Write-SummaryArtifacts -Data $summary
 
 Write-Host "Perf budget check: PASSED"
 Write-Host "Samples parsed: $($samples.Count)"
+if ($NoExit) {
+    return 0
+}
+
 exit 0
