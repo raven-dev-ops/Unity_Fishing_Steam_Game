@@ -18,6 +18,7 @@ Untrusted contexts without `UNITY_LICENSE` report warnings and skip Unity test e
 
 Headless scene screenshots:
 - Workflow: `.github/workflows/ci-scene-capture.yml`
+- Trigger: manual `workflow_dispatch` only
 - Uses PlayMode test `Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs`
 - Enables screenshot test with env var `RAVEN_SCENE_CAPTURE_ENABLED=1`
 - Uploads artifacts:

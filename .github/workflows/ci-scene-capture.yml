@@ -2,13 +2,6 @@ name: CI Headless Scene Capture
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/ci-scene-capture.yml"
-      - "Assets/Scenes/**"
-      - "Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs"
 
 permissions:
   contents: read
