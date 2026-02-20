@@ -21,3 +21,12 @@
 - Texture format: PNG.
 - Source files: keep PSD/ASE in source archive.
 - Ensure transparent backgrounds and tight bounds.
+
+## Import Baseline
+- Follow import policy in `docs/ASSET_IMPORT_STANDARDS.md`.
+- UI sprites/icons:
+  - Mipmaps disabled.
+  - Max size constrained to required display resolution.
+- Environment textures:
+  - Mipmaps enabled.
+  - Read/Write disabled unless runtime processing explicitly needs it.

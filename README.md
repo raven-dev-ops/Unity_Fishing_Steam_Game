@@ -50,7 +50,9 @@ Keyboard-first single-player fishing loop for Steam.
   - Delete local save file at `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/save_v1.json` and rerun smoke flow.
 
 ## Documentation Index
+- Addressables pilot: `docs/ADDRESSABLES_PILOT.md`
 - Architecture: `docs/ARCHITECTURE.md`
+- Asset import standards: `docs/ASSET_IMPORT_STANDARDS.md`
 - Assembly boundaries: `docs/ASSEMBLY_BOUNDARIES.md`
 - Contribution workflow: `CONTRIBUTING.md`
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
@@ -65,8 +67,10 @@ Keyboard-first single-player fishing loop for Steam.
 - Fishing conditions: `docs/FISHING_CONDITIONS.md`
 - Fishing tutorial flow: `docs/FISHING_TUTORIAL.md`
 - Input baseline: `docs/INPUT_MAP.md`
+- Mod support strategy: `docs/MOD_SUPPORT_STRATEGY.md`
 - Objectives system: `docs/OBJECTIVES_SYSTEM.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
+- Photo mode and capture: `docs/PHOTO_MODE.md`
 - Progression system baseline: `docs/PROGRESSION_SYSTEM.md`
 - Settings system: `docs/SETTINGS_SYSTEM.md`
 - Steam achievements/stats: `docs/STEAM_ACHIEVEMENTS_STATS.md`

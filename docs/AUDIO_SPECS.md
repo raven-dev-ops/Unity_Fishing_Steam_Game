@@ -40,3 +40,10 @@
   - line snap fail
   - fish escaped fail
   - missed hook fail
+
+## Import Baseline
+- Follow `docs/ASSET_IMPORT_STANDARDS.md` for clip import/load defaults.
+- Category defaults:
+  - Music -> streaming Vorbis.
+  - SFX -> decompress-on-load for short clips, compressed-in-memory for longer clips.
+  - VO -> compressed-in-memory Vorbis with subtitle timing validation.

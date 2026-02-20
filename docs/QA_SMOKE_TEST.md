@@ -34,6 +34,8 @@ End-to-end regression checklist for the MVP loop.
 21. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
 22. Steam run (if available): verify Rich Presence state updates + disable toggle behavior.
 23. Cloud run (if available): verify save continuity across two machines.
+24. Spot-check new texture/audio imports against `docs/ASSET_IMPORT_STANDARDS.md`.
+25. Enter photo mode (`F9`), capture screenshot (`F12`), verify output folder and HUD restore.
 
 ## Pass Criteria
 - No blocker regressions in core gameplay loop.

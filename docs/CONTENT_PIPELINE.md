@@ -4,6 +4,7 @@
 - All fish/ship/hook content is data-driven via ScriptableObjects.
 - Use stable string IDs (never display names) for save compatibility.
 - Content drops should avoid code changes whenever possible.
+- Follow import optimization baseline in `docs/ASSET_IMPORT_STANDARDS.md`.
 
 ## Primary Assets
 - Config root: `GameConfigSO`
@@ -21,8 +22,9 @@
 ## Validation Gate
 1. Add new definitions to `GameConfigSO`.
 2. Run `Raven > Validate Content Catalog`.
-3. Fix any duplicate ID, missing icon, or invalid range errors.
-4. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
+3. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
+4. Fix any duplicate ID, missing icon, or invalid range errors.
+5. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
 
 ## Headless Validation (CI)
 Run catalog validation in Unity batch mode:
@@ -44,6 +46,10 @@ Project wrapper (recommended):
 - Any validator `ERROR` fails the job and blocks merge.
 - `WARN` output is allowed for merge, but should be triaged.
 - Manual menu validation and batch validation use the same validator code path.
+
+## Post-1.0 Addressables Pilot
+- Reference: `docs/ADDRESSABLES_PILOT.md`
+- Pilot loader artifact: `Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs`
 
 ## Add Fish (No Code) Quick Checklist
 1. Create `FishDefinitionSO` and set stable `id`.

@@ -35,6 +35,7 @@ namespace RavenDevOps.Fishing.Core
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var objectivesService = servicesGo.AddComponent<ObjectivesService>();
             var uiAccessibilityService = servicesGo.AddComponent<GlobalUiAccessibilityService>();
+            var photoModeService = servicesGo.AddComponent<PhotoModeRuntimeService>();
             var audioManager = servicesGo.AddComponent<AudioManager>();
             var crashDiagnostics = servicesGo.AddComponent<CrashDiagnosticsService>();
             var steamBootstrap = servicesGo.AddComponent<SteamBootstrap>();
@@ -57,6 +58,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(objectivesService);
             RuntimeServiceRegistry.Register(uiAccessibilityService);
+            RuntimeServiceRegistry.Register(photoModeService);
             RuntimeServiceRegistry.Register(audioManager);
             RuntimeServiceRegistry.Register(crashDiagnostics);
             RuntimeServiceRegistry.Register(steamBootstrap);
