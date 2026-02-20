@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Tools;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Data
@@ -7,10 +10,16 @@ namespace RavenDevOps.Fishing.Data
     public sealed class CatalogService : MonoBehaviour
     {
         [SerializeField] private GameConfigSO _gameConfig;
+        [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
+        [SerializeField] private ModRuntimeCatalogService _modCatalogService;
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, ShipDefinitionSO> _shipById = new Dictionary<string, ShipDefinitionSO>();
         private readonly Dictionary<string, HookDefinitionSO> _hookById = new Dictionary<string, HookDefinitionSO>();
+        private readonly Dictionary<string, FishDefinitionSO> _phaseOneFishById = new Dictionary<string, FishDefinitionSO>();
+        private readonly List<UnityEngine.Object> _generatedRuntimeObjects = new List<UnityEngine.Object>();
+        private bool _phaseOneFishLoadRequested;
+        private bool _phaseOneFishLoadCompleted;
 
         public IReadOnlyDictionary<string, FishDefinitionSO> FishById => _fishById;
         public IReadOnlyDictionary<string, ShipDefinitionSO> ShipById => _shipById;
@@ -19,16 +28,36 @@ namespace RavenDevOps.Fishing.Data
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);
+            RuntimeServiceRegistry.Resolve(ref _addressablesPilotLoader, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _modCatalogService, this, warnIfMissing: false);
+            SubscribeToModCatalog();
+            RequestPhaseOneFishLoad();
             Rebuild();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeFromModCatalog();
+            CleanupGeneratedRuntimeObjects();
             RuntimeServiceRegistry.Unregister(this);
+        }
+
+        public void SetModCatalogService(ModRuntimeCatalogService modCatalogService)
+        {
+            if (_modCatalogService == modCatalogService)
+            {
+                return;
+            }
+
+            UnsubscribeFromModCatalog();
+            _modCatalogService = modCatalogService;
+            SubscribeToModCatalog();
+            Rebuild();
         }
 
         public void Rebuild()
         {
+            CleanupGeneratedRuntimeObjects();
             _fishById.Clear();
             _shipById.Clear();
             _hookById.Clear();
@@ -42,6 +71,8 @@ namespace RavenDevOps.Fishing.Data
             BuildFishCatalog();
             BuildShipCatalog();
             BuildHookCatalog();
+            ApplyPhaseOneFishCatalog();
+            ApplyModCatalogOverrides();
         }
 
         public bool TryGetFish(string id, out FishDefinitionSO fish)
@@ -81,6 +112,53 @@ namespace RavenDevOps.Fishing.Data
                 }
 
                 _fishById.Add(fish.id, fish);
+            }
+        }
+
+        private void RequestPhaseOneFishLoad()
+        {
+            if (_addressablesPilotLoader == null || _phaseOneFishLoadRequested)
+            {
+                return;
+            }
+
+            _phaseOneFishLoadRequested = true;
+            _addressablesPilotLoader.LoadFishDefinitionsAsync(HandlePhaseOneFishLoaded);
+        }
+
+        private void HandlePhaseOneFishLoaded(List<FishDefinitionSO> fishDefinitions)
+        {
+            _phaseOneFishById.Clear();
+            if (fishDefinitions != null)
+            {
+                for (var i = 0; i < fishDefinitions.Count; i++)
+                {
+                    var fish = fishDefinitions[i];
+                    if (fish == null || string.IsNullOrWhiteSpace(fish.id))
+                    {
+                        continue;
+                    }
+
+                    _phaseOneFishById[fish.id] = fish;
+                }
+            }
+
+            _phaseOneFishLoadCompleted = true;
+            Debug.Log(
+                $"CatalogService: phase-one fish load completed with {_phaseOneFishById.Count} fish definition(s). AddressablesRuntime={(_addressablesPilotLoader != null && _addressablesPilotLoader.IsAddressablesRuntimeAvailable)}.");
+            Rebuild();
+        }
+
+        private void ApplyPhaseOneFishCatalog()
+        {
+            if (!_phaseOneFishLoadCompleted || _phaseOneFishById.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _phaseOneFishById)
+            {
+                _fishById[pair.Key] = pair.Value;
             }
         }
 
@@ -131,6 +209,213 @@ namespace RavenDevOps.Fishing.Data
                 }
 
                 _hookById.Add(hook.id, hook);
+            }
+        }
+
+        private void ApplyModCatalogOverrides()
+        {
+            if (_modCatalogService == null || !_modCatalogService.ModsEnabled)
+            {
+                return;
+            }
+
+            var loadResult = _modCatalogService.LastLoadResult;
+            if (loadResult == null)
+            {
+                return;
+            }
+
+            foreach (var pair in loadResult.fishById)
+            {
+                var existing = _fishById.TryGetValue(pair.Key, out var existingFish) ? existingFish : null;
+                var runtimeFish = BuildRuntimeFishDefinition(pair.Value, existing);
+                if (runtimeFish == null)
+                {
+                    continue;
+                }
+
+                _fishById[pair.Key] = runtimeFish;
+            }
+
+            foreach (var pair in loadResult.shipById)
+            {
+                var existing = _shipById.TryGetValue(pair.Key, out var existingShip) ? existingShip : null;
+                var runtimeShip = BuildRuntimeShipDefinition(pair.Value, existing);
+                if (runtimeShip == null)
+                {
+                    continue;
+                }
+
+                _shipById[pair.Key] = runtimeShip;
+            }
+
+            foreach (var pair in loadResult.hookById)
+            {
+                var existing = _hookById.TryGetValue(pair.Key, out var existingHook) ? existingHook : null;
+                var runtimeHook = BuildRuntimeHookDefinition(pair.Value, existing);
+                if (runtimeHook == null)
+                {
+                    continue;
+                }
+
+                _hookById[pair.Key] = runtimeHook;
+            }
+
+            if (loadResult.acceptedMods.Count > 0)
+            {
+                Debug.Log(
+                    $"CatalogService: applied mod overrides from {loadResult.acceptedMods.Count} pack(s): fish={loadResult.fishById.Count}, ships={loadResult.shipById.Count}, hooks={loadResult.hookById.Count}.");
+            }
+        }
+
+        private FishDefinitionSO BuildRuntimeFishDefinition(ModFishDefinitionData source, FishDefinitionSO fallback)
+        {
+            if (source == null || string.IsNullOrWhiteSpace(source.id))
+            {
+                return null;
+            }
+
+            var fish = CreateRuntimeAsset<FishDefinitionSO>();
+            fish.id = source.id;
+            fish.minDistanceTier = source.minDistanceTier;
+            fish.maxDistanceTier = source.maxDistanceTier;
+            fish.minDepth = source.minDepth;
+            fish.maxDepth = source.maxDepth;
+            fish.rarityWeight = source.rarityWeight;
+            fish.baseValue = source.baseValue;
+            fish.minBiteDelaySeconds = source.minBiteDelaySeconds;
+            fish.maxBiteDelaySeconds = source.maxBiteDelaySeconds;
+            fish.fightStamina = source.fightStamina;
+            fish.pullIntensity = source.pullIntensity;
+            fish.escapeSeconds = source.escapeSeconds;
+            fish.minCatchWeightKg = source.minCatchWeightKg;
+            fish.maxCatchWeightKg = source.maxCatchWeightKg;
+            fish.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
+            return fish;
+        }
+
+        private ShipDefinitionSO BuildRuntimeShipDefinition(ModShipDefinitionData source, ShipDefinitionSO fallback)
+        {
+            if (source == null || string.IsNullOrWhiteSpace(source.id))
+            {
+                return null;
+            }
+
+            var ship = CreateRuntimeAsset<ShipDefinitionSO>();
+            ship.id = source.id;
+            ship.price = source.price;
+            ship.maxDistanceTier = source.maxDistanceTier;
+            ship.moveSpeed = source.moveSpeed;
+            ship.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
+            return ship;
+        }
+
+        private HookDefinitionSO BuildRuntimeHookDefinition(ModHookDefinitionData source, HookDefinitionSO fallback)
+        {
+            if (source == null || string.IsNullOrWhiteSpace(source.id))
+            {
+                return null;
+            }
+
+            var hook = CreateRuntimeAsset<HookDefinitionSO>();
+            hook.id = source.id;
+            hook.price = source.price;
+            hook.maxDepth = source.maxDepth;
+            hook.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
+            return hook;
+        }
+
+        private T CreateRuntimeAsset<T>() where T : ScriptableObject
+        {
+            var asset = ScriptableObject.CreateInstance<T>();
+            _generatedRuntimeObjects.Add(asset);
+            return asset;
+        }
+
+        private Sprite ResolveIcon(string resolvedPath, Sprite fallback)
+        {
+            if (string.IsNullOrWhiteSpace(resolvedPath))
+            {
+                return fallback;
+            }
+
+            if (!File.Exists(resolvedPath))
+            {
+                return fallback;
+            }
+
+            try
+            {
+                var bytes = File.ReadAllBytes(resolvedPath);
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!ImageConversion.LoadImage(texture, bytes, false))
+                {
+                    DestroyRuntimeObject(texture);
+                    return fallback;
+                }
+
+                var sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                _generatedRuntimeObjects.Add(texture);
+                _generatedRuntimeObjects.Add(sprite);
+                return sprite;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"CatalogService: failed to load icon at '{resolvedPath}' ({ex.Message}).");
+                return fallback;
+            }
+        }
+
+        private void SubscribeToModCatalog()
+        {
+            if (_modCatalogService == null)
+            {
+                return;
+            }
+
+            _modCatalogService.CatalogReloaded -= HandleModCatalogReloaded;
+            _modCatalogService.CatalogReloaded += HandleModCatalogReloaded;
+        }
+
+        private void UnsubscribeFromModCatalog()
+        {
+            if (_modCatalogService == null)
+            {
+                return;
+            }
+
+            _modCatalogService.CatalogReloaded -= HandleModCatalogReloaded;
+        }
+
+        private void HandleModCatalogReloaded()
+        {
+            Rebuild();
+        }
+
+        private void CleanupGeneratedRuntimeObjects()
+        {
+            for (var i = 0; i < _generatedRuntimeObjects.Count; i++)
+            {
+                DestroyRuntimeObject(_generatedRuntimeObjects[i]);
+            }
+
+            _generatedRuntimeObjects.Clear();
+        }
+
+        private static void DestroyRuntimeObject(UnityEngine.Object obj)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(obj);
+            }
+            else
+            {
+                DestroyImmediate(obj);
             }
         }
     }

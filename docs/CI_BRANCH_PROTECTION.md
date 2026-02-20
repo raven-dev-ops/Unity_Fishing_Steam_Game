@@ -24,7 +24,10 @@ These checks should be required on `main`:
 - `.github/workflows/release-steampipe.yml`
 
 ## Notes
-- Unity workflows use `UNITY_LICENSE` when available. Without it, workflows complete with warnings and skip Unity-dependent steps.
+- Unity workflows enforce `UNITY_LICENSE` in trusted contexts:
+  - protected refs (`github.ref_protected == true`)
+  - manual `workflow_dispatch`
+- In untrusted contexts, missing `UNITY_LICENSE` yields warning + skip for Unity-dependent steps.
 - Content validator workflow also runs asset import audit in warning-first mode and uploads `Artifacts/AssetImportAudit/*` report artifacts.
 - Perf budget workflow is path-gated (`PerfLogs/**`) and manual-dispatch capable for supplied performance logs.
 - Release workflow is environment-gated via `steam-release`.

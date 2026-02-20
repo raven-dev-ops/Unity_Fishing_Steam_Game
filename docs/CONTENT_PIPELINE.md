@@ -61,6 +61,7 @@ Unity.exe -batchmode -nographics -quit `
 ## Post-1.0 Addressables Pilot
 - Reference: `docs/ADDRESSABLES_PILOT.md`
 - Pilot loader artifact: `Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs`
+- Runtime overlay integration: `Assets/Scripts/Data/CatalogService.cs` (base catalog -> pilot fish overlay -> mod overrides)
 
 ## Add Fish (No Code) Quick Checklist
 1. Create `FishDefinitionSO` and set stable `id`.

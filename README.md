@@ -28,7 +28,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (path-gated on `PerfLogs/**` or manual dispatch with log path input).
-- Unity workflows run full build/test/validator jobs only when `UNITY_LICENSE` is configured in repository secrets; otherwise they emit warnings and skip Unity-dependent steps.
+- Unity workflows enforce `UNITY_LICENSE` in trusted contexts (protected refs or manual dispatch), and warn/skip in untrusted contexts.
 
 ## Project Structure
 - `Assets/Scenes/`: gameplay scenes (Boot -> Cinematic -> MainMenu -> Harbor -> Fishing)
@@ -72,6 +72,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Input baseline: `docs/INPUT_MAP.md`
 - Mod support strategy: `docs/MOD_SUPPORT_STRATEGY.md`
 - Mod manifest schema: `docs/MOD_MANIFEST_SCHEMA.md`
+- Mod runtime merge: `docs/MOD_RUNTIME_MERGE.md`
 - Objectives system: `docs/OBJECTIVES_SYSTEM.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
 - Photo mode and capture: `docs/PHOTO_MODE.md`

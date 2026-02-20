@@ -15,6 +15,8 @@ flowchart LR
     ICR[InputContextRouter]
     IAMC[InputActionMapController]
     SM[SaveManager]
+    MRS[ModRuntimeCatalogService]
+    APL[AddressablesPilotCatalogLoader]
     OBJ[ObjectivesService]
     UAS[GlobalUiAccessibilityService]
     PMS[PhotoModeRuntimeService]
@@ -31,6 +33,8 @@ flowchart LR
   GS --> ICR
   GS --> IAMC
   GS --> SM
+  GS --> MRS
+  GS --> APL
   GS --> OBJ
   GS --> UAS
   GS --> PMS
@@ -60,6 +64,8 @@ flowchart LR
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
+- Mod runtime catalog service discovers/validates data-only packs and feeds deterministic catalog overrides.
+- Addressables pilot loader can asynchronously provide phase-one fish catalog overlays with resource fallback.
 - Objectives service tracks non-Steam gameplay goals and persists objective progress/rewards.
 - Global UI accessibility service applies persisted UI scaling at runtime.
 - Photo mode runtime service auto-binds screenshot controls to main camera.
@@ -73,5 +79,6 @@ flowchart LR
 
 ## Data/Content Notes
 - Fish/ship/hook definitions are ScriptableObject-driven.
+- Catalog runtime merge order: base `GameConfigSO` -> phase-one addressables fish overlay -> mod overrides.
 - `ContentValidator` enforces ID/range/reference rules pre-merge and in CI.
 - Content drops should require no code when extending only data assets.

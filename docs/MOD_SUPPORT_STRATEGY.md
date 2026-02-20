@@ -40,6 +40,9 @@
 - Manifest schema model: `Assets/Scripts/Tools/ModManifestV1.cs`
 - Validator: `Assets/Scripts/Tools/ModManifestValidator.cs`
 - Schema reference: `docs/MOD_MANIFEST_SCHEMA.md`
+- Runtime discovery/merge service: `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
+- Runtime merge loader: `Assets/Scripts/Tools/ModRuntimeCatalogLoader.cs`
+- Runtime merge reference: `docs/MOD_RUNTIME_MERGE.md`
 
 ## Distribution Strategy
 - Phase 1: manual `.zip`/folder install with clear manifest format.
@@ -52,8 +55,8 @@
 - Safe-mode startup switch to disable all mods for troubleshooting.
 
 ## Follow-up Backlog Proposals
-1. `MOD-001` Mod manifest/schema spec + validator implementation.
-2. `MOD-002` Runtime mod discovery and merge pipeline.
+1. `MOD-001` Mod manifest/schema spec + validator implementation. (implemented)
+2. `MOD-002` Runtime mod discovery and merge pipeline. (implemented)
 3. `MOD-003` Mod failure reporting UI + safe mode toggle.
 4. `MOD-004` Mod packaging guide and sample templates.
 5. `MOD-005` Workshop feasibility spike and publish/subscription flow.

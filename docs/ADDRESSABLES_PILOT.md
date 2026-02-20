@@ -7,6 +7,11 @@ Post-1.0 pilot for scalable content loading beyond MVP eager-catalog approach.
 - `Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs`
   - Async label-based load path behind `ENABLE_ADDRESSABLES`
   - Resource fallback path for non-addressables runtime
+- `Assets/Scripts/Data/CatalogService.cs`
+  - Applies phase-one fish overlay after async pilot load completion
+  - Retains base catalog fallback when pilot load is unavailable/empty
+- `Assets/Scripts/Core/RuntimeServicesBootstrap.cs`
+  - Registers pilot loader as global runtime service
 
 ## Target Content Set
 - Fish definition content set (pilot label: `pilot/fish-definitions`)
@@ -46,8 +51,9 @@ Post-1.0 pilot for scalable content loading beyond MVP eager-catalog approach.
 ## Migration Path
 1. Install Addressables package and configure profiles/groups.
 2. Label pilot fish assets and load through `AddressablesPilotCatalogLoader`.
-3. Compare startup time/memory against baseline using profiler captures.
-4. Promote pilot path into production catalog service once stability criteria are met.
+3. Verify catalog overlay path through `CatalogService` (base -> pilot overlay -> mod overrides).
+4. Compare startup time/memory against baseline using profiler captures.
+5. Promote pilot path into production catalog service once stability criteria are met.
 
 ## Measurement Checklist
 1. Capture startup memory baseline before pilot migration.

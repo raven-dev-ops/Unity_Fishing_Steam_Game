@@ -24,15 +24,33 @@ jobs:
         with:
           lfs: true
 
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            trusted=true
+          fi
+
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
       - name: Detect Unity license availability
         id: unity_license
         shell: bash
         run: |
           if [ -n "${UNITY_LICENSE}" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+            echo "::error::UNITY_LICENSE secret is required in trusted Unity CI contexts."
+            exit 1
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE secret is not set. Skipping Unity build steps."
+            echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping Unity build steps."
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -74,4 +92,4 @@ jobs:
       - name: Report skipped build
         if: steps.unity_license.outputs.available != 'true'
         shell: bash
-        run: echo "Unity build steps skipped because UNITY_LICENSE is not configured."
+        run: echo "Unity build steps skipped because UNITY_LICENSE is not configured for this untrusted context."

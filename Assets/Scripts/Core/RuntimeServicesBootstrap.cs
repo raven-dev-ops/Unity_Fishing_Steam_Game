@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Audio;
+using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
@@ -33,6 +34,8 @@ namespace RavenDevOps.Fishing.Core
             var inputRebindingService = servicesGo.AddComponent<InputRebindingService>();
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
+            var addressablesPilotLoader = servicesGo.AddComponent<AddressablesPilotCatalogLoader>();
+            var modCatalogService = servicesGo.AddComponent<ModRuntimeCatalogService>();
             var objectivesService = servicesGo.AddComponent<ObjectivesService>();
             var uiAccessibilityService = servicesGo.AddComponent<GlobalUiAccessibilityService>();
             var photoModeService = servicesGo.AddComponent<PhotoModeRuntimeService>();
@@ -56,6 +59,8 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(inputRebindingService);
             RuntimeServiceRegistry.Register(userSettings);
             RuntimeServiceRegistry.Register(saveManager);
+            RuntimeServiceRegistry.Register(addressablesPilotLoader);
+            RuntimeServiceRegistry.Register(modCatalogService);
             RuntimeServiceRegistry.Register(objectivesService);
             RuntimeServiceRegistry.Register(uiAccessibilityService);
             RuntimeServiceRegistry.Register(photoModeService);

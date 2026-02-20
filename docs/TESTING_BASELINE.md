@@ -13,7 +13,8 @@
 
 ## Headless CI Run
 The CI workflow `.github/workflows/ci-tests.yml` runs both test modes using GameCI.
-If `UNITY_LICENSE` is not configured in repository secrets, CI reports a warning and skips Unity test execution.
+Trusted contexts (protected refs or manual dispatch) require `UNITY_LICENSE`.
+Untrusted contexts without `UNITY_LICENSE` report warnings and skip Unity test execution.
 
 Project wrapper (recommended):
 
