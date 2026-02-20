@@ -1,0 +1,13 @@
+﻿{
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "14.0.9",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.timeline": "1.8.2",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.ui": "1.0.0"
+  }
+}
