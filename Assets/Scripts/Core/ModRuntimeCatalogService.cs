@@ -14,9 +14,11 @@ namespace RavenDevOps.Fishing.Core
 
         private ModRuntimeCatalogLoadResult _lastLoadResult = new ModRuntimeCatalogLoadResult();
         private bool _safeModeActive;
+        private string _safeModeReason = string.Empty;
 
         public bool ModsEnabled => _lastLoadResult.modsEnabled;
         public bool SafeModeActive => _safeModeActive;
+        public string SafeModeReason => _safeModeReason;
         public string ModsRootPath => _lastLoadResult.modsRootPath;
         public ModRuntimeCatalogLoadResult LastLoadResult => _lastLoadResult;
 
@@ -35,15 +37,20 @@ namespace RavenDevOps.Fishing.Core
 
         public void Reload()
         {
-            _safeModeActive = ResolveSafeMode();
+            _safeModeActive = ResolveSafeMode(out _safeModeReason);
             var modsRootPath = ResolveModsRootPath();
             var shouldLoad = _enableMods && !_safeModeActive;
             _lastLoadResult = ModRuntimeCatalogLoader.Load(modsRootPath, shouldLoad, Application.version);
+            if (_safeModeActive)
+            {
+                var reason = string.IsNullOrWhiteSpace(_safeModeReason) ? "unknown source" : _safeModeReason;
+                _lastLoadResult.messages.Add($"INFO: Mod safe mode is active ({reason}).");
+            }
 
             if (_verboseLogging)
             {
                 Debug.Log(
-                    $"ModRuntimeCatalogService: modsEnabled={_lastLoadResult.modsEnabled}, safeMode={_safeModeActive}, accepted={_lastLoadResult.acceptedMods.Count}, rejected={_lastLoadResult.rejectedMods.Count}, root='{_lastLoadResult.modsRootPath}'.");
+                    $"ModRuntimeCatalogService: modsEnabled={_lastLoadResult.modsEnabled}, safeMode={_safeModeActive}, safeModeReason='{_safeModeReason}', accepted={_lastLoadResult.acceptedMods.Count}, rejected={_lastLoadResult.rejectedMods.Count}, root='{_lastLoadResult.modsRootPath}'.");
 
                 for (var i = 0; i < _lastLoadResult.messages.Count; i++)
                 {
@@ -84,20 +91,62 @@ namespace RavenDevOps.Fishing.Core
             return Path.Combine(root, _modsDirectoryName);
         }
 
-        private static bool ResolveSafeMode()
+        private static bool ResolveSafeMode(out string reason)
         {
             var env = Environment.GetEnvironmentVariable("RAVEN_DISABLE_MODS");
-            if (!string.IsNullOrWhiteSpace(env))
+            var args = Environment.GetCommandLineArgs();
+            var persistedSafeModeEnabled = PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
+            return EvaluateSafeModeRequest(persistedSafeModeEnabled, env, args, out reason);
+        }
+
+        public static bool EvaluateSafeModeRequest(
+            bool persistedSafeModeEnabled,
+            string envDisableModsValue,
+            string[] commandLineArgs,
+            out string reason)
+        {
+            reason = string.Empty;
+
+            if (IsTruthySafeModeEnv(envDisableModsValue))
             {
-                if (string.Equals(env, "1", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(env, "true", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(env, "yes", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
+                reason = "env:RAVEN_DISABLE_MODS";
+                return true;
             }
 
-            var args = Environment.GetCommandLineArgs();
+            if (HasSafeModeArg(commandLineArgs))
+            {
+                reason = "command-line";
+                return true;
+            }
+
+            if (persistedSafeModeEnabled)
+            {
+                reason = $"playerprefs:{UserSettingsService.ModsSafeModePlayerPrefsKey}";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsTruthySafeModeEnv(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HasSafeModeArg(string[] args)
+        {
+            if (args == null || args.Length == 0)
+            {
+                return false;
+            }
+
             for (var i = 0; i < args.Length; i++)
             {
                 var arg = args[i] ?? string.Empty;

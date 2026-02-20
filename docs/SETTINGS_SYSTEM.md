@@ -15,6 +15,7 @@ Persisted keys:
 - High-contrast fishing cues
 - UI scale
 - Steam Rich Presence enabled
+- Mod safe mode enabled (`settings.modSafeModeEnabled`)
 - Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
 
 ## Runtime Integration
@@ -32,6 +33,11 @@ Persisted keys:
   - `Assets/Scripts/UI/GlobalUiAccessibilityService.cs` (UI scale)
 - Steam Rich Presence consumer:
   - `Assets/Scripts/Steam/SteamRichPresenceService.cs`
+- Mod safe mode consumers:
+  - `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
+  - `Assets/Scripts/UI/SettingsMenuController.cs`
+  - `Assets/Scripts/UI/ProfileMenuController.cs`
+  - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`
 
 ## Display Controls
 - Fullscreen toggle switches between `FullScreenWindow` and `Windowed`.
@@ -47,3 +53,4 @@ Persisted keys:
 3. Confirm display/audio/input behavior is restored on boot.
 4. Toggle subtitles/high-contrast/UI scale and verify immediate + persisted behavior.
 5. Toggle Steam Rich Presence and verify Steam service respects setting.
+6. Toggle mod safe mode and relaunch to confirm mod runtime starts in safe mode with clear status text.

@@ -29,18 +29,28 @@ Applied catalogs:
 
 ## Safe Mode
 Disable all mod loading at startup with any of:
+- persisted setting: `settings.modSafeModeEnabled=1` (set via in-game settings/profile toggle)
 - env: `RAVEN_DISABLE_MODS=1`
 - CLI args:
   - `-safeMode=true`
   - `-disableMods=true`
   - `-mods=false`
 
+Priority order:
+1. `RAVEN_DISABLE_MODS`
+2. safe-mode CLI args
+3. persisted setting (`settings.modSafeModeEnabled`)
+
 When safe mode is active, runtime skips mod discovery and uses base catalogs only.
+`ModRuntimeCatalogService` exposes `SafeModeActive` + `SafeModeReason` for UI messaging.
 
 ## Runtime Behavior
 - Valid packs contribute override/additive entries into `CatalogService`.
 - Invalid packs are rejected without blocking startup.
 - Optional icon paths are only used when declared in manifest `assetOverrides`.
+- Runtime diagnostics UI can render accepted/rejected packs and loader messages via:
+  - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`
+  - `Assets/Scripts/UI/ModDiagnosticsTextFormatter.cs`
 
 ## Tests
 - `Assets/Tests/EditMode/ModRuntimeCatalogLoaderTests.cs`

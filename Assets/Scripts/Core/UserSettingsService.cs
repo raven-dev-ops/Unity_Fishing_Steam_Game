@@ -5,6 +5,8 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class UserSettingsService : MonoBehaviour
     {
+        public const string ModsSafeModePlayerPrefsKey = "settings.modSafeModeEnabled";
+
         private const string KeyMasterVolume = "settings.masterVolume";
         private const string KeyMusicVolume = "settings.musicVolume";
         private const string KeySfxVolume = "settings.sfxVolume";
@@ -18,6 +20,7 @@ namespace RavenDevOps.Fishing.Core
         private const string KeyHighContrastFishingCues = "settings.highContrastFishingCues";
         private const string KeyUiScale = "settings.uiScale";
         private const string KeySteamRichPresenceEnabled = "settings.steamRichPresenceEnabled";
+        private const string KeyModsSafeMode = ModsSafeModePlayerPrefsKey;
 
         private static UserSettingsService _instance;
 
@@ -34,6 +37,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private bool _highContrastFishingCues;
         [SerializeField] private float _uiScale = 1f;
         [SerializeField] private bool _steamRichPresenceEnabled = true;
+        [SerializeField] private bool _modSafeModeEnabled;
 
         public static UserSettingsService Instance => _instance;
 
@@ -50,6 +54,7 @@ namespace RavenDevOps.Fishing.Core
         public bool HighContrastFishingCues => _highContrastFishingCues;
         public float UiScale => _uiScale;
         public bool SteamRichPresenceEnabled => _steamRichPresenceEnabled;
+        public bool ModSafeModeEnabled => _modSafeModeEnabled;
 
         public event Action SettingsChanged;
 
@@ -163,6 +168,13 @@ namespace RavenDevOps.Fishing.Core
             NotifySettingsChanged();
         }
 
+        public void SetModSafeModeEnabled(bool enabled)
+        {
+            _modSafeModeEnabled = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
         public Resolution[] GetSupportedResolutions()
         {
             var resolutions = Screen.resolutions;
@@ -208,6 +220,7 @@ namespace RavenDevOps.Fishing.Core
             _highContrastFishingCues = PlayerPrefs.GetInt(KeyHighContrastFishingCues, 0) == 1;
             _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(KeyUiScale, 1f), 0.8f, 1.5f);
             _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
+            _modSafeModeEnabled = PlayerPrefs.GetInt(KeyModsSafeMode, 0) == 1;
 
             var current = Screen.currentResolution;
             _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, current.width);
@@ -230,6 +243,7 @@ namespace RavenDevOps.Fishing.Core
             PlayerPrefs.SetInt(KeyHighContrastFishingCues, _highContrastFishingCues ? 1 : 0);
             PlayerPrefs.SetFloat(KeyUiScale, _uiScale);
             PlayerPrefs.SetInt(KeySteamRichPresenceEnabled, _steamRichPresenceEnabled ? 1 : 0);
+            PlayerPrefs.SetInt(KeyModsSafeMode, _modSafeModeEnabled ? 1 : 0);
             PlayerPrefs.Save();
         }
 

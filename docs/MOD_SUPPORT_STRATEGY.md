@@ -43,6 +43,12 @@
 - Runtime discovery/merge service: `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
 - Runtime merge loader: `Assets/Scripts/Tools/ModRuntimeCatalogLoader.cs`
 - Runtime merge reference: `docs/MOD_RUNTIME_MERGE.md`
+- Runtime diagnostics panel + formatter:
+  - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`
+  - `Assets/Scripts/UI/ModDiagnosticsTextFormatter.cs`
+- Player-facing safe-mode toggles:
+  - `Assets/Scripts/UI/SettingsMenuController.cs`
+  - `Assets/Scripts/UI/ProfileMenuController.cs`
 
 ## Distribution Strategy
 - Phase 1: manual `.zip`/folder install with clear manifest format.
@@ -57,6 +63,6 @@
 ## Follow-up Backlog Proposals
 1. `MOD-001` Mod manifest/schema spec + validator implementation. (implemented)
 2. `MOD-002` Runtime mod discovery and merge pipeline. (implemented)
-3. `MOD-003` Mod failure reporting UI + safe mode toggle.
+3. `MOD-003` Mod failure reporting UI + safe mode toggle. (implemented)
 4. `MOD-004` Mod packaging guide and sample templates. (implemented)
 5. `MOD-005` Workshop feasibility spike and publish/subscription flow.
