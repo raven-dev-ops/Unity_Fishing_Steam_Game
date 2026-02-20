@@ -26,6 +26,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Batch content validator: `RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode`
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
+- Unity workflows run full build/test/validator jobs only when `UNITY_LICENSE` is configured in repository secrets; otherwise they emit warnings and skip Unity-dependent steps.
 
 ## Project Structure
 - `Assets/Scenes/`: gameplay scenes (Boot -> Cinematic -> MainMenu -> Harbor -> Fishing)

@@ -30,16 +30,21 @@ jobs:
         with:
           lfs: true
 
-      - name: Validate Unity license secret
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
         run: |
-          if [ -z "${UNITY_LICENSE}" ]; then
-            echo "::error::UNITY_LICENSE secret is required for Unity CI jobs."
-            exit 1
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret is not set. Skipping Unity test steps."
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
       - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
         uses: actions/cache@v4
         with:
           path: Library
@@ -48,6 +53,7 @@ jobs:
             Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-
 
       - name: Run Unity tests
+        if: steps.unity_license.outputs.available == 'true'
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -57,8 +63,14 @@ jobs:
           artifactsPath: artifacts/${{ matrix.testMode }}
 
       - name: Upload test artifacts
+        if: steps.unity_license.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: unity-test-results-${{ matrix.testMode }}-${{ github.sha }}
           path: artifacts/${{ matrix.testMode }}/**
           if-no-files-found: warn
+
+      - name: Report skipped test mode
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Unity test mode '${{ matrix.testMode }}' skipped because UNITY_LICENSE is not configured."

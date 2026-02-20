@@ -24,16 +24,21 @@ jobs:
         with:
           lfs: true
 
-      - name: Validate Unity license secret
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
         run: |
-          if [ -z "${UNITY_LICENSE}" ]; then
-            echo "::error::UNITY_LICENSE secret is required for Unity CI jobs."
-            exit 1
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret is not set. Skipping content validator steps."
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
       - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
         uses: actions/cache@v4
         with:
           path: Library
@@ -42,6 +47,7 @@ jobs:
             Library-Validator-${{ runner.os }}-
 
       - name: Run content validator
+        if: steps.unity_license.outputs.available == 'true'
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -50,6 +56,7 @@ jobs:
           buildMethod: RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode
 
       - name: Upload validator artifacts
+        if: steps.unity_license.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: content-validator-${{ github.sha }}
@@ -57,3 +64,8 @@ jobs:
             build/**
             Builds/**
           if-no-files-found: warn
+
+      - name: Report skipped validator
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Content validator skipped because UNITY_LICENSE is not configured."

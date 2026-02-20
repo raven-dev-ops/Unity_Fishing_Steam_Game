@@ -23,5 +23,5 @@ These checks should be required on `main`:
 - `.github/workflows/release-steampipe.yml`
 
 ## Notes
-- Unity workflows require `UNITY_LICENSE` secret.
+- Unity workflows use `UNITY_LICENSE` when available. Without it, workflows complete with warnings and skip Unity-dependent steps.
 - Release workflow is environment-gated via `steam-release`.
