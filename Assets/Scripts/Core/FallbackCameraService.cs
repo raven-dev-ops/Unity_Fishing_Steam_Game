@@ -119,13 +119,18 @@ namespace RavenDevOps.Fishing.Core
             _fallbackCamera = cameraGo.AddComponent<Camera>();
             _fallbackCamera.clearFlags = CameraClearFlags.SolidColor;
             _fallbackCamera.backgroundColor = Color.black;
-            _fallbackCamera.fieldOfView = 60f;
+            _fallbackCamera.orthographic = true;
+            _fallbackCamera.orthographicSize = 5f;
             _fallbackCamera.nearClipPlane = 0.01f;
-            _fallbackCamera.farClipPlane = 1000f;
+            _fallbackCamera.farClipPlane = 100f;
             _fallbackCamera.depth = -100f;
 
-            cameraGo.AddComponent<AudioListener>();
-            cameraGo.transform.position = new Vector3(0f, 1f, -10f);
+            if (Object.FindAnyObjectByType<AudioListener>() == null)
+            {
+                cameraGo.AddComponent<AudioListener>();
+            }
+
+            cameraGo.transform.position = new Vector3(0f, 0f, -10f);
             cameraGo.transform.rotation = Quaternion.identity;
 
             if (_verboseLogs)
