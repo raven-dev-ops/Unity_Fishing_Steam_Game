@@ -37,6 +37,7 @@ namespace RavenDevOps.Fishing.Steam
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Register(this);
+            TouchConfigInNonSteamBuilds();
             InitializeSteamHooks();
         }
 
@@ -254,5 +255,19 @@ namespace RavenDevOps.Fishing.Steam
             SteamUserStats.SetAchievement(achievementId);
         }
 #endif
+
+        private void TouchConfigInNonSteamBuilds()
+        {
+#if !STEAMWORKS_NET
+            _ = _statTotalCatches;
+            _ = _statTotalPurchases;
+            _ = _statTotalTrips;
+            _ = _statCatchValueCopecs;
+            _ = _achievementFirstCatch;
+            _ = _achievementFirstPurchase;
+            _ = _achievementTripMilestone;
+            _ = _tripMilestoneTarget;
+#endif
+        }
     }
 }

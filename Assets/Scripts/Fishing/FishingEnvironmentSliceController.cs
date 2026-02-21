@@ -195,7 +195,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private static bool HasDirectionalLight()
         {
-            var lights = Object.FindObjectsOfType<Light>(true);
+            var lights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (var i = 0; i < lights.Length; i++)
             {
                 if (lights[i] != null && lights[i].type == LightType.Directional)

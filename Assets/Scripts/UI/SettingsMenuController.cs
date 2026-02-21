@@ -304,7 +304,7 @@ namespace RavenDevOps.Fishing.UI
             }
 
             var resolution = _resolutions[_resolutionIndex];
-            _settingsService.SetResolution(resolution.width, resolution.height, resolution.refreshRate);
+            _settingsService.SetResolution(resolution.width, resolution.height, ResolveRefreshRateHz(resolution));
             RefreshResolutionText();
         }
 
@@ -330,7 +330,7 @@ namespace RavenDevOps.Fishing.UI
             }
 
             var resolution = _resolutions[Mathf.Clamp(_resolutionIndex, 0, _resolutions.Length - 1)];
-            _resolutionText.text = $"Resolution: {resolution.width}x{resolution.height} @ {resolution.refreshRate}Hz";
+            _resolutionText.text = $"Resolution: {resolution.width}x{resolution.height} @ {ResolveRefreshRateHz(resolution)}Hz";
         }
 
         private void RefreshInputSensitivityText(float value)
@@ -439,6 +439,17 @@ namespace RavenDevOps.Fishing.UI
             }
 
             slider.SetValueWithoutNotify(value);
+        }
+
+        private static int ResolveRefreshRateHz(Resolution resolution)
+        {
+            var ratio = resolution.refreshRateRatio;
+            if (ratio.denominator == 0)
+            {
+                return 60;
+            }
+
+            return Mathf.Max(1, Mathf.RoundToInt((float)ratio.numerator / ratio.denominator));
         }
 
         private void RefreshModSafeModeStatus(bool safeModePreferenceEnabled)

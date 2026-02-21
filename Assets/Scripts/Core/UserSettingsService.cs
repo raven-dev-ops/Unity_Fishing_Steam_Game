@@ -236,7 +236,7 @@ namespace RavenDevOps.Fishing.Core
                     {
                         width = Screen.width,
                         height = Screen.height,
-                        refreshRate = Screen.currentResolution.refreshRate
+                        refreshRateRatio = Screen.currentResolution.refreshRateRatio
                     }
                 };
             }
@@ -251,11 +251,11 @@ namespace RavenDevOps.Fishing.Core
                 var current = Screen.currentResolution;
                 _resolutionWidth = current.width;
                 _resolutionHeight = current.height;
-                _resolutionRefresh = current.refreshRate;
+                _resolutionRefresh = ResolveRefreshRateHz(current);
             }
 
             var mode = _fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
-            Screen.SetResolution(_resolutionWidth, _resolutionHeight, mode, _resolutionRefresh);
+            Screen.SetResolution(_resolutionWidth, _resolutionHeight, mode, BuildRefreshRate(_resolutionRefresh));
         }
 
         private void LoadFromPrefs()
@@ -280,7 +280,7 @@ namespace RavenDevOps.Fishing.Core
             var current = Screen.currentResolution;
             _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, current.width);
             _resolutionHeight = PlayerPrefs.GetInt(KeyResolutionHeight, current.height);
-            _resolutionRefresh = PlayerPrefs.GetInt(KeyResolutionRefresh, current.refreshRate);
+            _resolutionRefresh = PlayerPrefs.GetInt(KeyResolutionRefresh, ResolveRefreshRateHz(current));
         }
 
         private void SaveToPrefs()
@@ -317,6 +317,26 @@ namespace RavenDevOps.Fishing.Core
             {
                 Debug.LogError($"UserSettingsService: SettingsChanged listener failed ({ex.Message}).");
             }
+        }
+
+        private static int ResolveRefreshRateHz(Resolution resolution)
+        {
+            var ratio = resolution.refreshRateRatio;
+            if (ratio.denominator == 0)
+            {
+                return 60;
+            }
+
+            return Mathf.Max(1, Mathf.RoundToInt((float)ratio.numerator / ratio.denominator));
+        }
+
+        private static RefreshRate BuildRefreshRate(int refreshRateHz)
+        {
+            return new RefreshRate
+            {
+                numerator = (uint)Mathf.Max(1, refreshRateHz),
+                denominator = 1u
+            };
         }
     }
 }

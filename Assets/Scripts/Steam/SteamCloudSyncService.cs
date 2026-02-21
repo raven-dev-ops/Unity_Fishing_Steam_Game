@@ -29,6 +29,7 @@ namespace RavenDevOps.Fishing.Steam
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Register(this);
+            TouchConfigInNonSteamBuilds();
         }
 
         private void OnEnable()
@@ -377,6 +378,16 @@ namespace RavenDevOps.Fishing.Steam
             return true;
 #else
             return false;
+#endif
+        }
+
+        private void TouchConfigInNonSteamBuilds()
+        {
+#if !STEAMWORKS_NET
+            _ = _verboseLogs;
+            _ = _conflictSkewToleranceSeconds;
+            _ = _cloudSaveFileName;
+            _ = _cloudManifestFileName;
 #endif
         }
     }

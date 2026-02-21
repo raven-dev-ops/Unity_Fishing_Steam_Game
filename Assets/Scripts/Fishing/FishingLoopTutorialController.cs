@@ -243,7 +243,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private static IFishingHudOverlay FindFishingHudOverlay()
         {
-            var candidates = FindObjectsOfType<MonoBehaviour>(true);
+            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (var i = 0; i < candidates.Length; i++)
             {
                 if (candidates[i] is IFishingHudOverlay overlay)

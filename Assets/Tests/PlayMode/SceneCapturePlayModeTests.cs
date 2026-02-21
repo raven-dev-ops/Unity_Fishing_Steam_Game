@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,6 +12,9 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 {
     public sealed class SceneCapturePlayModeTests
     {
+        private static MethodInfo _imageConversionEncodeToPngMethod;
+        private static bool _imageConversionLookupCompleted;
+
         private static readonly string[] ScenePaths =
         {
             "Assets/Scenes/00_Boot.unity",
@@ -104,7 +108,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var width = Mathf.Max(640, Screen.width);
             var height = Mathf.Max(360, Screen.height);
 
-            var camera = Camera.main != null ? Camera.main : UnityEngine.Object.FindObjectOfType<Camera>();
+            var camera = Camera.main != null ? Camera.main : UnityEngine.Object.FindAnyObjectByType<Camera>();
             GameObject tempCameraObject = null;
             if (camera == null)
             {
@@ -132,7 +136,11 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 texture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
                 texture.Apply();
 
-                var pngBytes = texture.EncodeToPNG();
+                if (!TryEncodePng(texture, out var pngBytes))
+                {
+                    throw new InvalidOperationException("SceneCapturePlayModeTests: PNG encode failed because ImageConversion module is unavailable.");
+                }
+
                 File.WriteAllBytes(outputPath, pngBytes);
             }
             finally
@@ -165,6 +173,46 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             return sanitized;
+        }
+
+        private static bool TryEncodePng(Texture2D texture, out byte[] bytes)
+        {
+            bytes = null;
+            if (texture == null)
+            {
+                return false;
+            }
+
+            if (!_imageConversionLookupCompleted)
+            {
+                _imageConversionLookupCompleted = true;
+                var imageConversionType = Type.GetType("UnityEngine.ImageConversion, UnityEngine.ImageConversionModule", throwOnError: false);
+                if (imageConversionType != null)
+                {
+                    _imageConversionEncodeToPngMethod = imageConversionType.GetMethod(
+                        "EncodeToPNG",
+                        BindingFlags.Public | BindingFlags.Static,
+                        binder: null,
+                        types: new[] { typeof(Texture2D) },
+                        modifiers: null);
+                }
+            }
+
+            if (_imageConversionEncodeToPngMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                bytes = _imageConversionEncodeToPngMethod.Invoke(null, new object[] { texture }) as byte[];
+                return bytes != null && bytes.Length > 0;
+            }
+            catch
+            {
+                bytes = null;
+                return false;
+            }
         }
     }
 }

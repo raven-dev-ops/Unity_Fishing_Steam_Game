@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Tools;
 using UnityEngine;
@@ -12,6 +13,8 @@ namespace RavenDevOps.Fishing.Data
         [SerializeField] private GameConfigSO _gameConfig;
         [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
         [SerializeField] private ModRuntimeCatalogService _modCatalogService;
+        private static MethodInfo _imageConversionLoadImageMethod;
+        private static bool _imageConversionLookupCompleted;
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, ShipDefinitionSO> _shipById = new Dictionary<string, ShipDefinitionSO>();
@@ -442,7 +445,7 @@ namespace RavenDevOps.Fishing.Data
             {
                 var bytes = File.ReadAllBytes(resolvedPath);
                 var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                if (!ImageConversion.LoadImage(texture, bytes, false))
+                if (!TryDecodeTexture(texture, bytes))
                 {
                     DestroyRuntimeObject(texture);
                     return fallback;
@@ -457,6 +460,44 @@ namespace RavenDevOps.Fishing.Data
             {
                 Debug.LogWarning($"CatalogService: failed to load icon at '{resolvedPath}' ({ex.Message}).");
                 return fallback;
+            }
+        }
+
+        private static bool TryDecodeTexture(Texture2D texture, byte[] bytes)
+        {
+            if (texture == null || bytes == null || bytes.Length == 0)
+            {
+                return false;
+            }
+
+            if (!_imageConversionLookupCompleted)
+            {
+                _imageConversionLookupCompleted = true;
+                var imageConversionType = Type.GetType("UnityEngine.ImageConversion, UnityEngine.ImageConversionModule", throwOnError: false);
+                if (imageConversionType != null)
+                {
+                    _imageConversionLoadImageMethod = imageConversionType.GetMethod(
+                        "LoadImage",
+                        BindingFlags.Public | BindingFlags.Static,
+                        binder: null,
+                        types: new[] { typeof(Texture2D), typeof(byte[]), typeof(bool) },
+                        modifiers: null);
+                }
+            }
+
+            if (_imageConversionLoadImageMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var decodeResult = _imageConversionLoadImageMethod.Invoke(null, new object[] { texture, bytes, false });
+                return decodeResult is bool loaded && loaded;
+            }
+            catch
+            {
+                return false;
             }
         }
 

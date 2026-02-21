@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.UI
@@ -18,6 +19,8 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private bool _logCapturePaths = true;
 
         private readonly List<Canvas> _hiddenCanvases = new List<Canvas>();
+        private static MethodInfo _imageConversionEncodeToPngMethod;
+        private static bool _imageConversionLookupCompleted;
         private bool _photoModeActive;
         private Vector3 _originalPosition;
         private Quaternion _originalRotation;
@@ -135,7 +138,13 @@ namespace RavenDevOps.Fishing.UI
                     screenshotTexture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
                     screenshotTexture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
 
-                    var bytes = screenshotTexture.EncodeToPNG();
+                    if (!TryEncodePng(screenshotTexture, out var bytes))
+                    {
+                        Destroy(screenshotTexture);
+                        Debug.LogError("PhotoModeController: PNG encode failed because ImageConversion module is unavailable.");
+                        return string.Empty;
+                    }
+
                     Destroy(screenshotTexture);
 
                     File.WriteAllBytes(path, bytes);
@@ -231,7 +240,7 @@ namespace RavenDevOps.Fishing.UI
             }
 
             _hiddenCanvases.Clear();
-            var canvases = FindObjectsOfType<Canvas>(true);
+            var canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             for (var i = 0; i < canvases.Length; i++)
             {
                 var canvas = canvases[i];
@@ -252,6 +261,46 @@ namespace RavenDevOps.Fishing.UI
 
                 canvas.enabled = false;
                 _hiddenCanvases.Add(canvas);
+            }
+        }
+
+        private static bool TryEncodePng(Texture2D texture, out byte[] bytes)
+        {
+            bytes = null;
+            if (texture == null)
+            {
+                return false;
+            }
+
+            if (!_imageConversionLookupCompleted)
+            {
+                _imageConversionLookupCompleted = true;
+                var imageConversionType = Type.GetType("UnityEngine.ImageConversion, UnityEngine.ImageConversionModule", throwOnError: false);
+                if (imageConversionType != null)
+                {
+                    _imageConversionEncodeToPngMethod = imageConversionType.GetMethod(
+                        "EncodeToPNG",
+                        BindingFlags.Public | BindingFlags.Static,
+                        binder: null,
+                        types: new[] { typeof(Texture2D) },
+                        modifiers: null);
+                }
+            }
+
+            if (_imageConversionEncodeToPngMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                bytes = _imageConversionEncodeToPngMethod.Invoke(null, new object[] { texture }) as byte[];
+                return bytes != null && bytes.Length > 0;
+            }
+            catch
+            {
+                bytes = null;
+                return false;
             }
         }
     }

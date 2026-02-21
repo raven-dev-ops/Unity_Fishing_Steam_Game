@@ -172,16 +172,17 @@ namespace RavenDevOps.Fishing.Steam
                 return false;
             }
 
-#if UNITY_EDITOR
-            skipReason = "running in Unity editor";
-            return false;
-#else
+            if (Application.isEditor)
+            {
+                skipReason = "running in Unity editor";
+                return false;
+            }
+
             if (Debug.isDebugBuild && !_allowRelaunchInDevelopmentBuild)
             {
                 skipReason = "debug/development build without override";
                 return false;
             }
-#endif
 
             skipReason = string.Empty;
             return true;

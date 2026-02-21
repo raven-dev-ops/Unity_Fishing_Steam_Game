@@ -24,7 +24,7 @@ namespace RavenDevOps.Fishing.Harbor
 
             if (_interactables.Count == 0)
             {
-                _interactables.AddRange(FindObjectsOfType<WorldInteractable>(true));
+                _interactables.AddRange(FindObjectsByType<WorldInteractable>(FindObjectsInactive.Include, FindObjectsSortMode.None));
             }
         }
 

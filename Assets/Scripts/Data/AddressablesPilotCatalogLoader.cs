@@ -40,11 +40,7 @@ namespace RavenDevOps.Fishing.Data
         {
             get
             {
-#if ENABLE_ADDRESSABLES
-                return _useAddressablesWhenAvailable;
-#else
-                return false;
-#endif
+                return IsAddressablesCompiledIn && _useAddressablesWhenAvailable;
             }
         }
 
@@ -171,7 +167,7 @@ namespace RavenDevOps.Fishing.Data
             }
 
             Debug.Log(
-                $"AddressablesPilotCatalogLoader: fish definitions loaded count={results.Count}, source={(usedFallback ? "resources_fallback" : "addressables")}.");
+                $"AddressablesPilotCatalogLoader: fish definitions loaded count={results.Count}, source={(usedFallback ? "resources_fallback" : "addressables")}, label='{_fishDefinitionsLabel}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             onCompleted?.Invoke(results);
             yield break;
         }
@@ -248,7 +244,7 @@ namespace RavenDevOps.Fishing.Data
             _phaseTwoAudioLoadError = loadError ?? string.Empty;
 
             Debug.Log(
-                $"AddressablesPilotCatalogLoader: phase-two audio loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, error='{_phaseTwoAudioLoadError}'.");
+                $"AddressablesPilotCatalogLoader: phase-two audio loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, label='{_phaseTwoAudioLabel}', error='{_phaseTwoAudioLoadError}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             DispatchPhaseTwoAudioCallbacks();
             yield break;
         }
@@ -325,9 +321,21 @@ namespace RavenDevOps.Fishing.Data
             _phaseTwoEnvironmentLoadError = loadError ?? string.Empty;
 
             Debug.Log(
-                $"AddressablesPilotCatalogLoader: phase-two environment loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, error='{_phaseTwoEnvironmentLoadError}'.");
+                $"AddressablesPilotCatalogLoader: phase-two environment loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, label='{_phaseTwoEnvironmentLabel}', error='{_phaseTwoEnvironmentLoadError}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             DispatchPhaseTwoEnvironmentCallbacks();
             yield break;
+        }
+
+        private static bool IsAddressablesCompiledIn
+        {
+            get
+            {
+#if ENABLE_ADDRESSABLES
+                return true;
+#else
+                return false;
+#endif
+            }
         }
 
         private void CachePhaseTwoAudio(List<AudioClip> audioClips)
