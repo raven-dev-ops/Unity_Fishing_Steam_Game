@@ -6,6 +6,7 @@
 - `Assets/Scripts/UI/DialogueBubbleController.cs`
 - `Assets/Scripts/UI/HudOverlayController.cs`
 - `Assets/Scripts/UI/GlobalUiAccessibilityService.cs`
+- `Assets/Scripts/UI/UiAccessibilityCanvasRegistrant.cs` (for dynamically instantiated canvases)
 
 ## Features
 
@@ -25,6 +26,8 @@
 ### UI Scale
 - Setting: `settings.uiScale` (`0.8x` to `1.5x`)
 - Applied globally by `GlobalUiAccessibilityService` to root non-world-space canvases.
+- Scene canvases are registered on scene-load events (event-driven).
+- Dynamically instantiated canvases can auto-register through `UiAccessibilityCanvasRegistrant`.
 
 ## Persistence
 All accessibility options persist through `UserSettingsService` + `PlayerPrefs` and are restored on boot.
