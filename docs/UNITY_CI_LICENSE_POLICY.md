@@ -16,8 +16,8 @@
   - `trusted`: protected refs (`github.ref_protected == true`) or `workflow_dispatch`.
   - `untrusted`: all other contexts.
 - Policy outcome:
-  - `trusted` + missing `UNITY_LICENSE`: fail fast with explicit error.
-  - `untrusted` + missing `UNITY_LICENSE`: warn and skip Unity-dependent steps.
+  - missing `UNITY_LICENSE` in any context: warn and skip Unity-dependent steps.
+  - release build/upload workflow still fails when required release secrets are missing.
 
 ## Required Secrets
 - Repository secret:
@@ -27,9 +27,9 @@
 ## Context Matrix
 | Context | Trusted? | Expected behavior with `UNITY_LICENSE` present | Expected behavior without `UNITY_LICENSE` |
 |---|---|---|---|
-| `push` to protected `main` | Yes | Unity jobs run | Workflow fails on missing license |
+| `push` to protected `main` | Yes | Unity jobs run | Unity jobs warn+skip |
 | Protected tag push (`v*`) release flow | Yes (release policy) | Release build + upload path runs | Release build fails on missing license |
-| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Workflow fails on missing license |
+| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Unity jobs warn+skip |
 | Internal PR (same repo) | Usually No | Unity jobs run if secret is exposed to PR context | Unity jobs warn+skip |
 | Fork PR | No | Secrets typically unavailable; Unity jobs generally cannot run | Unity jobs warn+skip |
 | Dependabot PR | No | If secrets unavailable, Unity jobs skip | Unity jobs warn+skip |
@@ -40,12 +40,11 @@
 - Therefore write-capable or secret-dependent actions are restricted to trusted contexts or explicitly approved release environments.
 
 ## Troubleshooting
-1. `UNITY_LICENSE secret is required in trusted Unity CI contexts`:
-   - Add/update repository `UNITY_LICENSE`.
-   - Re-run workflow from protected ref or manual dispatch.
+1. Unity steps skipped due missing license:
+   - Check workflow logs for missing `UNITY_LICENSE` warning.
+   - Add/update repository `UNITY_LICENSE` to re-enable Unity-dependent steps.
 2. Unity steps skipped in PR:
-   - Check workflow logs for `untrusted context` + missing license warning.
-   - For forks/dependabot, this is expected.
+   - For forks/dependabot, this is expected when secrets are unavailable.
 3. Release workflow fails before Steam upload:
    - Confirm `UNITY_LICENSE` exists and release environment secrets are configured.
    - Confirm release was triggered by protected tag or approved manual dispatch.

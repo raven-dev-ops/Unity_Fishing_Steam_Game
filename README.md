@@ -34,7 +34,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Unity CI preflight enforces editor version contract (`2022.3.16f1`) via `scripts/ci/validate-unity-version.sh`.
 - Unity CI preflight enforces package-lock contract via `scripts/ci/validate-package-lock.sh`.
 - Build size report script: `scripts/ci/build-size-report.sh` with baseline `ci/build-size-baseline.json`.
-- Unity workflows enforce `UNITY_LICENSE` in trusted contexts (protected refs or manual dispatch), and warn/skip in untrusted contexts.
+- Unity workflows require `UNITY_LICENSE` to execute Unity-dependent steps; when absent they emit warnings and skip those steps.
 - Trusted write-capable check publication uses `AUTOMATION_WRITE_TOKEN` (`docs/CI_AUTOMATION_TOKEN_POLICY.md`).
 
 ## Project Structure
