@@ -182,14 +182,14 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             child.position = center;
-            var collider = child.GetComponent<BoxCollider>();
+            var collider = child.GetComponent<BoxCollider2D>();
             if (collider == null)
             {
-                collider = child.gameObject.AddComponent<BoxCollider>();
+                collider = child.gameObject.AddComponent<BoxCollider2D>();
             }
 
-            collider.size = size;
-            collider.center = Vector3.zero;
+            collider.size = new Vector2(size.x, size.y);
+            collider.offset = Vector2.zero;
             collider.isTrigger = false;
         }
 
