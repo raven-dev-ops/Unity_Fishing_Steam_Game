@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
@@ -14,14 +13,6 @@ namespace RavenDevOps.Fishing.Steam
 {
     public sealed class SteamCloudSyncService : MonoBehaviour
     {
-        [Serializable]
-        private sealed class CloudSaveManifest
-        {
-            public string savedAtUtc = string.Empty;
-            public string contentSha256 = string.Empty;
-            public string policy = "newest-wins";
-        }
-
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private bool _autoSyncOnSave = true;
         [SerializeField] private bool _verboseLogs = true;
@@ -122,6 +113,14 @@ namespace RavenDevOps.Fishing.Steam
             {
                 if (TryReadCloudText(_cloudSaveFileName, out var cloudJson))
                 {
+                    if (!ValidateCloudPayloadIntegrity(cloudJson, hasLocalSave: false, out var integrityReason))
+                    {
+                        BackupCloudConflict(localPath, cloudJson, integrityReason);
+                        LastConflictDecision = $"cloud_only_rejected_{integrityReason}";
+                        _saveManager.LoadOrCreate();
+                        return;
+                    }
+
                     var saveDir = Path.GetDirectoryName(localPath);
                     if (!string.IsNullOrWhiteSpace(saveDir))
                     {
@@ -129,7 +128,9 @@ namespace RavenDevOps.Fishing.Steam
                     }
 
                     File.WriteAllText(localPath, cloudJson);
-                    LastConflictDecision = "cloud_only_downloaded";
+                    LastConflictDecision = string.IsNullOrWhiteSpace(integrityReason)
+                        ? "cloud_only_downloaded"
+                        : $"cloud_only_downloaded_{integrityReason}";
                     _saveManager.LoadOrCreate();
                 }
 
@@ -147,6 +148,18 @@ namespace RavenDevOps.Fishing.Steam
             if (!TryReadCloudText(_cloudSaveFileName, out var cloudText))
             {
                 LastConflictDecision = "cloud_read_failed_keep_local";
+                return;
+            }
+
+            if (!ValidateCloudPayloadIntegrity(cloudText, hasLocalSave: true, out var integrityFailureReason))
+            {
+                BackupCloudConflict(localPath, cloudText, integrityFailureReason);
+                LastConflictDecision = $"cloud_integrity_failed_keep_local_{integrityFailureReason}";
+                if (_verboseLogs)
+                {
+                    Debug.LogWarning($"SteamCloudSyncService: cloud payload integrity failed ({integrityFailureReason}), local save kept.");
+                }
+
                 return;
             }
 
@@ -176,7 +189,7 @@ namespace RavenDevOps.Fishing.Steam
             }
             else
             {
-                BackupCloudConflict(localPath, cloudText);
+                BackupCloudConflict(localPath, cloudText, "local_newer");
                 LastConflictDecision = "local_newer_uploaded";
                 UploadLocalToCloud();
             }
@@ -217,10 +230,10 @@ namespace RavenDevOps.Fishing.Steam
         private void UploadManifest(string localPath, string localJson)
         {
 #if STEAMWORKS_NET
-            var manifest = new CloudSaveManifest
+            var manifest = new CloudSaveManifestData
             {
                 savedAtUtc = File.GetLastWriteTimeUtc(localPath).ToString("O"),
-                contentSha256 = ComputeSha256(localJson),
+                contentSha256 = SteamCloudIntegrity.ComputeSha256(localJson),
                 policy = "newest-wins"
             };
 
@@ -235,8 +248,8 @@ namespace RavenDevOps.Fishing.Steam
 #if STEAMWORKS_NET
             if (TryReadCloudText(_cloudManifestFileName, out var manifestJson))
             {
-                var manifest = JsonUtility.FromJson<CloudSaveManifest>(manifestJson);
-                if (manifest != null && DateTime.TryParse(manifest.savedAtUtc, out var parsed))
+                if (SteamCloudIntegrity.TryParseManifest(manifestJson, out var manifest) &&
+                    DateTime.TryParse(manifest.savedAtUtc, out var parsed))
                 {
                     return DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
                 }
@@ -251,18 +264,45 @@ namespace RavenDevOps.Fishing.Steam
             return DateTime.MinValue;
         }
 
-        private static string ComputeSha256(string text)
+        private bool ValidateCloudPayloadIntegrity(string cloudPayloadJson, bool hasLocalSave, out string integrityReason)
         {
-            var raw = Encoding.UTF8.GetBytes(text ?? string.Empty);
-            using var sha = SHA256.Create();
-            var hash = sha.ComputeHash(raw);
-            var builder = new StringBuilder(hash.Length * 2);
-            for (var i = 0; i < hash.Length; i++)
+#if STEAMWORKS_NET
+            integrityReason = string.Empty;
+            if (!TryReadCloudText(_cloudManifestFileName, out var manifestJson))
             {
-                builder.Append(hash[i].ToString("x2"));
+                if (hasLocalSave)
+                {
+                    integrityReason = CloudIntegrityFailure.ManifestMissing.ToString();
+                    return false;
+                }
+
+                integrityReason = "legacy_no_manifest";
+                return true;
             }
 
-            return builder.ToString();
+            if (!SteamCloudIntegrity.TryParseManifest(manifestJson, out var manifest))
+            {
+                if (hasLocalSave)
+                {
+                    integrityReason = CloudIntegrityFailure.ManifestJsonInvalid.ToString();
+                    return false;
+                }
+
+                integrityReason = "legacy_manifest_parse_failed";
+                return true;
+            }
+
+            if (!SteamCloudIntegrity.TryValidatePayload(cloudPayloadJson, manifest, out var failure))
+            {
+                integrityReason = failure.ToString();
+                return false;
+            }
+
+            return true;
+#else
+            integrityReason = "steamworks_disabled";
+            return false;
+#endif
         }
 
         private void BackupLocalConflict(string localPath, string suffix)
@@ -277,11 +317,29 @@ namespace RavenDevOps.Fishing.Steam
             File.Copy(localPath, backupPath, overwrite: true);
         }
 
-        private void BackupCloudConflict(string localPath, string cloudText)
+        private void BackupCloudConflict(string localPath, string cloudText, string reasonSuffix)
         {
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            var backupPath = localPath + $".conflict_cloud_{stamp}";
+            var safeReason = SanitizeFileToken(reasonSuffix);
+            var backupPath = localPath + $".conflict_cloud_{safeReason}_{stamp}";
             File.WriteAllText(backupPath, cloudText ?? string.Empty);
+        }
+
+        private static string SanitizeFileToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "unknown";
+            }
+
+            var token = value.Trim();
+            var invalidChars = Path.GetInvalidFileNameChars();
+            for (var i = 0; i < invalidChars.Length; i++)
+            {
+                token = token.Replace(invalidChars[i], '_');
+            }
+
+            return token;
         }
 
         private bool CanUseCloud()
