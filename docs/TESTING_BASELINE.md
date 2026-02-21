@@ -13,8 +13,9 @@
 
 ## Headless CI Run
 The CI workflow `.github/workflows/ci-tests.yml` runs both test modes using GameCI.
-Trusted contexts (protected refs or manual dispatch) require `UNITY_LICENSE`.
-Untrusted contexts without `UNITY_LICENSE` report warnings and skip Unity test execution.
+Unity steps run when `UNITY_LICENSE` is available.
+When `UNITY_LICENSE` is missing, workflows emit warnings and skip Unity test execution.
+If repository variable `UNITY_EXECUTION_ENFORCE=true`, trusted contexts fail when Unity execution is skipped.
 Check-run publication in trusted contexts uses `AUTOMATION_WRITE_TOKEN`; without it, tests still run and artifacts are uploaded (no check-run write).
 
 Headless scene screenshots:

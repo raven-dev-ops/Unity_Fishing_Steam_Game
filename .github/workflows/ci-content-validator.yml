@@ -71,6 +71,30 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
+      - name: Publish Unity execution status
+        id: unity_execution
+        shell: bash
+        run: |
+          if [ "${{ steps.unity_license.outputs.available }}" = "true" ]; then
+            echo "executed=true" >> "$GITHUB_OUTPUT"
+            echo "Unity execution status: executed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "executed=false" >> "$GITHUB_OUTPUT"
+            echo "Unity execution status: skipped (UNITY_LICENSE unavailable)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce Unity execution policy
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
+        run: |
+          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_execution.outputs.executed }}" != "true" ]; then
+            echo "::error::Unity execution enforcement is enabled (UNITY_EXECUTION_ENFORCE=true) and Unity steps were skipped."
+            exit 1
+          fi
+
       - name: Cache Library
         if: steps.unity_license.outputs.available == 'true'
         uses: actions/cache@v4
@@ -115,4 +139,4 @@ jobs:
       - name: Report skipped validator
         if: steps.unity_license.outputs.available != 'true'
         shell: bash
-        run: echo "Content validator skipped because UNITY_LICENSE is not configured for this untrusted context."
+        run: echo "Content validator skipped because UNITY_LICENSE is not configured for this run context."

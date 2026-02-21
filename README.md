@@ -35,6 +35,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Unity CI preflight enforces package-lock contract via `scripts/ci/validate-package-lock.sh`.
 - Build size report script: `scripts/ci/build-size-report.sh` with baseline `ci/build-size-baseline.json`.
 - Unity workflows require `UNITY_LICENSE` to execute Unity-dependent steps; when absent they emit warnings and skip those steps.
+- Optional execution enforcement toggle: set repository variable `UNITY_EXECUTION_ENFORCE=true` to fail trusted contexts when Unity execution is skipped.
 - Trusted write-capable check publication uses `AUTOMATION_WRITE_TOKEN` (`docs/CI_AUTOMATION_TOKEN_POLICY.md`).
 
 ## Project Structure
@@ -99,7 +100,6 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
 - Security disclosure policy: `SECURITY.md`
-- Testing baseline: `docs/TESTING_BASELINE.md`
 - UI architecture notes: `docs/UI_ARCHITECTURE.md`
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`
 

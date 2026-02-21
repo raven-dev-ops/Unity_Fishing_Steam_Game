@@ -17,6 +17,7 @@
   - `untrusted`: all other contexts.
 - Policy outcome:
   - missing `UNITY_LICENSE` in any context: warn and skip Unity-dependent steps.
+  - if repository variable `UNITY_EXECUTION_ENFORCE=true`, trusted contexts fail when Unity execution is skipped.
   - release build/upload workflow still fails when required release secrets are missing.
 
 ## Required Secrets
@@ -34,6 +35,14 @@
 | Fork PR | No | Secrets typically unavailable; Unity jobs generally cannot run | Unity jobs warn+skip |
 | Dependabot PR | No | If secrets unavailable, Unity jobs skip | Unity jobs warn+skip |
 
+## Execution Enforcement Toggle
+- Repository variable: `UNITY_EXECUTION_ENFORCE`.
+- Default behavior (unset/false):
+  - Unity workflows warn+skip when `UNITY_LICENSE` is missing.
+- Enforcement behavior (`true`):
+  - In trusted contexts, workflows fail if Unity execution is skipped.
+  - In untrusted contexts, warn+skip behavior remains.
+
 ## Why Write-Capable Steps Are Gated
 - Unity license and release credentials are sensitive.
 - Untrusted contexts can execute attacker-controlled branch content.
@@ -43,6 +52,7 @@
 1. Unity steps skipped due missing license:
    - Check workflow logs for missing `UNITY_LICENSE` warning.
    - Add/update repository `UNITY_LICENSE` to re-enable Unity-dependent steps.
+   - If trusted-context failures are expected, confirm `UNITY_EXECUTION_ENFORCE` value.
 2. Unity steps skipped in PR:
    - For forks/dependabot, this is expected when secrets are unavailable.
 3. Release workflow fails before Steam upload:
