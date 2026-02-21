@@ -16,6 +16,7 @@ flowchart LR
     IAMC[InputActionMapController]
     SM[SaveManager]
     MRS[ModRuntimeCatalogService]
+    MLS[MetaLoopRuntimeService]
     APL[AddressablesPilotCatalogLoader]
     OBJ[ObjectivesService]
     UAS[GlobalUiAccessibilityService]
@@ -34,6 +35,7 @@ flowchart LR
   GS --> IAMC
   GS --> SM
   GS --> MRS
+  GS --> MLS
   GS --> APL
   GS --> OBJ
   GS --> UAS
@@ -64,7 +66,9 @@ flowchart LR
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
+- Save load path is version-aware via `SaveMigrationPipeline` before runtime normalization.
 - Mod runtime catalog service discovers/validates data-only packs and feeds deterministic catalog overrides.
+- Meta-loop runtime service adds contracts, collections, demand modifiers, and gear synergies for retention depth.
 - Addressables pilot loader can asynchronously provide phase-one fish catalog overlays with resource fallback.
 - Objectives service tracks non-Steam gameplay goals and persists objective progress/rewards.
 - Global UI accessibility service applies persisted UI scaling at runtime.

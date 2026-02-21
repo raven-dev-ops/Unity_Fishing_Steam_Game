@@ -30,6 +30,9 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
+- Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`.
+- Economy/progression simulation gate: `.github/workflows/ci-balance-simulation.yml`.
+- Scheduled full-stack regression: `.github/workflows/nightly-full-regression.yml`.
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
 - Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.
 - Optional scene diff enforcement toggle: set repository variable `SCENE_CAPTURE_DIFF_ENFORCE=true`.
@@ -42,10 +45,15 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 
 ## Project Structure
 - `Assets/Scenes/`: gameplay scenes (Boot -> Cinematic -> MainMenu -> Harbor -> Fishing)
-- `Assets/Scripts/Core/`: runtime bootstrap and flow state orchestration
-- `Assets/Scripts/Fishing/`: fishing loop runtime systems
-- `Assets/Scripts/Save/`: profile/save persistence
-- `Assets/Scripts/Input/`: input routing and action-map context switching
+- `Assets/Scripts/Bootstrap/`: runtime service composition root
+- `Assets/Scripts/Core/`: shared runtime services, settings, and infrastructure
+- `Assets/Scripts/Systems/`: flow orchestration and objective systems
+- `Assets/Scripts/Fishing/`: fishing loop runtime systems and domain logic
+- `Assets/Scripts/Economy/`: sell economy and meta-loop systems
+- `Assets/Scripts/Data/`: catalog/content data services and mod merge models
+- `Assets/Scripts/Save/`: profile/save persistence and migration pipeline
+- `Assets/Scripts/Input/`: input routing, action maps, and rebinding services
+- `Assets/Scripts/UI/`: HUD/menu/settings/presentation controllers
 - `Assets/Editor/`: Unity editor tooling for build/validation
 - `docs/`: operations, QA, release, and content pipeline documentation
 - `.github/`: CI workflows, CODEOWNERS, issue templates, PR template
@@ -77,17 +85,22 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
 - Accessibility baseline: `docs/ACCESSIBILITY_BASELINE.md`
+- Accessibility conformance mapping: `docs/ACCESSIBILITY_CONFORMANCE.md`
 - Fishing environment slice: `docs/FISHING_ENVIRONMENT_SLICE.md`
 - Fishing combat model: `docs/FISHING_COMBAT_MODEL.md`
 - Fishing conditions: `docs/FISHING_CONDITIONS.md`
 - Fishing tutorial flow: `docs/FISHING_TUTORIAL.md`
+- Meta-loop systems: `docs/META_LOOP_SYSTEM.md`
 - Input baseline: `docs/INPUT_MAP.md`
 - Mod support strategy: `docs/MOD_SUPPORT_STRATEGY.md`
 - Mod manifest schema: `docs/MOD_MANIFEST_SCHEMA.md`
 - Mod runtime merge: `docs/MOD_RUNTIME_MERGE.md`
 - Mod packaging guide: `docs/MOD_PACKAGING_GUIDE.md`
 - Mod templates: `mods/templates/`
+- Nightly full regression runbook: `docs/NIGHTLY_FULL_REGRESSION.md`
 - Objectives system: `docs/OBJECTIVES_SYSTEM.md`
+- Memory and Addressables quality gates: `docs/MEMORY_AND_ADDRESSABLES_GATES.md`
+- Balance simulation tooling: `docs/BALANCE_SIMULATION.md`
 - Performance baseline and budgets: `docs/PERF_BASELINE.md`
 - Photo mode and capture: `docs/PHOTO_MODE.md`
 - Progression system baseline: `docs/PROGRESSION_SYSTEM.md`
