@@ -23,9 +23,15 @@ Headless scene screenshots:
 - Trigger: manual `workflow_dispatch` only
 - Uses PlayMode test `Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs`
 - Enables screenshot test with env var `RAVEN_SCENE_CAPTURE_ENABLED=1`
+- Compares captures to approved baseline in `ci/scene-capture-baseline/` using `scripts/ci/compare-scene-captures.py`
+- Diff thresholds:
+  - warn: `SCENE_CAPTURE_WARN_THRESHOLD` (default `0.015`)
+  - fail: `SCENE_CAPTURE_FAIL_THRESHOLD` (default `0.030`)
+- Optional enforcement: repository variable `SCENE_CAPTURE_DIFF_ENFORCE=true` fails the workflow on severe regressions
 - Uploads artifacts:
   - `scene-capture-playmode-<sha>`
   - `scene-captures-<sha>` (PNG scene screenshots)
+  - `scene-capture-diff-<sha>` (visual diff panels + summary)
 
 Project wrapper (recommended):
 
@@ -60,4 +66,8 @@ Unity.exe -batchmode -nographics -quit `
 - PlayMode:
   - Game flow pause/resume transitions
   - Pause-to-harbor transition behavior
+  - Catch -> inventory -> sell regression path
+  - Purchase ownership/equip regression path
+  - Save/load roundtrip across scene transitions
+  - Non-Steam fallback guard-path checks
   - Headless scene screenshot capture (env-gated in CI)

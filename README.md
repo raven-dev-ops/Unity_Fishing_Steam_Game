@@ -31,6 +31,8 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
+- Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.
+- Optional scene diff enforcement toggle: set repository variable `SCENE_CAPTURE_DIFF_ENFORCE=true`.
 - Unity CI preflight enforces editor version contract (`2022.3.16f1`) via `scripts/ci/validate-unity-version.sh`.
 - Unity CI preflight enforces package-lock contract via `scripts/ci/validate-package-lock.sh`.
 - Build size report script: `scripts/ci/build-size-report.sh` with baseline `ci/build-size-baseline.json`.
@@ -89,6 +91,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Photo mode and capture: `docs/PHOTO_MODE.md`
 - Progression system baseline: `docs/PROGRESSION_SYSTEM.md`
 - Settings system: `docs/SETTINGS_SYSTEM.md`
+- Scene capture baseline diffing: `docs/SCENE_CAPTURE_BASELINE.md`
 - Steam achievements/stats: `docs/STEAM_ACHIEVEMENTS_STATS.md`
 - Steam Cloud sync: `docs/STEAM_CLOUD_SYNC.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`

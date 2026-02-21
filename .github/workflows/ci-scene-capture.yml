@@ -8,6 +8,8 @@ permissions:
 
 env:
   EXPECTED_UNITY_VERSION: 2022.3.16f1
+  SCENE_CAPTURE_WARN_THRESHOLD: "0.015"
+  SCENE_CAPTURE_FAIL_THRESHOLD: "0.030"
 
 concurrency:
   group: ci-scene-capture-${{ github.ref }}
@@ -148,6 +150,37 @@ jobs:
           testMode: playmode
           artifactsPath: artifacts/playmode
 
+      - name: Setup Python
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install scene diff tooling
+        if: always() && steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pillow
+
+      - name: Compare captures against approved baseline
+        if: always() && steps.unity_license.outputs.available == 'true'
+        shell: bash
+        env:
+          SCENE_CAPTURE_DIFF_ENFORCE: ${{ vars.SCENE_CAPTURE_DIFF_ENFORCE }}
+        run: |
+          mkdir -p artifacts/scene-capture-diff
+          chmod +x scripts/ci/compare-scene-captures.py
+          python3 scripts/ci/compare-scene-captures.py \
+            --baseline-dir ci/scene-capture-baseline \
+            --capture-dir artifacts/scene-captures \
+            --output-dir artifacts/scene-capture-diff \
+            --warn-threshold "${SCENE_CAPTURE_WARN_THRESHOLD}" \
+            --fail-threshold "${SCENE_CAPTURE_FAIL_THRESHOLD}" \
+            --enforce "${SCENE_CAPTURE_DIFF_ENFORCE:-false}" \
+            --summary-json artifacts/scene-capture-diff/summary.json \
+            --summary-md artifacts/scene-capture-diff/summary.md
+
       - name: Publish scene capture summary
         if: always() && steps.unity_license.outputs.available == 'true'
         shell: bash
@@ -167,6 +200,10 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Scene capture folder was not generated." >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [ -f "artifacts/scene-capture-diff/summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "artifacts/scene-capture-diff/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload playmode test artifacts
         if: always() && steps.unity_license.outputs.available == 'true'
@@ -182,6 +219,14 @@ jobs:
         with:
           name: scene-captures-${{ github.sha }}
           path: artifacts/scene-captures/**
+          if-no-files-found: warn
+
+      - name: Upload scene diff artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-capture-diff-${{ github.sha }}
+          path: artifacts/scene-capture-diff/**
           if-no-files-found: warn
 
       - name: Report skipped scene capture
