@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Core;
+using System;
 using UnityEngine;
 
 #if STEAMWORKS_NET
@@ -208,8 +209,20 @@ namespace RavenDevOps.Fishing.Steam
 
             if (_verboseLogs)
             {
+                if (IsExpectedNonSteamFallback(_lastFallbackReason))
+                {
+                    Debug.Log($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
+                    return;
+                }
+
                 Debug.LogWarning($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
             }
+        }
+
+        private static bool IsExpectedNonSteamFallback(string reason)
+        {
+            return !string.IsNullOrWhiteSpace(reason)
+                && reason.IndexOf("STEAMWORKS_NET symbol not defined", StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

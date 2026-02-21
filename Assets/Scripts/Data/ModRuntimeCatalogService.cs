@@ -40,6 +40,11 @@ namespace RavenDevOps.Fishing.Core
             _safeModeActive = ResolveSafeMode(out _safeModeReason);
             var modsRootPath = ResolveModsRootPath();
             var shouldLoad = _enableMods && !_safeModeActive;
+            if (shouldLoad)
+            {
+                EnsureModsDirectoryExists(modsRootPath);
+            }
+
             _lastLoadResult = ModRuntimeCatalogLoader.Load(modsRootPath, shouldLoad, Application.version);
             if (_safeModeActive)
             {
@@ -80,15 +85,52 @@ namespace RavenDevOps.Fishing.Core
 
         private string ResolveModsRootPath()
         {
+            var rawPath = string.Empty;
             if (!string.IsNullOrWhiteSpace(_overrideModsRootPath))
             {
-                return _overrideModsRootPath;
+                rawPath = _overrideModsRootPath;
+            }
+            else
+            {
+                var root = string.IsNullOrWhiteSpace(Application.persistentDataPath)
+                    ? Directory.GetCurrentDirectory()
+                    : Application.persistentDataPath;
+                rawPath = Path.Combine(root, _modsDirectoryName);
             }
 
-            var root = string.IsNullOrWhiteSpace(Application.persistentDataPath)
-                ? Directory.GetCurrentDirectory()
-                : Application.persistentDataPath;
-            return Path.Combine(root, _modsDirectoryName);
+            if (string.IsNullOrWhiteSpace(rawPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return Path.GetFullPath(rawPath);
+            }
+            catch
+            {
+                return rawPath;
+            }
+        }
+
+        private void EnsureModsDirectoryExists(string modsRootPath)
+        {
+            if (string.IsNullOrWhiteSpace(modsRootPath) || Directory.Exists(modsRootPath))
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(modsRootPath);
+            }
+            catch (Exception exception)
+            {
+                if (_verboseLogging)
+                {
+                    Debug.LogWarning($"ModRuntimeCatalogService: failed to create mods directory '{modsRootPath}' ({exception.Message}).");
+                }
+            }
         }
 
         private static bool ResolveSafeMode(out string reason)
