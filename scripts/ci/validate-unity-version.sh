@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_VERSION_FILE="${PROJECT_VERSION_FILE:-ProjectSettings/ProjectVersion.txt}"
-EXPECTED_UNITY_VERSION="${EXPECTED_UNITY_VERSION:-2022.3.16f1}"
+EXPECTED_UNITY_VERSION="${EXPECTED_UNITY_VERSION:-6000.2.12f1}"
 
 if [[ ! -f "${PROJECT_VERSION_FILE}" ]]; then
   echo "::error::Unity version guard failed: missing ${PROJECT_VERSION_FILE}."
@@ -27,3 +27,4 @@ fi
 
 echo "Unity version guard passed: ${actual_unity_version}"
 echo "unity_version=${actual_unity_version}" >> "${GITHUB_OUTPUT:-/dev/null}"
+

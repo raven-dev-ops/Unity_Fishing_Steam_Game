@@ -5,7 +5,7 @@
 - Builder entrypoint: `Assets/Editor/BuildCommandLine.cs`
 
 ## Unity Version Contract
-- Pinned editor version: `2022.3.16f1` (`ProjectSettings/ProjectVersion.txt`).
+- Pinned editor version: `6000.2.12f1` (`ProjectSettings/ProjectVersion.txt`).
 - Unity CI workflows run `scripts/ci/validate-unity-version.sh` before license/build steps.
 - Unity CI workflows run `scripts/ci/validate-package-lock.sh` to fail fast on missing/malformed `Packages/packages-lock.json`.
 - Guard failures are intentional when editor version drifts without workflow alignment.
@@ -19,7 +19,7 @@
 - `Packages/packages-lock.json` is tracked and required in CI.
 - Allowed lock-file change triggers:
   1. `Packages/manifest.json` dependency changes.
-  2. Unity editor version upgrade (for this project, currently `2022.3.16f1`).
+  2. Unity editor version upgrade (for this project, currently `6000.2.12f1`).
 - Lock-file diffs should be reviewed for:
   - unexpected package additions/removals,
   - unexpected version changes outside intended package updates.
@@ -112,3 +112,4 @@ Project wrapper (recommended):
 
 ## Save Path (Windows)
 - `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/save_v1.json`
+

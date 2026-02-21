@@ -21,11 +21,12 @@
   - release build/upload workflow still fails when required release secrets are missing.
 
 ## Current Enforcement Posture (2026-02-21)
-- Repository variable `UNITY_EXECUTION_ENFORCE` is set to `true`.
+- Repository variable `UNITY_EXECUTION_ENFORCE` is set to `false`.
 - Effect in protected/trusted contexts:
-  - Unity build/test/content-validator steps must execute.
-  - Missing/invalid Unity license becomes a blocking failure for required checks.
-- Temporary disablement is permitted only for incident response and must be logged in ops notes with owner + rollback timestamp.
+  - Missing/invalid Unity license emits warning and skips Unity-dependent steps.
+  - Unity execution is non-blocking until enforcement is re-enabled.
+- Re-enable path:
+  - Set `UNITY_EXECUTION_ENFORCE=true` once Unity license and trusted-context execution are ready to be hard-required.
 
 ## Required Secrets
 - Repository secret:

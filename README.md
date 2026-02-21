@@ -5,7 +5,7 @@ Keyboard-first single-player fishing loop for Steam.
 ## Developer Quick Start
 
 ### Prerequisites
-- Unity `2022.3.16f1` (LTS)
+- Unity `6000.2.12f1` (LTS)
 - Git LFS
 - Windows 10/11 for local Windows player builds
 
@@ -38,7 +38,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
 - Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.
 - Optional scene diff enforcement toggle: set repository variable `SCENE_CAPTURE_DIFF_ENFORCE=true`.
-- Unity CI preflight enforces editor version contract (`2022.3.16f1`) via `scripts/ci/validate-unity-version.sh`.
+- Unity CI preflight enforces editor version contract (`6000.2.12f1`) via `scripts/ci/validate-unity-version.sh`.
 - Unity CI preflight enforces package-lock contract via `scripts/ci/validate-package-lock.sh`.
 - Build size report script: `scripts/ci/build-size-report.sh` with baseline `ci/build-size-baseline.json`.
 - Unity workflows require `UNITY_LICENSE` to execute Unity-dependent steps; when absent they emit warnings and skip those steps.
@@ -62,7 +62,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 
 ## Troubleshooting
 - Compile errors after pull:
-  - Reimport project and verify Unity version is `2022.3.16f1`.
+  - Reimport project and verify Unity version is `6000.2.12f1`.
 - Missing assets or pink materials:
   - Run `git lfs pull`, then reopen project.
 - Input not responding in play mode:
@@ -135,3 +135,4 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Commit Unity `.meta` files with associated assets.
 - Replace assets in-place when possible to preserve GUID references.
 - Track large binary assets (audio/video/textures/models) with Git LFS.
+

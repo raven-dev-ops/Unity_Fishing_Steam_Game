@@ -22,7 +22,7 @@ permissions:
   id-token: write
 
 env:
-  EXPECTED_UNITY_VERSION: 2022.3.16f1
+  EXPECTED_UNITY_VERSION: 6000.2.12f1
 
 concurrency:
   group: release-steampipe-${{ github.ref }}
@@ -329,3 +329,4 @@ jobs:
           name: steampipe-logs-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
           path: Artifacts/SteamPipeLogs/**
           if-no-files-found: warn
+
