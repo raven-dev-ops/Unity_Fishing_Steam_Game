@@ -65,6 +65,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 ## Documentation Index
 - Addressables pilot: `docs/ADDRESSABLES_PILOT.md`
 - Architecture: `docs/ARCHITECTURE.md`
+- Industry quality roadmap: `docs/INDUSTRY_QUALITY_ROADMAP.md`
 - Asset import standards: `docs/ASSET_IMPORT_STANDARDS.md`
 - Assembly boundaries: `docs/ASSEMBLY_BOUNDARIES.md`
 - Contribution workflow: `CONTRIBUTING.md`
