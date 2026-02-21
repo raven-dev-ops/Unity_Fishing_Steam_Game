@@ -64,3 +64,11 @@ Configure in GitHub repository settings:
    - `release_windows_sbom.spdx.json` contains `spdxVersion`.
 3. Verify attestation for release subject:
    - `gh attestation verify --repo raven-dev-ops/Unity_Fishing_Steam_Game Artifacts/ReleaseBuild/Windows/**`
+
+## RC Signoff Integration
+- Before final tag push, complete the RC validation/signoff bundle:
+  - `docs/RC_VALIDATION_BUNDLE.md`
+- Security/provenance sections in the RC bundle must include:
+  - release run URL,
+  - provenance artifact URL,
+  - attestation verification note and operator.

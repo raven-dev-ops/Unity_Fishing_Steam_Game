@@ -115,6 +115,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Testing baseline: `docs/TESTING_BASELINE.md`
 - Unity CI license/trusted-context policy: `docs/UNITY_CI_LICENSE_POLICY.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
+- RC validation/signoff bundle: `docs/RC_VALIDATION_BUNDLE.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
 - Security disclosure policy: `SECURITY.md`
 - UI architecture notes: `docs/UI_ARCHITECTURE.md`
