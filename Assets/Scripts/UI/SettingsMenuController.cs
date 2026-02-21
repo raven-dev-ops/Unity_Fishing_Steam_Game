@@ -16,9 +16,14 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private Slider _voSlider;
         [SerializeField] private Slider _inputSensitivitySlider;
         [SerializeField] private Slider _uiScaleSlider;
+        [SerializeField] private Slider _subtitleScaleSlider;
+        [SerializeField] private Slider _subtitleBackgroundOpacitySlider;
         [SerializeField] private Toggle _fullscreenToggle;
         [SerializeField] private Toggle _subtitlesToggle;
         [SerializeField] private Toggle _highContrastFishingCuesToggle;
+        [SerializeField] private Toggle _reelInputToggle;
+        [SerializeField] private Toggle _reducedMotionToggle;
+        [SerializeField] private Toggle _readabilityBoostToggle;
         [SerializeField] private Toggle _steamRichPresenceToggle;
         [SerializeField] private Toggle _modSafeModeToggle;
 
@@ -26,6 +31,8 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _resolutionText;
         [SerializeField] private TMP_Text _inputSensitivityText;
         [SerializeField] private TMP_Text _uiScaleText;
+        [SerializeField] private TMP_Text _subtitleScaleText;
+        [SerializeField] private TMP_Text _subtitleBackgroundOpacityText;
         [SerializeField] private TMP_Text _modSafeModeStatusText;
         [SerializeField] private TMP_Text _fishingActionBindingText;
         [SerializeField] private TMP_Text _harborInteractBindingText;
@@ -131,6 +138,33 @@ namespace RavenDevOps.Fishing.UI
             _settingsService?.SetHighContrastFishingCues(enabled);
         }
 
+        public void OnReelInputToggleChanged(bool enabled)
+        {
+            _settingsService?.SetReelInputToggle(enabled);
+        }
+
+        public void OnReducedMotionChanged(bool enabled)
+        {
+            _settingsService?.SetReducedMotion(enabled);
+        }
+
+        public void OnReadabilityBoostChanged(bool enabled)
+        {
+            _settingsService?.SetReadabilityBoost(enabled);
+        }
+
+        public void OnSubtitleScaleChanged(float value)
+        {
+            _settingsService?.SetSubtitleScale(value);
+            RefreshSubtitleScaleText(value);
+        }
+
+        public void OnSubtitleBackgroundOpacityChanged(float value)
+        {
+            _settingsService?.SetSubtitleBackgroundOpacity(value);
+            RefreshSubtitleBackgroundOpacityText(value);
+        }
+
         public void OnSteamRichPresenceChanged(bool enabled)
         {
             _settingsService?.SetSteamRichPresenceEnabled(enabled);
@@ -171,6 +205,8 @@ namespace RavenDevOps.Fishing.UI
                 RefreshDisplayModeText(Screen.fullScreenMode != FullScreenMode.Windowed);
                 RefreshResolutionText();
                 RefreshUiScaleText(1f);
+                RefreshSubtitleScaleText(1f);
+                RefreshSubtitleBackgroundOpacityText(0.65f);
                 var safeModePreferenceEnabled = PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
                 RefreshModSafeModeStatus(safeModePreferenceEnabled);
                 RefreshBindingTexts();
@@ -186,6 +222,8 @@ namespace RavenDevOps.Fishing.UI
             SetSliderValue(_voSlider, _settingsService.VoVolume);
             SetSliderValue(_inputSensitivitySlider, _settingsService.InputSensitivity);
             SetSliderValue(_uiScaleSlider, _settingsService.UiScale);
+            SetSliderValue(_subtitleScaleSlider, _settingsService.SubtitleScale);
+            SetSliderValue(_subtitleBackgroundOpacitySlider, _settingsService.SubtitleBackgroundOpacity);
 
             if (_fullscreenToggle != null)
             {
@@ -202,6 +240,21 @@ namespace RavenDevOps.Fishing.UI
                 _highContrastFishingCuesToggle.isOn = _settingsService.HighContrastFishingCues;
             }
 
+            if (_reelInputToggle != null)
+            {
+                _reelInputToggle.isOn = _settingsService.ReelInputToggle;
+            }
+
+            if (_reducedMotionToggle != null)
+            {
+                _reducedMotionToggle.isOn = _settingsService.ReducedMotion;
+            }
+
+            if (_readabilityBoostToggle != null)
+            {
+                _readabilityBoostToggle.isOn = _settingsService.ReadabilityBoost;
+            }
+
             if (_steamRichPresenceToggle != null)
             {
                 _steamRichPresenceToggle.isOn = _settingsService.SteamRichPresenceEnabled;
@@ -216,6 +269,8 @@ namespace RavenDevOps.Fishing.UI
             RefreshResolutionText();
             RefreshInputSensitivityText(_settingsService.InputSensitivity);
             RefreshUiScaleText(_settingsService.UiScale);
+            RefreshSubtitleScaleText(_settingsService.SubtitleScale);
+            RefreshSubtitleBackgroundOpacityText(_settingsService.SubtitleBackgroundOpacity);
             RefreshModSafeModeStatus(_settingsService.ModSafeModeEnabled);
             RefreshBindingTexts();
         }
@@ -291,6 +346,22 @@ namespace RavenDevOps.Fishing.UI
             if (_uiScaleText != null)
             {
                 _uiScaleText.text = $"UI Scale: {value:0.00}x";
+            }
+        }
+
+        private void RefreshSubtitleScaleText(float value)
+        {
+            if (_subtitleScaleText != null)
+            {
+                _subtitleScaleText.text = $"Subtitle Scale: {value:0.00}x";
+            }
+        }
+
+        private void RefreshSubtitleBackgroundOpacityText(float value)
+        {
+            if (_subtitleBackgroundOpacityText != null)
+            {
+                _subtitleBackgroundOpacityText.text = $"Subtitle Background: {Mathf.RoundToInt(Mathf.Clamp01(value) * 100f)}%";
             }
         }
 

@@ -21,7 +21,7 @@
 
 ## Runtime Context Switching
 - Map switching is handled by `Assets/Scripts/Input/InputActionMapController.cs`.
-- Flow-level pause handling routes through action maps in `Assets/Scripts/Input/KeyboardFlowInputDriver.cs`.
+- Flow-level pause handling routes through action maps in `Assets/Scripts/Systems/KeyboardFlowInputDriver.cs`.
 - Pause-state return-to-harbor input routes through `Assets/Scripts/Fishing/FishingPauseBridge.cs`.
 - Only one map is active at a time.
 

@@ -1,0 +1,40 @@
+{
+  "tiers": {
+    "minimum": {
+      "min_average_fps_warn": 60.0,
+      "min_average_fps_fail": 55.0,
+      "max_p95_frame_ms_warn": 25.0,
+      "max_p95_frame_ms_fail": 30.0,
+      "max_gc_delta_kb_warn": 64.0,
+      "max_gc_delta_kb_fail": 80.0,
+      "min_samples": 1
+    },
+    "recommended": {
+      "min_average_fps_warn": 75.0,
+      "min_average_fps_fail": 68.0,
+      "max_p95_frame_ms_warn": 20.0,
+      "max_p95_frame_ms_fail": 24.0,
+      "max_gc_delta_kb_warn": 56.0,
+      "max_gc_delta_kb_fail": 72.0,
+      "min_samples": 1
+    },
+    "reference": {
+      "min_average_fps_warn": 90.0,
+      "min_average_fps_fail": 80.0,
+      "max_p95_frame_ms_warn": 16.0,
+      "max_p95_frame_ms_fail": 20.0,
+      "max_gc_delta_kb_warn": 48.0,
+      "max_gc_delta_kb_fail": 64.0,
+      "min_samples": 1
+    }
+  },
+  "waiver_policy": {
+    "required_fields": [
+      "owner",
+      "reason",
+      "expires_on",
+      "ticket"
+    ],
+    "max_waiver_days": 14
+  }
+}

@@ -56,6 +56,31 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         }
 
         [Test]
+        public void Step_WithHighPullIntensity_CanSnapLine()
+        {
+            var model = new FishEncounterModel();
+            var fish = new FishDefinition
+            {
+                id = "fish_line_snap",
+                fightStamina = 50f,
+                pullIntensity = 3f,
+                escapeSeconds = 30f
+            };
+
+            model.Begin(fish, initialTension: 0.85f);
+
+            var landed = false;
+            var failReason = FishingFailReason.None;
+            for (var i = 0; i < 120 && !landed && failReason == FishingFailReason.None; i++)
+            {
+                model.Step(0.02f, isReeling: true, out landed, out failReason);
+            }
+
+            Assert.That(landed, Is.False);
+            Assert.That(failReason, Is.EqualTo(FishingFailReason.LineSnap));
+        }
+
+        [Test]
         public void ResolveTensionState_MapsExpectedThresholds()
         {
             Assert.That(FishEncounterModel.ResolveTensionState(0.1f), Is.EqualTo(FishingTensionState.Safe));

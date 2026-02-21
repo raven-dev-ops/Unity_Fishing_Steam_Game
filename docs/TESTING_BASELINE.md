@@ -1,7 +1,14 @@
 # Testing Baseline
 
 ## Test Assemblies
-- Runtime: `Assets/Scripts/RavenDevOps.Fishing.Runtime.asmdef`
+- Runtime:
+  - `Assets/Scripts/Core/RavenDevOps.Fishing.Core.asmdef`
+  - `Assets/Scripts/Save/RavenDevOps.Fishing.Save.asmdef`
+  - `Assets/Scripts/Data/RavenDevOps.Fishing.Data.asmdef`
+  - `Assets/Scripts/Fishing/RavenDevOps.Fishing.Fishing.asmdef`
+  - `Assets/Scripts/Economy/RavenDevOps.Fishing.Economy.asmdef`
+  - `Assets/Scripts/UI/RavenDevOps.Fishing.UI.asmdef`
+  - `Assets/Scripts/Steam/RavenDevOps.Fishing.Steam.asmdef`
 - Editor tools: `Assets/Editor/RavenDevOps.Fishing.Editor.asmdef`
 - EditMode tests: `Assets/Tests/EditMode/RavenDevOps.Fishing.Tests.EditMode.asmdef`
 - PlayMode tests: `Assets/Tests/PlayMode/RavenDevOps.Fishing.Tests.PlayMode.asmdef`
@@ -32,6 +39,21 @@ Headless scene screenshots:
   - `scene-capture-playmode-<sha>`
   - `scene-captures-<sha>` (PNG scene screenshots)
   - `scene-capture-diff-<sha>` (visual diff panels + summary)
+
+Nightly full regression:
+- Workflow: `.github/workflows/nightly-full-regression.yml`
+- Includes:
+  - EditMode tests
+  - PlayMode tests
+  - content validator + asset import audit
+  - headless scene capture + diff
+  - perf parsing summary
+- Consolidated runbook: `docs/NIGHTLY_FULL_REGRESSION.md`
+
+Non-Unity deterministic gates:
+- Perf tier ingestion: `.github/workflows/ci-perf-budget.yml`
+- Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`
+- Economy/progression balance simulation: `.github/workflows/ci-balance-simulation.yml`
 
 Project wrapper (recommended):
 

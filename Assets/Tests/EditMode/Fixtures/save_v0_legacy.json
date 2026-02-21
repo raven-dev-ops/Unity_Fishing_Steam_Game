@@ -1,0 +1,17 @@
+{
+  "copecs": 180,
+  "equippedShipId": "ship_lv1",
+  "equippedHookId": "hook_lv1",
+  "ownedShips": ["ship_lv1"],
+  "ownedHooks": ["hook_lv1"],
+  "fishInventory": [
+    {
+      "fishId": "fish_cod",
+      "distanceTier": 2,
+      "count": 3
+    }
+  ],
+  "catchLog": [],
+  "careerStartLocalDate": "2026-02-19",
+  "lastLoginLocalDate": "2026-02-21"
+}

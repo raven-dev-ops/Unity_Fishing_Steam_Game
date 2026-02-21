@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Save;
-using RavenDevOps.Fishing.UI;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Core
@@ -31,6 +30,7 @@ namespace RavenDevOps.Fishing.Core
 
         public event Action<ObjectiveProgressEntry> ObjectiveUpdated;
         public event Action<ObjectiveProgressEntry> ObjectiveCompleted;
+        public event Action<string> ObjectiveLabelChanged;
 
         private void Awake()
         {
@@ -253,10 +253,14 @@ namespace RavenDevOps.Fishing.Core
 
         private void UpdateObjectiveUi()
         {
-            var hud = RuntimeServiceRegistry.Get<HudOverlayController>();
-            if (hud != null)
+            var label = BuildActiveObjectiveLabel();
+            try
             {
-                hud.SetObjectiveStatus(BuildActiveObjectiveLabel());
+                ObjectiveLabelChanged?.Invoke(label);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"ObjectivesService: ObjectiveLabelChanged listener failed ({ex.Message}).");
             }
         }
 

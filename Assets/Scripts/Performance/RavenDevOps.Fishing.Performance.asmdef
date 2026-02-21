@@ -1,0 +1,14 @@
+{
+  "name": "RavenDevOps.Fishing.Performance",
+  "rootNamespace": "RavenDevOps.Fishing.Performance",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

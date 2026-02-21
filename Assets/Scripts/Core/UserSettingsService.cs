@@ -19,6 +19,11 @@ namespace RavenDevOps.Fishing.Core
         private const string KeySubtitlesEnabled = "settings.subtitlesEnabled";
         private const string KeyHighContrastFishingCues = "settings.highContrastFishingCues";
         private const string KeyUiScale = "settings.uiScale";
+        private const string KeyReelInputToggle = "settings.reelInputToggle";
+        private const string KeyReducedMotion = "settings.reducedMotion";
+        private const string KeySubtitleScale = "settings.subtitleScale";
+        private const string KeySubtitleBackgroundOpacity = "settings.subtitleBackgroundOpacity";
+        private const string KeyReadabilityBoost = "settings.readabilityBoost";
         private const string KeySteamRichPresenceEnabled = "settings.steamRichPresenceEnabled";
         private const string KeyModsSafeMode = ModsSafeModePlayerPrefsKey;
 
@@ -36,6 +41,11 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private bool _subtitlesEnabled = true;
         [SerializeField] private bool _highContrastFishingCues;
         [SerializeField] private float _uiScale = 1f;
+        [SerializeField] private bool _reelInputToggle;
+        [SerializeField] private bool _reducedMotion;
+        [SerializeField] private float _subtitleScale = 1f;
+        [SerializeField] private float _subtitleBackgroundOpacity = 0.65f;
+        [SerializeField] private bool _readabilityBoost;
         [SerializeField] private bool _steamRichPresenceEnabled = true;
         [SerializeField] private bool _modSafeModeEnabled;
 
@@ -53,6 +63,11 @@ namespace RavenDevOps.Fishing.Core
         public bool SubtitlesEnabled => _subtitlesEnabled;
         public bool HighContrastFishingCues => _highContrastFishingCues;
         public float UiScale => _uiScale;
+        public bool ReelInputToggle => _reelInputToggle;
+        public bool ReducedMotion => _reducedMotion;
+        public float SubtitleScale => _subtitleScale;
+        public float SubtitleBackgroundOpacity => _subtitleBackgroundOpacity;
+        public bool ReadabilityBoost => _readabilityBoost;
         public bool SteamRichPresenceEnabled => _steamRichPresenceEnabled;
         public bool ModSafeModeEnabled => _modSafeModeEnabled;
 
@@ -161,6 +176,41 @@ namespace RavenDevOps.Fishing.Core
             NotifySettingsChanged();
         }
 
+        public void SetReelInputToggle(bool enabled)
+        {
+            _reelInputToggle = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetReducedMotion(bool enabled)
+        {
+            _reducedMotion = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetSubtitleScale(float scale)
+        {
+            _subtitleScale = Mathf.Clamp(scale, 0.8f, 1.5f);
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetSubtitleBackgroundOpacity(float opacity)
+        {
+            _subtitleBackgroundOpacity = Mathf.Clamp01(opacity);
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
+        public void SetReadabilityBoost(bool enabled)
+        {
+            _readabilityBoost = enabled;
+            SaveToPrefs();
+            NotifySettingsChanged();
+        }
+
         public void SetSteamRichPresenceEnabled(bool enabled)
         {
             _steamRichPresenceEnabled = enabled;
@@ -219,6 +269,11 @@ namespace RavenDevOps.Fishing.Core
             _subtitlesEnabled = PlayerPrefs.GetInt(KeySubtitlesEnabled, 1) == 1;
             _highContrastFishingCues = PlayerPrefs.GetInt(KeyHighContrastFishingCues, 0) == 1;
             _uiScale = Mathf.Clamp(PlayerPrefs.GetFloat(KeyUiScale, 1f), 0.8f, 1.5f);
+            _reelInputToggle = PlayerPrefs.GetInt(KeyReelInputToggle, 0) == 1;
+            _reducedMotion = PlayerPrefs.GetInt(KeyReducedMotion, 0) == 1;
+            _subtitleScale = Mathf.Clamp(PlayerPrefs.GetFloat(KeySubtitleScale, 1f), 0.8f, 1.5f);
+            _subtitleBackgroundOpacity = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySubtitleBackgroundOpacity, 0.65f));
+            _readabilityBoost = PlayerPrefs.GetInt(KeyReadabilityBoost, 0) == 1;
             _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
             _modSafeModeEnabled = PlayerPrefs.GetInt(KeyModsSafeMode, 0) == 1;
 
@@ -242,6 +297,11 @@ namespace RavenDevOps.Fishing.Core
             PlayerPrefs.SetInt(KeySubtitlesEnabled, _subtitlesEnabled ? 1 : 0);
             PlayerPrefs.SetInt(KeyHighContrastFishingCues, _highContrastFishingCues ? 1 : 0);
             PlayerPrefs.SetFloat(KeyUiScale, _uiScale);
+            PlayerPrefs.SetInt(KeyReelInputToggle, _reelInputToggle ? 1 : 0);
+            PlayerPrefs.SetInt(KeyReducedMotion, _reducedMotion ? 1 : 0);
+            PlayerPrefs.SetFloat(KeySubtitleScale, _subtitleScale);
+            PlayerPrefs.SetFloat(KeySubtitleBackgroundOpacity, _subtitleBackgroundOpacity);
+            PlayerPrefs.SetInt(KeyReadabilityBoost, _readabilityBoost ? 1 : 0);
             PlayerPrefs.SetInt(KeySteamRichPresenceEnabled, _steamRichPresenceEnabled ? 1 : 0);
             PlayerPrefs.SetInt(KeyModsSafeMode, _modSafeModeEnabled ? 1 : 0);
             PlayerPrefs.Save();

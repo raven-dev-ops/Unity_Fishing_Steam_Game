@@ -12,6 +12,12 @@
    - `escapeSeconds`
 5. Resolver sets `Resolve` with success/fail outcome and returns to `Cast`.
 
+## Domain Service Split
+- Catch-outcome rule logic is extracted into `Assets/Scripts/Fishing/FishingOutcomeDomainService.cs`.
+- Encounter progression remains deterministic in `Assets/Scripts/Fishing/FishEncounterModel.cs`.
+- `CatchResolver` is adapter/orchestration focused (input/audio/save/HUD wiring + side-effect dispatch).
+- HUD interaction uses `IFishingHudOverlay` contract (`Assets/Scripts/Core/IFishingHudOverlay.cs`) rather than direct UI assembly coupling.
+
 ## Tension States
 - `Safe`
 - `Warning`
@@ -25,6 +31,27 @@
 - `FishEscaped`
 
 Failure reason text is surfaced in HUD feedback and written to catch log entries.
+
+## Anti-Frustration Assist Layer
+- Runtime service: `Assets/Scripts/Fishing/FishingAssistService.cs`
+- Current assists:
+  - no-bite pity activation after configurable dry streak
+  - adaptive hook-window bonus after configurable failure streak
+- Guardrails:
+  - pity delay scale clamped to `[0.25, 1.0]`
+  - adaptive hook-window bonus clamped to `<= 0.75s`
+  - configurable cooldown catches after assist activation
+- Telemetry events:
+  - `save-migration` logs remain in structured logs for save pipeline
+  - fishing assist activations are logged under `fishing-assist`
+
+## Test Coverage
+- EditMode:
+  - `Assets/Tests/EditMode/FishingOutcomeDomainServiceTests.cs`
+  - `Assets/Tests/EditMode/FishEncounterModelTests.cs`
+  - `Assets/Tests/EditMode/FishingAssistServiceTests.cs`
+- PlayMode:
+  - `Assets/Tests/PlayMode/CatchResolverIntegrationPlayModeTests.cs`
 
 ## Data Authoring Fields
 Fish data fields (SO + runtime definition):

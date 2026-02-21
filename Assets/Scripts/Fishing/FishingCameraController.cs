@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Core;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
@@ -16,12 +17,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _minOrthoSize = 4.5f;
         [SerializeField] private float _maxOrthoSize = 7f;
         [SerializeField] private float _maxTrackedDepth = 14f;
+        [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private float _reducedMotionFollowScale = 0.45f;
+        [SerializeField] private float _reducedMotionSizeLerpScale = 0.4f;
 
         private Camera _camera;
 
         private void Awake()
         {
             _camera = GetComponent<Camera>();
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
         }
 
         private void LateUpdate()
@@ -41,10 +46,14 @@ namespace RavenDevOps.Fishing.Fishing
             focus.y = Mathf.Clamp(focus.y, Mathf.Min(_yBounds.x, _yBounds.y), Mathf.Max(_yBounds.x, _yBounds.y));
 
             var desired = focus + _offset;
+            var reducedMotion = _settingsService != null && _settingsService.ReducedMotion;
+            var followLerp = reducedMotion
+                ? Mathf.Max(0.01f, _followLerp * Mathf.Clamp(_reducedMotionFollowScale, 0.1f, 1f))
+                : Mathf.Max(0.01f, _followLerp);
             transform.position = Vector3.Lerp(
                 transform.position,
                 desired,
-                1f - Mathf.Exp(-Mathf.Max(0.01f, _followLerp) * Time.unscaledDeltaTime));
+                1f - Mathf.Exp(-followLerp * Time.unscaledDeltaTime));
 
             if (_camera.orthographic)
             {
@@ -55,7 +64,8 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var halfHorizontalAsVertical = horizontalSpan / Mathf.Max(0.01f, _camera.aspect);
                 var targetSize = Mathf.Max(_minOrthoSize, verticalSpan * 0.5f, halfHorizontalAsVertical * 0.5f, depthSize);
-                _camera.orthographicSize = Mathf.Lerp(_camera.orthographicSize, Mathf.Min(_maxOrthoSize, targetSize), 1f - Mathf.Exp(-8f * Time.unscaledDeltaTime));
+                var sizeLerp = reducedMotion ? Mathf.Clamp(_reducedMotionSizeLerpScale, 0.1f, 1f) * 8f : 8f;
+                _camera.orthographicSize = Mathf.Lerp(_camera.orthographicSize, Mathf.Min(_maxOrthoSize, targetSize), 1f - Mathf.Exp(-sizeLerp * Time.unscaledDeltaTime));
             }
         }
 

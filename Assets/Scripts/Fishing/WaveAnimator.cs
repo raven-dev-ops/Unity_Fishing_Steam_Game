@@ -9,10 +9,13 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Transform _waveLayerB;
         [SerializeField] private float _waveSpeedA = 0.3f;
         [SerializeField] private float _waveSpeedB = 0.6f;
+        [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private float _reducedMotionSpeedScale = 0.4f;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
         }
 
         private void OnDestroy()
@@ -28,8 +31,12 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
-            AnimateLayer(_waveLayerA, _waveSpeedA);
-            AnimateLayer(_waveLayerB, _waveSpeedB);
+            var speedScale = _settingsService != null && _settingsService.ReducedMotion
+                ? Mathf.Clamp(_reducedMotionSpeedScale, 0f, 1f)
+                : 1f;
+
+            AnimateLayer(_waveLayerA, _waveSpeedA * speedScale);
+            AnimateLayer(_waveLayerB, _waveSpeedB * speedScale);
         }
 
         private static void AnimateLayer(Transform layer, float speed)

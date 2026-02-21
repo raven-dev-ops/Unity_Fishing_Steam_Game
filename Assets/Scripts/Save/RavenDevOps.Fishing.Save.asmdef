@@ -1,9 +1,8 @@
 {
-  "name": "RavenDevOps.Fishing.Runtime",
-  "rootNamespace": "RavenDevOps.Fishing",
+  "name": "RavenDevOps.Fishing.Save",
+  "rootNamespace": "RavenDevOps.Fishing.Save",
   "references": [
-    "Unity.InputSystem",
-    "Unity.TextMeshPro"
+    "RavenDevOps.Fishing.Core"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

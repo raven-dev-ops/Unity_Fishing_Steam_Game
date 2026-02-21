@@ -94,10 +94,10 @@ jobs:
         run: |
           if [ "${{ steps.unity_license.outputs.available }}" = "true" ]; then
             echo "executed=true" >> "$GITHUB_OUTPUT"
-            echo "Unity execution status: executed." >> "$GITHUB_STEP_SUMMARY"
+            echo "Unity execution status: executed. Remediation owner: CI maintainers (no action required)." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "executed=false" >> "$GITHUB_OUTPUT"
-            echo "Unity execution status: skipped (UNITY_LICENSE unavailable)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Unity execution status: skipped (UNITY_LICENSE unavailable). Remediation owner: repository administrators managing UNITY_LICENSE." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Enforce Unity execution policy

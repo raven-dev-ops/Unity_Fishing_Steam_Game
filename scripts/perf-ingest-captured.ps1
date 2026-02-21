@@ -2,6 +2,8 @@ param(
     [string]$ExplicitLogFile = "",
     [string[]]$SearchRoots = @("PerfLogs", "Artifacts/Perf/Captured"),
     [string[]]$NamePatterns = @("perf*.log", "*perf*.log", "*sanity*.log"),
+    [string]$DefaultTier = "minimum",
+    [string]$TierBudgetConfigPath = "ci/perf-tier-budgets.json",
     [double]$MinAverageFps = 60.0,
     [double]$MaxP95FrameMs = 25.0,
     [double]$MaxGcDeltaKb = 64.0,
@@ -102,6 +104,32 @@ function Discover-PerfLogs {
     return @($candidates.Values | Sort-Object)
 }
 
+function Resolve-TierFromPath {
+    param(
+        [string]$LogPath,
+        [string]$FallbackTier
+    )
+
+    $normalized = if ([string]::IsNullOrWhiteSpace($LogPath)) { "" } else { $LogPath.ToLowerInvariant() }
+    if ($normalized -match "minimum") {
+        return "minimum"
+    }
+
+    if ($normalized -match "recommended") {
+        return "recommended"
+    }
+
+    if ($normalized -match "reference") {
+        return "reference"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($FallbackTier)) {
+        return "minimum"
+    }
+
+    return $FallbackTier.Trim().ToLowerInvariant()
+}
+
 function Write-IngestionArtifacts {
     param(
         [hashtable]$Summary,
@@ -127,8 +155,10 @@ if ($discoveredLogs.Count -eq 0) {
         reason = "no_logs_found"
         generated_utc = (Get-Date).ToUniversalTime().ToString("o")
         explicit_log_file = $ExplicitLogFile
+        default_tier = $DefaultTier
         discovered_count = 0
         passed_count = 0
+        warning_count = 0
         failed_count = 0
         thresholds = [ordered]@{
             min_average_fps = $MinAverageFps
@@ -157,6 +187,7 @@ Ensure-Directory -Path $PerLogOutputDirectory
 
 $entries = New-Object System.Collections.Generic.List[object]
 $passedCount = 0
+$warningCount = 0
 $failedCount = 0
 
 for ($index = 0; $index -lt $discoveredLogs.Count; $index++) {
@@ -172,12 +203,15 @@ for ($index = 0; $index -lt $discoveredLogs.Count; $index++) {
 
     $entrySummaryJson = Join-Path $entryDirectory "perf_budget_summary.json"
     $entrySummaryText = Join-Path $entryDirectory "perf_budget_summary.txt"
+    $entryTier = Resolve-TierFromPath -LogPath $logFile -FallbackTier $DefaultTier
 
     $parserExitCode = 1
     $parserException = $null
     try {
         $parserExitCode = & $parserScriptPath `
             -LogFile $logFile `
+            -Tier $entryTier `
+            -TierBudgetConfigPath $TierBudgetConfigPath `
             -MinAverageFps $MinAverageFps `
             -MaxP95FrameMs $MaxP95FrameMs `
             -MaxGcDeltaKb $MaxGcDeltaKb `
@@ -199,6 +233,7 @@ for ($index = 0; $index -lt $discoveredLogs.Count; $index++) {
     $reason = if ([string]::IsNullOrWhiteSpace($parserException)) { "parser_failure" } else { $parserException }
     $sampleCount = 0
     $failureCount = 0
+    $entryWarningCount = 0
 
     if (Test-Path -LiteralPath $entrySummaryJson -PathType Leaf) {
         $entrySummary = Get-Content -Raw $entrySummaryJson | ConvertFrom-Json
@@ -217,6 +252,14 @@ for ($index = 0; $index -lt $discoveredLogs.Count; $index++) {
         if ($null -ne $entrySummary.failure_count) {
             $failureCount = [int]$entrySummary.failure_count
         }
+
+        if ($null -ne $entrySummary.warning_count) {
+            $entryWarningCount = [int]$entrySummary.warning_count
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($entrySummary.tier)) {
+            $entryTier = [string]$entrySummary.tier
+        }
     }
     elseif ($parserExitCode -eq 0) {
         $status = "passed"
@@ -226,32 +269,40 @@ for ($index = 0; $index -lt $discoveredLogs.Count; $index++) {
     if ($status -eq "passed") {
         $passedCount++
     }
+    elseif ($status -eq "warning") {
+        $warningCount++
+    }
     else {
         $failedCount++
     }
 
     $entries.Add([ordered]@{
         log_file = $logFile
+        tier = $entryTier
         status = $status
         reason = $reason
         sample_count = $sampleCount
         failure_count = $failureCount
+        warning_count = $entryWarningCount
         summary_json = $entrySummaryJson
         summary_text = $entrySummaryText
     })
 }
 
-$overallStatus = if ($failedCount -gt 0) { "failed" } else { "passed" }
-$overallReason = if ($failedCount -gt 0) { "one_or_more_logs_failed_budget" } else { "ok" }
+$overallStatus = if ($failedCount -gt 0) { "failed" } elseif ($warningCount -gt 0) { "warning" } else { "passed" }
+$overallReason = if ($failedCount -gt 0) { "one_or_more_logs_failed_budget" } elseif ($warningCount -gt 0) { "one_or_more_logs_warn_budget" } else { "ok" }
 
 $finalSummary = [ordered]@{
     status = $overallStatus
     reason = $overallReason
     generated_utc = (Get-Date).ToUniversalTime().ToString("o")
     explicit_log_file = $ExplicitLogFile
+    default_tier = $DefaultTier
     discovered_count = $discoveredLogs.Count
     passed_count = $passedCount
+    warning_count = $warningCount
     failed_count = $failedCount
+    tier_budget_config_path = $TierBudgetConfigPath
     thresholds = [ordered]@{
         min_average_fps = $MinAverageFps
         max_p95_frame_ms = $MaxP95FrameMs
@@ -267,16 +318,19 @@ $markdownLines.Add("")
 $markdownLines.Add(("Status: **{0}**" -f $overallStatus.ToUpperInvariant()))
 $markdownLines.Add(('Generated (UTC): `{0}`' -f $finalSummary.generated_utc))
 $markdownLines.Add(("Discovered logs: {0}" -f $finalSummary.discovered_count))
+$markdownLines.Add(("Default tier: {0}" -f $finalSummary.default_tier))
 $markdownLines.Add(("Thresholds: avg_fps>={0}, p95_frame_ms<={1}, gc_delta_kb<={2}, min_samples={3}" -f $MinAverageFps, $MaxP95FrameMs, $MaxGcDeltaKb, $MinSamples))
 $markdownLines.Add("")
-$markdownLines.Add("| Log File | Status | Samples | Failures | Reason |")
-$markdownLines.Add("|---|---|---:|---:|---|")
+$markdownLines.Add("| Log File | Tier | Status | Samples | Warnings | Failures | Reason |")
+$markdownLines.Add("|---|---|---|---:|---:|---:|---|")
 
 foreach ($entry in $entries) {
-    $markdownLines.Add(("{0} | {1} | {2} | {3} | {4}" -f
+    $markdownLines.Add(("{0} | {1} | {2} | {3} | {4} | {5} | {6}" -f
             (Escape-MarkdownCell -Value $entry.log_file),
+            (Escape-MarkdownCell -Value ([string]$entry.tier)),
             (Escape-MarkdownCell -Value ([string]$entry.status).ToUpperInvariant()),
             $entry.sample_count,
+            $entry.warning_count,
             $entry.failure_count,
             (Escape-MarkdownCell -Value $entry.reason)))
 }

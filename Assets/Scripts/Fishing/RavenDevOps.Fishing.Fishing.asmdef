@@ -1,0 +1,23 @@
+{
+  "name": "RavenDevOps.Fishing.Fishing",
+  "rootNamespace": "RavenDevOps.Fishing.Fishing",
+  "references": [
+    "RavenDevOps.Fishing.Audio",
+    "RavenDevOps.Fishing.Core",
+    "RavenDevOps.Fishing.Data",
+    "RavenDevOps.Fishing.Economy",
+    "RavenDevOps.Fishing.Input",
+    "RavenDevOps.Fishing.Save",
+    "RavenDevOps.Fishing.Systems",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

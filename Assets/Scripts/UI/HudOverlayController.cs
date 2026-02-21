@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace RavenDevOps.Fishing.UI
 {
-    public sealed class HudOverlayController : MonoBehaviour
+    public sealed class HudOverlayController : MonoBehaviour, IFishingHudOverlay
     {
         [SerializeField] private TMP_Text _copecsText;
         [SerializeField] private TMP_Text _dayText;
@@ -21,6 +21,7 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private ObjectivesService _objectivesService;
 
         private ISaveDataView _saveDataView;
 
@@ -50,6 +51,11 @@ namespace RavenDevOps.Fishing.UI
             {
                 RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             }
+
+            if (_objectivesService == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _objectivesService, this, warnIfMissing: false);
+            }
         }
 
         private void OnEnable()
@@ -67,6 +73,11 @@ namespace RavenDevOps.Fishing.UI
             if (_settingsService != null)
             {
                 _settingsService.SettingsChanged += OnSettingsChanged;
+            }
+
+            if (_objectivesService != null)
+            {
+                _objectivesService.ObjectiveLabelChanged += OnObjectiveLabelChanged;
             }
 
             Refresh();
@@ -87,6 +98,11 @@ namespace RavenDevOps.Fishing.UI
             if (_settingsService != null)
             {
                 _settingsService.SettingsChanged -= OnSettingsChanged;
+            }
+
+            if (_objectivesService != null)
+            {
+                _objectivesService.ObjectiveLabelChanged -= OnObjectiveLabelChanged;
             }
         }
 
@@ -166,6 +182,11 @@ namespace RavenDevOps.Fishing.UI
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(CurrentObjectiveStatus) && _objectivesService != null)
+            {
+                CurrentObjectiveStatus = _objectivesService.BuildActiveObjectiveLabel();
+            }
+
             var save = _saveDataView.Current;
             if (_copecsText != null)
             {
@@ -237,6 +258,11 @@ namespace RavenDevOps.Fishing.UI
         private void OnSettingsChanged()
         {
             Refresh();
+        }
+
+        private void OnObjectiveLabelChanged(string label)
+        {
+            SetObjectiveStatus(label);
         }
 
         private string BuildTensionText(FishingTensionState tensionState, float tensionNormalized)

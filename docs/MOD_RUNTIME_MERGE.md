@@ -6,9 +6,9 @@ Runtime loader for data-only mod packs discovered from:
 `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/Mods`
 
 Implementation files:
-- `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
-- `Assets/Scripts/Tools/ModRuntimeCatalogLoader.cs`
-- `Assets/Scripts/Tools/ModRuntimeCatalogModels.cs`
+- `Assets/Scripts/Data/ModRuntimeCatalogService.cs`
+- `Assets/Scripts/Data/ModRuntimeCatalogLoader.cs`
+- `Assets/Scripts/Data/ModRuntimeCatalogModels.cs`
 
 ## Discovery Rules
 1. Enumerate direct subdirectories under `Mods`.

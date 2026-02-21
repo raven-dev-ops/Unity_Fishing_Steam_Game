@@ -1,0 +1,25 @@
+{
+  "default": {
+    "warn_total_mb": 900,
+    "fail_total_mb": 1024
+  },
+  "scenes": {
+    "03_Harbor": {
+      "warn_total_mb": 850,
+      "fail_total_mb": 960
+    },
+    "04_Fishing": {
+      "warn_total_mb": 900,
+      "fail_total_mb": 1024
+    }
+  },
+  "waiver_policy": {
+    "required_fields": [
+      "owner",
+      "reason",
+      "expires_on",
+      "ticket"
+    ],
+    "max_waiver_days": 14
+  }
+}

@@ -1,0 +1,105 @@
+name: CI Memory and Addressables Gates
+
+on:
+  workflow_dispatch:
+    inputs:
+      explicit_memory_path:
+        description: "Optional file/directory override for memory sample JSON inputs"
+        required: false
+        default: ""
+        type: string
+      explicit_duplication_path:
+        description: "Optional file/directory override for Addressables duplication report JSON inputs"
+        required: false
+        default: ""
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-memory-duplication.yml"
+      - "scripts/ci/memory-budget-check.ps1"
+      - "scripts/ci/addressables-duplication-check.ps1"
+      - "ci/memory-budget-baseline.json"
+      - "ci/addressables-duplication-baseline.json"
+      - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
+      - "PerfLogs/**"
+      - "Artifacts/Memory/**"
+      - "Artifacts/Addressables/**"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-memory-duplication.yml"
+      - "scripts/ci/memory-budget-check.ps1"
+      - "scripts/ci/addressables-duplication-check.ps1"
+      - "ci/memory-budget-baseline.json"
+      - "ci/addressables-duplication-baseline.json"
+      - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
+      - "PerfLogs/**"
+      - "Artifacts/Memory/**"
+      - "Artifacts/Addressables/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-memory-duplication-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  memory_and_duplication:
+    name: Validate memory + duplication budgets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run memory budget gate
+        shell: pwsh
+        run: |
+          $explicitPath = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_memory_path || '' }}"
+          ./scripts/ci/memory-budget-check.ps1 `
+            -ExplicitInputPath $explicitPath `
+            -BaselineConfigPath "ci/memory-budget-baseline.json" `
+            -SummaryJsonPath "Artifacts/Memory/memory_budget_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Memory/memory_budget_summary.md"
+
+      - name: Run Addressables duplication gate
+        shell: pwsh
+        run: |
+          $explicitPath = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_duplication_path || '' }}"
+          ./scripts/ci/addressables-duplication-check.ps1 `
+            -ExplicitReportPath $explicitPath `
+            -BaselineConfigPath "ci/addressables-duplication-baseline.json" `
+            -SummaryJsonPath "Artifacts/Addressables/duplication_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Addressables/duplication_summary.md"
+
+      - name: Publish combined summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Memory + Addressables Gates" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "Artifacts/Memory/memory_budget_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Memory/memory_budget_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f "Artifacts/Addressables/duplication_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Addressables/duplication_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload memory artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-budget-${{ github.sha }}
+          path: Artifacts/Memory/**
+          if-no-files-found: warn
+
+      - name: Upload duplication artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: addressables-duplication-${{ github.sha }}
+          path: Artifacts/Addressables/**
+          if-no-files-found: warn

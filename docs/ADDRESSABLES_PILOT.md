@@ -18,7 +18,7 @@ Post-1.0 Addressables rollout for scalable content loading beyond MVP eager-cata
   - Resolves SFX events through phase-two audio keys with serialized fallback clips
 - `Assets/Scripts/Fishing/FishingEnvironmentSliceController.cs`
   - Resolves optional phase-two skybox material key with fallback material behavior
-- `Assets/Scripts/Core/RuntimeServicesBootstrap.cs`
+- `Assets/Scripts/Bootstrap/RuntimeServicesBootstrap.cs`
   - Registers pilot loader as global runtime service
 
 ## Target Content Set

@@ -20,6 +20,13 @@
   - if repository variable `UNITY_EXECUTION_ENFORCE=true`, trusted contexts fail when Unity execution is skipped.
   - release build/upload workflow still fails when required release secrets are missing.
 
+## Current Enforcement Posture (2026-02-21)
+- Repository variable `UNITY_EXECUTION_ENFORCE` is set to `true`.
+- Effect in protected/trusted contexts:
+  - Unity build/test/content-validator steps must execute.
+  - Missing/invalid Unity license becomes a blocking failure for required checks.
+- Temporary disablement is permitted only for incident response and must be logged in ops notes with owner + rollback timestamp.
+
 ## Required Secrets
 - Repository secret:
   - `UNITY_LICENSE`: required for Unity build/test/validator/scene-capture/release-build jobs.
@@ -28,9 +35,9 @@
 ## Context Matrix
 | Context | Trusted? | Expected behavior with `UNITY_LICENSE` present | Expected behavior without `UNITY_LICENSE` |
 |---|---|---|---|
-| `push` to protected `main` | Yes | Unity jobs run | Unity jobs warn+skip |
+| `push` to protected `main` | Yes | Unity jobs run | Unity jobs fail when enforcement is enabled |
 | Protected tag push (`v*`) release flow | Yes (release policy) | Release build + upload path runs | Release build fails on missing license |
-| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Unity jobs warn+skip |
+| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Unity jobs fail when enforcement is enabled |
 | Internal PR (same repo) | Usually No | Unity jobs run if secret is exposed to PR context | Unity jobs warn+skip |
 | Fork PR | No | Secrets typically unavailable; Unity jobs generally cannot run | Unity jobs warn+skip |
 | Dependabot PR | No | If secrets unavailable, Unity jobs skip | Unity jobs warn+skip |

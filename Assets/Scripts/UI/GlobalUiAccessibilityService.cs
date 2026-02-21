@@ -117,6 +117,11 @@ namespace RavenDevOps.Fishing.UI
         private void ApplyUiScale()
         {
             var uiScale = _settingsService != null ? _settingsService.UiScale : 1f;
+            if (_settingsService != null && _settingsService.ReadabilityBoost)
+            {
+                uiScale = Mathf.Max(uiScale, 1.1f);
+            }
+
             PruneStaleCanvases();
             foreach (var canvas in _registeredCanvases)
             {

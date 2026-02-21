@@ -3,6 +3,7 @@
 ## Current Save Baseline
 - Save model: `Assets/Scripts/Save/SaveDataV1.cs`
 - Save manager: `Assets/Scripts/Save/SaveManager.cs`
+- Migration pipeline: `Assets/Scripts/Save/SaveMigrationPipeline.cs`
 - Current schema version: `saveVersion = 1`
 - Runtime save file: `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/save_v1.json`
 
@@ -18,6 +19,19 @@
 - On migration failure, fail safely and preserve original file for recovery.
 - Save writes must be atomic (`.tmp` + replace/move) to reduce corruption risk.
 - Corrupt save reads should back up original file and recover to a fresh usable profile.
+- Migration reports should log source/target version and applied steps for support diagnostics.
+
+## Implemented Baseline
+- Registered migrators are executed by `SaveMigrationPipeline.TryPrepareForLoad(...)`.
+- Version detection uses `saveVersion` envelope parsing (missing value treated as `0` legacy).
+- Current migration chain:
+  - `v0 -> v1` (`SaveV0ToV1Migrator`)
+- Unsupported future saves (`saveVersion > current`) fail load safely.
+- Migration outcomes emit structured diagnostics via `StructuredLogService` category `save-migration`:
+  - `status=success|failed`
+  - source/final version
+  - migration steps or failure reason
+  - save path for triage context
 
 ## Write Cadence and Flush Boundaries
 - `SaveManager` uses debounced write scheduling for routine gameplay mutations.
@@ -32,6 +46,11 @@
 - Keep fixture saves for each shipped version.
 - Validate boot-time migration for all fixtures.
 - Validate post-migration gameplay, economy, and inventory integrity.
+- Current baseline tests:
+  - `Assets/Tests/EditMode/SaveMigrationPipelineTests.cs`
+  - Fixture inputs/snapshots:
+    - `Assets/Tests/EditMode/Fixtures/save_v0_legacy.json`
+    - `Assets/Tests/EditMode/Fixtures/save_v1_migrated_snapshot.json`
 
 ## Release Gate
 - Any `saveVersion` bump requires migration notes in release documentation.

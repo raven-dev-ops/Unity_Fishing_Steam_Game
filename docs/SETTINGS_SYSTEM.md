@@ -34,7 +34,7 @@ Persisted keys:
 - Steam Rich Presence consumer:
   - `Assets/Scripts/Steam/SteamRichPresenceService.cs`
 - Mod safe mode consumers:
-  - `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
+  - `Assets/Scripts/Data/ModRuntimeCatalogService.cs`
   - `Assets/Scripts/UI/SettingsMenuController.cs`
   - `Assets/Scripts/UI/ProfileMenuController.cs`
   - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`

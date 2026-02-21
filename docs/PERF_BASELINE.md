@@ -5,6 +5,11 @@ Baseline covers worst-case MVP loop checks in:
 - `03_Harbor`
 - `04_Fishing`
 
+Hardware tier policy covers:
+- `minimum`
+- `recommended`
+- `reference`
+
 ## Capture Method
 1. Use QA build profile:
    - `scripts/unity-cli.ps1 -Task build -BuildProfile QA -LogFile build_perf.log`
@@ -18,7 +23,7 @@ Baseline covers worst-case MVP loop checks in:
    - Optional ingestion override: `-ExplicitLogFile <file-or-directory>`
 
 `PerfSanityRunner` emits structured lines in this format:
-`PERF_SANITY scene=<name> frames=<n> avg_fps=<v> min_fps=<v> max_fps=<v> avg_frame_ms=<v> p95_frame_ms=<v> gc_delta_kb=<v>`
+`PERF_SANITY scene=<name> tier=<tier> frames=<n> avg_fps=<v> min_fps=<v> max_fps=<v> avg_frame_ms=<v> p95_frame_ms=<v> gc_delta_kb=<v>`
 
 ## Measurement Notes
 - `gc_delta_kb` is sampled before log/label formatting so instrumentation allocations do not inflate the metric.
@@ -26,10 +31,13 @@ Baseline covers worst-case MVP loop checks in:
 - For consistent comparisons, capture runs at the same resolution/quality and after warmup.
 
 ## Regression Budgets (MVP Gate)
-| Scenario | Min avg FPS | Max p95 frame ms | Max GC delta KB/sample window |
-|---|---:|---:|---:|
-| Harbor traversal + menu churn | 60 | 25 | 64 |
-| Fishing repeated cast/hook/reel | 60 | 25 | 64 |
+Tier thresholds are source-controlled in `ci/perf-tier-budgets.json`.
+
+Minimum tier defaults:
+| Scenario | Warn min avg FPS | Fail min avg FPS | Warn max p95 frame ms | Fail max p95 frame ms | Warn max GC KB | Fail max GC KB |
+|---|---:|---:|---:|---:|---:|---:|
+| Harbor traversal + menu churn | 60 | 55 | 25 | 30 | 64 | 80 |
+| Fishing repeated cast/hook/reel | 60 | 55 | 25 | 30 | 64 | 80 |
 
 ## Baseline Session Template
 Record one row per scenario and keep the latest approved run:
@@ -42,6 +50,10 @@ Record one row per scenario and keep the latest approved run:
 ## Variance Guidance
 - Treat <=10% drift as normal variance across comparable runs.
 - Anything beyond thresholds or repeated >10% drift is a regression candidate and requires triage.
+- Tier-waiver policy:
+  - Temporary warnings may be waived for up to 14 days.
+  - Waiver notes must include owner, ticket, reason, and expiry date.
+  - Fail-level regressions are blocking.
 
 ## CI Budget Gate
 - Workflow: `.github/workflows/ci-perf-budget.yml`
@@ -57,4 +69,8 @@ Record one row per scenario and keep the latest approved run:
     - `Artifacts/Perf/perf_ingestion_summary.json`
     - `Artifacts/Perf/perf_ingestion_summary.md`
     - `Artifacts/Perf/Ingested/**` (per-log parser outputs)
+  - Parser resolves tier from:
+    - `PERF_SANITY ... tier=<tier>` log metadata
+    - filename fallback (`minimum|recommended|reference`)
+    - default fallback tier (`minimum`)
   - If no matching logs are found, workflow is marked skipped (warning + summary artifact).

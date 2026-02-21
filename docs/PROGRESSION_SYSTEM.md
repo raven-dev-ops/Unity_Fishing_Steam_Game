@@ -33,6 +33,7 @@
   - Level 5: `ship_lv3`
 - Unlocks are recorded in `SaveDataV1.progression.unlockedContentIds`.
 - Shop purchase/equip calls are blocked for tracked content until unlocked.
+- Meta-loop collection progress/completion tokens are also persisted in `unlockedContentIds`.
 
 ## Persistence
 - Save payload fields:
@@ -53,4 +54,5 @@
 1. Catch fish repeatedly and confirm XP increments/level-up.
 2. Confirm locked ship/hook cannot be bought pre-unlock.
 3. Reach unlock threshold and verify purchase path opens.
-4. Relaunch and verify progression persists.
+4. Complete collection-set catches and verify completion reward token persists.
+5. Relaunch and verify progression persists.

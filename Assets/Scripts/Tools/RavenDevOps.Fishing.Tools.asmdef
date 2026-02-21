@@ -1,0 +1,20 @@
+{
+  "name": "RavenDevOps.Fishing.Tools",
+  "rootNamespace": "RavenDevOps.Fishing.Tools",
+  "references": [
+    "RavenDevOps.Fishing.Core",
+    "RavenDevOps.Fishing.Data",
+    "RavenDevOps.Fishing.Economy",
+    "RavenDevOps.Fishing.Fishing",
+    "RavenDevOps.Fishing.Save"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -30,18 +30,25 @@ End-to-end regression checklist for the MVP loop.
 17. Pause menu resume/return harbor/exit behavior.
 18. Rebind core actions in Settings, relaunch, and verify persistence.
 19. Toggle subtitles/high-contrast/UI scale, relaunch, and verify accessibility persistence.
-20. Save, relaunch, verify continuity and catch log/progression/objective persistence.
-21. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
-22. Steam run (if available): verify Rich Presence state updates + disable toggle behavior.
-23. Cloud run (if available): verify save continuity across two machines.
-24. Spot-check new texture/audio imports against `docs/ASSET_IMPORT_STANDARDS.md`.
-25. Enter photo mode (`F9`), capture screenshot (`F12`), verify output folder and HUD restore.
+20. Toggle reel input mode (hold/toggle) and verify fishing reel behavior updates correctly.
+21. Toggle reduced motion and verify camera/wave motion reduction in fishing scene.
+22. Adjust subtitle scale/background opacity and confirm readability changes apply immediately and persist.
+23. Toggle readability boost and verify improved legibility across HUD/dialogue text.
+24. Complete accessibility pass checklist in `docs/ACCESSIBILITY_CONFORMANCE.md`.
+25. Save, relaunch, verify continuity and catch log/progression/objective persistence.
+26. Steam run (if available): verify first-catch/first-purchase/trip stats updates.
+27. Steam run (if available): verify Rich Presence state updates + disable toggle behavior.
+28. Cloud run (if available): verify save continuity across two machines.
+29. Spot-check new texture/audio imports against `docs/ASSET_IMPORT_STANDARDS.md`.
+30. Enter photo mode (`F9`), capture screenshot (`F12`), verify output folder and HUD restore.
 
 ## Pass Criteria
 - No blocker regressions in core gameplay loop.
 - No repeating Console error spam in normal flow.
 - All keyboard-first actions are reachable without mouse.
 - Controller can navigate gameplay UI and core loop actions end-to-end.
+- Reel input mode is verified in both hold and toggle variants.
+- Reduced motion visibly lowers camera/wave motion in fishing.
 - Fishing HUD shows tension state and explicit fail reasons during reel failures.
 - Fishing HUD shows active condition state and objective status updates.
 - Runtime log file is generated and readable at:

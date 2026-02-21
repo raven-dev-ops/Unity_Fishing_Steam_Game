@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Core.Logging;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Save
@@ -518,8 +519,30 @@ namespace RavenDevOps.Fishing.Save
 
             try
             {
-                var json = FileSystem.ReadAllText(SavePath);
-                loaded = JsonUtility.FromJson<SaveDataV1>(json);
+                var rawJson = FileSystem.ReadAllText(SavePath);
+                if (!SaveMigrationPipeline.TryPrepareForLoad(rawJson, out var normalizedJson, out var migrationReport))
+                {
+                    var reason = string.IsNullOrWhiteSpace(migrationReport.FailureReason)
+                        ? "migration failed"
+                        : migrationReport.FailureReason;
+                    StructuredLogService.LogWarning(
+                        "save-migration",
+                        $"status=failed source_version={migrationReport.SourceVersion} final_version={migrationReport.FinalVersion} reason=\"{reason}\" path=\"{SavePath}\"");
+                    BackupCorruptSaveFile($"migration failed: {reason}");
+                    return false;
+                }
+
+                loaded = JsonUtility.FromJson<SaveDataV1>(normalizedJson);
+                if (migrationReport.WasMigrated)
+                {
+                    var steps = migrationReport.AppliedSteps.Count > 0
+                        ? string.Join(", ", migrationReport.AppliedSteps)
+                        : "unknown";
+                    StructuredLogService.LogInfo(
+                        "save-migration",
+                        $"status=success source_version={migrationReport.SourceVersion} final_version={migrationReport.FinalVersion} steps=\"{steps}\" path=\"{SavePath}\"");
+                    Debug.Log($"SaveManager: migrated save v{migrationReport.SourceVersion} -> v{migrationReport.FinalVersion} ({steps}).");
+                }
             }
             catch (Exception ex)
             {

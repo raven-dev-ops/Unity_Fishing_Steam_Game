@@ -1,0 +1,16 @@
+{
+  "name": "RavenDevOps.Fishing.Data",
+  "rootNamespace": "RavenDevOps.Fishing.Data",
+  "references": [
+    "RavenDevOps.Fishing.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

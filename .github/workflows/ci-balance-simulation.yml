@@ -1,0 +1,60 @@
+name: CI Balance Simulation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-balance-simulation.yml"
+      - "scripts/simulate-economy-progression.ps1"
+      - "ci/balance-sim-config.json"
+      - "docs/BALANCE_SIMULATION.md"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-balance-simulation.yml"
+      - "scripts/simulate-economy-progression.ps1"
+      - "ci/balance-sim-config.json"
+      - "docs/BALANCE_SIMULATION.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-balance-simulation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  balance_simulation:
+    name: Run deterministic balance simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run balance simulation
+        shell: pwsh
+        run: |
+          ./scripts/simulate-economy-progression.ps1 `
+            -ConfigPath "ci/balance-sim-config.json" `
+            -ReportJsonPath "Artifacts/BalanceSim/balance_simulation_report.json" `
+            -ReportMarkdownPath "Artifacts/BalanceSim/balance_simulation_report.md"
+
+      - name: Publish simulation summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "Artifacts/BalanceSim/balance_simulation_report.md" ]; then
+            cat "Artifacts/BalanceSim/balance_simulation_report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Balance simulation markdown report not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload simulation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: balance-simulation-${{ github.sha }}
+          path: Artifacts/BalanceSim/**
+          if-no-files-found: warn

@@ -21,7 +21,13 @@
    - `Build Windows release artifact` creates `windows-release-<tag>-<sha>`.
    - `SteamPipe upload` downloads artifact to `Artifacts/ReleaseBuild/Windows`.
 8. Review release build-size report (`Artifacts/BuildSize/build_size_report.md`) and confirm threshold status.
-9. Attach build metadata/checksums to release notes.
+9. Confirm tiered perf budget compliance from latest perf ingestion summary:
+   - `Artifacts/Perf/perf_ingestion_summary.json`
+   - Ensure no `failed` tier status and any `warning` tier has approved waiver note.
+10. Review provenance evidence:
+   - SBOM artifact: `provenance-release-<tag>-<sha>/release_windows_sbom.spdx.json`
+   - Build attestation: verify with `gh attestation verify --repo raven-dev-ops/Unity_Fishing_Steam_Game Artifacts/ReleaseBuild/Windows/**`
+11. Attach build metadata/checksums to release notes.
 
 ## Optional Local Rehearsal
 - Local release build is still useful for QA rehearsal:

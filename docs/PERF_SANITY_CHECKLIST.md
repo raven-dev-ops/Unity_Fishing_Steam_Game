@@ -16,6 +16,7 @@
 - `avg_fps` should meet baseline budget.
 - `p95_frame_ms` should remain within baseline budget.
 - `gc_delta_kb` should remain within baseline budget.
+- Tier metadata (`tier=<minimum|recommended|reference>`) should be present in `PERF_SANITY` lines.
 - Fish roll hot path should show no avoidable per-roll managed allocations in steady state.
 - Ignore first sample window after scene load; use warmed windows for budget evidence.
 
@@ -32,3 +33,11 @@ Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SA
    - `Artifacts/Perf/perf_ingestion_summary.json`
    - `Artifacts/Perf/perf_ingestion_summary.md`
    - `Artifacts/Perf/Ingested/**`
+
+## Tier Waiver Path
+1. If summary status is `warning`, open/update tracking ticket with:
+   - owner
+   - reason
+   - expiration date (<=14 days)
+2. Add waiver note in release/ops checklist.
+3. Fail-level (`status=failed`) results are blocking and require fix or threshold policy update with explicit approval.

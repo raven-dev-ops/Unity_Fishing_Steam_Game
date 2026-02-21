@@ -1,7 +1,6 @@
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
-using RavenDevOps.Fishing.UI;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
@@ -20,7 +19,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private CatchResolver _catchResolver;
-        [SerializeField] private HudOverlayController _hudOverlay;
+        [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private InputRebindingService _rebindService;
         [SerializeField] private int _maxRecoveryFailures = 3;
 
@@ -28,14 +27,19 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _isActive;
         private int _failureCount;
         private string _actionLabel = "Action";
+        private IFishingHudOverlay _hudOverlay;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _hudOverlay, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _rebindService, this, warnIfMissing: false);
+            _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
+            if (_hudOverlay == null)
+            {
+                _hudOverlay = FindFishingHudOverlay();
+            }
             RefreshBindings();
         }
 
@@ -235,6 +239,20 @@ namespace RavenDevOps.Fishing.Fishing
 
             var display = _rebindService.GetDisplayBindingForAction("Fishing/Action");
             _actionLabel = string.IsNullOrWhiteSpace(display) ? "Action" : display;
+        }
+
+        private static IFishingHudOverlay FindFishingHudOverlay()
+        {
+            var candidates = FindObjectsOfType<MonoBehaviour>(true);
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (candidates[i] is IFishingHudOverlay overlay)
+                {
+                    return overlay;
+                }
+            }
+
+            return null;
         }
     }
 }

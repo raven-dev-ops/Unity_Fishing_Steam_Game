@@ -2,7 +2,8 @@
   "name": "RavenDevOps.Fishing.Editor",
   "rootNamespace": "RavenDevOps.Fishing.EditorTools",
   "references": [
-    "RavenDevOps.Fishing.Runtime"
+    "RavenDevOps.Fishing.Data",
+    "RavenDevOps.Fishing.Tools"
   ],
   "includePlatforms": [
     "Editor"

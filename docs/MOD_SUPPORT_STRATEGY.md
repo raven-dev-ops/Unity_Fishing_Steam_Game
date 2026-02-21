@@ -37,11 +37,11 @@
 5. Log accepted/rejected mods in support-friendly report.
 
 ### Current Baseline (Implemented)
-- Manifest schema model: `Assets/Scripts/Tools/ModManifestV1.cs`
-- Validator: `Assets/Scripts/Tools/ModManifestValidator.cs`
+- Manifest schema model: `Assets/Scripts/Data/ModManifestV1.cs`
+- Validator: `Assets/Scripts/Data/ModManifestValidator.cs`
 - Schema reference: `docs/MOD_MANIFEST_SCHEMA.md`
-- Runtime discovery/merge service: `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
-- Runtime merge loader: `Assets/Scripts/Tools/ModRuntimeCatalogLoader.cs`
+- Runtime discovery/merge service: `Assets/Scripts/Data/ModRuntimeCatalogService.cs`
+- Runtime merge loader: `Assets/Scripts/Data/ModRuntimeCatalogLoader.cs`
 - Runtime merge reference: `docs/MOD_RUNTIME_MERGE.md`
 - Runtime diagnostics panel + formatter:
   - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`

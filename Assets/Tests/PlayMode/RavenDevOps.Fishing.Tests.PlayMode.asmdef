@@ -2,7 +2,20 @@
   "name": "RavenDevOps.Fishing.Tests.PlayMode",
   "rootNamespace": "RavenDevOps.Fishing.Tests.PlayMode",
   "references": [
-    "RavenDevOps.Fishing.Runtime"
+    "RavenDevOps.Fishing.Audio",
+    "RavenDevOps.Fishing.Bootstrap",
+    "RavenDevOps.Fishing.Core",
+    "RavenDevOps.Fishing.Data",
+    "RavenDevOps.Fishing.Economy",
+    "RavenDevOps.Fishing.Fishing",
+    "RavenDevOps.Fishing.Harbor",
+    "RavenDevOps.Fishing.Input",
+    "RavenDevOps.Fishing.Performance",
+    "RavenDevOps.Fishing.Save",
+    "RavenDevOps.Fishing.Steam",
+    "RavenDevOps.Fishing.Systems",
+    "RavenDevOps.Fishing.Tools",
+    "RavenDevOps.Fishing.UI"
   ],
   "includePlatforms": [
     "Editor"

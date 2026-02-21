@@ -1,0 +1,26 @@
+{
+  "seed": 1337,
+  "simulated_hours": 4,
+  "trips_per_hour": 6,
+  "catches_per_trip": 5,
+  "catch_fail_rate": 0.22,
+  "base_value_min": 8,
+  "base_value_max": 24,
+  "weight_min_kg": 0.5,
+  "weight_max_kg": 2.8,
+  "distance_tier_weights": [
+    0.55,
+    0.30,
+    0.15
+  ],
+  "distance_tier_step": 0.25,
+  "level_thresholds": [0, 100, 250, 450, 700, 1000],
+  "thresholds": {
+    "warn_currency_per_hour_min": 420,
+    "fail_currency_per_hour_min": 350,
+    "warn_fail_rate_max": 0.30,
+    "fail_fail_rate_max": 0.36,
+    "warn_minutes_to_level3_max": 180,
+    "fail_minutes_to_level3_max": 240
+  }
+}

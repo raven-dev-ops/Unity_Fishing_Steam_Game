@@ -9,12 +9,16 @@ namespace RavenDevOps.Fishing.Economy
     public sealed class SellSummaryCalculator : MonoBehaviour
     {
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private MetaLoopRuntimeService _metaLoopService;
         [SerializeField] private float _distanceTierStep = 0.25f;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
         }
 
         private void OnDestroy()
@@ -51,7 +55,20 @@ namespace RavenDevOps.Fishing.Economy
                 }
 
                 var multiplier = CalculateDistanceMultiplier(stack.distanceTier);
-                var stackValue = Mathf.RoundToInt(baseValue * multiplier) * Mathf.Max(0, stack.count);
+                var demandMultiplier = _metaLoopService != null
+                    ? _metaLoopService.GetMarketDemandMultiplier(stack.fishId)
+                    : 1f;
+
+                var synergyMultiplier = 1f;
+                if (_metaLoopService != null && _saveManager != null && _saveManager.Current != null)
+                {
+                    synergyMultiplier = _metaLoopService.GetGearSynergyMultiplier(
+                        _saveManager.Current.equippedShipId,
+                        _saveManager.Current.equippedHookId,
+                        out _);
+                }
+
+                var stackValue = Mathf.RoundToInt(baseValue * multiplier * demandMultiplier * synergyMultiplier) * Mathf.Max(0, stack.count);
                 summary.totalEarned += stackValue;
                 summary.itemCount += Mathf.Max(0, stack.count);
             }

@@ -4,8 +4,8 @@
 Defines the baseline manifest format and validator rules for data-only mod packs.
 
 ## File Format
-- JSON document parsed into `ModManifestV1` (`Assets/Scripts/Tools/ModManifestV1.cs`).
-- Validator entrypoint: `ModManifestValidator.Validate(...)` (`Assets/Scripts/Tools/ModManifestValidator.cs`).
+- JSON document parsed into `ModManifestV1` (`Assets/Scripts/Data/ModManifestV1.cs`).
+- Validator entrypoint: `ModManifestValidator.Validate(...)` (`Assets/Scripts/Data/ModManifestValidator.cs`).
 
 ## Required Fields
 - `schemaVersion`: must be `1.0`.

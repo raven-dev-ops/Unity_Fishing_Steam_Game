@@ -19,6 +19,9 @@
 ## Protected Release Path
 - Use `.github/workflows/release-steampipe.yml` for release uploads.
 - Workflow builds Windows release artifact and hands it off to upload job (`Artifacts/ReleaseBuild/Windows`).
+- Workflow generates provenance evidence in `build_windows_release`:
+  - SBOM: `Artifacts/Provenance/release_windows_sbom.spdx.json`
+  - Artifact attestation: GitHub build-provenance attestation for `Artifacts/ReleaseBuild/Windows/**`
 - Release job is bound to `environment: steam-release`.
 - Configure environment reviewers for manual approval before upload.
 - Trigger from protected semver tags (`v*`) or manual dispatch with approval.
@@ -35,7 +38,7 @@ Configure in GitHub repository settings:
 3. Enforce admins.
 4. Require linear history and conversation resolution.
 5. Disallow force pushes.
-6. If your policy requires PR approvals/CODEOWNERS, configure `required_pull_request_reviews` explicitly.
+6. Require PR approvals + CODEOWNERS review (`required_pull_request_reviews`).
 
 ## Secret Rotation
 - Rotate Steam secrets at least every 90 days or after contributor role changes.
@@ -52,3 +55,12 @@ Configure in GitHub repository settings:
 ## Audit Trail
 - Release workflow run history is retained in GitHub Actions.
 - Each approved release includes actor, tag, and workflow log evidence.
+- Release runs also retain provenance artifacts (`provenance-release-<tag>-<sha>`) and attestation records.
+
+## Maintainer Verification
+1. Download provenance artifact from workflow run:
+   - `provenance-release-<tag>-<sha>`
+2. Confirm SBOM exists and is valid SPDX JSON:
+   - `release_windows_sbom.spdx.json` contains `spdxVersion`.
+3. Verify attestation for release subject:
+   - `gh attestation verify --repo raven-dev-ops/Unity_Fishing_Steam_Game Artifacts/ReleaseBuild/Windows/**`

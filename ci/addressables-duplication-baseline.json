@@ -1,0 +1,15 @@
+{
+  "warn_duplicate_total_mb": 64,
+  "fail_duplicate_total_mb": 96,
+  "warn_duplicate_asset_count": 150,
+  "fail_duplicate_asset_count": 250,
+  "waiver_policy": {
+    "required_fields": [
+      "owner",
+      "reason",
+      "expires_on",
+      "ticket"
+    ],
+    "max_waiver_days": 14
+  }
+}

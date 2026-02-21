@@ -92,6 +92,19 @@ namespace RavenDevOps.Fishing.Fishing
             return ApplyConditionModifiers(ResolveByWeightedRoll(normalizedRoll));
         }
 
+        public FishDefinition RollFishByDistanceOnly(int distanceTier)
+        {
+            EnsureRuntimeDefinitions();
+            var totalWeight = BuildDistanceOnlyCandidates(distanceTier);
+            if (_candidateBuffer.Count == 0 || totalWeight <= 0)
+            {
+                return null;
+            }
+
+            var roll = Random.Range(0, totalWeight);
+            return ApplyConditionModifiers(ResolveByWeightedRoll(roll));
+        }
+
         private void EnsureRuntimeDefinitions()
         {
             if (!_cacheDirty && _runtimeDefinitions.Count > 0)
@@ -172,6 +185,36 @@ namespace RavenDevOps.Fishing.Fishing
                 var inDistanceRange = distanceTier >= fish.minDistanceTier && distanceTier <= fish.maxDistanceTier;
                 var inDepthRange = depth >= fish.minDepth && depth <= fish.maxDepth;
                 if (!inDistanceRange || !inDepthRange)
+                {
+                    continue;
+                }
+
+                var weight = Mathf.Max(1, Mathf.RoundToInt(Mathf.Max(0.1f, fish.rarityWeight) * Mathf.Max(0.1f, modifier.rarityWeightMultiplier)));
+                totalWeight += weight;
+                _candidateBuffer.Add(fish);
+                _candidateWeightBuffer.Add(weight);
+            }
+
+            return totalWeight;
+        }
+
+        private int BuildDistanceOnlyCandidates(int distanceTier)
+        {
+            _candidateBuffer.Clear();
+            _candidateWeightBuffer.Clear();
+            var totalWeight = 0;
+            var modifier = _conditionController != null ? _conditionController.GetCombinedModifier() : FishConditionModifier.Identity;
+
+            for (var i = 0; i < _runtimeDefinitions.Count; i++)
+            {
+                var fish = _runtimeDefinitions[i];
+                if (fish == null)
+                {
+                    continue;
+                }
+
+                var inDistanceRange = distanceTier >= fish.minDistanceTier && distanceTier <= fish.maxDistanceTier;
+                if (!inDistanceRange)
                 {
                     continue;
                 }

@@ -36,3 +36,6 @@ sysinfo.txt
 Thumbs.db
 
 # Package manager generated
+
+# Generated CI/local artifact outputs
+[Aa]rtifacts/

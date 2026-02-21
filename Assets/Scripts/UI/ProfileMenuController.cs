@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Save;
 using TMPro;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace RavenDevOps.Fishing.UI
 
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private ObjectivesService _objectivesService;
+        [SerializeField] private MetaLoopRuntimeService _metaLoopService;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private ModRuntimeCatalogService _modCatalogService;
 
@@ -32,6 +34,7 @@ namespace RavenDevOps.Fishing.UI
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _objectivesService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _modCatalogService, this, warnIfMissing: false);
         }
@@ -55,6 +58,12 @@ namespace RavenDevOps.Fishing.UI
                 _modCatalogService.CatalogReloaded += OnCatalogReloaded;
             }
 
+            if (_metaLoopService != null)
+            {
+                _metaLoopService.MetaLoopUpdated -= OnMetaLoopUpdated;
+                _metaLoopService.MetaLoopUpdated += OnMetaLoopUpdated;
+            }
+
             Refresh();
         }
 
@@ -73,6 +82,11 @@ namespace RavenDevOps.Fishing.UI
             if (_modCatalogService != null)
             {
                 _modCatalogService.CatalogReloaded -= OnCatalogReloaded;
+            }
+
+            if (_metaLoopService != null)
+            {
+                _metaLoopService.MetaLoopUpdated -= OnMetaLoopUpdated;
             }
         }
 
@@ -109,7 +123,16 @@ namespace RavenDevOps.Fishing.UI
 
             if (_objectiveText != null && _objectivesService != null)
             {
-                _objectiveText.text = _objectivesService.BuildActiveObjectiveLabel();
+                var builder = new StringBuilder();
+                builder.AppendLine(_objectivesService.BuildActiveObjectiveLabel());
+                if (_metaLoopService != null)
+                {
+                    builder.AppendLine(_metaLoopService.BuildContractStatusLabel());
+                    builder.AppendLine(_metaLoopService.BuildCollectionStatusLabel());
+                    builder.Append(_metaLoopService.BuildMarketDemandSummary());
+                }
+
+                _objectiveText.text = builder.ToString().TrimEnd();
             }
 
             RefreshCatchLogText(save);
@@ -206,6 +229,11 @@ namespace RavenDevOps.Fishing.UI
         private void OnCatalogReloaded()
         {
             RefreshModSafeModeStatus();
+        }
+
+        private void OnMetaLoopUpdated()
+        {
+            Refresh();
         }
 
         private void RefreshModSafeModeStatus()

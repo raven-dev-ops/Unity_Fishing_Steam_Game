@@ -18,6 +18,8 @@ on:
 
 permissions:
   contents: read
+  attestations: write
+  id-token: write
 
 env:
   EXPECTED_UNITY_VERSION: 2022.3.16f1
@@ -170,6 +172,29 @@ jobs:
           echo "artifact_name=$artifact_name" >> "$GITHUB_STEP_SUMMARY"
           echo "artifact_path=${GITHUB_WORKSPACE}/Artifacts/ReleaseBuild/Windows" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Generate release SBOM (SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          path: Artifacts/ReleaseBuild/Windows
+          format: spdx-json
+          output-file: Artifacts/Provenance/release_windows_sbom.spdx.json
+
+      - name: Verify SBOM output
+        shell: bash
+        run: |
+          sbom_path="Artifacts/Provenance/release_windows_sbom.spdx.json"
+          if [ ! -f "$sbom_path" ]; then
+            echo "::error::SBOM file missing: $sbom_path"
+            exit 1
+          fi
+
+          if ! grep -q '"spdxVersion"' "$sbom_path"; then
+            echo "::error::SBOM file does not contain expected SPDX metadata."
+            exit 1
+          fi
+
+          echo "SBOM verified: $sbom_path"
+
       - name: Generate release build-size report
         shell: bash
         env:
@@ -206,6 +231,18 @@ jobs:
           name: build-size-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
           path: Artifacts/BuildSize/**
           if-no-files-found: warn
+
+      - name: Upload release provenance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: provenance-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: Artifacts/Provenance/**
+          if-no-files-found: error
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: Artifacts/ReleaseBuild/Windows/**
 
   steampipe_upload:
     name: SteamPipe upload

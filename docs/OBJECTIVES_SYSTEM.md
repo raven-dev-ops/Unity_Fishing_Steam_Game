@@ -1,7 +1,7 @@
 # Objectives System (Non-Steam)
 
 ## Runtime Components
-- `Assets/Scripts/Core/ObjectivesService.cs`
+- `Assets/Scripts/Systems/ObjectivesService.cs`
 - `Assets/Scripts/Save/SaveDataV1.cs` (`objectiveProgress`)
 - `Assets/Scripts/UI/HudOverlayController.cs`
 - `Assets/Scripts/UI/ProfileMenuController.cs`
@@ -23,6 +23,7 @@ Types:
 - `obj_catch_3` - Catch 3 fish (+120c)
 - `obj_trip_2` - Complete 2 fishing trips (+90c)
 - `obj_value_250` - Land 250 copecs of catch value (+160c)
+- `meta_contract_active` - Rotating contract objective managed by meta-loop runtime service.
 
 ## Persistence
 Stored in `SaveDataV1.objectiveProgress`:

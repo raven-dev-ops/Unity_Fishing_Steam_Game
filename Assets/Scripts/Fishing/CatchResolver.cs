@@ -1,10 +1,12 @@
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Core.Logging;
+using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
-using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 
 namespace RavenDevOps.Fishing.Fishing
 {
@@ -13,13 +15,22 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private FishSpawner _spawner;
         [SerializeField] private HookMovementController _hook;
-        [SerializeField] private HudOverlayController _hudOverlay;
+        [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private MetaLoopRuntimeService _metaLoopService;
 
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
+        [SerializeField] private bool _enableNoBitePity = true;
+        [SerializeField] private int _noBitePityThresholdCasts = 3;
+        [SerializeField] private float _pityBiteDelayScale = 0.55f;
+        [SerializeField] private bool _enableAdaptiveHookWindowAssist = true;
+        [SerializeField] private int _adaptiveHookWindowFailureThreshold = 3;
+        [SerializeField] private float _adaptiveHookWindowBonusSeconds = 0.35f;
+        [SerializeField] private int _assistCooldownCatches = 2;
         [SerializeField] private bool _autoAttachFishingCameraController = true;
         [SerializeField] private bool _autoAttachFishingTutorialController = true;
         [SerializeField] private bool _autoAttachEnvironmentSliceController = true;
@@ -35,6 +46,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private AudioClip _missHookSfx;
 
         private readonly FishEncounterModel _encounterModel = new FishEncounterModel();
+        private readonly FishingOutcomeDomainService _outcomeDomainService = new FishingOutcomeDomainService();
+        private readonly FishingAssistService _assistService = new FishingAssistService();
+        private IFishingHudOverlay _hudOverlay;
 
         private FishDefinition _targetFish;
         private FishDefinition _hookedFish;
@@ -44,12 +58,15 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _catchSucceeded;
         private FishingFailReason _pendingFailReason = FishingFailReason.None;
         private FishingTensionState _lastTensionState = FishingTensionState.None;
+        private float _activeHookReactionWindowSeconds;
         private bool _cameraConfigured;
         private bool _tutorialConfigured;
         private bool _environmentConfigured;
         private bool _conditionConfigured;
 
+        [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
+        private bool _toggleReelActive;
 
         public event System.Action<bool, FishingFailReason, string> CatchResolved;
 
@@ -58,6 +75,21 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
+            _randomSource ??= new UnityFishingRandomSource();
+            _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
+            if (_hudOverlay == null)
+            {
+                _hudOverlay = FindFishingHudOverlay();
+            }
+
+            ConfigureAssistService();
+        }
+
+        private void OnValidate()
+        {
+            ConfigureAssistService();
         }
 
         private void OnEnable()
@@ -136,6 +168,8 @@ namespace RavenDevOps.Fishing.Fishing
             _hookedElapsedSeconds = 0f;
             _biteTimerSeconds = 0f;
             _lastTensionState = FishingTensionState.None;
+            _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
+            _toggleReelActive = false;
 
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0f, FishingTensionState.None);
@@ -147,6 +181,20 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _targetFish = _spawner.RollFish(_currentDistanceTier, _hook.CurrentDepth);
+            var pityActivated = false;
+            if (_targetFish == null && _spawner != null && _assistService.TryActivateNoBitePity())
+            {
+                _targetFish = _spawner.RollFishByDistanceOnly(_currentDistanceTier);
+                pityActivated = _targetFish != null;
+                if (pityActivated)
+                {
+                    StructuredLogService.LogInfo(
+                        "fishing-assist",
+                        $"assist=no_bite_pity status=activated distance_tier={_currentDistanceTier}");
+                }
+            }
+
+            _assistService.RecordCastResult(_targetFish != null);
             if (_targetFish == null)
             {
                 _hudOverlay?.SetFishingStatus("No bite in this zone. Recast or change depth.");
@@ -156,6 +204,13 @@ namespace RavenDevOps.Fishing.Fishing
             var minBite = Mathf.Max(0f, _targetFish.minBiteDelaySeconds);
             var maxBite = Mathf.Max(minBite, _targetFish.maxBiteDelaySeconds);
             _biteTimerSeconds = Random.Range(minBite, maxBite);
+            _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
+            if (pityActivated)
+            {
+                _hudOverlay?.SetFishingStatus("Fishing assist active: activity increased. Waiting for a bite...");
+                return;
+            }
+
             _hudOverlay?.SetFishingStatus("Waiting for a bite...");
         }
 
@@ -168,8 +223,20 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookedFish = _targetFish;
             _hookedElapsedSeconds = 0f;
+            _activeHookReactionWindowSeconds = _assistService.ResolveHookWindow(_hookReactionWindowSeconds, out var adaptiveWindowActivated);
             _audioManager?.PlaySfx(_hookSfx);
-            _hudOverlay?.SetFishingStatus("Fish hooked! Press and hold Action to reel.");
+            if (adaptiveWindowActivated)
+            {
+                StructuredLogService.LogInfo(
+                    "fishing-assist",
+                    $"assist=adaptive_hook_window status=activated base_window={_hookReactionWindowSeconds:0.00} resolved_window={_activeHookReactionWindowSeconds:0.00}");
+                _hudOverlay?.SetFishingStatus("Fish hooked! Assist active: extra hook timing window.");
+            }
+            else
+            {
+                _hudOverlay?.SetFishingStatus("Fish hooked! Press and hold Action to reel.");
+            }
+
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0.2f, FishingTensionState.Safe);
             _lastTensionState = FishingTensionState.Safe;
@@ -179,7 +246,10 @@ namespace RavenDevOps.Fishing.Fishing
         {
             if (_hookedFish == null)
             {
-                _pendingFailReason = FishingFailReason.MissedHook;
+                _pendingFailReason = _outcomeDomainService.ResolveHookWindowFailure(
+                    hasHookedFish: false,
+                    elapsedSeconds: _hookedElapsedSeconds,
+                    reactionWindowSeconds: _activeHookReactionWindowSeconds);
                 _stateMachine?.SetResolve();
                 return;
             }
@@ -206,25 +276,24 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickHookedWindow()
         {
-            if (_hookedFish == null)
-            {
-                return;
-            }
-
             _hookedElapsedSeconds += Time.deltaTime;
-            if (_hookedElapsedSeconds >= Mathf.Max(0.2f, _hookReactionWindowSeconds))
+            var failReason = _outcomeDomainService.ResolveHookWindowFailure(
+                hasHookedFish: _hookedFish != null,
+                elapsedSeconds: _hookedElapsedSeconds,
+                reactionWindowSeconds: _activeHookReactionWindowSeconds);
+            if (failReason != FishingFailReason.None)
             {
-                _pendingFailReason = FishingFailReason.MissedHook;
+                _pendingFailReason = failReason;
                 _stateMachine?.SetResolve();
             }
         }
 
         private void TickReelFight()
         {
-            var isReeling = _reelAction != null && _reelAction.IsPressed();
+            var isReeling = ResolveIsReeling();
             var tensionState = _encounterModel.Step(Time.deltaTime, isReeling, out var landed, out var failReason);
             _hudOverlay?.SetFishingTension(_encounterModel.TensionNormalized, tensionState);
-            _hudOverlay?.SetFishingStatus(isReeling ? "Reeling..." : "Hold Action to reel.");
+            _hudOverlay?.SetFishingStatus(isReeling ? "Reeling..." : ResolveReelHintText());
 
             if (tensionState != _lastTensionState)
             {
@@ -263,10 +332,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (_catchSucceeded && _hookedFish != null)
             {
-                var weightKg = Random.Range(
-                    Mathf.Max(0.1f, _hookedFish.minCatchWeightKg),
-                    Mathf.Max(_hookedFish.minCatchWeightKg, _hookedFish.maxCatchWeightKg));
-                var valueCopecs = Mathf.Max(1, Mathf.RoundToInt(_hookedFish.baseValue * Random.Range(0.9f, 1.3f)));
+                var reward = _outcomeDomainService.BuildCatchReward(_hookedFish, _randomSource);
+                var weightKg = reward.WeightKg;
+                var valueCopecs = reward.ValueCopecs;
 
                 _saveManager?.RecordCatch(_hookedFish.id, _currentDistanceTier, weightKg, valueCopecs);
                 _audioManager?.PlaySfx(_catchSfx);
@@ -275,7 +343,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
             else
             {
-                var reason = BuildFailureReasonText(_pendingFailReason);
+                var reason = _outcomeDomainService.BuildFailureReasonText(_pendingFailReason);
                 _hudOverlay?.SetFishingFailure(reason);
                 _hudOverlay?.SetFishingStatus("Press Action to cast again.");
                 _saveManager?.RecordCatchFailure(_hookedFish != null ? _hookedFish.id : string.Empty, _currentDistanceTier, reason);
@@ -283,6 +351,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             InvokeCatchResolved(_catchSucceeded, resolvedFailReason, resolvedFishId);
+            _assistService.RecordCatchOutcome(_catchSucceeded);
 
             _encounterModel.End();
             _targetFish = null;
@@ -290,6 +359,7 @@ namespace RavenDevOps.Fishing.Fishing
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
+            _toggleReelActive = false;
             _stateMachine?.ResetToCast();
         }
 
@@ -321,21 +391,6 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
-        private static string BuildFailureReasonText(FishingFailReason failReason)
-        {
-            switch (failReason)
-            {
-                case FishingFailReason.MissedHook:
-                    return "Missed hook: the fish slipped away before you started reeling.";
-                case FishingFailReason.LineSnap:
-                    return "Line snapped: tension stayed too high.";
-                case FishingFailReason.FishEscaped:
-                    return "Fish escaped: stamina was not depleted before escape.";
-                default:
-                    return "Catch failed.";
-            }
-        }
-
         private void UpdateHudTelemetry()
         {
             if (_hudOverlay == null || _hook == null)
@@ -346,7 +401,21 @@ namespace RavenDevOps.Fishing.Fishing
             _hudOverlay.SetFishingTelemetry(_currentDistanceTier, _hook.CurrentDepth);
             if (_spawner != null)
             {
-                _hudOverlay.SetFishingConditions(_spawner.GetActiveConditionSummary());
+                var conditionSummary = _spawner.GetActiveConditionSummary();
+                if (_metaLoopService != null && _saveManager != null && _saveManager.Current != null)
+                {
+                    var activeFishId = _hookedFish != null ? _hookedFish.id : (_targetFish != null ? _targetFish.id : string.Empty);
+                    if (!string.IsNullOrWhiteSpace(activeFishId))
+                    {
+                        var modifierLabel = _metaLoopService.BuildModifierLabel(
+                            activeFishId,
+                            _saveManager.Current.equippedShipId,
+                            _saveManager.Current.equippedHookId);
+                        conditionSummary = $"{conditionSummary} | {modifierLabel}";
+                    }
+                }
+
+                _hudOverlay.SetFishingConditions(conditionSummary);
             }
         }
 
@@ -438,6 +507,64 @@ namespace RavenDevOps.Fishing.Fishing
 
             _spawner.SetConditionController(controller);
             _conditionConfigured = controller != null;
+        }
+
+        private void ConfigureAssistService()
+        {
+            _assistService.Configure(new FishingAssistSettings
+            {
+                EnableNoBitePity = _enableNoBitePity,
+                NoBitePityThresholdCasts = Mathf.Max(1, _noBitePityThresholdCasts),
+                PityBiteDelayScale = Mathf.Clamp(_pityBiteDelayScale, 0.25f, 1f),
+                EnableAdaptiveHookWindow = _enableAdaptiveHookWindowAssist,
+                AdaptiveFailureThreshold = Mathf.Max(1, _adaptiveHookWindowFailureThreshold),
+                AdaptiveHookWindowBonusSeconds = Mathf.Clamp(_adaptiveHookWindowBonusSeconds, 0f, 0.75f),
+                AssistCooldownCatches = Mathf.Max(0, _assistCooldownCatches)
+            });
+        }
+
+        private static IFishingHudOverlay FindFishingHudOverlay()
+        {
+            var candidates = FindObjectsOfType<MonoBehaviour>(true);
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (candidates[i] is IFishingHudOverlay overlay)
+                {
+                    return overlay;
+                }
+            }
+
+            return null;
+        }
+
+        private bool ResolveIsReeling()
+        {
+            if (_reelAction == null)
+            {
+                return false;
+            }
+
+            var toggleMode = _settingsService != null && _settingsService.ReelInputToggle;
+            if (!toggleMode)
+            {
+                _toggleReelActive = false;
+                return _reelAction.IsPressed();
+            }
+
+            if (_reelAction.WasPressedThisFrame())
+            {
+                _toggleReelActive = !_toggleReelActive;
+            }
+
+            return _toggleReelActive;
+        }
+
+        private string ResolveReelHintText()
+        {
+            var toggleMode = _settingsService != null && _settingsService.ReelInputToggle;
+            return toggleMode
+                ? "Press Action to toggle reel."
+                : "Hold Action to reel.";
         }
     }
 }

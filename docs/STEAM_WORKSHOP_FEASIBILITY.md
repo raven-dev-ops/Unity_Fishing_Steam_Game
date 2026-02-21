@@ -43,11 +43,11 @@ Subscription/install lifecycle:
 ## Mapping to Current Mod Pipeline
 Existing runtime model already aligns well:
 - Manifest schema + validation:
-  - `Assets/Scripts/Tools/ModManifestV1.cs`
-  - `Assets/Scripts/Tools/ModManifestValidator.cs`
+  - `Assets/Scripts/Data/ModManifestV1.cs`
+  - `Assets/Scripts/Data/ModManifestValidator.cs`
 - Runtime discovery/merge:
-  - `Assets/Scripts/Core/ModRuntimeCatalogService.cs`
-  - `Assets/Scripts/Tools/ModRuntimeCatalogLoader.cs`
+  - `Assets/Scripts/Data/ModRuntimeCatalogService.cs`
+  - `Assets/Scripts/Data/ModRuntimeCatalogLoader.cs`
 - Diagnostics + safe mode:
   - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`
   - `Assets/Scripts/Core/UserSettingsService.cs` (`settings.modSafeModeEnabled`)

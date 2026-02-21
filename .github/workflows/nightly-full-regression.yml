@@ -1,0 +1,550 @@
+name: Nightly Full Regression
+
+on:
+  schedule:
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+    inputs:
+      explicit_perf_log_file:
+        description: "Optional perf log file or directory override in repo workspace"
+        required: false
+        default: ""
+        type: string
+      simulate_failure:
+        description: "Force workflow failure after summary generation (for triage drill validation)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_UNITY_VERSION: 2022.3.16f1
+  SCENE_CAPTURE_WARN_THRESHOLD: "0.015"
+  SCENE_CAPTURE_FAIL_THRESHOLD: "0.030"
+
+concurrency:
+  group: nightly-full-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unity_editmode:
+    name: Nightly Unity EditMode
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            trusted=true
+          fi
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
+        run: |
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE is not configured for this run context."
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Enforce Unity execution policy
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
+        run: |
+          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+            exit 1
+          fi
+
+      - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Nightly-EditMode-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-Nightly-EditMode-${{ runner.os }}-
+
+      - name: Run EditMode tests
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          testMode: editmode
+          artifactsPath: artifacts/editmode
+
+      - name: Upload EditMode artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-editmode-${{ github.sha }}
+          path: artifacts/editmode/**
+          if-no-files-found: warn
+
+      - name: Report skipped EditMode
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Nightly EditMode skipped because UNITY_LICENSE is not configured." >> "$GITHUB_STEP_SUMMARY"
+
+  unity_playmode:
+    name: Nightly Unity PlayMode
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            trusted=true
+          fi
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
+        run: |
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE is not configured for this run context."
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Enforce Unity execution policy
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
+        run: |
+          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+            exit 1
+          fi
+
+      - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Nightly-PlayMode-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-Nightly-PlayMode-${{ runner.os }}-
+
+      - name: Run PlayMode tests
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          testMode: playmode
+          artifactsPath: artifacts/playmode
+
+      - name: Upload PlayMode artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-playmode-${{ github.sha }}
+          path: artifacts/playmode/**
+          if-no-files-found: warn
+
+      - name: Report skipped PlayMode
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Nightly PlayMode skipped because UNITY_LICENSE is not configured." >> "$GITHUB_STEP_SUMMARY"
+
+  content_validator:
+    name: Nightly Content Validator
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            trusted=true
+          fi
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
+        run: |
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE is not configured for this run context."
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Enforce Unity execution policy
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
+        run: |
+          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+            exit 1
+          fi
+
+      - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Nightly-Validator-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-Nightly-Validator-${{ runner.os }}-
+
+      - name: Run content validator
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode
+
+      - name: Run asset import audit
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: RavenDevOps.Fishing.EditorTools.AssetImportComplianceRunner.ValidateAssetImportsBatchMode
+          customParameters: >-
+            -assetImportAuditFailOnWarnings=true
+            -assetImportAuditAllowlistPath=ci/asset-import-warning-allowlist.json
+
+      - name: Upload validator artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-content-validator-${{ github.sha }}
+          path: |
+            build/**
+            Builds/**
+            Artifacts/AssetImportAudit/**
+          if-no-files-found: warn
+
+      - name: Report skipped validator
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Nightly validator skipped because UNITY_LICENSE is not configured." >> "$GITHUB_STEP_SUMMARY"
+
+  scene_capture:
+    name: Nightly Scene Capture + Diff
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
+      - name: Determine trusted context
+        id: trust
+        shell: bash
+        run: |
+          trusted=false
+          if [ "${{ github.ref_protected }}" = "true" ]; then
+            trusted=true
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+            trusted=true
+          fi
+          echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Detect Unity license availability
+        id: unity_license
+        shell: bash
+        run: |
+          if [ -n "${UNITY_LICENSE}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE is not configured for this run context."
+          fi
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Enforce Unity execution policy
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
+        run: |
+          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+            exit 1
+          fi
+
+      - name: Cache Library
+        if: steps.unity_license.outputs.available == 'true'
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Nightly-SceneCapture-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-Nightly-SceneCapture-${{ runner.os }}-
+
+      - name: Prepare scene capture output
+        if: steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          rm -rf artifacts/scene-captures
+          mkdir -p artifacts/scene-captures
+
+      - name: Run PlayMode scene capture tests
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          RAVEN_SCENE_CAPTURE_ENABLED: "1"
+        with:
+          testMode: playmode
+          artifactsPath: artifacts/playmode
+
+      - name: Setup Python
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install scene diff tooling
+        if: always() && steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pillow
+
+      - name: Compare captures against baseline
+        if: always() && steps.unity_license.outputs.available == 'true'
+        shell: bash
+        env:
+          SCENE_CAPTURE_DIFF_ENFORCE: ${{ vars.SCENE_CAPTURE_DIFF_ENFORCE }}
+        run: |
+          mkdir -p artifacts/scene-capture-diff
+          chmod +x scripts/ci/compare-scene-captures.py
+          python3 scripts/ci/compare-scene-captures.py \
+            --baseline-dir ci/scene-capture-baseline \
+            --capture-dir artifacts/scene-captures \
+            --output-dir artifacts/scene-capture-diff \
+            --warn-threshold "${SCENE_CAPTURE_WARN_THRESHOLD}" \
+            --fail-threshold "${SCENE_CAPTURE_FAIL_THRESHOLD}" \
+            --enforce "${SCENE_CAPTURE_DIFF_ENFORCE:-false}" \
+            --summary-json artifacts/scene-capture-diff/summary.json \
+            --summary-md artifacts/scene-capture-diff/summary.md
+
+      - name: Upload scene capture artifacts
+        if: always() && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-scene-capture-${{ github.sha }}
+          path: |
+            artifacts/playmode/**
+            artifacts/scene-captures/**
+            artifacts/scene-capture-diff/**
+          if-no-files-found: warn
+
+      - name: Report skipped scene capture
+        if: steps.unity_license.outputs.available != 'true'
+        shell: bash
+        run: echo "Nightly scene capture skipped because UNITY_LICENSE is not configured." >> "$GITHUB_STEP_SUMMARY"
+
+  perf_parse:
+    name: Nightly Perf Parse
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse perf logs
+        shell: pwsh
+        run: |
+          $explicitLogFile = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_perf_log_file || '' }}"
+          ./scripts/perf-ingest-captured.ps1 `
+            -ExplicitLogFile $explicitLogFile `
+            -SummaryJsonPath "Artifacts/Perf/perf_ingestion_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Perf/perf_ingestion_summary.md" `
+            -PerLogOutputDirectory "Artifacts/Perf/Ingested"
+
+      - name: Upload perf artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-perf-${{ github.sha }}
+          path: Artifacts/Perf/**
+          if-no-files-found: warn
+
+  consolidate:
+    name: Nightly Consolidated Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: always()
+    needs:
+      - unity_editmode
+      - unity_playmode
+      - content_validator
+      - scene_capture
+      - perf_parse
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: Artifacts/NightlyInputs
+
+      - name: Build consolidated summary
+        shell: bash
+        run: |
+          mkdir -p Artifacts/NightlySummary
+          summary_md="Artifacts/NightlySummary/nightly_full_regression_summary.md"
+          summary_json="Artifacts/NightlySummary/nightly_full_regression_summary.json"
+
+          {
+            echo "# Nightly Full Regression Summary"
+            echo
+            echo "Generated UTC: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            echo
+            echo "## Job Results"
+            echo "- Nightly Unity EditMode: **${{ needs.unity_editmode.result }}**"
+            echo "- Nightly Unity PlayMode: **${{ needs.unity_playmode.result }}**"
+            echo "- Nightly Content Validator: **${{ needs.content_validator.result }}**"
+            echo "- Nightly Scene Capture + Diff: **${{ needs.scene_capture.result }}**"
+            echo "- Nightly Perf Parse: **${{ needs.perf_parse.result }}**"
+            echo
+            echo "## Artifact Inventory"
+            if [ -d "Artifacts/NightlyInputs" ]; then
+              find Artifacts/NightlyInputs -type f | sort | sed 's#^#- `#; s#$#`#'
+            else
+              echo "- No artifacts downloaded."
+            fi
+          } > "$summary_md"
+
+          cat > "$summary_json" <<JSON
+          {
+            "generated_utc": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "jobs": {
+              "unity_editmode": "${{ needs.unity_editmode.result }}",
+              "unity_playmode": "${{ needs.unity_playmode.result }}",
+              "content_validator": "${{ needs.content_validator.result }}",
+              "scene_capture": "${{ needs.scene_capture.result }}",
+              "perf_parse": "${{ needs.perf_parse.result }}"
+            }
+          }
+          JSON
+
+          cat "$summary_md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload consolidated summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-full-regression-summary-${{ github.sha }}
+          path: Artifacts/NightlySummary/**
+          if-no-files-found: error
+
+      - name: Simulate failure (dispatch input)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.simulate_failure == 'true'
+        shell: bash
+        run: |
+          echo "::error::simulate_failure=true requested; failing after summary artifact generation."
+          exit 1

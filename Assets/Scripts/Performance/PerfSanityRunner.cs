@@ -15,6 +15,7 @@ namespace RavenDevOps.Fishing.Performance
         [SerializeField] private float _targetAverageFps = 60f;
         [SerializeField] private float _targetP95FrameMs = 25f;
         [SerializeField] private float _targetGcDeltaKb = 64f;
+        [SerializeField] private string _hardwareTier = "minimum";
 
         private float[] _windowFrameDurations = System.Array.Empty<float>();
         private float[] _windowFrameDurationsScratch = System.Array.Empty<float>();
@@ -93,8 +94,9 @@ namespace RavenDevOps.Fishing.Performance
             var sceneName = SceneManager.GetActiveScene().name;
             var sampleLog = string.Format(
                 CultureInfo.InvariantCulture,
-                "PERF_SANITY scene={0} frames={1} avg_fps={2:0.00} min_fps={3:0.00} max_fps={4:0.00} avg_frame_ms={5:0.00} p95_frame_ms={6:0.00} gc_delta_kb={7:0.00}",
+                "PERF_SANITY scene={0} tier={1} frames={2} avg_fps={3:0.00} min_fps={4:0.00} max_fps={5:0.00} avg_frame_ms={6:0.00} p95_frame_ms={7:0.00} gc_delta_kb={8:0.00}",
                 sceneName,
+                NormalizeTier(_hardwareTier),
                 _windowSampleCount,
                 avgFps,
                 minFps,
@@ -175,6 +177,16 @@ namespace RavenDevOps.Fishing.Performance
             var clampedPercentile = Mathf.Clamp01(percentile);
             var index = Mathf.Clamp(Mathf.CeilToInt((availableSamples - 1) * clampedPercentile), 0, availableSamples - 1);
             return scratchBuffer[index] * 1000f;
+        }
+
+        private static string NormalizeTier(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "minimum";
+            }
+
+            return value.Trim().ToLowerInvariant();
         }
     }
 }

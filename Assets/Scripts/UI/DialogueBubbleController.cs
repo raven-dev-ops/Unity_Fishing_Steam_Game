@@ -6,6 +6,7 @@ using RavenDevOps.Fishing.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.UI
 {
@@ -24,6 +25,7 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private CanvasGroup _subtitleBackgroundCanvasGroup;
 
         private int _index;
         private bool _isRunning;
@@ -31,6 +33,10 @@ namespace RavenDevOps.Fishing.UI
         private InputAction _uiCancelAction;
         private InputAction _harborInteractAction;
         private InputAction _harborPauseAction;
+        private float _baseFontSize = 36f;
+        private Color _baseTextColor = Color.white;
+        private float _baseOutlineWidth;
+        private Color _baseOutlineColor = Color.black;
 
         public bool IsRunning => _isRunning;
 
@@ -43,6 +49,16 @@ namespace RavenDevOps.Fishing.UI
             {
                 _root.SetActive(false);
             }
+
+            if (_lineText != null)
+            {
+                _baseFontSize = _lineText.fontSize;
+                _baseTextColor = _lineText.color;
+                _baseOutlineWidth = _lineText.outlineWidth;
+                _baseOutlineColor = _lineText.outlineColor;
+            }
+
+            ApplySubtitleAccessibility();
         }
 
         private void OnEnable()
@@ -129,6 +145,8 @@ namespace RavenDevOps.Fishing.UI
                 _lineText.text = AreSubtitlesEnabled() ? line.text : string.Empty;
             }
 
+            ApplySubtitleAccessibility();
+
             if (line.voiceClip != null)
             {
                 _audioManager?.PlayVoice(line.voiceClip);
@@ -152,6 +170,26 @@ namespace RavenDevOps.Fishing.UI
             }
 
             _root.SetActive(_isRunning && AreSubtitlesEnabled());
+        }
+
+        private void ApplySubtitleAccessibility()
+        {
+            if (_lineText != null)
+            {
+                var subtitleScale = _settingsService != null ? _settingsService.SubtitleScale : 1f;
+                _lineText.fontSize = Mathf.Max(10f, _baseFontSize * Mathf.Clamp(subtitleScale, 0.8f, 1.5f));
+
+                var readabilityBoost = _settingsService != null && _settingsService.ReadabilityBoost;
+                _lineText.color = readabilityBoost ? Color.black : _baseTextColor;
+                _lineText.outlineWidth = readabilityBoost ? Mathf.Max(_baseOutlineWidth, 0.2f) : _baseOutlineWidth;
+                _lineText.outlineColor = readabilityBoost ? Color.white : _baseOutlineColor;
+            }
+
+            if (_subtitleBackgroundCanvasGroup != null)
+            {
+                var opacity = _settingsService != null ? _settingsService.SubtitleBackgroundOpacity : 0.65f;
+                _subtitleBackgroundCanvasGroup.alpha = Mathf.Clamp01(opacity);
+            }
         }
 
         private bool AreSubtitlesEnabled()
