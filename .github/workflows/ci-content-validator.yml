@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  EXPECTED_UNITY_VERSION: 6000.2.12f1
+  EXPECTED_UNITY_VERSION: 6000.3.9f1
 
 concurrency:
   group: ci-validator-${{ github.ref }}

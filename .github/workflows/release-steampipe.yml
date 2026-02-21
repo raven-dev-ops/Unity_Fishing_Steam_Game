@@ -22,7 +22,7 @@ permissions:
   id-token: write
 
 env:
-  EXPECTED_UNITY_VERSION: 6000.2.12f1
+  EXPECTED_UNITY_VERSION: 6000.3.9f1
 
 concurrency:
   group: release-steampipe-${{ github.ref }}
