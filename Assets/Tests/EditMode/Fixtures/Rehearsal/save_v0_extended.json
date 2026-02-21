@@ -1,0 +1,41 @@
+{
+  "copecs": 430,
+  "equippedShipId": "ship_lv2",
+  "equippedHookId": "hook_lv2",
+  "ownedShips": [
+    "ship_lv1",
+    "ship_lv2"
+  ],
+  "ownedHooks": [
+    "hook_lv1",
+    "hook_lv2"
+  ],
+  "fishInventory": [
+    {
+      "fishId": "fish_cod",
+      "distanceTier": 2,
+      "count": 3
+    }
+  ],
+  "catchLog": [
+    {
+      "fishId": "fish_cod",
+      "distanceTier": 2,
+      "weightKg": 1.7,
+      "valueCopecs": 28,
+      "timestampUtc": "2026-02-20T09:00:00.0000000Z",
+      "sessionId": "legacy-session",
+      "landed": true,
+      "failReason": ""
+    }
+  ],
+  "careerStartLocalDate": "2026-02-01",
+  "lastLoginLocalDate": "2026-02-20",
+  "stats": {
+    "totalFishCaught": 3,
+    "farthestDistanceTier": 2,
+    "totalTrips": 1,
+    "totalPurchases": 1,
+    "totalCatchValueCopecs": 84
+  }
+}

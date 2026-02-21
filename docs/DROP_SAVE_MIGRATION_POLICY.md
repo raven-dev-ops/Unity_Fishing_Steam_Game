@@ -48,9 +48,18 @@
 - Validate post-migration gameplay, economy, and inventory integrity.
 - Current baseline tests:
   - `Assets/Tests/EditMode/SaveMigrationPipelineTests.cs`
-  - Fixture inputs/snapshots:
-    - `Assets/Tests/EditMode/Fixtures/save_v0_legacy.json`
-    - `Assets/Tests/EditMode/Fixtures/save_v1_migrated_snapshot.json`
+  - `Assets/Tests/EditMode/SaveMigrationRehearsalTests.cs`
+- Fixture inputs/snapshots:
+  - `Assets/Tests/EditMode/Fixtures/save_v0_legacy.json`
+  - `Assets/Tests/EditMode/Fixtures/save_v1_migrated_snapshot.json`
+  - Rehearsal corpus manifest:
+    - `Assets/Tests/EditMode/Fixtures/Rehearsal/save_rehearsal_manifest.json`
+
+## Rehearsal and Rollback Drill
+- Rehearsal runbook and triage signatures:
+  - `docs/SAVE_MIGRATION_REHEARSAL.md`
+- Rollback drill expectation:
+  - malformed payloads trigger safe failure path with corrupt backup copy (no destructive overwrite).
 
 ## Release Gate
 - Any `saveVersion` bump requires migration notes in release documentation.

@@ -86,6 +86,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Catch log baseline: `docs/CATCH_LOG.md`
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Save migration rehearsal: `docs/SAVE_MIGRATION_REHEARSAL.md`
 - Accessibility baseline: `docs/ACCESSIBILITY_BASELINE.md`
 - Accessibility conformance mapping: `docs/ACCESSIBILITY_CONFORMANCE.md`
 - Fishing environment slice: `docs/FISHING_ENVIRONMENT_SLICE.md`

@@ -1,0 +1,11 @@
+{
+  "copecs": 75,
+  "ownedShips": [
+    "ship_lv1"
+  ],
+  "ownedHooks": [
+    "hook_lv1"
+  ],
+  "fishInventory": [],
+  "catchLog": []
+}

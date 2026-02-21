@@ -1,0 +1,51 @@
+{
+  "saveVersion": 1,
+  "copecs": 900,
+  "equippedShipId": "ship_lv2",
+  "equippedHookId": "hook_lv2",
+  "ownedShips": [
+    "ship_lv1",
+    "ship_lv2"
+  ],
+  "ownedHooks": [
+    "hook_lv1",
+    "hook_lv2"
+  ],
+  "fishInventory": [
+    {
+      "fishId": "fish_cod",
+      "distanceTier": 2,
+      "count": 4
+    }
+  ],
+  "catchLog": [],
+  "tutorialFlags": {
+    "tutorialSeen": true,
+    "fishingLoopTutorialCompleted": true,
+    "fishingLoopTutorialSkipped": false,
+    "fishingLoopTutorialReplayRequested": false
+  },
+  "careerStartLocalDate": "2026-02-01",
+  "lastLoginLocalDate": "2026-02-21",
+  "stats": {
+    "totalFishCaught": 4,
+    "farthestDistanceTier": 2,
+    "totalTrips": 2,
+    "totalPurchases": 1,
+    "totalCatchValueCopecs": 110
+  },
+  "progression": {
+    "level": 2,
+    "totalXp": 210,
+    "xpIntoLevel": 110,
+    "xpToNextLevel": 140,
+    "unlockedContentIds": [
+      "hook_lv2"
+    ],
+    "lastUnlockId": "hook_lv2"
+  },
+  "objectiveProgress": {
+    "entries": [],
+    "completedObjectives": 0
+  }
+}

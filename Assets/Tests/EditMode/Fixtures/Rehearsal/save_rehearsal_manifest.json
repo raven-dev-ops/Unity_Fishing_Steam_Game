@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "id": "legacy_minimal",
+      "relativePath": "save_v0_minimal.json",
+      "expectSuccess": true,
+      "expectedSourceVersion": 0,
+      "expectedFinalVersion": 1,
+      "expectFailureContains": ""
+    },
+    {
+      "id": "legacy_extended",
+      "relativePath": "save_v0_extended.json",
+      "expectSuccess": true,
+      "expectedSourceVersion": 0,
+      "expectedFinalVersion": 1,
+      "expectFailureContains": ""
+    },
+    {
+      "id": "current_v1",
+      "relativePath": "save_v1_current.json",
+      "expectSuccess": true,
+      "expectedSourceVersion": 1,
+      "expectedFinalVersion": 1,
+      "expectFailureContains": ""
+    },
+    {
+      "id": "future_version",
+      "relativePath": "save_v99_future.json",
+      "expectSuccess": false,
+      "expectedSourceVersion": 99,
+      "expectedFinalVersion": 99,
+      "expectFailureContains": "newer than supported version"
+    },
+    {
+      "id": "invalid_json",
+      "relativePath": "save_invalid.json",
+      "expectSuccess": false,
+      "expectedSourceVersion": 0,
+      "expectedFinalVersion": 0,
+      "expectFailureContains": "json parse exception"
+    }
+  ]
+}

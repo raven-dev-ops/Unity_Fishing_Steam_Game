@@ -1,0 +1,11 @@
+{
+  "saveVersion": 0,
+  "copecs": 21,
+  "ownedShips": ["ship_lv1"],
+  "fishInventory": [
+    {
+      "fishId": "fish_cod",
+      "distanceTier": 1,
+      "count": 1
+    }
+  ]

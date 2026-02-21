@@ -85,6 +85,7 @@ Unity.exe -batchmode -nographics -quit `
   - Fishing condition modifier and fish-spawn behavior checks
   - Economy sell-summary multiplier behavior
   - Save fixture deserialization
+  - Save migration rehearsal corpus and rollback drill checks
   - Input context map activation and rebinding override persistence
 - PlayMode:
   - Game flow pause/resume transitions
