@@ -1,0 +1,80 @@
+name: CI Content Lock Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      fail_on_findings:
+        description: "Fail workflow on unresolved placeholder findings"
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-content-lock-audit.yml"
+      - "scripts/ci/content-lock-audit.ps1"
+      - "ci/content-lock-replacements.json"
+      - "Assets/Art/Placeholders/placeholder_manifest.json"
+      - "docs/CONTENT_LOCK_CHECKLIST.md"
+      - "docs/CONTENT_PIPELINE.md"
+      - "README.md"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-content-lock-audit.yml"
+      - "scripts/ci/content-lock-audit.ps1"
+      - "ci/content-lock-replacements.json"
+      - "Assets/Art/Placeholders/placeholder_manifest.json"
+      - "docs/CONTENT_LOCK_CHECKLIST.md"
+      - "docs/CONTENT_PIPELINE.md"
+      - "README.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-content-lock-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  content_lock_audit:
+    name: Audit placeholder content lock status
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run content lock audit
+        shell: pwsh
+        run: |
+          $failOnFindings = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.fail_on_findings || 'false' }}"
+          $failSwitch = $false
+          if ($failOnFindings -eq "true") {
+            $failSwitch = $true
+          }
+
+          ./scripts/ci/content-lock-audit.ps1 `
+            -PlaceholderManifestPath "Assets/Art/Placeholders/placeholder_manifest.json" `
+            -ReplacementPlanPath "ci/content-lock-replacements.json" `
+            -FailOnFindings:$failSwitch `
+            -SummaryJsonPath "Artifacts/ContentLock/content_lock_summary.json" `
+            -SummaryMarkdownPath "Artifacts/ContentLock/content_lock_summary.md"
+
+      - name: Publish content lock summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "Artifacts/ContentLock/content_lock_summary.md" ]; then
+            cat "Artifacts/ContentLock/content_lock_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Content lock summary markdown not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload content lock artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-lock-audit-${{ github.sha }}
+          path: Artifacts/ContentLock/**
+          if-no-files-found: warn

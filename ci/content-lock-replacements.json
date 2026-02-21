@@ -1,0 +1,22 @@
+{
+  "waiver_policy": {
+    "required_fields": [
+      "id",
+      "owner",
+      "reason",
+      "expires_on",
+      "ticket"
+    ],
+    "max_waiver_days": 30
+  },
+  "replacements": [],
+  "waivers": [
+    {
+      "id": "*",
+      "owner": "raven-dev-ops",
+      "reason": "Placeholder replacement pass is in progress for 1.0 content lock.",
+      "expires_on": "2026-03-22",
+      "ticket": "#209"
+    }
+  ]
+}

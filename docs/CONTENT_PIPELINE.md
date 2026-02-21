@@ -27,6 +27,14 @@
 5. Fix any duplicate ID, missing icon, invalid range, or import audit warnings.
 6. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
 
+## 1.0 Content Lock
+- Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
+- Placeholder inventory source: `Assets/Art/Placeholders/placeholder_manifest.json`
+- Replacement/waiver tracking: `ci/content-lock-replacements.json`
+- Automated audit:
+  - script: `scripts/ci/content-lock-audit.ps1`
+  - workflow: `.github/workflows/ci-content-lock-audit.yml`
+
 ## Headless Validation (CI)
 Run catalog validation in Unity batch mode:
 

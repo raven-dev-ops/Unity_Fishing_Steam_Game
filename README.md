@@ -33,6 +33,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`.
 - Economy/progression simulation gate: `.github/workflows/ci-balance-simulation.yml`.
 - Hardware baseline lock gate: `.github/workflows/ci-hardware-baseline-lock.yml`.
+- Content lock/placeholder audit gate: `.github/workflows/ci-content-lock-audit.yml`.
 - Scheduled full-stack regression: `.github/workflows/nightly-full-regression.yml`.
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
 - Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.
@@ -86,6 +87,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Catch log baseline: `docs/CATCH_LOG.md`
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
 - Save migration rehearsal: `docs/SAVE_MIGRATION_REHEARSAL.md`
 - Accessibility baseline: `docs/ACCESSIBILITY_BASELINE.md`
 - Accessibility conformance mapping: `docs/ACCESSIBILITY_CONFORMANCE.md`
