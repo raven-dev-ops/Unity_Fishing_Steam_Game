@@ -17,6 +17,7 @@ Keyboard-first single-player fishing loop for Steam.
 
 Launcher detection checks Unity Hub metadata (`%APPDATA%/UnityHub/editors-v2.json`) and common Hub install roots.
 If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` before running `OPEN_UNITY_PROJECT.bat`.
+`OPEN_UNITY_PROJECT.bat` also validates launcher script API marker compatibility and stops with an explicit update message if local scripts are stale.
 
 ### Validate Before PR
 1. Run content validator: `Raven > Validate Content Catalog`.

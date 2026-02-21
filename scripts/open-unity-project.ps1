@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$LauncherApiVersion = 2
 
 function Get-ProjectRoot {
     if (-not [string]::IsNullOrWhiteSpace($ProjectPath)) {
