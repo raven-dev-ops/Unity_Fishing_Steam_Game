@@ -34,6 +34,7 @@ namespace RavenDevOps.Fishing.Core
             var inputMapController = servicesGo.AddComponent<InputActionMapController>();
             var inputRebindingService = servicesGo.AddComponent<InputRebindingService>();
             var userSettings = servicesGo.AddComponent<UserSettingsService>();
+            var fallbackCameraService = servicesGo.AddComponent<FallbackCameraService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var addressablesPilotLoader = servicesGo.AddComponent<AddressablesPilotCatalogLoader>();
             var modCatalogService = servicesGo.AddComponent<ModRuntimeCatalogService>();
@@ -60,6 +61,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(inputMapController);
             RuntimeServiceRegistry.Register(inputRebindingService);
             RuntimeServiceRegistry.Register(userSettings);
+            RuntimeServiceRegistry.Register(fallbackCameraService);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(addressablesPilotLoader);
             RuntimeServiceRegistry.Register(modCatalogService);
