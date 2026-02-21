@@ -87,8 +87,8 @@ namespace RavenDevOps.Fishing.EditorTools
 
             var locationPathName = Path.Combine(outputDirectory, executableName);
             var target = BuildTarget.StandaloneWindows64;
-            var targetGroup = BuildPipeline.GetBuildTargetGroup(target);
-            var previousDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(targetGroup);
+            var namedBuildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(BuildPipeline.GetBuildTargetGroup(target));
+            var previousDefineSymbols = PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget);
             var profileDefineSymbols = ApplyBuildProfileDefineSymbols(previousDefineSymbols, buildProfile);
 
             var options = new BuildPlayerOptions
@@ -101,7 +101,7 @@ namespace RavenDevOps.Fishing.EditorTools
 
             try
             {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(targetGroup, profileDefineSymbols);
+                PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, profileDefineSymbols);
 
                 var report = BuildPipeline.BuildPlayer(options);
                 var summary = report.summary;
@@ -118,7 +118,7 @@ namespace RavenDevOps.Fishing.EditorTools
             }
             finally
             {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(targetGroup, previousDefineSymbols);
+                PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, previousDefineSymbols);
             }
         }
 

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace RavenDevOps.Fishing.UI
 {
@@ -52,7 +54,7 @@ namespace RavenDevOps.Fishing.UI
                 }
             }
 
-            if (UnityEngine.Input.GetKeyDown(_togglePhotoModeKey))
+            if (GetKeyDown(_togglePhotoModeKey))
             {
                 SetPhotoMode(!_photoModeActive);
             }
@@ -63,7 +65,7 @@ namespace RavenDevOps.Fishing.UI
             }
 
             HandleFreeCameraMovement();
-            if (UnityEngine.Input.GetKeyDown(_captureScreenshotKey))
+            if (GetKeyDown(_captureScreenshotKey))
             {
                 CaptureScreenshot();
             }
@@ -177,48 +179,88 @@ namespace RavenDevOps.Fishing.UI
                 return;
             }
 
-            var speed = _moveSpeed * (UnityEngine.Input.GetKey(KeyCode.LeftShift) ? _boostMultiplier : 1f);
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return;
+            }
+
+            var mouse = Mouse.current;
+            var speed = _moveSpeed * (keyboard.leftShiftKey.isPressed ? _boostMultiplier : 1f);
             var move = Vector3.zero;
 
-            if (UnityEngine.Input.GetKey(KeyCode.W))
+            if (keyboard.wKey.isPressed)
             {
                 move += _targetCamera.transform.forward;
             }
 
-            if (UnityEngine.Input.GetKey(KeyCode.S))
+            if (keyboard.sKey.isPressed)
             {
                 move -= _targetCamera.transform.forward;
             }
 
-            if (UnityEngine.Input.GetKey(KeyCode.D))
+            if (keyboard.dKey.isPressed)
             {
                 move += _targetCamera.transform.right;
             }
 
-            if (UnityEngine.Input.GetKey(KeyCode.A))
+            if (keyboard.aKey.isPressed)
             {
                 move -= _targetCamera.transform.right;
             }
 
-            if (UnityEngine.Input.GetKey(KeyCode.E))
+            if (keyboard.eKey.isPressed)
             {
                 move += _targetCamera.transform.up;
             }
 
-            if (UnityEngine.Input.GetKey(KeyCode.Q))
+            if (keyboard.qKey.isPressed)
             {
                 move -= _targetCamera.transform.up;
             }
 
             _targetCamera.transform.position += move * (speed * Time.unscaledDeltaTime);
-            if (UnityEngine.Input.GetMouseButton(1))
+            if (mouse != null && mouse.rightButton.isPressed)
             {
-                var mouseX = UnityEngine.Input.GetAxisRaw("Mouse X");
-                var mouseY = UnityEngine.Input.GetAxisRaw("Mouse Y");
+                var mouseDelta = mouse.delta.ReadValue();
+                var mouseX = mouseDelta.x;
+                var mouseY = mouseDelta.y;
                 var yaw = mouseX * _lookSensitivity * Time.unscaledDeltaTime;
                 var pitch = -mouseY * _lookSensitivity * Time.unscaledDeltaTime;
                 _targetCamera.transform.Rotate(Vector3.up, yaw, Space.World);
                 _targetCamera.transform.Rotate(Vector3.right, pitch, Space.Self);
+            }
+        }
+
+        private static bool GetKeyDown(KeyCode keyCode)
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return false;
+            }
+
+            return TryResolveKeyControl(keyboard, keyCode, out var keyControl) && keyControl.wasPressedThisFrame;
+        }
+
+        private static bool TryResolveKeyControl(Keyboard keyboard, KeyCode keyCode, out KeyControl keyControl)
+        {
+            keyControl = null;
+            if (keyboard == null)
+            {
+                return false;
+            }
+
+            switch (keyCode)
+            {
+                case KeyCode.F9:
+                    keyControl = keyboard.f9Key;
+                    return true;
+                case KeyCode.F12:
+                    keyControl = keyboard.f12Key;
+                    return true;
+                default:
+                    return false;
             }
         }
 
