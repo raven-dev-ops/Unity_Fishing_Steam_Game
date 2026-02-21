@@ -1,7 +1,9 @@
 {
   "name": "RavenDevOps.Fishing.Core",
   "rootNamespace": "RavenDevOps.Fishing.Core",
-  "references": [],
+  "references": [
+    "Unity.InputSystem"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
