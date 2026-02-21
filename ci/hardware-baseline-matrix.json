@@ -1,0 +1,85 @@
+{
+  "capture_policy": {
+    "required_tiers": [
+      "minimum",
+      "recommended",
+      "reference"
+    ],
+    "max_capture_age_days": 30
+  },
+  "waiver_policy": {
+    "required_fields": [
+      "tier",
+      "owner",
+      "reason",
+      "expires_on",
+      "ticket"
+    ],
+    "max_waiver_days": 14
+  },
+  "tiers": {
+    "minimum": {
+      "target_spec": {
+        "os": "Windows 10/11 64-bit",
+        "cpu": "Intel Core i5-8400 / AMD Ryzen 5 2600",
+        "gpu": "NVIDIA GTX 1060 6GB / AMD RX 580 8GB",
+        "ram_gb_min": 8
+      },
+      "captures": []
+    },
+    "recommended": {
+      "target_spec": {
+        "os": "Windows 10/11 64-bit",
+        "cpu": "Intel Core i7-10700 / AMD Ryzen 5 5600",
+        "gpu": "NVIDIA RTX 2060 / AMD RX 6600 XT",
+        "ram_gb_min": 16
+      },
+      "captures": []
+    },
+    "reference": {
+      "target_spec": {
+        "os": "Windows 11 64-bit",
+        "cpu": "Intel Core i7-13700KF",
+        "gpu": "NVIDIA RTX 4070 Ti",
+        "ram_gb_min": 32
+      },
+      "captures": [
+        {
+          "capture_id": "reference-local-20260221T032700Z",
+          "captured_utc": "2026-02-21T03:27:00Z",
+          "source": "local-dev-fingerprint",
+          "owner": "raven-dev-ops",
+          "validated": true,
+          "machine": {
+            "os": "Microsoft Windows 11 Home 10.0.26200",
+            "cpu": "13th Gen Intel(R) Core(TM) i7-13700KF",
+            "gpu": "NVIDIA GeForce RTX 4070 Ti",
+            "ram_gb": 31.85
+          },
+          "metrics": {
+            "perf_summary_json": "",
+            "memory_summary_json": "",
+            "duplication_summary_json": "",
+            "notes": "Hardware fingerprint recorded. Unity gameplay capture evidence pending."
+          }
+        }
+      ]
+    }
+  },
+  "waivers": [
+    {
+      "tier": "minimum",
+      "owner": "raven-dev-ops",
+      "reason": "Awaiting physical minimum-spec capture machine allocation.",
+      "expires_on": "2026-03-06",
+      "ticket": "#207"
+    },
+    {
+      "tier": "recommended",
+      "owner": "raven-dev-ops",
+      "reason": "Awaiting physical recommended-spec capture machine allocation.",
+      "expires_on": "2026-03-06",
+      "ticket": "#207"
+    }
+  ]
+}

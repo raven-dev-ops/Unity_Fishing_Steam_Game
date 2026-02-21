@@ -54,6 +54,7 @@ Non-Unity deterministic gates:
 - Perf tier ingestion: `.github/workflows/ci-perf-budget.yml`
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`
 - Economy/progression balance simulation: `.github/workflows/ci-balance-simulation.yml`
+- Hardware baseline lock matrix validation: `.github/workflows/ci-hardware-baseline-lock.yml`
 
 Project wrapper (recommended):
 

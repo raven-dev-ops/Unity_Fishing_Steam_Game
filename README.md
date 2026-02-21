@@ -32,6 +32,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`.
 - Economy/progression simulation gate: `.github/workflows/ci-balance-simulation.yml`.
+- Hardware baseline lock gate: `.github/workflows/ci-hardware-baseline-lock.yml`.
 - Scheduled full-stack regression: `.github/workflows/nightly-full-regression.yml`.
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
 - Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.
@@ -76,6 +77,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Industry quality roadmap: `docs/INDUSTRY_QUALITY_ROADMAP.md`
 - Asset import standards: `docs/ASSET_IMPORT_STANDARDS.md`
 - Assembly boundaries: `docs/ASSEMBLY_BOUNDARIES.md`
+- Hardware baseline lock: `docs/HARDWARE_BASELINE_LOCK.md`
 - Contribution workflow: `CONTRIBUTING.md`
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
 - Build profiles: `docs/BUILD_PROFILES.md`

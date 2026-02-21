@@ -43,6 +43,7 @@ CI behavior:
 - Baseline files:
   - `ci/memory-budget-baseline.json`
   - `ci/addressables-duplication-baseline.json`
+  - `ci/hardware-baseline-matrix.json`
 - Waiver requirements (for warnings):
   - owner
   - reason
@@ -50,8 +51,21 @@ CI behavior:
   - expiry date (<=14 days)
 - Failing results require fix or explicit baseline/policy update in PR with rationale.
 
+Representative hardware lock:
+- Validate tier coverage and waiver policy:
+  - `scripts/ci/hardware-baseline-lock-check.ps1`
+- CI workflow:
+  - `.github/workflows/ci-hardware-baseline-lock.yml`
+
 ## Baseline Update Process
 1. Capture representative memory/duplication report inputs.
 2. Run workflow/manual dispatch and inspect summary artifacts.
 3. Update baseline JSON thresholds in same PR.
 4. Include rationale and reviewer signoff.
+
+## Hardware Evidence Requirement for 1.0
+- Memory/duplication thresholds should be calibrated from representative tier captures:
+  - `minimum`
+  - `recommended`
+  - `reference`
+- Capture metadata and artifact references must be recorded in `ci/hardware-baseline-matrix.json`.

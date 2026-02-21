@@ -18,6 +18,7 @@
 | Secret scan | `.github/workflows/secret-scan.yml` | push | Success | Scan summary |
 | Perf budget | `.github/workflows/ci-perf-budget.yml` | push/manual | Success | `Artifacts/Perf` summary |
 | Memory + duplication | `.github/workflows/ci-memory-duplication.yml` | push/manual | Success | `Artifacts/Memory`, `Artifacts/Addressables` summaries |
+| Hardware baseline lock | `.github/workflows/ci-hardware-baseline-lock.yml` | push/manual | Success or approved waiver path | `Artifacts/Hardware/hardware_baseline_lock_summary.*` |
 | Balance simulation | `.github/workflows/ci-balance-simulation.yml` | push/manual | Success | `Artifacts/BalanceSim` report |
 | Scene capture diff | `.github/workflows/ci-scene-capture.yml` | manual | Success (or approved waiver) | scene captures + diff summary |
 | Nightly regression | `.github/workflows/nightly-full-regression.yml` | schedule/manual | Success and consolidated summary | nightly summary artifact |
@@ -40,6 +41,7 @@
 | Secret scan |  |  |  |  |  |
 | Perf budget |  |  |  |  |  |
 | Memory + duplication |  |  |  |  |  |
+| Hardware baseline lock |  |  |  |  |  |
 | Balance simulation |  |  |  |  |  |
 | Scene capture diff |  |  |  |  |  |
 | Nightly regression |  |  |  |  |  |

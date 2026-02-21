@@ -10,6 +10,11 @@ Hardware tier policy covers:
 - `recommended`
 - `reference`
 
+Hardware capture lock source:
+- `ci/hardware-baseline-matrix.json`
+- Validation script: `scripts/ci/hardware-baseline-lock-check.ps1`
+- Workflow: `.github/workflows/ci-hardware-baseline-lock.yml`
+
 ## Capture Method
 1. Use QA build profile:
    - `scripts/unity-cli.ps1 -Task build -BuildProfile QA -LogFile build_perf.log`
@@ -55,6 +60,10 @@ Record one row per scenario and keep the latest approved run:
   - Waiver notes must include owner, ticket, reason, and expiry date.
   - Fail-level regressions are blocking.
 
+Hardware-tier waiver policy:
+- Missing representative tier captures (`minimum`/`recommended`/`reference`) require explicit waiver entries in `ci/hardware-baseline-matrix.json`.
+- Waivers are time-boxed (max 14 days by policy) and validated by `scripts/ci/hardware-baseline-lock-check.ps1`.
+
 ## CI Budget Gate
 - Workflow: `.github/workflows/ci-perf-budget.yml`
 - Trigger paths: `PerfLogs/**` (plus workflow/script/doc changes) and manual dispatch.
@@ -74,3 +83,9 @@ Record one row per scenario and keep the latest approved run:
     - filename fallback (`minimum|recommended|reference`)
     - default fallback tier (`minimum`)
   - If no matching logs are found, workflow is marked skipped (warning + summary artifact).
+
+## Baseline Lock Verification
+- Run non-blocking matrix validation:
+  - `scripts/ci/hardware-baseline-lock-check.ps1`
+- Run strict 1.0 validation (all tiers must have at least one validated capture):
+  - `scripts/ci/hardware-baseline-lock-check.ps1 -RequireAllTiersValidated`

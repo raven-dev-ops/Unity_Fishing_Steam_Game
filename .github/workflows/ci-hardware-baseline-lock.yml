@@ -1,0 +1,79 @@
+name: CI Hardware Baseline Lock
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_all_tiers_validated:
+        description: "Fail when minimum/recommended/reference tiers do not each have at least one validated capture"
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ci-hardware-baseline-lock.yml"
+      - "ci/hardware-baseline-matrix.json"
+      - "scripts/ci/hardware-baseline-lock-check.ps1"
+      - "scripts/ci/collect-hardware-fingerprint.ps1"
+      - "docs/HARDWARE_BASELINE_LOCK.md"
+      - "docs/PERF_BASELINE.md"
+      - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
+  pull_request:
+    paths:
+      - ".github/workflows/ci-hardware-baseline-lock.yml"
+      - "ci/hardware-baseline-matrix.json"
+      - "scripts/ci/hardware-baseline-lock-check.ps1"
+      - "scripts/ci/collect-hardware-fingerprint.ps1"
+      - "docs/HARDWARE_BASELINE_LOCK.md"
+      - "docs/PERF_BASELINE.md"
+      - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-hardware-baseline-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hardware_baseline_lock:
+    name: Validate hardware baseline lock matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run hardware baseline lock check
+        shell: pwsh
+        run: |
+          $requireAll = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.require_all_tiers_validated || 'false' }}"
+          $requireAllSwitch = $false
+          if ($requireAll -eq "true") {
+            $requireAllSwitch = $true
+          }
+
+          ./scripts/ci/hardware-baseline-lock-check.ps1 `
+            -MatrixPath "ci/hardware-baseline-matrix.json" `
+            -RequireAllTiersValidated:$requireAllSwitch `
+            -SummaryJsonPath "Artifacts/Hardware/hardware_baseline_lock_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Hardware/hardware_baseline_lock_summary.md"
+
+      - name: Publish hardware baseline summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "Artifacts/Hardware/hardware_baseline_lock_summary.md" ]; then
+            cat "Artifacts/Hardware/hardware_baseline_lock_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Hardware baseline summary markdown not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload hardware baseline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardware-baseline-lock-${{ github.sha }}
+          path: Artifacts/Hardware/**
+          if-no-files-found: warn
