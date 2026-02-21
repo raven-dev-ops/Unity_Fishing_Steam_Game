@@ -14,7 +14,13 @@ if [[ ! -s "${LOCK_FILE}" ]]; then
   exit 1
 fi
 
-python3 - "${LOCK_FILE}" "${MANIFEST_FILE}" <<'PY'
+python_bin="$(command -v python3 || command -v python || true)"
+if [[ -z "${python_bin}" ]]; then
+  echo "::error::Package lock guard failed: python interpreter not found (python3 or python)."
+  exit 1
+fi
+
+"${python_bin}" - "${LOCK_FILE}" "${MANIFEST_FILE}" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -26,7 +32,7 @@ errors = []
 
 def load_json(path: Path):
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception as exc:
         errors.append(f"{path} is not valid JSON: {exc}")
         return None
@@ -96,4 +102,3 @@ print(
     f"{len(lock_dependencies)} dependencies and covers all manifest entries."
 )
 PY
-

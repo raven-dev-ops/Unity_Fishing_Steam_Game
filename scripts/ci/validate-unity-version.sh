@@ -9,7 +9,11 @@ if [[ ! -f "${PROJECT_VERSION_FILE}" ]]; then
   exit 1
 fi
 
-actual_unity_version="$(awk -F': ' '/^m_EditorVersion:/ {print $2}' "${PROJECT_VERSION_FILE}" | tr -d '\r' | head -n 1)"
+actual_line="$(grep -m 1 'm_EditorVersion:' "${PROJECT_VERSION_FILE}" || true)"
+actual_unity_version="$(
+  printf '%s' "${actual_line}" \
+    | sed -e 's/^\xEF\xBB\xBF//' -e 's/^m_EditorVersion:[[:space:]]*//' -e 's/\r$//'
+)"
 
 if [[ -z "${actual_unity_version}" ]]; then
   echo "::error::Unity version guard failed: could not parse m_EditorVersion from ${PROJECT_VERSION_FILE}."
