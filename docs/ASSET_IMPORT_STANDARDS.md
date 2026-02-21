@@ -70,9 +70,17 @@ Define stable texture/audio import defaults to reduce memory and performance reg
 - Default report output:
   - `Artifacts/AssetImportAudit/asset_import_audit_report.txt`
 - CI integration:
-  - `.github/workflows/ci-content-validator.yml` runs the audit in warning-first mode and uploads report artifacts.
+  - `.github/workflows/ci-content-validator.yml` runs audit in fail-on-warning mode and uploads report artifacts.
+  - Workflow args:
+    - `-assetImportAuditFailOnWarnings=true`
+    - `-assetImportAuditAllowlistPath=ci/asset-import-warning-allowlist.json`
 
-## Fail-Later Path
-- Default behavior is warning-first to avoid blocking cleanup-in-progress content drops.
-- To fail CI on warnings once baseline is clean, run batch mode with:
-  - `-assetImportAuditFailOnWarnings=true`
+## Warning Allowlist Policy
+- Allowlist file: `ci/asset-import-warning-allowlist.json`
+- Each exception entry must include:
+  - `pattern` (substring used to match warning message)
+  - `owner`
+  - `reason`
+  - `expiresOn` (`YYYY-MM-DD`)
+- Expired or malformed allowlist entries fail the audit.
+- Keep allowlist minimal and time-bound; remove entries once content is remediated.

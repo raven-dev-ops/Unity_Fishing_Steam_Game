@@ -22,6 +22,8 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private UserSettingsService _settingsService;
 
+        private ISaveDataView _saveDataView;
+
         public int CurrentDistanceTier { get; set; } = 1;
         public float CurrentDepth { get; set; }
         public float CurrentTensionNormalized { get; private set; }
@@ -33,16 +35,28 @@ namespace RavenDevOps.Fishing.UI
 
         private void Awake()
         {
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            if (_saveDataView == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+                _saveDataView = _saveManager;
+            }
+
+            if (_gameFlowManager == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            }
+
+            if (_settingsService == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            }
         }
 
         private void OnEnable()
         {
-            if (_saveManager != null)
+            if (_saveDataView != null)
             {
-                _saveManager.SaveDataChanged += OnSaveDataChanged;
+                _saveDataView.SaveDataChanged += OnSaveDataChanged;
             }
 
             if (_gameFlowManager != null)
@@ -60,9 +74,9 @@ namespace RavenDevOps.Fishing.UI
 
         private void OnDisable()
         {
-            if (_saveManager != null)
+            if (_saveDataView != null)
             {
-                _saveManager.SaveDataChanged -= OnSaveDataChanged;
+                _saveDataView.SaveDataChanged -= OnSaveDataChanged;
             }
 
             if (_gameFlowManager != null)
@@ -73,6 +87,21 @@ namespace RavenDevOps.Fishing.UI
             if (_settingsService != null)
             {
                 _settingsService.SettingsChanged -= OnSettingsChanged;
+            }
+        }
+
+        public void ConfigureDependencies(ISaveDataView saveDataView, GameFlowManager gameFlowManager = null, UserSettingsService settingsService = null)
+        {
+            _saveDataView = saveDataView;
+            _saveManager = saveDataView as SaveManager;
+            if (gameFlowManager != null)
+            {
+                _gameFlowManager = gameFlowManager;
+            }
+
+            if (settingsService != null)
+            {
+                _settingsService = settingsService;
             }
         }
 
@@ -132,12 +161,12 @@ namespace RavenDevOps.Fishing.UI
 
         public void Refresh()
         {
-            if (_saveManager == null)
+            if (_saveDataView == null)
             {
                 return;
             }
 
-            var save = _saveManager.Current;
+            var save = _saveDataView.Current;
             if (_copecsText != null)
             {
                 _copecsText.text = $"Copecs: {save.copecs}";

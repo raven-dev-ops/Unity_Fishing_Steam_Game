@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  EXPECTED_UNITY_VERSION: 2022.3.16f1
+
 concurrency:
   group: ci-tests-${{ github.ref }}
   cancel-in-progress: true
@@ -30,6 +33,18 @@ jobs:
         with:
           lfs: true
 
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
       - name: Determine trusted context
         id: trust
         shell: bash
@@ -44,6 +59,25 @@ jobs:
           fi
 
           echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve write automation token
+        id: automation_token
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          AUTOMATION_WRITE_TOKEN: ${{ secrets.AUTOMATION_WRITE_TOKEN }}
+        run: |
+          chmod +x scripts/ci/resolve-write-automation-token.sh
+          scripts/ci/resolve-write-automation-token.sh
+
+      - name: Report write automation mode
+        shell: bash
+        run: |
+          echo "Write automation enabled: ${{ steps.automation_token.outputs.write_enabled }}"
+          echo "Write automation reason: ${{ steps.automation_token.outputs.reason }}"
+          if [ "${{ steps.automation_token.outputs.write_enabled }}" != "true" ]; then
+            echo "Unity test check publication is disabled; artifacts remain available for manual review." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Detect Unity license availability
         id: unity_license
@@ -66,17 +100,27 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          key: Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
           restore-keys: |
             Library-Tests-${{ runner.os }}-${{ matrix.testMode }}-
 
-      - name: Run Unity tests
-        if: steps.unity_license.outputs.available == 'true'
+      - name: Run Unity tests (publish check run)
+        if: steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled == 'true'
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          githubToken: ${{ steps.automation_token.outputs.token }}
+          checkName: Unity ${{ matrix.testMode }} Tests
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: artifacts/${{ matrix.testMode }}
+
+      - name: Run Unity tests (artifact-only fallback)
+        if: steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled != 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
           testMode: ${{ matrix.testMode }}
           artifactsPath: artifacts/${{ matrix.testMode }}
 

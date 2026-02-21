@@ -17,6 +17,7 @@
 - `p95_frame_ms` should remain within baseline budget.
 - `gc_delta_kb` should remain within baseline budget.
 - Fish roll hot path should show no avoidable per-roll managed allocations in steady state.
+- Ignore first sample window after scene load; use warmed windows for budget evidence.
 
 ## Failure Logging
 Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SANITY_BUDGET_FAIL` lines.

@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  EXPECTED_UNITY_VERSION: 2022.3.16f1
+
 concurrency:
   group: ci-build-${{ github.ref }}
   cancel-in-progress: true
@@ -23,6 +26,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
 
       - name: Determine trusted context
         id: trust
@@ -60,7 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-Build-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          key: Library-Build-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
           restore-keys: |
             Library-Build-${{ runner.os }}-
 
@@ -80,6 +95,31 @@ jobs:
             -buildCommit=${{ github.sha }}
             -buildBranch=${{ github.ref_name }}
 
+      - name: Generate build-size report
+        if: steps.unity_license.outputs.available == 'true'
+        shell: bash
+        env:
+          BUILD_ROOT: Builds/Windows
+          BASELINE_FILE: ci/build-size-baseline.json
+          REPORT_JSON: Artifacts/BuildSize/build_size_report.json
+          REPORT_MD: Artifacts/BuildSize/build_size_report.md
+          ENFORCEMENT_MODE: warn
+          BUILD_SIZE_WARN_DELTA_PERCENT: "8"
+          BUILD_SIZE_FAIL_DELTA_PERCENT: "15"
+        run: |
+          chmod +x scripts/ci/build-size-report.sh
+          scripts/ci/build-size-report.sh
+
+      - name: Publish build-size summary
+        if: steps.unity_license.outputs.available == 'true'
+        shell: bash
+        run: |
+          if [ -f "Artifacts/BuildSize/build_size_report.md" ]; then
+            cat "Artifacts/BuildSize/build_size_report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Build size report markdown not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload build artifacts
         if: steps.unity_license.outputs.available == 'true'
         uses: actions/upload-artifact@v4
@@ -87,6 +127,7 @@ jobs:
           name: windows-build-${{ github.sha }}
           path: |
             Builds/Windows/**
+            Artifacts/BuildSize/**
           if-no-files-found: warn
 
       - name: Report skipped build

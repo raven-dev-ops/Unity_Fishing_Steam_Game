@@ -15,6 +15,8 @@ namespace RavenDevOps.Fishing.Steam
 
         [SerializeField] private uint _steamAppId = 480;
         [SerializeField] private bool _dontDestroyOnLoad = true;
+        [SerializeField] private bool _enforceSteamRelaunch = false;
+        [SerializeField] private bool _allowRelaunchInDevelopmentBuild = false;
         [SerializeField] private bool _verboseLogs = true;
 
         public static bool IsSteamInitialized => _steamInitialized;
@@ -89,6 +91,11 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
+            if (!TryHandleRelaunchGuard())
+            {
+                return;
+            }
+
             try
             {
                 _steamInitialized = SteamAPI.Init();
@@ -111,6 +118,73 @@ namespace RavenDevOps.Fishing.Steam
 #else
             SetFallback("STEAMWORKS_NET symbol not defined. Running non-Steam fallback mode.");
 #endif
+        }
+
+        private bool TryHandleRelaunchGuard()
+        {
+#if STEAMWORKS_NET
+            if (!ShouldAttemptSteamRelaunch(out var skipReason))
+            {
+                if (_verboseLogs)
+                {
+                    Debug.Log($"SteamBootstrap: skipping Steam relaunch guard ({skipReason}).");
+                }
+
+                return true;
+            }
+
+            try
+            {
+                var shouldRelaunch = SteamAPI.RestartAppIfNecessary(new AppId_t(_steamAppId));
+                if (shouldRelaunch)
+                {
+                    SetFallback($"RestartAppIfNecessary requested relaunch via Steam for appId={_steamAppId}. Quitting current process.");
+                    Application.Quit();
+                    return false;
+                }
+
+                if (_verboseLogs)
+                {
+                    Debug.Log($"SteamBootstrap: relaunch guard passed for appId={_steamAppId}.");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                SetFallback($"RestartAppIfNecessary threw exception: {ex.Message}");
+                return false;
+            }
+#endif
+
+            return true;
+        }
+
+        private bool ShouldAttemptSteamRelaunch(out string skipReason)
+        {
+            if (!_enforceSteamRelaunch)
+            {
+                skipReason = "feature disabled in inspector";
+                return false;
+            }
+
+            if (_steamAppId == 0)
+            {
+                skipReason = "steam app id is not configured";
+                return false;
+            }
+
+#if UNITY_EDITOR
+            skipReason = "running in Unity editor";
+            return false;
+#else
+            if (Debug.isDebugBuild && !_allowRelaunchInDevelopmentBuild)
+            {
+                skipReason = "debug/development build without override";
+                return false;
+            }
+#endif
+
+            skipReason = string.Empty;
+            return true;
         }
 
         private static void ShutdownSteam()

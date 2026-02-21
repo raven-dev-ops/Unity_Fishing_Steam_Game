@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,6 +7,8 @@ namespace RavenDevOps.Fishing.Performance
 {
     public sealed class PerfSanityRunner : MonoBehaviour
     {
+        private const float MinimumFrameSeconds = 0.0001f;
+
         [SerializeField] private Text _fpsLabel;
         [SerializeField] private int _sampleFrames = 300;
         [SerializeField] private bool _emitWarningsOnBudgetFailure = true;
@@ -15,22 +16,34 @@ namespace RavenDevOps.Fishing.Performance
         [SerializeField] private float _targetP95FrameMs = 25f;
         [SerializeField] private float _targetGcDeltaKb = 64f;
 
-        private readonly List<float> _windowFrameDurations = new List<float>(512);
+        private float[] _windowFrameDurations = System.Array.Empty<float>();
+        private float[] _windowFrameDurationsScratch = System.Array.Empty<float>();
+        private int _windowSampleCount;
         private int _frameCounter;
         private float _elapsedSeconds;
         private long _gcWindowStartBytes;
 
         private void OnEnable()
         {
+            EnsureSampleBuffers();
             ResetWindow();
+        }
+
+        private void OnValidate()
+        {
+            _sampleFrames = Mathf.Max(1, _sampleFrames);
+            EnsureSampleBuffers();
         }
 
         private void Update()
         {
+            EnsureSampleBuffers();
+
             _frameCounter++;
-            var deltaTime = Mathf.Max(0.0001f, Time.unscaledDeltaTime);
+            var deltaTime = Mathf.Max(MinimumFrameSeconds, Time.unscaledDeltaTime);
             _elapsedSeconds += deltaTime;
-            _windowFrameDurations.Add(deltaTime);
+            _windowFrameDurations[_windowSampleCount] = deltaTime;
+            _windowSampleCount++;
 
             if (_frameCounter < _sampleFrames)
             {
@@ -45,30 +58,30 @@ namespace RavenDevOps.Fishing.Performance
         {
             _frameCounter = 0;
             _elapsedSeconds = 0f;
-            _windowFrameDurations.Clear();
+            _windowSampleCount = 0;
             _gcWindowStartBytes = System.GC.GetTotalMemory(false);
         }
 
         private void EmitWindowSample()
         {
-            if (_windowFrameDurations.Count == 0)
+            if (_windowSampleCount <= 0)
             {
                 return;
             }
 
-            var avgFrameSeconds = _elapsedSeconds / Mathf.Max(1, _windowFrameDurations.Count);
-            var avgFps = 1f / Mathf.Max(0.0001f, avgFrameSeconds);
+            var avgFrameSeconds = _elapsedSeconds / Mathf.Max(1, _windowSampleCount);
+            var avgFps = 1f / Mathf.Max(MinimumFrameSeconds, avgFrameSeconds);
             var minFps = float.MaxValue;
             var maxFps = 0f;
-            for (var i = 0; i < _windowFrameDurations.Count; i++)
+            for (var i = 0; i < _windowSampleCount; i++)
             {
-                var fps = 1f / Mathf.Max(0.0001f, _windowFrameDurations[i]);
+                var fps = 1f / Mathf.Max(MinimumFrameSeconds, _windowFrameDurations[i]);
                 minFps = Mathf.Min(minFps, fps);
                 maxFps = Mathf.Max(maxFps, fps);
             }
 
             var avgFrameMs = avgFrameSeconds * 1000f;
-            var p95FrameMs = ResolvePercentileFrameMs(_windowFrameDurations, 0.95f);
+            var p95FrameMs = ResolvePercentileFrameMsNoAlloc(_windowFrameDurations, _windowFrameDurationsScratch, _windowSampleCount, 0.95f);
             var gcDeltaBytes = System.GC.GetTotalMemory(false) - _gcWindowStartBytes;
             var gcDeltaKb = gcDeltaBytes / 1024f;
 
@@ -82,7 +95,7 @@ namespace RavenDevOps.Fishing.Performance
                 CultureInfo.InvariantCulture,
                 "PERF_SANITY scene={0} frames={1} avg_fps={2:0.00} min_fps={3:0.00} max_fps={4:0.00} avg_frame_ms={5:0.00} p95_frame_ms={6:0.00} gc_delta_kb={7:0.00}",
                 sceneName,
-                _frameCounter,
+                _windowSampleCount,
                 avgFps,
                 minFps,
                 maxFps,
@@ -114,19 +127,54 @@ namespace RavenDevOps.Fishing.Performance
             }
         }
 
-        private static float ResolvePercentileFrameMs(List<float> frameDurations, float percentile)
+        private void EnsureSampleBuffers()
         {
-            if (frameDurations == null || frameDurations.Count == 0)
+            var requiredSamples = Mathf.Max(1, _sampleFrames);
+            var resized = false;
+            if (_windowFrameDurations.Length != requiredSamples)
+            {
+                _windowFrameDurations = new float[requiredSamples];
+                resized = true;
+            }
+
+            if (_windowFrameDurationsScratch.Length != requiredSamples)
+            {
+                _windowFrameDurationsScratch = new float[requiredSamples];
+                resized = true;
+            }
+
+            if (resized)
+            {
+                _windowSampleCount = 0;
+                _frameCounter = 0;
+                _elapsedSeconds = 0f;
+                _gcWindowStartBytes = System.GC.GetTotalMemory(false);
+            }
+        }
+
+        public static float ResolvePercentileFrameMsNoAlloc(
+            float[] frameDurations,
+            float[] scratchBuffer,
+            int sampleCount,
+            float percentile)
+        {
+            if (frameDurations == null || scratchBuffer == null || sampleCount <= 0)
             {
                 return 0f;
             }
 
-            var sorted = new List<float>(frameDurations);
-            sorted.Sort();
+            var availableSamples = System.Math.Min(sampleCount, System.Math.Min(frameDurations.Length, scratchBuffer.Length));
+            if (availableSamples <= 0)
+            {
+                return 0f;
+            }
+
+            System.Array.Copy(frameDurations, scratchBuffer, availableSamples);
+            System.Array.Sort(scratchBuffer, 0, availableSamples);
 
             var clampedPercentile = Mathf.Clamp01(percentile);
-            var index = Mathf.Clamp(Mathf.CeilToInt((sorted.Count - 1) * clampedPercentile), 0, sorted.Count - 1);
-            return sorted[index] * 1000f;
+            var index = Mathf.Clamp(Mathf.CeilToInt((availableSamples - 1) * clampedPercentile), 0, availableSamples - 1);
+            return scratchBuffer[index] * 1000f;
         }
     }
 }

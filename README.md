@@ -11,9 +11,11 @@ Keyboard-first single-player fishing loop for Steam.
 
 ### Clone and Open
 1. Clone repository and pull LFS assets.
-2. Open project in Unity Hub with `2022.3.16f1`.
+2. Double-click `OPEN_UNITY_PROJECT.bat` from the repo root (Windows) to open the project directly.
 3. Let Unity import and compile scripts.
 4. Open `Assets/Scenes/00_Boot.unity` and press Play.
+
+If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `OPEN_UNITY_PROJECT.bat`.
 
 ### Validate Before PR
 1. Run content validator: `Raven > Validate Content Catalog`.
@@ -29,7 +31,11 @@ Keyboard-first single-player fishing loop for Steam.
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
+- Unity CI preflight enforces editor version contract (`2022.3.16f1`) via `scripts/ci/validate-unity-version.sh`.
+- Unity CI preflight enforces package-lock contract via `scripts/ci/validate-package-lock.sh`.
+- Build size report script: `scripts/ci/build-size-report.sh` with baseline `ci/build-size-baseline.json`.
 - Unity workflows enforce `UNITY_LICENSE` in trusted contexts (protected refs or manual dispatch), and warn/skip in untrusted contexts.
+- Trusted write-capable check publication uses `AUTOMATION_WRITE_TOKEN` (`docs/CI_AUTOMATION_TOKEN_POLICY.md`).
 
 ## Project Structure
 - `Assets/Scenes/`: gameplay scenes (Boot -> Cinematic -> MainMenu -> Harbor -> Fishing)
@@ -62,6 +68,7 @@ Keyboard-first single-player fishing loop for Steam.
 - Build pipeline: `docs/BUILD_PIPELINE_WINDOWS.md`
 - Build profiles: `docs/BUILD_PROFILES.md`
 - CI and branch protection: `docs/CI_BRANCH_PROTECTION.md`
+- CI automation token policy: `docs/CI_AUTOMATION_TOKEN_POLICY.md`
 - Catch log baseline: `docs/CATCH_LOG.md`
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
@@ -88,8 +95,10 @@ Keyboard-first single-player fishing loop for Steam.
 - Steam rich presence: `docs/STEAM_RICH_PRESENCE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Testing baseline: `docs/TESTING_BASELINE.md`
+- Unity CI license/trusted-context policy: `docs/UNITY_CI_LICENSE_POLICY.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`
 - Security release workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
+- Security disclosure policy: `SECURITY.md`
 - Testing baseline: `docs/TESTING_BASELINE.md`
 - UI architecture notes: `docs/UI_ARCHITECTURE.md`
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`

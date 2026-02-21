@@ -54,8 +54,8 @@ Unity.exe -batchmode -nographics -quit `
 
 ### CI Gate Policy
 - Any validator `ERROR` fails the job and blocks merge.
-- Import audit runs in warning-first mode and uploads audit report artifacts.
-- `WARN` output is allowed for merge, but should be triaged.
+- Import audit runs in fail-on-warning mode (with explicit allowlist support) and uploads audit report artifacts.
+- Allowed exceptions must be tracked in `ci/asset-import-warning-allowlist.json` with owner/reason/expiry.
 - Manual menu validation and batch validation use shared validator/audit code paths.
 
 ## Post-1.0 Addressables Pilot

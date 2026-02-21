@@ -19,6 +19,9 @@ on:
 permissions:
   contents: read
 
+env:
+  EXPECTED_UNITY_VERSION: 2022.3.16f1
+
 concurrency:
   group: release-steampipe-${{ github.ref }}
   cancel-in-progress: false
@@ -81,12 +84,135 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  build_windows_release:
+    name: Build Windows release artifact
+    needs:
+      - preflight
+      - secret_scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      artifact_name: ${{ steps.artifact_meta.outputs.artifact_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
+
+      - name: Validate Unity license secret
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "::error::UNITY_LICENSE secret is required for release build artifact generation."
+            exit 1
+          fi
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Release-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
+          restore-keys: |
+            Library-Release-${{ runner.os }}-
+
+      - name: Build project (Release profile)
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildMethod: RavenDevOps.Fishing.EditorTools.BuildCommandLine.BuildWindowsBatchMode
+          customParameters: >-
+            -buildOutput=Builds/Windows
+            -buildExeName=UnityFishingSteamGame.exe
+            -buildProfile=Release
+            -buildNumber=${{ github.run_number }}
+            -buildCommit=${{ github.sha }}
+            -buildBranch=${{ github.ref_name }}
+
+      - name: Stage release build artifact
+        id: artifact_meta
+        shell: bash
+        run: |
+          if [ ! -d "Builds/Windows" ]; then
+            echo "::error::Expected release build output directory missing: Builds/Windows"
+            exit 1
+          fi
+
+          if [ -z "$(find Builds/Windows -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "::error::Release build output directory is empty: Builds/Windows"
+            exit 1
+          fi
+
+          mkdir -p Artifacts/ReleaseBuild
+          rm -rf Artifacts/ReleaseBuild/Windows
+          cp -R Builds/Windows Artifacts/ReleaseBuild/Windows
+
+          artifact_name="windows-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_STEP_SUMMARY"
+          echo "artifact_path=${GITHUB_WORKSPACE}/Artifacts/ReleaseBuild/Windows" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate release build-size report
+        shell: bash
+        env:
+          BUILD_ROOT: Artifacts/ReleaseBuild/Windows
+          BASELINE_FILE: ci/build-size-baseline.json
+          REPORT_JSON: Artifacts/BuildSize/build_size_report.json
+          REPORT_MD: Artifacts/BuildSize/build_size_report.md
+          ENFORCEMENT_MODE: fail
+          BUILD_SIZE_WARN_DELTA_PERCENT: "8"
+          BUILD_SIZE_FAIL_DELTA_PERCENT: "15"
+        run: |
+          chmod +x scripts/ci/build-size-report.sh
+          scripts/ci/build-size-report.sh
+
+      - name: Publish release build-size summary
+        shell: bash
+        run: |
+          if [ -f "Artifacts/BuildSize/build_size_report.md" ]; then
+            cat "Artifacts/BuildSize/build_size_report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Release build size report markdown not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact_meta.outputs.artifact_name }}
+          path: Artifacts/ReleaseBuild/Windows
+          if-no-files-found: error
+
+      - name: Upload release build-size artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-size-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: Artifacts/BuildSize/**
+          if-no-files-found: warn
 
   steampipe_upload:
     name: SteamPipe upload
     needs:
       - preflight
       - secret_scan
+      - build_windows_release
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     environment:
@@ -96,6 +222,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build_windows_release.outputs.artifact_name }}
+          path: Artifacts/ReleaseBuild
+
+      - name: Validate release artifact handoff
+        shell: bash
+        run: |
+          build_output="${GITHUB_WORKSPACE}/Artifacts/ReleaseBuild/Windows"
+          if [ ! -d "$build_output" ]; then
+            echo "::error::Expected downloaded release artifact directory missing: $build_output"
+            exit 1
+          fi
+
+          if [ -z "$(find "$build_output" -mindepth 1 -maxdepth 1 -print -quit)" ]; then
+            echo "::error::Downloaded release artifact is empty: $build_output"
+            exit 1
+          fi
+
+          echo "Validated release artifact path: $build_output"
 
       - name: Validate required secrets
         shell: bash
@@ -115,6 +263,8 @@ jobs:
         run: |
           echo "Release tag: ${{ needs.preflight.outputs.release_tag }}"
           echo "Dry run: ${{ needs.preflight.outputs.dry_run }}"
+          echo "Build artifact: ${{ needs.build_windows_release.outputs.artifact_name }}"
+          echo "Build output path: ${GITHUB_WORKSPACE}/Artifacts/ReleaseBuild/Windows"
 
       - name: SteamPipe rehearsal/upload (guarded)
         shell: bash
@@ -124,6 +274,8 @@ jobs:
           STEAM_DEPOT_WINDOWS_ID: ${{ secrets.STEAM_DEPOT_WINDOWS_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
           STEAM_CONFIG_VDF: ${{ secrets.STEAM_CONFIG_VDF }}
+          STEAM_BUILD_OUTPUT: ${{ github.workspace }}/Artifacts/ReleaseBuild/Windows
+          STEAM_BUILD_LOGS: ${{ github.workspace }}/Artifacts/SteamPipeLogs
         run: |
           if [ ! -f "scripts/release/steam_upload.sh" ]; then
             echo "::error::Missing scripts/release/steam_upload.sh upload script."
@@ -132,3 +284,11 @@ jobs:
 
           chmod +x scripts/release/steam_upload.sh
           scripts/release/steam_upload.sh "${{ needs.preflight.outputs.release_tag }}"
+
+      - name: Upload SteamPipe logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: steampipe-logs-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: Artifacts/SteamPipeLogs/**
+          if-no-files-found: warn

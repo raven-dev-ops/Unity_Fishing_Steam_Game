@@ -22,7 +22,7 @@ namespace RavenDevOps.Fishing.Save
         public string displayName = string.Empty;
     }
 
-    public sealed class SaveManager : MonoBehaviour
+    public sealed class SaveManager : MonoBehaviour, ISaveDataView
     {
         private const string FileName = "save_v1.json";
         private const string TempFileSuffix = ".tmp";
@@ -35,6 +35,11 @@ namespace RavenDevOps.Fishing.Save
         [SerializeField] private string _sessionId = string.Empty;
         [SerializeField] private List<int> _levelXpThresholds = new List<int>(ProgressionRules.Defaults);
         [SerializeField] private List<ProgressionUnlockDefinition> _progressionUnlocks = new List<ProgressionUnlockDefinition>();
+        [SerializeField] private float _minimumSaveIntervalSeconds = 1f;
+
+        [NonSerialized] private ISaveFileSystem _fileSystem;
+        [NonSerialized] private ITimeProvider _timeProvider;
+        [NonSerialized] private SaveWriteThrottle _saveWriteThrottle;
 
         public static SaveManager Instance => _instance;
         public SaveDataV1 Current => _current;
@@ -50,7 +55,10 @@ namespace RavenDevOps.Fishing.Save
         public event Action<int> TripCompleted;
         public event Action<string, int, int> PurchaseRecorded;
 
-        private string SavePath => Path.Combine(Application.persistentDataPath, FileName);
+        private ISaveFileSystem FileSystem => _fileSystem ??= new SaveFileSystem();
+        private ITimeProvider TimeProvider => _timeProvider ??= new UnityTimeProvider();
+        private SaveWriteThrottle WriteThrottle => _saveWriteThrottle ??= new SaveWriteThrottle(_minimumSaveIntervalSeconds);
+        private string SavePath => Path.Combine(FileSystem.PersistentDataPath, FileName);
 
         private void Awake()
         {
@@ -61,23 +69,35 @@ namespace RavenDevOps.Fishing.Save
             }
 
             _instance = this;
+            _saveWriteThrottle = new SaveWriteThrottle(_minimumSaveIntervalSeconds);
             _sessionId = Guid.NewGuid().ToString("N");
             NormalizeProgressionConfig();
             RuntimeServiceRegistry.Register(this);
             LoadOrCreate();
         }
 
+        private void OnValidate()
+        {
+            _minimumSaveIntervalSeconds = Mathf.Max(0f, _minimumSaveIntervalSeconds);
+            _saveWriteThrottle = new SaveWriteThrottle(_minimumSaveIntervalSeconds);
+        }
+
+        private void Update()
+        {
+            TryFlushPendingSave();
+        }
+
         private void OnApplicationPause(bool pauseStatus)
         {
             if (pauseStatus)
             {
-                Save();
+                Save(forceImmediate: true);
             }
         }
 
         private void OnApplicationQuit()
         {
-            Save();
+            Save(forceImmediate: true);
         }
 
         public void LoadOrCreate()
@@ -86,63 +106,95 @@ namespace RavenDevOps.Fishing.Save
             {
                 _current = CreateNewSaveData();
                 NormalizeCurrentData();
-                Save();
+                Save(forceImmediate: true);
                 return;
             }
 
             _current = loaded;
             NormalizeCurrentData();
             _current.lastLoginLocalDate = CurrentLocalDate();
-            Save();
+            Save(forceImmediate: true);
         }
 
         public void Save()
+        {
+            Save(forceImmediate: false);
+        }
+
+        public void Save(bool forceImmediate)
+        {
+            if (forceImmediate)
+            {
+                PersistNow();
+                return;
+            }
+
+            var now = TimeProvider.RealtimeSinceStartup;
+            if (WriteThrottle.Request(now, forceImmediate: false))
+            {
+                PersistNow();
+            }
+        }
+
+        internal void ConfigureRuntimeDependencies(ISaveFileSystem fileSystem, ITimeProvider timeProvider)
+        {
+            _fileSystem = fileSystem ?? new SaveFileSystem();
+            _timeProvider = timeProvider ?? new UnityTimeProvider();
+            _saveWriteThrottle = new SaveWriteThrottle(_minimumSaveIntervalSeconds);
+        }
+
+        private void TryFlushPendingSave()
+        {
+            if (!WriteThrottle.TryFlush(TimeProvider.RealtimeSinceStartup))
+            {
+                return;
+            }
+
+            PersistNow();
+        }
+
+        private void PersistNow()
         {
             try
             {
                 var saveDir = Path.GetDirectoryName(SavePath);
                 if (!string.IsNullOrWhiteSpace(saveDir))
                 {
-                    Directory.CreateDirectory(saveDir);
+                    FileSystem.EnsureDirectory(saveDir);
                 }
 
                 var tmpPath = SavePath + TempFileSuffix;
                 var backupPath = SavePath + BackupFileSuffix;
                 var json = JsonUtility.ToJson(_current, true);
 
-                File.WriteAllText(tmpPath, json);
+                FileSystem.WriteAllText(tmpPath, json);
 
-                if (File.Exists(SavePath))
+                if (FileSystem.FileExists(SavePath))
                 {
-                    AtomicReplace(tmpPath, SavePath, backupPath);
+                    AtomicReplace(tmpPath, SavePath, backupPath, FileSystem);
                 }
                 else
                 {
-                    File.Move(tmpPath, SavePath);
+                    FileSystem.MoveFile(tmpPath, SavePath);
                 }
 
-                if (File.Exists(backupPath))
+                if (FileSystem.FileExists(backupPath))
                 {
-                    File.Delete(backupPath);
+                    FileSystem.DeleteFile(backupPath);
                 }
 
-                if (File.Exists(tmpPath))
+                if (FileSystem.FileExists(tmpPath))
                 {
-                    File.Delete(tmpPath);
+                    FileSystem.DeleteFile(tmpPath);
                 }
 
-                try
-                {
-                    SaveDataChanged?.Invoke(_current);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"SaveManager: SaveDataChanged listener failed ({ex.Message}).");
-                }
+                WriteThrottle.MarkPersisted(TimeProvider.RealtimeSinceStartup);
+                NotifySaveDataChanged();
             }
             catch (Exception ex)
             {
                 Debug.LogError($"SaveManager: failed to save profile atomically ({ex.Message}).");
+                WriteThrottle.MarkPending();
             }
         }
 
@@ -449,6 +501,7 @@ namespace RavenDevOps.Fishing.Save
         {
             if (_instance == this)
             {
+                Save(forceImmediate: true);
                 _instance = null;
             }
 
@@ -458,14 +511,14 @@ namespace RavenDevOps.Fishing.Save
         private bool TryLoadExisting(out SaveDataV1 loaded)
         {
             loaded = null;
-            if (!File.Exists(SavePath))
+            if (!FileSystem.FileExists(SavePath))
             {
                 return false;
             }
 
             try
             {
-                var json = File.ReadAllText(SavePath);
+                var json = FileSystem.ReadAllText(SavePath);
                 loaded = JsonUtility.FromJson<SaveDataV1>(json);
             }
             catch (Exception ex)
@@ -483,7 +536,7 @@ namespace RavenDevOps.Fishing.Save
             return true;
         }
 
-        private static SaveDataV1 CreateNewSaveData()
+        private SaveDataV1 CreateNewSaveData()
         {
             var now = CurrentLocalDate();
             return new SaveDataV1
@@ -719,16 +772,16 @@ namespace RavenDevOps.Fishing.Save
 
         private void BackupCorruptSaveFile(string reason)
         {
-            if (!File.Exists(SavePath))
+            if (!FileSystem.FileExists(SavePath))
             {
                 return;
             }
 
             try
             {
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var timestamp = TimeProvider.LocalNow.ToString("yyyyMMdd_HHmmss");
                 var corruptPath = SavePath + $".corrupt_{timestamp}";
-                File.Copy(SavePath, corruptPath, overwrite: true);
+                FileSystem.CopyFile(SavePath, corruptPath, overwrite: true);
                 Debug.LogWarning($"SaveManager: detected corrupt save, copied to '{corruptPath}' ({reason}).");
             }
             catch (Exception ex)
@@ -737,27 +790,27 @@ namespace RavenDevOps.Fishing.Save
             }
         }
 
-        private static void AtomicReplace(string tempPath, string destinationPath, string backupPath)
+        private static void AtomicReplace(string tempPath, string destinationPath, string backupPath, ISaveFileSystem fileSystem)
         {
             try
             {
-                File.Replace(tempPath, destinationPath, backupPath, ignoreMetadataErrors: true);
+                fileSystem.ReplaceFile(tempPath, destinationPath, backupPath);
             }
             catch (PlatformNotSupportedException)
             {
-                File.Copy(tempPath, destinationPath, overwrite: true);
-                File.Delete(tempPath);
+                fileSystem.CopyFile(tempPath, destinationPath, overwrite: true);
+                fileSystem.DeleteFile(tempPath);
             }
             catch (IOException)
             {
-                File.Copy(tempPath, destinationPath, overwrite: true);
-                File.Delete(tempPath);
+                fileSystem.CopyFile(tempPath, destinationPath, overwrite: true);
+                fileSystem.DeleteFile(tempPath);
             }
         }
 
-        private static string CurrentLocalDate()
+        private string CurrentLocalDate()
         {
-            return DateTime.Now.ToString("yyyy-MM-dd");
+            return TimeProvider.LocalNow.ToString("yyyy-MM-dd");
         }
 
         private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float weightKg, int valueCopecs, string failReason)
@@ -769,7 +822,7 @@ namespace RavenDevOps.Fishing.Save
                 distanceTier = Mathf.Max(1, distanceTier),
                 weightKg = Mathf.Max(0f, weightKg),
                 valueCopecs = Mathf.Max(0, valueCopecs),
-                timestampUtc = DateTime.UtcNow.ToString("O"),
+                timestampUtc = TimeProvider.UtcNow.ToString("O"),
                 sessionId = _sessionId,
                 landed = landed,
                 failReason = failReason ?? string.Empty
@@ -851,6 +904,18 @@ namespace RavenDevOps.Fishing.Save
             catch (Exception ex)
             {
                 Debug.LogError($"SaveManager: PurchaseRecorded listener failed ({ex.Message}).");
+            }
+        }
+
+        private void NotifySaveDataChanged()
+        {
+            try
+            {
+                SaveDataChanged?.Invoke(_current);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SaveManager: SaveDataChanged listener failed ({ex.Message}).");
             }
         }
     }

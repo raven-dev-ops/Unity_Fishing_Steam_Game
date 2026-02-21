@@ -6,6 +6,9 @@ on:
 permissions:
   contents: read
 
+env:
+  EXPECTED_UNITY_VERSION: 2022.3.16f1
+
 concurrency:
   group: ci-scene-capture-${{ github.ref }}
   cancel-in-progress: true
@@ -19,6 +22,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      - name: Validate Unity version contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-unity-version.sh
+          scripts/ci/validate-unity-version.sh
+
+      - name: Validate package lock contract
+        shell: bash
+        run: |
+          chmod +x scripts/ci/validate-package-lock.sh
+          scripts/ci/validate-package-lock.sh
 
       - name: Determine trusted context
         id: trust
@@ -34,6 +49,25 @@ jobs:
           fi
 
           echo "trusted=$trusted" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve write automation token
+        id: automation_token
+        shell: bash
+        env:
+          TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
+          AUTOMATION_WRITE_TOKEN: ${{ secrets.AUTOMATION_WRITE_TOKEN }}
+        run: |
+          chmod +x scripts/ci/resolve-write-automation-token.sh
+          scripts/ci/resolve-write-automation-token.sh
+
+      - name: Report write automation mode
+        shell: bash
+        run: |
+          echo "Write automation enabled: ${{ steps.automation_token.outputs.write_enabled }}"
+          echo "Write automation reason: ${{ steps.automation_token.outputs.reason }}"
+          if [ "${{ steps.automation_token.outputs.write_enabled }}" != "true" ]; then
+            echo "Scene capture check publication is disabled; screenshot/test artifacts remain available for manual review." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Detect Unity license availability
         id: unity_license
@@ -56,7 +90,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Library
-          key: Library-SceneCapture-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json') }}
+          key: Library-SceneCapture-${{ runner.os }}-${{ hashFiles('ProjectSettings/ProjectVersion.txt', 'Packages/manifest.json', 'Packages/packages-lock.json') }}
           restore-keys: |
             Library-SceneCapture-${{ runner.os }}-
 
@@ -67,14 +101,25 @@ jobs:
           rm -rf artifacts/scene-captures
           mkdir -p artifacts/scene-captures
 
-      - name: Run PlayMode tests with scene capture enabled
-        if: steps.unity_license.outputs.available == 'true'
+      - name: Run PlayMode tests with scene capture enabled (publish check run)
+        if: steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled == 'true'
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           RAVEN_SCENE_CAPTURE_ENABLED: "1"
         with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          githubToken: ${{ steps.automation_token.outputs.token }}
+          checkName: Scene Capture PlayMode
+          testMode: playmode
+          artifactsPath: artifacts/playmode
+
+      - name: Run PlayMode tests with scene capture enabled (artifact-only fallback)
+        if: steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled != 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          RAVEN_SCENE_CAPTURE_ENABLED: "1"
+        with:
           testMode: playmode
           artifactsPath: artifacts/playmode
 

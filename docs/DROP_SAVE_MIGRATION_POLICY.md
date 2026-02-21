@@ -19,6 +19,15 @@
 - Save writes must be atomic (`.tmp` + replace/move) to reduce corruption risk.
 - Corrupt save reads should back up original file and recover to a fresh usable profile.
 
+## Write Cadence and Flush Boundaries
+- `SaveManager` uses debounced write scheduling for routine gameplay mutations.
+- Default minimum write interval: `1.0s` (`_minimumSaveIntervalSeconds`).
+- Critical boundaries force immediate flush:
+  - `OnApplicationPause(true)`
+  - `OnApplicationQuit()`
+  - `OnDestroy()` of active save singleton
+- If a scheduled write fails, save request remains pending for retry on next flush opportunity.
+
 ## Test Policy
 - Keep fixture saves for each shipped version.
 - Validate boot-time migration for all fixtures.

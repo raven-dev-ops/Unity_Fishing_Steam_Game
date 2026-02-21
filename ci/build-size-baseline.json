@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "build_profile": "QA",
+  "target": "StandaloneWindows64",
+  "total_bytes": null,
+  "notes": "Set total_bytes from an approved reference build report before enforcing fail thresholds."
+}

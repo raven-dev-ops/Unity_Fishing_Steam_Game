@@ -16,8 +16,13 @@
    - `git tag -a v1.0.0 -m "Release v1.0.0"`
 5. Push tag:
    - `git push origin v1.0.0`
-6. Build Windows release using `Release` profile:
-   - CLI: `scripts/unity-cli.ps1 -Task build -BuildProfile Release -LogFile release_build.log`
-   - Or batch arg: `-buildProfile=Release`
-7. Upload build via guarded Steam release workflow (`.github/workflows/release-steampipe.yml`).
-8. Attach build metadata/checksums to release notes.
+6. Trigger guarded Steam release workflow (`.github/workflows/release-steampipe.yml`) using tag push or manual dispatch.
+7. Confirm workflow artifact handoff:
+   - `Build Windows release artifact` creates `windows-release-<tag>-<sha>`.
+   - `SteamPipe upload` downloads artifact to `Artifacts/ReleaseBuild/Windows`.
+8. Review release build-size report (`Artifacts/BuildSize/build_size_report.md`) and confirm threshold status.
+9. Attach build metadata/checksums to release notes.
+
+## Optional Local Rehearsal
+- Local release build is still useful for QA rehearsal:
+  - `scripts/unity-cli.ps1 -Task build -BuildProfile Release -LogFile release_build.log`

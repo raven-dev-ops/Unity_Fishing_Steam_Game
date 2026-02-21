@@ -13,14 +13,15 @@
 - `STEAM_CONFIG_VDF`
 
 ## Rehearsal Path (Dry Run)
-1. Build release candidate via standard build pipeline (`Builds/Windows` default output).
-2. Run guarded release workflow with `dry_run=true` (`.github/workflows/release-steampipe.yml`).
-3. Confirm generated VDF layouts and SteamCMD command summary in workflow log.
-4. Confirm no secrets are printed in logs.
+1. Run guarded release workflow with `dry_run=true` (`.github/workflows/release-steampipe.yml`).
+2. Confirm `Build Windows release artifact` job succeeds and uploads `windows-release-<tag>-<sha>`.
+3. Confirm `SteamPipe upload` job downloads artifact and validates `Artifacts/ReleaseBuild/Windows`.
+4. Confirm generated VDF layouts and SteamCMD command summary in workflow log.
+5. Confirm no secrets are printed in logs.
 
 ## Live Beta Upload Path
 1. Run same workflow with `dry_run=false`.
-2. Upload to beta branch (`STEAM_BETA_BRANCH`, default `beta`).
+2. Upload to beta branch (`STEAM_BETA_BRANCH`, default `beta`) from downloaded release artifact.
 3. Install/update from clean test environment.
 4. Verify launch, update continuity, and save integrity.
 

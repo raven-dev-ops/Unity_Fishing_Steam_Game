@@ -10,14 +10,20 @@ Baseline covers worst-case MVP loop checks in:
    - `scripts/unity-cli.ps1 -Task build -BuildProfile QA -LogFile build_perf.log`
 2. Run scene scenarios from `docs/PERF_SANITY_CHECKLIST.md`.
 3. Ensure a `PerfSanityRunner` instance is active in the test scene.
-4. Capture `PERF_SANITY` lines from player/editor log.
-5. Run parser gate:
+4. Warm up scene for at least one sample window before recording budget evidence.
+5. Capture `PERF_SANITY` lines from player/editor log.
+6. Run parser gate:
    - Single log: `scripts/perf-budget-check.ps1 -LogFile <path-to-log>`
    - Captured-log ingestion: `scripts/perf-ingest-captured.ps1`
    - Optional ingestion override: `-ExplicitLogFile <file-or-directory>`
 
 `PerfSanityRunner` emits structured lines in this format:
 `PERF_SANITY scene=<name> frames=<n> avg_fps=<v> min_fps=<v> max_fps=<v> avg_frame_ms=<v> p95_frame_ms=<v> gc_delta_kb=<v>`
+
+## Measurement Notes
+- `gc_delta_kb` is sampled before log/label formatting so instrumentation allocations do not inflate the metric.
+- Percentile sampling uses reusable buffers to avoid per-window list copy/sort allocations.
+- For consistent comparisons, capture runs at the same resolution/quality and after warmup.
 
 ## Regression Budgets (MVP Gate)
 | Scenario | Min avg FPS | Max p95 frame ms | Max GC delta KB/sample window |

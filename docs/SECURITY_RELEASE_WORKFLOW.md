@@ -4,6 +4,8 @@
 - Keep Steam credentials out of repository history.
 - Restrict release/upload execution to approved and auditable contexts.
 - Define minimum incident response and secret rotation process.
+- Align public disclosure guidance with `SECURITY.md`.
+- Keep CI write-capable automation scoped and documented (`docs/CI_AUTOMATION_TOKEN_POLICY.md`).
 
 ## Secret Storage Policy
 - Store Steam credentials only in GitHub Actions secrets and protected environments.
@@ -16,6 +18,7 @@
 
 ## Protected Release Path
 - Use `.github/workflows/release-steampipe.yml` for release uploads.
+- Workflow builds Windows release artifact and hands it off to upload job (`Artifacts/ReleaseBuild/Windows`).
 - Release job is bound to `environment: steam-release`.
 - Configure environment reviewers for manual approval before upload.
 - Trigger from protected semver tags (`v*`) or manual dispatch with approval.
