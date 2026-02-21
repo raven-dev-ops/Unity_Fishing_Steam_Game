@@ -15,7 +15,8 @@ Keyboard-first single-player fishing loop for Steam.
 3. Let Unity import and compile scripts.
 4. Open `Assets/Scenes/00_Boot.unity` and press Play.
 
-If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `OPEN_UNITY_PROJECT.bat`.
+Launcher detection checks Unity Hub metadata (`%APPDATA%/UnityHub/editors-v2.json`) and common Hub install roots.
+If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` before running `OPEN_UNITY_PROJECT.bat`.
 
 ### Validate Before PR
 1. Run content validator: `Raven > Validate Content Catalog`.
