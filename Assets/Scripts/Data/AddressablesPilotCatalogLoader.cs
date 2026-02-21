@@ -173,6 +173,7 @@ namespace RavenDevOps.Fishing.Data
             Debug.Log(
                 $"AddressablesPilotCatalogLoader: fish definitions loaded count={results.Count}, source={(usedFallback ? "resources_fallback" : "addressables")}.");
             onCompleted?.Invoke(results);
+            yield break;
         }
 
         private IEnumerator LoadPhaseTwoAudioRoutine()
@@ -249,6 +250,7 @@ namespace RavenDevOps.Fishing.Data
             Debug.Log(
                 $"AddressablesPilotCatalogLoader: phase-two audio loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, error='{_phaseTwoAudioLoadError}'.");
             DispatchPhaseTwoAudioCallbacks();
+            yield break;
         }
 
         private IEnumerator LoadPhaseTwoEnvironmentRoutine()
@@ -325,6 +327,7 @@ namespace RavenDevOps.Fishing.Data
             Debug.Log(
                 $"AddressablesPilotCatalogLoader: phase-two environment loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, error='{_phaseTwoEnvironmentLoadError}'.");
             DispatchPhaseTwoEnvironmentCallbacks();
+            yield break;
         }
 
         private void CachePhaseTwoAudio(List<AudioClip> audioClips)

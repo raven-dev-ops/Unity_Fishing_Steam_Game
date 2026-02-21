@@ -72,14 +72,15 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var day = DayCounterService.ComputeDayNumber(_saveManager != null ? _saveManager.Current.careerStartLocalDate : string.Empty);
-            var hash = Mathf.Abs((fishId + day).GetHashCode());
-            var bucket = hash % 7;
-            var multiplier = 0.85f + (bucket * 0.06f);
+            var hash = ComputeStableHash32($"{fishId}|{day}");
+            var normalized = (hash & 0xFFFFu) / 65535f;
+            var multiplier = 0.85f + (normalized * 0.4f);
             return Mathf.Clamp(multiplier, 0.8f, 1.25f);
         }
 
         public float GetGearSynergyMultiplier(string shipId, string hookId, out string label)
         {
+            SeedDefaultSynergiesIfNeeded();
             label = string.Empty;
             if (string.IsNullOrWhiteSpace(shipId) || string.IsNullOrWhiteSpace(hookId))
             {
@@ -403,6 +404,26 @@ namespace RavenDevOps.Fishing.Economy
         private static string BuildCollectionToken(string fishId)
         {
             return $"{CollectionTokenPrefix}{CollectionSetId}_{fishId}";
+        }
+
+        private static uint ComputeStableHash32(string value)
+        {
+            unchecked
+            {
+                var hash = 2166136261u;
+                if (string.IsNullOrEmpty(value))
+                {
+                    return hash;
+                }
+
+                for (var i = 0; i < value.Length; i++)
+                {
+                    hash ^= value[i];
+                    hash *= 16777619u;
+                }
+
+                return hash;
+            }
         }
 
         private void SeedDefaultSynergiesIfNeeded()

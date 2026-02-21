@@ -61,8 +61,7 @@ namespace RavenDevOps.Fishing.Tests.EditMode
                 });
 
                 controller.ConfigureDependencies(fakeSave);
-                controller.enabled = false;
-                controller.enabled = true;
+                InvokePrivateMethod(controller, "OnEnable");
 
                 fakeSave.UpdateCopecs(75);
                 fakeSave.RaiseChanged();
@@ -74,6 +73,13 @@ namespace RavenDevOps.Fishing.Tests.EditMode
                 UnityEngine.Object.DestroyImmediate(copecsText.gameObject);
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName)
+        {
+            var method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"Expected method '{methodName}' to exist for test setup.");
+            method.Invoke(target, null);
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)

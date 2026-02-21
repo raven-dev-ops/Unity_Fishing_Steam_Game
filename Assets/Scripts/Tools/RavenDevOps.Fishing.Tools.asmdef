@@ -6,7 +6,8 @@
     "RavenDevOps.Fishing.Data",
     "RavenDevOps.Fishing.Economy",
     "RavenDevOps.Fishing.Fishing",
-    "RavenDevOps.Fishing.Save"
+    "RavenDevOps.Fishing.Save",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

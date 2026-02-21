@@ -16,7 +16,9 @@
     "RavenDevOps.Fishing.Systems",
     "RavenDevOps.Fishing.Tools",
     "RavenDevOps.Fishing.UI",
-    "RavenDevOps.Fishing.Editor"
+    "RavenDevOps.Fishing.Editor",
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

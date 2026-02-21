@@ -282,13 +282,18 @@ namespace RavenDevOps.Fishing.EditorTools
                 var category = ClassifyAudioCategoryPath(path);
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
                 var clipLengthSeconds = clip != null ? clip.length : -1f;
+#if UNITY_6000_0_OR_NEWER
+                var preloadAudioData = settings.preloadAudioData;
+#else
+                var preloadAudioData = importer.preloadAudioData;
+#endif
                 ValidateAudioSettings(
                     path,
                     category,
                     settings.loadType,
                     settings.compressionFormat,
                     settings.quality,
-                    importer.preloadAudioData,
+                    preloadAudioData,
                     clipLengthSeconds,
                     result.Warnings);
             }

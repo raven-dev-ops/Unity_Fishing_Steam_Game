@@ -17,9 +17,7 @@
     "RavenDevOps.Fishing.Tools",
     "RavenDevOps.Fishing.UI"
   ],
-  "includePlatforms": [
-    "Editor"
-  ],
+  "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

@@ -231,7 +231,10 @@ $unityExe = Resolve-UnityEditorPath -Root $root
 $args = New-Object System.Collections.Generic.List[string]
 $args.Add('-batchmode')
 $args.Add('-nographics')
-$args.Add('-quit')
+$isTestTask = $Task -eq 'test-edit' -or $Task -eq 'test-play'
+if (-not $isTestTask) {
+    $args.Add('-quit')
+}
 $args.Add('-projectPath')
 $args.Add($root)
 $args.Add('-logFile')

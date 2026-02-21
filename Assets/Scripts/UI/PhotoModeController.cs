@@ -49,7 +49,7 @@ namespace RavenDevOps.Fishing.UI
                 }
             }
 
-            if (Input.GetKeyDown(_togglePhotoModeKey))
+            if (UnityEngine.Input.GetKeyDown(_togglePhotoModeKey))
             {
                 SetPhotoMode(!_photoModeActive);
             }
@@ -60,7 +60,7 @@ namespace RavenDevOps.Fishing.UI
             }
 
             HandleFreeCameraMovement();
-            if (Input.GetKeyDown(_captureScreenshotKey))
+            if (UnityEngine.Input.GetKeyDown(_captureScreenshotKey))
             {
                 CaptureScreenshot();
             }
@@ -110,7 +110,43 @@ namespace RavenDevOps.Fishing.UI
                 Directory.CreateDirectory(ScreenshotDirectory);
                 var filename = $"photo_{DateTime.UtcNow:yyyyMMdd_HHmmss_fff}.png";
                 var path = Path.Combine(ScreenshotDirectory, filename);
-                ScreenCapture.CaptureScreenshot(path, Mathf.Max(1, _screenshotSuperSize));
+
+                if (_targetCamera == null)
+                {
+                    Debug.LogWarning("PhotoModeController: capture skipped because target camera is missing.");
+                    return string.Empty;
+                }
+
+                var superSize = Mathf.Max(1, _screenshotSuperSize);
+                var width = Mathf.Max(1, Screen.width * superSize);
+                var height = Mathf.Max(1, Screen.height * superSize);
+
+                var renderTexture = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
+                var previousRenderTexture = RenderTexture.active;
+                var previousCameraTarget = _targetCamera.targetTexture;
+
+                try
+                {
+                    _targetCamera.targetTexture = renderTexture;
+                    _targetCamera.Render();
+                    RenderTexture.active = renderTexture;
+
+                    var screenshotTexture = new Texture2D(width, height, TextureFormat.RGB24, mipChain: false);
+                    screenshotTexture.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
+                    screenshotTexture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+
+                    var bytes = screenshotTexture.EncodeToPNG();
+                    Destroy(screenshotTexture);
+
+                    File.WriteAllBytes(path, bytes);
+                }
+                finally
+                {
+                    _targetCamera.targetTexture = previousCameraTarget;
+                    RenderTexture.active = previousRenderTexture;
+                    RenderTexture.ReleaseTemporary(renderTexture);
+                }
+
                 if (_logCapturePaths)
                 {
                     Debug.Log($"PhotoModeController: screenshot captured -> {path}");
@@ -132,44 +168,44 @@ namespace RavenDevOps.Fishing.UI
                 return;
             }
 
-            var speed = _moveSpeed * (Input.GetKey(KeyCode.LeftShift) ? _boostMultiplier : 1f);
+            var speed = _moveSpeed * (UnityEngine.Input.GetKey(KeyCode.LeftShift) ? _boostMultiplier : 1f);
             var move = Vector3.zero;
 
-            if (Input.GetKey(KeyCode.W))
+            if (UnityEngine.Input.GetKey(KeyCode.W))
             {
                 move += _targetCamera.transform.forward;
             }
 
-            if (Input.GetKey(KeyCode.S))
+            if (UnityEngine.Input.GetKey(KeyCode.S))
             {
                 move -= _targetCamera.transform.forward;
             }
 
-            if (Input.GetKey(KeyCode.D))
+            if (UnityEngine.Input.GetKey(KeyCode.D))
             {
                 move += _targetCamera.transform.right;
             }
 
-            if (Input.GetKey(KeyCode.A))
+            if (UnityEngine.Input.GetKey(KeyCode.A))
             {
                 move -= _targetCamera.transform.right;
             }
 
-            if (Input.GetKey(KeyCode.E))
+            if (UnityEngine.Input.GetKey(KeyCode.E))
             {
                 move += _targetCamera.transform.up;
             }
 
-            if (Input.GetKey(KeyCode.Q))
+            if (UnityEngine.Input.GetKey(KeyCode.Q))
             {
                 move -= _targetCamera.transform.up;
             }
 
             _targetCamera.transform.position += move * (speed * Time.unscaledDeltaTime);
-            if (Input.GetMouseButton(1))
+            if (UnityEngine.Input.GetMouseButton(1))
             {
-                var mouseX = Input.GetAxisRaw("Mouse X");
-                var mouseY = Input.GetAxisRaw("Mouse Y");
+                var mouseX = UnityEngine.Input.GetAxisRaw("Mouse X");
+                var mouseY = UnityEngine.Input.GetAxisRaw("Mouse Y");
                 var yaw = mouseX * _lookSensitivity * Time.unscaledDeltaTime;
                 var pitch = -mouseY * _lookSensitivity * Time.unscaledDeltaTime;
                 _targetCamera.transform.Rotate(Vector3.up, yaw, Space.World);

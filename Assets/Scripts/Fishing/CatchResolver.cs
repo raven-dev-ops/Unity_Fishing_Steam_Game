@@ -203,7 +203,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             var minBite = Mathf.Max(0f, _targetFish.minBiteDelaySeconds);
             var maxBite = Mathf.Max(minBite, _targetFish.maxBiteDelaySeconds);
-            _biteTimerSeconds = Random.Range(minBite, maxBite);
+            _biteTimerSeconds = UnityEngine.Random.Range(minBite, maxBite);
             _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
             if (pityActivated)
             {

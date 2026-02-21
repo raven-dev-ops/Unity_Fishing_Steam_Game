@@ -33,7 +33,8 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(report.SourceVersion, Is.EqualTo(0));
             Assert.That(report.FinalVersion, Is.EqualTo(1));
             Assert.That(report.WasMigrated, Is.True);
-            Assert.That(report.AppliedSteps, Has.One.EqualTo("v0->v1"));
+            Assert.That(report.AppliedSteps.Count, Is.EqualTo(1));
+            Assert.That(report.AppliedSteps[0], Is.EqualTo("v0->v1"));
 
             var migrated = JsonUtility.FromJson<SaveDataV1>(normalized);
             Assert.That(migrated, Is.Not.Null);

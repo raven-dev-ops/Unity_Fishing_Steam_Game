@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using RavenDevOps.Fishing.EditorTools;
 using UnityEditor;
+using UnityEngine;
 
 namespace RavenDevOps.Fishing.Tests.EditMode
 {
