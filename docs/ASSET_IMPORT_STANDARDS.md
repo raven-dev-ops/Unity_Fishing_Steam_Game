@@ -16,6 +16,29 @@ Define stable texture/audio import defaults to reduce memory and performance reg
   - PC default: `RGBA 32-bit` only when alpha quality is critical
   - otherwise use platform-compressed default equivalent
 
+### Generated Icon Sheets (Workflow Output)
+- Path scope: `Assets/Art/Sheets/Icons/*.png`
+- `Texture Type`: `Sprite (2D and UI)`
+- `Sprite Mode`: `Multiple`
+- `sRGB`: enabled
+- `Alpha Is Transparency`: enabled
+- `Mip Maps`: disabled
+- `Read/Write`: disabled
+- `Wrap Mode`: `Clamp`
+- `Filter Mode`: `Bilinear`
+- Atlas target max size baseline: `4096`
+
+### SpriteAtlas Assets
+- Path scope: `Assets/Art/Atlases/Icons/*.spriteatlas`
+- `Enable Rotation`: false
+- `Tight Packing`: false
+- `Padding`: `4`
+- Texture settings:
+  - `Generate Mip Maps`: false
+  - `Readable`: false
+  - `sRGB`: true
+  - `Filter Mode`: `Bilinear`
+
 ### Environment / Background Textures
 - `Texture Type`: `Default`
 - `Mip Maps`: enabled

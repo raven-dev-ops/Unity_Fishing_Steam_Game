@@ -1,0 +1,340 @@
+fileFormatVersion: 2
+guid: 41902eec228b6d247a1e38d19812d49f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 4600363434714224699
+    second: icons_hooks_sheet_v01_0
+  - first:
+      213: -1530322025486477277
+    second: icons_hooks_sheet_v01_1
+  - first:
+      213: -1362778339905246685
+    second: icons_hooks_sheet_v01_2
+  - first:
+      213: -5899346087234175837
+    second: icons_hooks_sheet_v01_3
+  - first:
+      213: -5699594160824516839
+    second: icons_hooks_sheet_v01_4
+  - first:
+      213: 3687107484201989510
+    second: icons_hooks_sheet_v01_5
+  - first:
+      213: 6425505829433372786
+    second: icons_hooks_sheet_v01_6
+  - first:
+      213: -1588759081860374289
+    second: hook_coastal_deep_placeholder_v01
+  - first:
+      213: 6930544469867018239
+    second: hook_icon_coastal_placeholder_v01
+  - first:
+      213: 7633336098359907811
+    second: hook_lv1_placeholder_v01
+  - first:
+      213: 948030754248161614
+    second: hook_lv2_placeholder_v01
+  - first:
+      213: -5766888181204795101
+    second: hook_lv3_placeholder_v01
+  - first:
+      213: 1415044551795048080
+    second: hook_lvl2_barbed_v01_placeholder_v01
+  - first:
+      213: 861704218036432777
+    second: hook_valid_placeholder_v01
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: hook_coastal_deep_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 1048
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe0690c580893f9e0800000000000000
+      internalID: -1588759081860374289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_icon_coastal_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 528
+        y: 1048
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff7b87ac97d3e2060800000000000000
+      internalID: 6930544469867018239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_lv1_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 1048
+        y: 1048
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e598e10dbe0fe960800000000000000
+      internalID: 7633336098359907811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_lv2_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 528
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e497b17b2f4182d00800000000000000
+      internalID: 948030754248161614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_lv3_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 528
+        y: 528
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 321c3e3e0c5e7ffa0800000000000000
+      internalID: -5766888181204795101
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_lvl2_barbed_v01_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 1048
+        y: 528
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09e781bc58f33a310800000000000000
+      internalID: 1415044551795048080
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: hook_valid_placeholder_v01
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 8
+        width: 512
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98f6489bb6365fb00800000000000000
+      internalID: 861704218036432777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      hook_coastal_deep_placeholder_v01: -1588759081860374289
+      hook_icon_coastal_placeholder_v01: 6930544469867018239
+      hook_lv1_placeholder_v01: 7633336098359907811
+      hook_lv2_placeholder_v01: 948030754248161614
+      hook_lv3_placeholder_v01: -5766888181204795101
+      hook_lvl2_barbed_v01_placeholder_v01: 1415044551795048080
+      hook_valid_placeholder_v01: 861704218036432777
+      icons_hooks_sheet_v01_0: 4600363434714224699
+      icons_hooks_sheet_v01_1: -1530322025486477277
+      icons_hooks_sheet_v01_2: -1362778339905246685
+      icons_hooks_sheet_v01_3: -5899346087234175837
+      icons_hooks_sheet_v01_4: -5699594160824516839
+      icons_hooks_sheet_v01_5: 3687107484201989510
+      icons_hooks_sheet_v01_6: 6425505829433372786
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

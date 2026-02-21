@@ -22,6 +22,15 @@
 - Source files: keep PSD/ASE in source archive.
 - Ensure transparent backgrounds and tight bounds.
 
+## Icon Sheet Workflow
+- Author icon source sprites as individual PNGs in `Assets/Art/Placeholders/Icons/<Category>/`.
+- Keep icon dimensions consistent per category (placeholder baseline is `512x512`).
+- Do not hand-edit generated sheet textures.
+- Regenerate sheets/atlases through: `Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`.
+- Generated assets are emitted to:
+  - `Assets/Art/Sheets/Icons/`
+  - `Assets/Art/Atlases/Icons/`
+
 ## Import Baseline
 - Follow import policy in `docs/ASSET_IMPORT_STANDARDS.md`.
 - UI sprites/icons:

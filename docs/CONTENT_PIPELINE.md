@@ -19,13 +19,24 @@
 - Sprites: `<type>_<id>_<variant>_vNN.png`
 - Audio: `<type>_<event>_<variant>_vNN.wav`
 
+## Sprite Sheet + SpriteAtlas Workflow
+- Source icon placeholders live under `Assets/Art/Placeholders/Icons/**`.
+- Run Unity menu command: `Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`.
+- Batch entrypoint: `RavenDevOps.Fishing.EditorTools.SpriteSheetAtlasWorkflow.RebuildSheetsAndAtlasesBatchMode`.
+- CLI wrapper: `.\scripts\unity-cli.ps1 -Task rebuild-sheets -LogFile rebuild_sheets.log`.
+- Generated outputs:
+  - Sheets: `Assets/Art/Sheets/Icons/icons_<category>_sheet_v01.png`
+  - Atlases: `Assets/Art/Atlases/Icons/icons_<category>.spriteatlas`
+- Rebuild is deterministic from `Assets/Art/Placeholders/placeholder_manifest.json` and cleans stale generated sheet/atlas assets.
+
 ## Validation Gate
 1. Add new definitions to `GameConfigSO`.
-2. Run `Raven > Validate Content Catalog`.
-3. Run `Raven > Validate Asset Import Compliance`.
-4. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
-5. Fix any duplicate ID, missing icon, invalid range, or import audit warnings.
-6. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
+2. Rebuild sprite sheets and atlases (`Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`).
+3. Run `Raven > Validate Content Catalog`.
+4. Run `Raven > Validate Asset Import Compliance`.
+5. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
+6. Fix any duplicate ID, missing icon, invalid range, or import audit warnings.
+7. Run smoke checks before merge (`docs/QA_SMOKE_TEST.md`).
 
 ## 1.0 Content Lock
 - Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
