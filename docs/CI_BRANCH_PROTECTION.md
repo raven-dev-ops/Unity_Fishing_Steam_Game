@@ -15,28 +15,24 @@ Configured via:
 - `PUT /repos/raven-dev-ops/Unity_Fishing_Steam_Game/branches/main/protection`
 
 Current effective policy (`GET /branches/main/protection`):
-1. Require pull request before merge (direct pushes blocked).
-2. Require status checks and up-to-date branch (`strict=true`).
-3. Require at least 1 approving review.
-4. Require CODEOWNERS review.
-5. Dismiss stale approvals on new commits.
-6. Enforce admins.
-7. Require linear history.
-8. Require conversation resolution.
-9. Disallow force push and branch deletion.
+1. Require status checks and up-to-date branch (`strict=true`).
+2. Enforce admins.
+3. Require linear history.
+4. Require conversation resolution.
+5. Disallow force push and branch deletion.
+6. Pull-request review gate is currently not configured (`required_pull_request_reviews` unset).
 
 ## Verification Evidence
 ### API evidence
 `gh api repos/raven-dev-ops/Unity_Fishing_Steam_Game/branches/main/protection` returned:
 - `required_status_checks.strict: true`
 - `required_status_checks.contexts: [Build Windows x64, Unity editmode, Unity playmode, Validate content catalog, Gitleaks]`
-- `required_pull_request_reviews.required_approving_review_count: 1`
-- `required_pull_request_reviews.require_code_owner_reviews: true`
 - `enforce_admins.enabled: true`
 - `allow_force_pushes.enabled: false`
 - `allow_deletions.enabled: false`
 - `required_linear_history.enabled: true`
 - `required_conversation_resolution.enabled: true`
+- `required_pull_request_reviews: (not configured)`
 
 ### Merge/push blocking smoke
 Command:
@@ -44,7 +40,6 @@ Command:
 
 Observed server response:
 - `GH006: Protected branch update failed for refs/heads/main`
-- `Changes must be made through a pull request`
 - `5 of 5 required status checks are expected`
 
 ## Workflow Inventory

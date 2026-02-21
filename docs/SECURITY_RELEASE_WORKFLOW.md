@@ -32,9 +32,10 @@ Configure in GitHub repository settings:
    - `Unity playmode`
    - `Validate content catalog`
    - `Gitleaks`
-3. Require pull request reviews.
-4. Require CODEOWNERS review.
+3. Enforce admins.
+4. Require linear history and conversation resolution.
 5. Disallow force pushes.
+6. If your policy requires PR approvals/CODEOWNERS, configure `required_pull_request_reviews` explicitly.
 
 ## Secret Rotation
 - Rotate Steam secrets at least every 90 days or after contributor role changes.
