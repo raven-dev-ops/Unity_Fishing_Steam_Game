@@ -14,7 +14,7 @@ namespace RavenDevOps.Fishing.EditorTools
 {
     public static class SpriteSheetAtlasWorkflow
     {
-        private const string PlaceholderManifestPath = "Assets/Art/Placeholders/placeholder_manifest.json";
+        private const string ArtManifestPath = "Assets/Art/Source/art_manifest.json";
         private const string SheetOutputRoot = "Assets/Art/Sheets/Icons";
         private const string AtlasOutputRoot = "Assets/Art/Atlases/Icons";
         private const int SheetPaddingPixels = 8;
@@ -31,13 +31,13 @@ namespace RavenDevOps.Fishing.EditorTools
         private static bool _imageConversionLookupCompleted;
 
         [Serializable]
-        private sealed class PlaceholderManifest
+        private sealed class ArtManifest
         {
-            public List<PlaceholderManifestEntry> entries = new List<PlaceholderManifestEntry>();
+            public List<ArtManifestEntry> entries = new List<ArtManifestEntry>();
         }
 
         [Serializable]
-        private sealed class PlaceholderManifestEntry
+        private sealed class ArtManifestEntry
         {
             public string id = string.Empty;
             public string category = string.Empty;
@@ -64,7 +64,7 @@ namespace RavenDevOps.Fishing.EditorTools
             public Rect Rect { get; }
         }
 
-        [MenuItem("Raven/Art/Rebuild Placeholder Icon Sheets + Atlases")]
+        [MenuItem("Raven/Art/Rebuild Source Icon Sheets + Atlases")]
         public static void RebuildFromMenu()
         {
             if (!RebuildSheetsAndAtlases())
@@ -83,7 +83,7 @@ namespace RavenDevOps.Fishing.EditorTools
 
         public static bool RebuildSheetsAndAtlases()
         {
-            if (!TryLoadManifest(PlaceholderManifestPath, out var manifest))
+            if (!TryLoadManifest(ArtManifestPath, out var manifest))
             {
                 return false;
             }
@@ -98,7 +98,7 @@ namespace RavenDevOps.Fishing.EditorTools
 
             if (iconEntries.Count == 0)
             {
-                Debug.LogWarning("SpriteSheetAtlasWorkflow: no icon entries were found in placeholder manifest.");
+                Debug.LogWarning("SpriteSheetAtlasWorkflow: no icon entries were found in art manifest.");
                 return true;
             }
 
@@ -176,7 +176,7 @@ namespace RavenDevOps.Fishing.EditorTools
 
         private static bool TryBuildSheetForCategory(
             string normalizedCategory,
-            List<PlaceholderManifestEntry> entries,
+            List<ArtManifestEntry> entries,
             out string sheetAssetPath)
         {
             sheetAssetPath = string.Empty;
@@ -203,7 +203,7 @@ namespace RavenDevOps.Fishing.EditorTools
                     icons.Add(new SourceIcon
                     {
                         spriteName = EnsureUniqueSpriteName(
-                            SanitizeSpriteName(entry.name, entry.id),
+                            SanitizeSpriteName(entry.id, entry.name),
                             usedSpriteNames),
                         texture = texture
                     });
@@ -446,30 +446,30 @@ namespace RavenDevOps.Fishing.EditorTools
             }
         }
 
-        private static bool TryLoadManifest(string assetPath, out PlaceholderManifest manifest)
+        private static bool TryLoadManifest(string assetPath, out ArtManifest manifest)
         {
             manifest = null;
             var absolutePath = ToAbsolutePath(assetPath);
             if (!File.Exists(absolutePath))
             {
-                Debug.LogError($"SpriteSheetAtlasWorkflow: placeholder manifest not found at '{assetPath}'.");
+                Debug.LogError($"SpriteSheetAtlasWorkflow: art manifest not found at '{assetPath}'.");
                 return false;
             }
 
             try
             {
                 var json = File.ReadAllText(absolutePath);
-                manifest = JsonUtility.FromJson<PlaceholderManifest>(json);
+                manifest = JsonUtility.FromJson<ArtManifest>(json);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"SpriteSheetAtlasWorkflow: failed to parse placeholder manifest ({ex.Message}).");
+                Debug.LogError($"SpriteSheetAtlasWorkflow: failed to parse art manifest ({ex.Message}).");
                 return false;
             }
 
             if (manifest == null || manifest.entries == null)
             {
-                Debug.LogError($"SpriteSheetAtlasWorkflow: placeholder manifest '{assetPath}' is invalid.");
+                Debug.LogError($"SpriteSheetAtlasWorkflow: art manifest '{assetPath}' is invalid.");
                 return false;
             }
 

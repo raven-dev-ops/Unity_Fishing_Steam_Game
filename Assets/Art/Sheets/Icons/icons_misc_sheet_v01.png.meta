@@ -6,8 +6,8 @@ TextureImporter:
       213: 1899925018559570448
     second: icons_misc_sheet_v01_0
   - first:
-      213: 1764709574065973149
-    second: photo_yyyymmdd_hhmmss_mmm_placeholder_v01
+      213: 4447319877365282457
+    second: photo_yyyymmdd_hhmmss_mmm
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -116,7 +116,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: photo_yyyymmdd_hhmmss_mmm_placeholder_v01
+      name: photo_yyyymmdd_hhmmss_mmm
       rect:
         serializedVersion: 2
         x: 8
@@ -131,8 +131,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d97eeedf1028d7810800000000000000
-      internalID: 1764709574065973149
+      spriteID: 99634e49ddd08bd30800000000000000
+      internalID: 4447319877365282457
       vertices: []
       indices: 
       edges: []
@@ -152,7 +152,7 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       icons_misc_sheet_v01_0: 1899925018559570448
-      photo_yyyymmdd_hhmmss_mmm_placeholder_v01: 1764709574065973149
+      photo_yyyymmdd_hhmmss_mmm: 4447319877365282457
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

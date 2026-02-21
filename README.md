@@ -36,7 +36,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`.
 - Economy/progression simulation gate: `.github/workflows/ci-balance-simulation.yml`.
 - Hardware baseline lock gate: `.github/workflows/ci-hardware-baseline-lock.yml`.
-- Content lock/placeholder audit gate: `.github/workflows/ci-content-lock-audit.yml`.
+- Content lock/source-art audit gate: `.github/workflows/ci-content-lock-audit.yml`.
 - Scheduled full-stack regression: `.github/workflows/nightly-full-regression.yml`.
 - Headless scene capture workflow: `.github/workflows/ci-scene-capture.yml` (manual dispatch only; PlayMode screenshot artifacts for key scenes).
 - Scene capture workflow runs baseline visual diffing via `scripts/ci/compare-scene-captures.py` against `ci/scene-capture-baseline/`.

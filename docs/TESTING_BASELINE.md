@@ -55,7 +55,7 @@ Non-Unity deterministic gates:
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`
 - Economy/progression balance simulation: `.github/workflows/ci-balance-simulation.yml`
 - Hardware baseline lock matrix validation: `.github/workflows/ci-hardware-baseline-lock.yml`
-- Content lock/placeholder audit: `.github/workflows/ci-content-lock-audit.yml`
+- Content lock/source-art audit: `.github/workflows/ci-content-lock-audit.yml`
 
 Project wrapper (recommended):
 

@@ -1,4 +1,4 @@
-﻿# Art Specs (MVP)
+# Art Specs (MVP)
 
 ## MVP Rules
 - Use readable silhouettes at 1080p.
@@ -23,10 +23,11 @@
 - Ensure transparent backgrounds and tight bounds.
 
 ## Icon Sheet Workflow
-- Author icon source sprites as individual PNGs in `Assets/Art/Placeholders/Icons/<Category>/`.
-- Keep icon dimensions consistent per category (placeholder baseline is `512x512`).
+- Author icon source sprites as individual PNGs in `Assets/Art/Source/Icons/<Category>/`.
+- Keep icon dimensions consistent per category (`512x512` baseline).
+- Optional canonical sheet source: `Assets/Art/Sheets/Source/ui_icons_sheet_4096x2048_v01.png`.
 - Do not hand-edit generated sheet textures.
-- Regenerate sheets/atlases through: `Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`.
+- Regenerate sheets/atlases through: `Raven > Art > Rebuild Source Icon Sheets + Atlases`.
 - Generated assets are emitted to:
   - `Assets/Art/Sheets/Icons/`
   - `Assets/Art/Atlases/Icons/`

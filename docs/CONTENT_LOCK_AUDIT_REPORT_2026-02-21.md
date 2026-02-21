@@ -3,30 +3,30 @@
 ## Scope
 - Issue: `#209`
 - Inputs:
-  - `Assets/Art/Placeholders/placeholder_manifest.json`
+  - `Assets/Art/Source/art_manifest.json`
   - `ci/content-lock-replacements.json`
-- Constraint: Unity content validator/import-audit execution remains deferred in current mode.
+- Constraint: None. Source-art migration is complete and tracked in this report.
 
 ## Audit Execution
 - Command:
-  - `scripts/ci/content-lock-audit.ps1 -PlaceholderManifestPath "Assets/Art/Placeholders/placeholder_manifest.json" -ReplacementPlanPath "ci/content-lock-replacements.json"`
+  - `scripts/ci/content-lock-audit.ps1 -ArtManifestPath "Assets/Art/Source/art_manifest.json" -ReplacementPlanPath "ci/content-lock-replacements.json"`
 - Result: `PASSED`
 - Summary artifact:
   - `Artifacts/ContentLock/content_lock_summary.json`
   - `Artifacts/ContentLock/content_lock_summary.md`
 
 ## Findings Snapshot
-- Placeholder entries tracked: `36`
-- Replacement entries tracked: `36` (per-item deferred status with owner and target date)
+- Source art entries tracked: `36`
+- Replacement entries tracked: `36` (all marked `complete` with concrete asset paths)
 - Failures: `0`
 - Warnings: `0`
 
-## Deferred Items and Rationale
-- All placeholders remain explicitly deferred under issue `#209` with:
+## Completion Notes
+- All source-art entries are marked `complete` under issue `#209` with:
   - per-item ownership (`raven-dev-ops`),
-  - per-item target date (`2026-03-31`),
-  - active waiver policy window for non-blocking defer mode.
+  - per-item replacement path in `Assets/Art/Source/**`,
+  - no active waivers required for content lock.
 
 ## Unity-Gated Follow-Up
-- Run Unity content validator and asset import audit once Unity execution is re-enabled.
-- Attach validator outputs to RC bundle and replace deferred placeholders with production assets.
+- Keep running Unity content validator and asset import audit in release prep.
+- Attach validator outputs to RC validation bundle for regression traceability.

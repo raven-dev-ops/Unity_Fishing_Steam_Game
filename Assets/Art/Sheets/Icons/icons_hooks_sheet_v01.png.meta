@@ -24,26 +24,26 @@ TextureImporter:
       213: 6425505829433372786
     second: icons_hooks_sheet_v01_6
   - first:
-      213: -1588759081860374289
-    second: hook_coastal_deep_placeholder_v01
+      213: -9063964255230421879
+    second: hook_coastal_deep
   - first:
-      213: 6930544469867018239
-    second: hook_icon_coastal_placeholder_v01
+      213: 5284266098647667381
+    second: hook_icon_coastal
   - first:
-      213: 7633336098359907811
-    second: hook_lv1_placeholder_v01
+      213: -5717297548280234298
+    second: hook_lv1
   - first:
-      213: 948030754248161614
-    second: hook_lv2_placeholder_v01
+      213: -7973582638711460376
+    second: hook_lv2
   - first:
-      213: -5766888181204795101
-    second: hook_lv3_placeholder_v01
+      213: 5216407504019009018
+    second: hook_lv3
   - first:
-      213: 1415044551795048080
-    second: hook_lvl2_barbed_v01_placeholder_v01
+      213: -4541608324946788101
+    second: hook_lvl2_barbed_v01
   - first:
-      213: 861704218036432777
-    second: hook_valid_placeholder_v01
+      213: -8036066945982183228
+    second: hook_valid
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -152,7 +152,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: hook_coastal_deep_placeholder_v01
+      name: hook_coastal_deep
       rect:
         serializedVersion: 2
         x: 8
@@ -167,14 +167,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fe0690c580893f9e0800000000000000
-      internalID: -1588759081860374289
+      spriteID: 98417266884563280800000000000000
+      internalID: -9063964255230421879
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_icon_coastal_placeholder_v01
+      name: hook_icon_coastal
       rect:
         serializedVersion: 2
         x: 528
@@ -189,14 +189,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ff7b87ac97d3e2060800000000000000
-      internalID: 6930544469867018239
+      spriteID: 5b2988cf40c755940800000000000000
+      internalID: 5284266098647667381
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_lv1_placeholder_v01
+      name: hook_lv1
       rect:
         serializedVersion: 2
         x: 1048
@@ -211,14 +211,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3e598e10dbe0fe960800000000000000
-      internalID: 7633336098359907811
+      spriteID: 6ce7b8fdb2418a0b0800000000000000
+      internalID: -5717297548280234298
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_lv2_placeholder_v01
+      name: hook_lv2
       rect:
         serializedVersion: 2
         x: 8
@@ -233,14 +233,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e497b17b2f4182d00800000000000000
-      internalID: 948030754248161614
+      spriteID: 8eda16006d4285190800000000000000
+      internalID: -7973582638711460376
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_lv3_placeholder_v01
+      name: hook_lv3
       rect:
         serializedVersion: 2
         x: 528
@@ -255,14 +255,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 321c3e3e0c5e7ffa0800000000000000
-      internalID: -5766888181204795101
+      spriteID: afd2cb8bcf6646840800000000000000
+      internalID: 5216407504019009018
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_lvl2_barbed_v01_placeholder_v01
+      name: hook_lvl2_barbed_v01
       rect:
         serializedVersion: 2
         x: 1048
@@ -277,14 +277,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 09e781bc58f33a310800000000000000
-      internalID: 1415044551795048080
+      spriteID: bf0079a7a47f8f0c0800000000000000
+      internalID: -4541608324946788101
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: hook_valid_placeholder_v01
+      name: hook_valid
       rect:
         serializedVersion: 2
         x: 8
@@ -299,8 +299,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 98f6489bb6365fb00800000000000000
-      internalID: 861704218036432777
+      spriteID: 4c8497580b72a7090800000000000000
+      internalID: -8036066945982183228
       vertices: []
       indices: 
       edges: []
@@ -319,13 +319,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      hook_coastal_deep_placeholder_v01: -1588759081860374289
-      hook_icon_coastal_placeholder_v01: 6930544469867018239
-      hook_lv1_placeholder_v01: 7633336098359907811
-      hook_lv2_placeholder_v01: 948030754248161614
-      hook_lv3_placeholder_v01: -5766888181204795101
-      hook_lvl2_barbed_v01_placeholder_v01: 1415044551795048080
-      hook_valid_placeholder_v01: 861704218036432777
+      hook_coastal_deep: -9063964255230421879
+      hook_icon_coastal: 5284266098647667381
+      hook_lv1: -5717297548280234298
+      hook_lv2: -7973582638711460376
+      hook_lv3: 5216407504019009018
+      hook_lvl2_barbed_v01: -4541608324946788101
+      hook_valid: -8036066945982183228
       icons_hooks_sheet_v01_0: 4600363434714224699
       icons_hooks_sheet_v01_1: -1530322025486477277
       icons_hooks_sheet_v01_2: -1362778339905246685

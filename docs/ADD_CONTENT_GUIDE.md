@@ -5,10 +5,11 @@ This guide is for adding fish, ships, and hooks without code changes.
 ## 1) Add art/audio assets
 - Follow naming rules in `docs/ART_SPECS.md` and `docs/AUDIO_SPECS.md`.
 - Keep pivots consistent by type (fish center, ship center-bottom, hook top).
-- For icon placeholders, add/update source PNGs in `Assets/Art/Placeholders/Icons/<Category>/`.
+- For source icons, add/update PNGs in `Assets/Art/Source/Icons/<Category>/`.
+- Optional master source sheet lives at `Assets/Art/Sheets/Source/ui_icons_sheet_4096x2048_v01.png`.
 
 ## 2) Rebuild sheets + atlases
-- Run: `Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`.
+- Run: `Raven > Art > Rebuild Source Icon Sheets + Atlases`.
 - Or batch: `.\scripts\unity-cli.ps1 -Task rebuild-sheets -LogFile rebuild_sheets.log`.
 - Confirm updated outputs in:
   - `Assets/Art/Sheets/Icons/`

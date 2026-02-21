@@ -29,7 +29,7 @@
         {
           "capture_id": "minimum-planned-20260221T060500Z",
           "captured_utc": "2026-02-21T06:05:00Z",
-          "source": "defer-mode-placeholder",
+          "source": "defer-mode-source-art",
           "owner": "raven-dev-ops",
           "validated": false,
           "machine": {
@@ -58,7 +58,7 @@
         {
           "capture_id": "recommended-planned-20260221T060600Z",
           "captured_utc": "2026-02-21T06:06:00Z",
-          "source": "defer-mode-placeholder",
+          "source": "defer-mode-source-art",
           "owner": "raven-dev-ops",
           "validated": false,
           "machine": {
@@ -123,3 +123,4 @@
     }
   ]
 }
+

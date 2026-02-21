@@ -20,18 +20,21 @@
 - Audio: `<type>_<event>_<variant>_vNN.wav`
 
 ## Sprite Sheet + SpriteAtlas Workflow
-- Source icon placeholders live under `Assets/Art/Placeholders/Icons/**`.
-- Run Unity menu command: `Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`.
+- Source icon art lives under `Assets/Art/Source/Icons/**`.
+- Optional canonical source sheet + rects:
+  - `Assets/Art/Sheets/Source/ui_icons_sheet_4096x2048_v01.png`
+  - `Assets/Art/Sheets/Source/ui_icons_sheet_4096x2048_v01_rects.json`
+- Run Unity menu command: `Raven > Art > Rebuild Source Icon Sheets + Atlases`.
 - Batch entrypoint: `RavenDevOps.Fishing.EditorTools.SpriteSheetAtlasWorkflow.RebuildSheetsAndAtlasesBatchMode`.
 - CLI wrapper: `.\scripts\unity-cli.ps1 -Task rebuild-sheets -LogFile rebuild_sheets.log`.
 - Generated outputs:
   - Sheets: `Assets/Art/Sheets/Icons/icons_<category>_sheet_v01.png`
   - Atlases: `Assets/Art/Atlases/Icons/icons_<category>.spriteatlas`
-- Rebuild is deterministic from `Assets/Art/Placeholders/placeholder_manifest.json` and cleans stale generated sheet/atlas assets.
+- Rebuild is deterministic from `Assets/Art/Source/art_manifest.json` and cleans stale generated sheet/atlas assets.
 
 ## Validation Gate
 1. Add new definitions to `GameConfigSO`.
-2. Rebuild sprite sheets and atlases (`Raven > Art > Rebuild Placeholder Icon Sheets + Atlases`).
+2. Rebuild sprite sheets and atlases (`Raven > Art > Rebuild Source Icon Sheets + Atlases`).
 3. Run `Raven > Validate Content Catalog`.
 4. Run `Raven > Validate Asset Import Compliance`.
 5. Apply texture/audio import settings per `docs/ASSET_IMPORT_STANDARDS.md`.
@@ -40,7 +43,7 @@
 
 ## 1.0 Content Lock
 - Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
-- Placeholder inventory source: `Assets/Art/Placeholders/placeholder_manifest.json`
+- Source art inventory: `Assets/Art/Source/art_manifest.json`
 - Replacement/waiver tracking: `ci/content-lock-replacements.json`
 - Automated audit:
   - script: `scripts/ci/content-lock-audit.ps1`

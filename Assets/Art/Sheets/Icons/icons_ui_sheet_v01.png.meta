@@ -6,8 +6,8 @@ TextureImporter:
       213: 436348674480691147
     second: icons_ui_sheet_v01_0
   - first:
-      213: 1238207261540522821
-    second: icon_test_placeholder_v01
+      213: -3792533707000594596
+    second: icon_test
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -116,7 +116,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: icon_test_placeholder_v01
+      name: icon_test
       rect:
         serializedVersion: 2
         x: 8
@@ -131,8 +131,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 54b9e6ea1fefe2110800000000000000
-      internalID: 1238207261540522821
+      spriteID: c5fb88befa63e5bc0800000000000000
+      internalID: -3792533707000594596
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      icon_test_placeholder_v01: 1238207261540522821
+      icon_test: -3792533707000594596
       icons_ui_sheet_v01_0: 436348674480691147
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0

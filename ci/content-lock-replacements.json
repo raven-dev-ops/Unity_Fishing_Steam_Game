@@ -12,336 +12,330 @@
     "replacements":  [
                          {
                              "id":  "fish_a",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_a_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_b",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_b_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_behavior_invalid",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_behavior_invalid_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_coastal_snapper",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_coastal_snapper_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_cod",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_cod_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_cod_common_v01",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_cod_common_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_heavy",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_heavy_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_icon",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_icon_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_icon_coastal",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_icon_coastal_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_light",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_light_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_modded",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_modded_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_pack",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_pack_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_surface",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_surface_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_test",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_test_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "fish_valid",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Fish/fish_valid_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_coastal_deep",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_coastal_deep_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_icon_coastal",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_icon_coastal_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_lv1",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_lv1_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_lv2",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_lv2_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_lv3",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_lv3_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_lvl2_barbed_v01",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_lvl2_barbed_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "hook_valid",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Hooks/hook_valid_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "icon_test",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/UI/icon_test_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "photo_yyyymmdd_hhmmss_mmm",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Misc/photo_yyyymmdd_hhmmss_mmm_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_coastal_runner",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_coastal_runner_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_icon_coastal",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_icon_coastal_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_lv1",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_lv1_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_lv2",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_lv2_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_lv3",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_lv3_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_lvl1_basic_v01",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_lvl1_basic_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "ship_valid",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Icons/Ships/ship_valid_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "scene_00_boot",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Scenes/00_boot_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "scene_01_cinematic",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Scenes/01_cinematic_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "scene_02_mainmenu",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Scenes/02_mainmenu_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "scene_03_harbor",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Scenes/03_harbor_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          },
                          {
                              "id":  "scene_04_fishing",
-                             "status":  "deferred",
-                             "replacementPath":  "",
+                             "status":  "complete",
+                             "replacementPath":  "Assets/Art/Source/Scenes/04_fishing_v01.png",
                              "owner":  "raven-dev-ops",
-                             "target_by":  "2026-03-31",
+                             "target_by":  "2026-02-21",
                              "ticket":  "#209",
-                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                             "notes":  "Real source-art migrated and integrated into SpriteSheet/SpriteAtlas pipeline."
                          }
                      ],
     "waivers":  [
-                    {
-                        "id":  "*",
-                        "owner":  "raven-dev-ops",
-                        "reason":  "Placeholder replacement pass is in progress for 1.0 content lock.",
-                        "expires_on":  "2026-03-22",
-                        "ticket":  "#209"
-                    }
+
                 ]
 }

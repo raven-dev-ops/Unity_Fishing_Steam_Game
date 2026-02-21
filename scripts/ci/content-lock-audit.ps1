@@ -1,5 +1,5 @@
 param(
-    [string]$PlaceholderManifestPath = "Assets/Art/Placeholders/placeholder_manifest.json",
+    [string]$ArtManifestPath = "Assets/Art/Source/art_manifest.json",
     [string]$ReplacementPlanPath = "ci/content-lock-replacements.json",
     [switch]$FailOnFindings,
     [string]$SummaryJsonPath = "Artifacts/ContentLock/content_lock_summary.json",
@@ -55,7 +55,7 @@ function Get-MetaGuid {
 function Get-ExternalReferences {
     param(
         [string]$GuidValue,
-        [string]$PlaceholderRoot = "Assets/Art/Placeholders"
+        [string]$SourceRoot = "Assets/Art/Source"
     )
 
     if ([string]::IsNullOrWhiteSpace($GuidValue)) {
@@ -67,7 +67,7 @@ function Get-ExternalReferences {
         $args = @(
             "--files-with-matches",
             "--fixed-strings",
-            "--glob", "!$PlaceholderRoot/**",
+            "--glob", "!$SourceRoot/**",
             "--glob", "!**/*.meta",
             $GuidValue,
             "Assets"
@@ -85,7 +85,7 @@ function Get-ExternalReferences {
         return @($results | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     }
 
-    $normalizedPlaceholderRoot = $PlaceholderRoot.Replace('\', '/').TrimEnd('/')
+    $normalizedSourceRoot = $SourceRoot.Replace('\', '/').TrimEnd('/')
     $candidatePaths = Get-ChildItem -Path "Assets" -Recurse -File | Where-Object {
         $normalizedPath = $_.FullName.Replace('\', '/')
         $assetRelativePath = $normalizedPath
@@ -94,7 +94,7 @@ function Get-ExternalReferences {
             $assetRelativePath = $normalizedPath.Substring($assetsIndex + 1)
         }
 
-        if ($assetRelativePath.StartsWith($normalizedPlaceholderRoot + '/', [StringComparison]::OrdinalIgnoreCase)) {
+        if ($assetRelativePath.StartsWith($normalizedSourceRoot + '/', [StringComparison]::OrdinalIgnoreCase)) {
             return $false
         }
 
@@ -117,19 +117,19 @@ function Get-ExternalReferences {
     return @($matches | Select-Object -ExpandProperty Path -Unique)
 }
 
-if (-not (Test-Path -LiteralPath $PlaceholderManifestPath -PathType Leaf)) {
-    throw "Placeholder manifest not found: '$PlaceholderManifestPath'."
+if (-not (Test-Path -LiteralPath $ArtManifestPath -PathType Leaf)) {
+    throw "Art manifest not found: '$ArtManifestPath'."
 }
 
 if (-not (Test-Path -LiteralPath $ReplacementPlanPath -PathType Leaf)) {
     throw "Replacement plan not found: '$ReplacementPlanPath'."
 }
 
-$manifest = Get-Content -Raw -Path $PlaceholderManifestPath | ConvertFrom-Json
+$manifest = Get-Content -Raw -Path $ArtManifestPath | ConvertFrom-Json
 $plan = Get-Content -Raw -Path $ReplacementPlanPath | ConvertFrom-Json
 
 if ($null -eq $manifest -or $null -eq $manifest.entries) {
-    throw "Placeholder manifest '$PlaceholderManifestPath' is missing 'entries'."
+    throw "Art manifest '$ArtManifestPath' is missing 'entries'."
 }
 
 if ($null -eq $plan) {
@@ -246,7 +246,7 @@ foreach ($manifestEntry in $manifest.entries) {
     $guid = if ($assetExists) { Get-MetaGuid -AssetPath $path } else { "" }
     if ($assetExists -and [string]::IsNullOrWhiteSpace($guid)) {
         $failures.Add([ordered]@{
-            scope = "placeholder_asset"
+            scope = "source_asset"
             id = $id
             reason = "meta_guid_missing"
         })
@@ -277,13 +277,13 @@ foreach ($manifestEntry in $manifest.entries) {
     if ($externalReferences.Count -gt 0 -and $replacementStatus -ne "complete") {
         if ($hasActiveWaiver) {
             $entryStatus = "waived"
-            $entryReason = "placeholder_referenced_with_active_waiver"
+            $entryReason = "source_asset_referenced_with_active_waiver"
         }
         else {
             $entryStatus = "warning"
-            $entryReason = "placeholder_referenced_without_replacement"
+            $entryReason = "source_asset_referenced_without_replacement"
             $warnings.Add([ordered]@{
-                scope = "placeholder_reference"
+                scope = "source_asset_reference"
                 id = $id
                 reason = $entryReason
                 reference_count = $externalReferences.Count
@@ -298,7 +298,7 @@ foreach ($manifestEntry in $manifest.entries) {
     $entries.Add([ordered]@{
         id = $id
         category = $category
-        placeholder_path = $path
+        source_path = $path
         replacement_status = $replacementStatus
         replacement_path = $replacementPath
         replacement_owner = $replacementOwner
@@ -313,13 +313,13 @@ $summary = [ordered]@{
     status = "passed"
     reason = "ok"
     generated_utc = $nowUtc.ToString("o")
-    placeholder_manifest_path = $PlaceholderManifestPath
+    art_manifest_path = $ArtManifestPath
     replacement_plan_path = $ReplacementPlanPath
-    placeholder_count = $entries.Count
+    source_asset_count = $entries.Count
     warning_count = $warnings.Count
     failure_count = $failures.Count
     replacements_complete_count = @($entries | Where-Object { $_.replacement_status -eq "complete" }).Count
-    referenced_placeholder_count = @($entries | Where-Object { $_.reference_count -gt 0 }).Count
+    referenced_source_asset_count = @($entries | Where-Object { $_.reference_count -gt 0 }).Count
     entries = $entries
     warnings = $warnings
     failures = $failures
@@ -347,8 +347,8 @@ $md.Add("# Content Lock Audit Summary")
 $md.Add("")
 $md.Add(("Status: **{0}**" -f $summary.status.ToUpperInvariant()))
 $md.Add(("Reason: {0}" -f $summary.reason))
-$md.Add(("Placeholder entries: {0}" -f $summary.placeholder_count))
-$md.Add(("Referenced placeholders: {0}" -f $summary.referenced_placeholder_count))
+$md.Add(("Source art entries: {0}" -f $summary.source_asset_count))
+$md.Add(("Referenced source assets: {0}" -f $summary.referenced_source_asset_count))
 $md.Add(("Replacements complete: {0}" -f $summary.replacements_complete_count))
 $md.Add("")
 $md.Add("| ID | Category | Replacement Status | References | Waiver | Status |")

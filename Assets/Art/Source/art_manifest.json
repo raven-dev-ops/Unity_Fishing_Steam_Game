@@ -1,0 +1,297 @@
+{
+    "generatedUtc":  "2026-02-21T23:07:44.5252851Z",
+    "source":  "real_sheet_pipeline",
+    "iconCount":  31,
+    "sceneCount":  5,
+    "count":  36,
+    "entries":  [
+                    {
+                        "id":  "fish_a",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_a_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_a_v01.png"
+                    },
+                    {
+                        "id":  "fish_b",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_b_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_b_v01.png"
+                    },
+                    {
+                        "id":  "fish_behavior_invalid",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_behavior_invalid_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_behavior_invalid_v01.png"
+                    },
+                    {
+                        "id":  "fish_coastal_snapper",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_coastal_snapper_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_coastal_snapper_v01.png"
+                    },
+                    {
+                        "id":  "fish_cod",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_cod_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_cod_v01.png"
+                    },
+                    {
+                        "id":  "fish_cod_common_v01",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_cod_common_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_cod_common_v01.png"
+                    },
+                    {
+                        "id":  "fish_heavy",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_heavy_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_heavy_v01.png"
+                    },
+                    {
+                        "id":  "fish_icon",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_icon_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_icon_v01.png"
+                    },
+                    {
+                        "id":  "fish_icon_coastal",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_icon_coastal_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_icon_coastal_v01.png"
+                    },
+                    {
+                        "id":  "fish_light",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_light_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_light_v01.png"
+                    },
+                    {
+                        "id":  "fish_modded",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_modded_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_modded_v01.png"
+                    },
+                    {
+                        "id":  "fish_pack",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_pack_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_pack_v01.png"
+                    },
+                    {
+                        "id":  "fish_surface",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_surface_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_surface_v01.png"
+                    },
+                    {
+                        "id":  "fish_test",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_test_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_test_v01.png"
+                    },
+                    {
+                        "id":  "fish_valid",
+                        "category":  "Fish",
+                        "type":  "icon",
+                        "name":  "fish_valid_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Fish/fish_valid_v01.png"
+                    },
+                    {
+                        "id":  "hook_coastal_deep",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_coastal_deep_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_coastal_deep_v01.png"
+                    },
+                    {
+                        "id":  "hook_icon_coastal",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_icon_coastal_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_icon_coastal_v01.png"
+                    },
+                    {
+                        "id":  "hook_lv1",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_lv1_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_lv1_v01.png"
+                    },
+                    {
+                        "id":  "hook_lv2",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_lv2_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_lv2_v01.png"
+                    },
+                    {
+                        "id":  "hook_lv3",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_lv3_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_lv3_v01.png"
+                    },
+                    {
+                        "id":  "hook_lvl2_barbed_v01",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_lvl2_barbed_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_lvl2_barbed_v01.png"
+                    },
+                    {
+                        "id":  "hook_valid",
+                        "category":  "Hooks",
+                        "type":  "icon",
+                        "name":  "hook_valid_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Hooks/hook_valid_v01.png"
+                    },
+                    {
+                        "id":  "icon_test",
+                        "category":  "UI",
+                        "type":  "icon",
+                        "name":  "icon_test_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/UI/icon_test_v01.png"
+                    },
+                    {
+                        "id":  "photo_yyyymmdd_hhmmss_mmm",
+                        "category":  "Misc",
+                        "type":  "icon",
+                        "name":  "photo_yyyymmdd_hhmmss_mmm_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Misc/photo_yyyymmdd_hhmmss_mmm_v01.png"
+                    },
+                    {
+                        "id":  "ship_coastal_runner",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_coastal_runner_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_coastal_runner_v01.png"
+                    },
+                    {
+                        "id":  "ship_icon_coastal",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_icon_coastal_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_icon_coastal_v01.png"
+                    },
+                    {
+                        "id":  "ship_lv1",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_lv1_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_lv1_v01.png"
+                    },
+                    {
+                        "id":  "ship_lv2",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_lv2_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_lv2_v01.png"
+                    },
+                    {
+                        "id":  "ship_lv3",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_lv3_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_lv3_v01.png"
+                    },
+                    {
+                        "id":  "ship_lvl1_basic_v01",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_lvl1_basic_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_lvl1_basic_v01.png"
+                    },
+                    {
+                        "id":  "ship_valid",
+                        "category":  "Ships",
+                        "type":  "icon",
+                        "name":  "ship_valid_v01",
+                        "dimensions":  "512x512",
+                        "path":  "Assets/Art/Source/Icons/Ships/ship_valid_v01.png"
+                    },
+                    {
+                        "id":  "scene_00_boot",
+                        "category":  "Scenes",
+                        "type":  "scene",
+                        "name":  "00_boot_v01",
+                        "dimensions":  "1920x1080",
+                        "path":  "Assets/Art/Source/Scenes/00_boot_v01.png"
+                    },
+                    {
+                        "id":  "scene_01_cinematic",
+                        "category":  "Scenes",
+                        "type":  "scene",
+                        "name":  "01_cinematic_v01",
+                        "dimensions":  "1920x1080",
+                        "path":  "Assets/Art/Source/Scenes/01_cinematic_v01.png"
+                    },
+                    {
+                        "id":  "scene_02_mainmenu",
+                        "category":  "Scenes",
+                        "type":  "scene",
+                        "name":  "02_mainmenu_v01",
+                        "dimensions":  "1920x1080",
+                        "path":  "Assets/Art/Source/Scenes/02_mainmenu_v01.png"
+                    },
+                    {
+                        "id":  "scene_03_harbor",
+                        "category":  "Scenes",
+                        "type":  "scene",
+                        "name":  "03_harbor_v01",
+                        "dimensions":  "1920x1080",
+                        "path":  "Assets/Art/Source/Scenes/03_harbor_v01.png"
+                    },
+                    {
+                        "id":  "scene_04_fishing",
+                        "category":  "Scenes",
+                        "type":  "scene",
+                        "name":  "04_fishing_v01",
+                        "dimensions":  "1920x1080",
+                        "path":  "Assets/Art/Source/Scenes/04_fishing_v01.png"
+                    }
+                ]
+}

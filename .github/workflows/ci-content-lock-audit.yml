@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       fail_on_findings:
-        description: "Fail workflow on unresolved placeholder findings"
+        description: "Fail workflow on unresolved source-art findings"
         required: true
         default: false
         type: boolean
@@ -15,7 +15,7 @@ on:
       - ".github/workflows/ci-content-lock-audit.yml"
       - "scripts/ci/content-lock-audit.ps1"
       - "ci/content-lock-replacements.json"
-      - "Assets/Art/Placeholders/placeholder_manifest.json"
+      - "Assets/Art/Source/art_manifest.json"
       - "docs/CONTENT_LOCK_CHECKLIST.md"
       - "docs/CONTENT_PIPELINE.md"
       - "README.md"
@@ -24,7 +24,7 @@ on:
       - ".github/workflows/ci-content-lock-audit.yml"
       - "scripts/ci/content-lock-audit.ps1"
       - "ci/content-lock-replacements.json"
-      - "Assets/Art/Placeholders/placeholder_manifest.json"
+      - "Assets/Art/Source/art_manifest.json"
       - "docs/CONTENT_LOCK_CHECKLIST.md"
       - "docs/CONTENT_PIPELINE.md"
       - "README.md"
@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   content_lock_audit:
-    name: Audit placeholder content lock status
+    name: Audit source-art content lock status
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -55,7 +55,7 @@ jobs:
           }
 
           ./scripts/ci/content-lock-audit.ps1 `
-            -PlaceholderManifestPath "Assets/Art/Placeholders/placeholder_manifest.json" `
+            -ArtManifestPath "Assets/Art/Source/art_manifest.json" `
             -ReplacementPlanPath "ci/content-lock-replacements.json" `
             -FailOnFindings:$failSwitch `
             -SummaryJsonPath "Artifacts/ContentLock/content_lock_summary.json" `
