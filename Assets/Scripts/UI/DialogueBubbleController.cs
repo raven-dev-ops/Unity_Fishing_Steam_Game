@@ -187,7 +187,7 @@ namespace RavenDevOps.Fishing.UI
 
             if (_subtitleBackgroundCanvasGroup != null)
             {
-                var opacity = _settingsService != null ? _settingsService.SubtitleBackgroundOpacity : 0.65f;
+                var opacity = _settingsService != null ? _settingsService.SubtitleBackgroundOpacity : 0.72f;
                 _subtitleBackgroundCanvasGroup.alpha = Mathf.Clamp01(opacity);
             }
         }

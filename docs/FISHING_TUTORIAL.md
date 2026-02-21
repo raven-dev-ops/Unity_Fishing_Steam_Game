@@ -17,6 +17,14 @@
 - At retry cap (`_maxRecoveryFailures`), tutorial auto-completes and gameplay continues.
 - This prevents tutorial state from blocking loop progression.
 
+## 1.0 Anti-Frustration Defaults
+- Tutorial auto-recovery retry cap remains `3` failed attempts before forced completion.
+- Fishing assist defaults in `CatchResolver` are tuned for earlier recovery when players struggle:
+  - no-bite pity threshold `2`,
+  - pity bite delay scale `0.50`,
+  - adaptive hook-window threshold `2`,
+  - adaptive hook-window bonus `+0.40s`.
+
 ## Skip and Replay
 - Skip entry point:
   - `TutorialControlPanel.SkipFishingTutorial()`

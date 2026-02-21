@@ -44,7 +44,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private bool _reelInputToggle;
         [SerializeField] private bool _reducedMotion;
         [SerializeField] private float _subtitleScale = 1f;
-        [SerializeField] private float _subtitleBackgroundOpacity = 0.65f;
+        [SerializeField] private float _subtitleBackgroundOpacity = 0.72f;
         [SerializeField] private bool _readabilityBoost;
         [SerializeField] private bool _steamRichPresenceEnabled = true;
         [SerializeField] private bool _modSafeModeEnabled;
@@ -272,7 +272,7 @@ namespace RavenDevOps.Fishing.Core
             _reelInputToggle = PlayerPrefs.GetInt(KeyReelInputToggle, 0) == 1;
             _reducedMotion = PlayerPrefs.GetInt(KeyReducedMotion, 0) == 1;
             _subtitleScale = Mathf.Clamp(PlayerPrefs.GetFloat(KeySubtitleScale, 1f), 0.8f, 1.5f);
-            _subtitleBackgroundOpacity = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySubtitleBackgroundOpacity, 0.65f));
+            _subtitleBackgroundOpacity = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySubtitleBackgroundOpacity, 0.72f));
             _readabilityBoost = PlayerPrefs.GetInt(KeyReadabilityBoost, 0) == 1;
             _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
             _modSafeModeEnabled = PlayerPrefs.GetInt(KeyModsSafeMode, 0) == 1;

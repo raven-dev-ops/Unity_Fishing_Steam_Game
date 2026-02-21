@@ -14,6 +14,12 @@
 5. Tag patch release (`v1.0.1`, etc).
 6. Merge back to active release branch if applicable.
 
+## Operator Outputs
+- Branch creation output references the source release tag.
+- Regression run captures test summary and failure triage notes.
+- Patch tag is annotated and pushed with release notes delta.
+- Audit record includes incident ID, approver, and UTC timestamps for each critical step.
+
 ## Emergency Admin Bypass (Exception Path)
 - Use only for production-severity incidents where normal PR flow is unavailable.
 - Required post-action audit record:

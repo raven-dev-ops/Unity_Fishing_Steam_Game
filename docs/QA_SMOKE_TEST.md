@@ -41,6 +41,7 @@ End-to-end regression checklist for the MVP loop.
 28. Cloud run (if available): verify save continuity across two machines.
 29. Spot-check new texture/audio imports against `docs/ASSET_IMPORT_STANDARDS.md`.
 30. Enter photo mode (`F9`), capture screenshot (`F12`), verify output folder and HUD restore.
+31. Complete and attach `docs/UX_ACCESSIBILITY_SIGNOFF.md` for 1.0 UX/accessibility signoff.
 
 ## Pass Criteria
 - No blocker regressions in core gameplay loop.
@@ -49,6 +50,7 @@ End-to-end regression checklist for the MVP loop.
 - Controller can navigate gameplay UI and core loop actions end-to-end.
 - Reel input mode is verified in both hold and toggle variants.
 - Reduced motion visibly lowers camera/wave motion in fishing.
+- 1.0 UX/accessibility signoff artifact is completed and linked.
 - Fishing HUD shows tension state and explicit fail reasons during reel failures.
 - Fishing HUD shows active condition state and objective status updates.
 - Runtime log file is generated and readable at:

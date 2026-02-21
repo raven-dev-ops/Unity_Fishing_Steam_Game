@@ -56,6 +56,19 @@
 ## Persistence
 All accessibility options persist through `UserSettingsService` + `PlayerPrefs` and are restored on boot.
 
+## 1.0 Default Rationale
+- Subtitles default `enabled` to reduce comprehension failures in noisy environments.
+- Subtitle scale default remains `1.0` with supported range `0.8` to `1.5`.
+- Subtitle background opacity default is `0.72` to improve legibility against bright fishing backgrounds.
+- Readability boost remains opt-in (`false` by default) to preserve baseline visual presentation.
+- Reel toggle and reduced motion remain opt-in (`false` by default) with immediate persistence once enabled.
+- Anti-frustration fishing assist launch defaults:
+  - no-bite pity threshold: `2` dry casts,
+  - pity bite delay scale: `0.50`,
+  - adaptive hook-window threshold: `2` failures,
+  - adaptive hook-window bonus: `+0.40s`.
+  These values reduce early frustration while preserving normal cooldown/skill progression.
+
 ## Test Flow
 1. Toggle subtitles/high-contrast/UI scale and verify immediate effect.
 2. Toggle hold/toggle reel mode and verify fishing input behavior.

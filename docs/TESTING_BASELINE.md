@@ -88,6 +88,8 @@ Unity.exe -batchmode -nographics -quit `
   - Save fixture deserialization
   - Save migration rehearsal corpus and rollback drill checks
   - Input context map activation and rebinding override persistence
+  - Accessibility default/persistence guardrails (subtitles, readability options)
+  - Fishing assist anti-frustration default settings guardrails
 - PlayMode:
   - Game flow pause/resume transitions
   - Pause-to-harbor transition behavior

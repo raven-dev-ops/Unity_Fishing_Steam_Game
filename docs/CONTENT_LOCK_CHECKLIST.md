@@ -9,6 +9,7 @@
 - Replacement/waiver plan: `ci/content-lock-replacements.json`
 - Audit script: `scripts/ci/content-lock-audit.ps1`
 - CI workflow: `.github/workflows/ci-content-lock-audit.yml`
+- Latest report: `docs/CONTENT_LOCK_AUDIT_REPORT_2026-02-21.md`
 
 ## Operator Checklist
 1. Run content lock audit:
@@ -47,4 +48,5 @@
 
 ## Current State (2026-02-21)
 - Placeholder inventory is present and tracked in source control.
-- Replacement plan is initialized; unresolved placeholders are tracked under active waiver while replacement pass is in progress (`#209`).
+- Replacement plan includes per-item deferred entries (owner + target date) for all tracked placeholders.
+- Active waiver remains in place for defer mode while Unity-gated validator execution is pending.

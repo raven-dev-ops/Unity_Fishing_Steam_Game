@@ -88,9 +88,12 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
 - Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
+- Content lock audit report (2026-02-21): `docs/CONTENT_LOCK_AUDIT_REPORT_2026-02-21.md`
 - Save migration rehearsal: `docs/SAVE_MIGRATION_REHEARSAL.md`
+- Save migration rehearsal report (2026-02-21): `docs/SAVE_MIGRATION_REHEARSAL_REPORT_2026-02-21.md`
 - Accessibility baseline: `docs/ACCESSIBILITY_BASELINE.md`
 - Accessibility conformance mapping: `docs/ACCESSIBILITY_CONFORMANCE.md`
+- UX/accessibility 1.0 signoff: `docs/UX_ACCESSIBILITY_SIGNOFF.md`
 - Fishing environment slice: `docs/FISHING_ENVIRONMENT_SLICE.md`
 - Fishing combat model: `docs/FISHING_COMBAT_MODEL.md`
 - Fishing conditions: `docs/FISHING_CONDITIONS.md`
@@ -114,9 +117,11 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` before running `
 - Steam achievements/stats: `docs/STEAM_ACHIEVEMENTS_STATS.md`
 - Steam Cloud sync: `docs/STEAM_CLOUD_SYNC.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`
+- Steam release compliance checklist: `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`
 - Steam Workshop feasibility: `docs/STEAM_WORKSHOP_FEASIBILITY.md`
 - Steam rich presence: `docs/STEAM_RICH_PRESENCE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
+- Release ops dry run and hotfix drill: `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md`
 - Testing baseline: `docs/TESTING_BASELINE.md`
 - Unity CI license/trusted-context policy: `docs/UNITY_CI_LICENSE_POLICY.md`
 - Release tagging/checklist: `docs/RELEASE_TAGGING.md`

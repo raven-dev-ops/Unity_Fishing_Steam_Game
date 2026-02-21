@@ -25,11 +25,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private bool _enableNoBitePity = true;
-        [SerializeField] private int _noBitePityThresholdCasts = 3;
-        [SerializeField] private float _pityBiteDelayScale = 0.55f;
+        [SerializeField] private int _noBitePityThresholdCasts = 2;
+        [SerializeField] private float _pityBiteDelayScale = 0.5f;
         [SerializeField] private bool _enableAdaptiveHookWindowAssist = true;
-        [SerializeField] private int _adaptiveHookWindowFailureThreshold = 3;
-        [SerializeField] private float _adaptiveHookWindowBonusSeconds = 0.35f;
+        [SerializeField] private int _adaptiveHookWindowFailureThreshold = 2;
+        [SerializeField] private float _adaptiveHookWindowBonusSeconds = 0.4f;
         [SerializeField] private int _assistCooldownCatches = 2;
         [SerializeField] private bool _autoAttachFishingCameraController = true;
         [SerializeField] private bool _autoAttachFishingTutorialController = true;

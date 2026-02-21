@@ -11,6 +11,7 @@
 3. Complete RC validation/signoff bundle:
    - `docs/RC_VALIDATION_BUNDLE.md`
 4. Complete compliance check:
+   - Complete `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`.
    - Confirm `LICENSE` is present and current.
    - Review `THIRD_PARTY_NOTICES.md` for new dependencies/assets/tools.
    - Confirm required attributions are included in release notes/packaging where needed.

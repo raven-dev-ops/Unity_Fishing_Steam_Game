@@ -14,6 +14,11 @@ Persisted keys:
 - Subtitles enabled
 - High-contrast fishing cues
 - UI scale
+- Reel input toggle (hold/toggle)
+- Reduced motion
+- Subtitle scale
+- Subtitle background opacity
+- Readability boost
 - Steam Rich Presence enabled
 - Mod safe mode enabled (`settings.modSafeModeEnabled`)
 - Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
@@ -30,7 +35,10 @@ Persisted keys:
 - Accessibility consumers:
   - `Assets/Scripts/UI/DialogueBubbleController.cs` (subtitles)
   - `Assets/Scripts/UI/HudOverlayController.cs` (high-contrast fishing cues)
-  - `Assets/Scripts/UI/GlobalUiAccessibilityService.cs` (UI scale)
+  - `Assets/Scripts/UI/GlobalUiAccessibilityService.cs` (UI scale + readability boost)
+  - `Assets/Scripts/Fishing/CatchResolver.cs` (reel toggle behavior)
+  - `Assets/Scripts/Fishing/WaveAnimator.cs` (reduced motion)
+  - `Assets/Scripts/Fishing/FishingCameraController.cs` (reduced motion)
 - Steam Rich Presence consumer:
   - `Assets/Scripts/Steam/SteamRichPresenceService.cs`
 - Mod safe mode consumers:
@@ -52,5 +60,6 @@ Persisted keys:
 2. Verify settings in Pause Menu reflect persisted values.
 3. Confirm display/audio/input behavior is restored on boot.
 4. Toggle subtitles/high-contrast/UI scale and verify immediate + persisted behavior.
-5. Toggle Steam Rich Presence and verify Steam service respects setting.
-6. Toggle mod safe mode and relaunch to confirm mod runtime starts in safe mode with clear status text.
+5. Toggle reel mode/reduced motion/readability controls and verify immediate + persisted behavior.
+6. Toggle Steam Rich Presence and verify Steam service respects setting.
+7. Toggle mod safe mode and relaunch to confirm mod runtime starts in safe mode with clear status text.

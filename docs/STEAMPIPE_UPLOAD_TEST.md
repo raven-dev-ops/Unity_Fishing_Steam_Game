@@ -25,6 +25,12 @@
 3. Install/update from clean test environment.
 4. Verify launch, update continuity, and save integrity.
 
+## Operator Evidence to Capture
+- Workflow run URL and triggering actor.
+- Uploaded artifact name (`windows-release-<tag>-<sha>`).
+- SteamPipe command summary excerpt showing target app/depot/branch.
+- Post-install smoke result summary (launch + save continuity).
+
 ## Security Controls
 - Secrets are consumed from GitHub protected environment only.
 - Upload script rejects missing secret/env variables.

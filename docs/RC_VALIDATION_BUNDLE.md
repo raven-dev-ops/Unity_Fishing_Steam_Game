@@ -14,6 +14,7 @@
 |---|---|---|---|---|
 | Build | `.github/workflows/ci-build.yml` | push/manual | Success | Build logs, build-size summary |
 | Tests | `.github/workflows/ci-tests.yml` | push/manual | Success | EditMode/PlayMode artifacts or documented skip reason |
+| UX/accessibility signoff | `docs/UX_ACCESSIBILITY_SIGNOFF.md` | release prep | Completed checklist with known exceptions | Signoff doc revision + linked QA notes |
 | Content | `.github/workflows/ci-content-validator.yml` | push/manual | Success | Validator/audit logs |
 | Secret scan | `.github/workflows/secret-scan.yml` | push | Success | Scan summary |
 | Perf budget | `.github/workflows/ci-perf-budget.yml` | push/manual | Success | `Artifacts/Perf` summary |
@@ -24,6 +25,7 @@
 | Scene capture diff | `.github/workflows/ci-scene-capture.yml` | manual | Success (or approved waiver) | scene captures + diff summary |
 | Nightly regression | `.github/workflows/nightly-full-regression.yml` | schedule/manual | Success and consolidated summary | nightly summary artifact |
 | Release provenance | `.github/workflows/release-steampipe.yml` | tag/manual | Success | release artifact, SBOM, provenance/attestation, SteamPipe logs |
+| Release ops dry run + hotfix drill | `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md` | release prep | Completed drill report with follow-ups | Drill report revision + run URLs/evidence |
 
 ## RC Execution Procedure
 1. Freeze candidate commit SHA and create RC tracking note.
@@ -38,6 +40,7 @@
 |---|---|---|---|---|---|
 | Build |  |  |  |  |  |
 | Tests |  |  |  |  |  |
+| UX/accessibility signoff |  |  |  |  |  |
 | Content |  |  |  |  |  |
 | Secret scan |  |  |  |  |  |
 | Perf budget |  |  |  |  |  |
@@ -48,6 +51,7 @@
 | Scene capture diff |  |  |  |  |  |
 | Nightly regression |  |  |  |  |  |
 | Release provenance |  |  |  |  |  |
+| Release ops dry run + hotfix drill |  |  |  |  |  |
 
 ## Final Signoff Table
 
@@ -82,3 +86,6 @@
 - Security/provenance workflow: `docs/SECURITY_RELEASE_WORKFLOW.md`
 - Nightly runbook: `docs/NIGHTLY_FULL_REGRESSION.md`
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`
+- UX/accessibility signoff: `docs/UX_ACCESSIBILITY_SIGNOFF.md`
+- Steam release compliance: `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`
+- Release ops dry run/hotfix drill: `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md`

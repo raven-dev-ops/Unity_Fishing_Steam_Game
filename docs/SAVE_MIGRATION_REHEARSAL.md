@@ -46,3 +46,6 @@ Current corpus cases:
 - Rehearsal report with manifest case outcomes and UTC date.
 - Rollback drill evidence (backup file path/signature and expected log markers).
 - Updated migration policy/runbooks linked from issue closure.
+
+Current report:
+- `docs/SAVE_MIGRATION_REHEARSAL_REPORT_2026-02-21.md`

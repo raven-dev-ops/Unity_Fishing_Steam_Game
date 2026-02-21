@@ -1,22 +1,347 @@
 {
-  "waiver_policy": {
-    "required_fields": [
-      "id",
-      "owner",
-      "reason",
-      "expires_on",
-      "ticket"
-    ],
-    "max_waiver_days": 30
-  },
-  "replacements": [],
-  "waivers": [
-    {
-      "id": "*",
-      "owner": "raven-dev-ops",
-      "reason": "Placeholder replacement pass is in progress for 1.0 content lock.",
-      "expires_on": "2026-03-22",
-      "ticket": "#209"
-    }
-  ]
+    "waiver_policy":  {
+                          "required_fields":  [
+                                                  "id",
+                                                  "owner",
+                                                  "reason",
+                                                  "expires_on",
+                                                  "ticket"
+                                              ],
+                          "max_waiver_days":  30
+                      },
+    "replacements":  [
+                         {
+                             "id":  "fish_a",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_b",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_behavior_invalid",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_coastal_snapper",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_cod",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_cod_common_v01",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_heavy",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_icon",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_icon_coastal",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_light",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_modded",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_pack",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_surface",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_test",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "fish_valid",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_coastal_deep",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_icon_coastal",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_lv1",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_lv2",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_lv3",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_lvl2_barbed_v01",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "hook_valid",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "icon_test",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "photo_yyyymmdd_hhmmss_mmm",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_coastal_runner",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_icon_coastal",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_lv1",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_lv2",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_lv3",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_lvl1_basic_v01",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "ship_valid",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "scene_00_boot",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "scene_01_cinematic",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "scene_02_mainmenu",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "scene_03_harbor",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         },
+                         {
+                             "id":  "scene_04_fishing",
+                             "status":  "deferred",
+                             "replacementPath":  "",
+                             "owner":  "raven-dev-ops",
+                             "target_by":  "2026-03-31",
+                             "ticket":  "#209",
+                             "notes":  "Placeholder retained in 1.0 defer mode pending production art replacement."
+                         }
+                     ],
+    "waivers":  [
+                    {
+                        "id":  "*",
+                        "owner":  "raven-dev-ops",
+                        "reason":  "Placeholder replacement pass is in progress for 1.0 content lock.",
+                        "expires_on":  "2026-03-22",
+                        "ticket":  "#209"
+                    }
+                ]
 }

@@ -80,8 +80,46 @@ $nowUtc = (Get-Date).ToUniversalTime()
 $entries = New-Object System.Collections.Generic.List[object]
 $warnings = New-Object System.Collections.Generic.List[object]
 $failures = New-Object System.Collections.Generic.List[object]
+$waivers = @()
+if ($null -ne $matrix.waivers) {
+    $waivers = @($matrix.waivers)
+}
+
+$activeWaiverTiers = @{}
+foreach ($waiver in $waivers) {
+    if ($null -eq $waiver) {
+        continue
+    }
+
+    $waiverTier = Normalize-Tier -Value ([string]$waiver.tier)
+    if ([string]::IsNullOrWhiteSpace($waiverTier)) {
+        continue
+    }
+
+    $waiverExpiry = Parse-DateUtc -Value ([string]$waiver.expires_on)
+    if ($null -eq $waiverExpiry -or $waiverExpiry -lt $nowUtc.Date) {
+        continue
+    }
+
+    if (-not $activeWaiverTiers.ContainsKey($waiverTier)) {
+        $activeWaiverTiers[$waiverTier] = $true
+    }
+}
+
+function Test-ActiveTierWaiver {
+    param([string]$Tier)
+
+    $normalizedTier = Normalize-Tier -Value $Tier
+    if ($activeWaiverTiers.ContainsKey($normalizedTier)) {
+        return $true
+    }
+
+    return $activeWaiverTiers.ContainsKey("*")
+}
 
 foreach ($tier in $requiredTiers) {
+    $tierHasActiveWaiver = Test-ActiveTierWaiver -Tier $tier
+
     $tierProperty = $matrix.tiers.PSObject.Properties | Where-Object { $_.Name -ieq $tier } | Select-Object -First 1
     if ($null -eq $tierProperty -or $null -eq $tierProperty.Value) {
         $failures.Add([ordered]@{
@@ -120,7 +158,7 @@ foreach ($tier in $requiredTiers) {
     }
 
     if ($captures.Count -eq 0) {
-        if ($RequireAllTiersValidated) {
+        if ($RequireAllTiersValidated -and -not $tierHasActiveWaiver) {
             $failures.Add([ordered]@{
                 scope = "tier"
                 tier = $tier
@@ -128,10 +166,11 @@ foreach ($tier in $requiredTiers) {
             })
         }
         else {
+            $warningReason = if ($tierHasActiveWaiver) { "tier_validation_waived_no_capture" } else { "no_capture_entries" }
             $warnings.Add([ordered]@{
                 scope = "tier"
                 tier = $tier
-                reason = "no_capture_entries"
+                reason = $warningReason
             })
         }
         $entries.Add([ordered]@{
@@ -139,8 +178,8 @@ foreach ($tier in $requiredTiers) {
             capture_count = 0
             validated_capture_count = 0
             newest_capture_utc = ""
-            status = if ($RequireAllTiersValidated) { "failed" } else { "warning" }
-            reason = "no_capture_entries"
+            status = if ($tierHasActiveWaiver) { "waived" } elseif ($RequireAllTiersValidated) { "failed" } else { "warning" }
+            reason = if ($tierHasActiveWaiver) { "tier_validation_waived_no_capture" } else { "no_capture_entries" }
         })
         continue
     }
@@ -232,7 +271,7 @@ foreach ($tier in $requiredTiers) {
 
     if ($validatedCount -eq 0) {
         $message = "no_validated_capture"
-        if ($RequireAllTiersValidated) {
+        if ($RequireAllTiersValidated -and -not $tierHasActiveWaiver) {
             $failures.Add([ordered]@{
                 scope = "tier"
                 tier = $tier
@@ -240,6 +279,9 @@ foreach ($tier in $requiredTiers) {
             })
         }
         else {
+            if ($tierHasActiveWaiver) {
+                $message = "tier_validation_waived_no_validated_capture"
+            }
             $warnings.Add([ordered]@{
                 scope = "tier"
                 tier = $tier
@@ -253,16 +295,12 @@ foreach ($tier in $requiredTiers) {
         capture_count = $captures.Count
         validated_capture_count = $validatedCount
         newest_capture_utc = if ($null -eq $newestCaptureUtc) { "" } else { $newestCaptureUtc.ToString("o") }
-        status = if ($validatedCount -gt 0) { "ok" } else { "pending_validation" }
-        reason = if ($validatedCount -gt 0) { "ok" } else { "awaiting_validated_capture" }
+        status = if ($validatedCount -gt 0) { "ok" } elseif ($tierHasActiveWaiver) { "waived" } else { "pending_validation" }
+        reason = if ($validatedCount -gt 0) { "ok" } elseif ($tierHasActiveWaiver) { "tier_validation_waived_pending_capture" } else { "awaiting_validated_capture" }
     })
 }
 
 $waiverFailures = 0
-$waivers = @()
-if ($null -ne $matrix.waivers) {
-    $waivers = @($matrix.waivers)
-}
 foreach ($waiver in $waivers) {
     if ($null -eq $waiver) {
         $waiverFailures++

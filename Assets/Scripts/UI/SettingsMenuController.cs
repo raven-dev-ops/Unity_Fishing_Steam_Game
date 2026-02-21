@@ -206,7 +206,7 @@ namespace RavenDevOps.Fishing.UI
                 RefreshResolutionText();
                 RefreshUiScaleText(1f);
                 RefreshSubtitleScaleText(1f);
-                RefreshSubtitleBackgroundOpacityText(0.65f);
+                RefreshSubtitleBackgroundOpacityText(0.72f);
                 var safeModePreferenceEnabled = PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
                 RefreshModSafeModeStatus(safeModePreferenceEnabled);
                 RefreshBindingTexts();

@@ -29,7 +29,9 @@
 1. Execute accessibility steps in `docs/QA_SMOKE_TEST.md`.
 2. Validate persistence by relaunching after each option change.
 3. Record any known issues/exceptions in test run notes.
+4. Complete 1.0 signoff artifact in `docs/UX_ACCESSIBILITY_SIGNOFF.md`.
 
 ## Known Exceptions
 - No external third-party accessibility certification has been performed.
 - Platform-level text-to-speech/speech-to-text integration is not implemented in current baseline.
+- Unity execution-backed evidence is deferred while `UNITY_EXECUTION_ENFORCE=false`.

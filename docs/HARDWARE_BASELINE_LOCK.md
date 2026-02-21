@@ -39,6 +39,7 @@ Each tier must define:
      - `scripts/ci/hardware-baseline-lock-check.ps1`
    - Strict tier-complete mode:
      - `scripts/ci/hardware-baseline-lock-check.ps1 -RequireAllTiersValidated`
+      - Active tier waivers can convert strict missing-capture failures into explicit `waived` status until expiry.
 
 ## Waiver Policy
 - Temporary gaps (for example, missing physical tier access) must be added to matrix `waivers`.

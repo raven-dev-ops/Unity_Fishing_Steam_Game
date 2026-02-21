@@ -6,6 +6,20 @@ namespace RavenDevOps.Fishing.Tests.EditMode
     public sealed class FishingAssistServiceTests
     {
         [Test]
+        public void DefaultSettings_MatchLaunchTunedAssistValues()
+        {
+            var settings = new FishingAssistSettings();
+
+            Assert.That(settings.EnableNoBitePity, Is.True);
+            Assert.That(settings.NoBitePityThresholdCasts, Is.EqualTo(2));
+            Assert.That(settings.PityBiteDelayScale, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(settings.EnableAdaptiveHookWindow, Is.True);
+            Assert.That(settings.AdaptiveFailureThreshold, Is.EqualTo(2));
+            Assert.That(settings.AdaptiveHookWindowBonusSeconds, Is.EqualTo(0.4f).Within(0.001f));
+            Assert.That(settings.AssistCooldownCatches, Is.EqualTo(2));
+        }
+
+        [Test]
         public void TryActivateNoBitePity_ActivatesAtConfiguredStreak()
         {
             var service = new FishingAssistService();

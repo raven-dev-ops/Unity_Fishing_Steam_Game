@@ -5,11 +5,11 @@ namespace RavenDevOps.Fishing.Fishing
     public sealed class FishingAssistSettings
     {
         public bool EnableNoBitePity = true;
-        public int NoBitePityThresholdCasts = 3;
-        public float PityBiteDelayScale = 0.55f;
+        public int NoBitePityThresholdCasts = 2;
+        public float PityBiteDelayScale = 0.5f;
         public bool EnableAdaptiveHookWindow = true;
-        public int AdaptiveFailureThreshold = 3;
-        public float AdaptiveHookWindowBonusSeconds = 0.35f;
+        public int AdaptiveFailureThreshold = 2;
+        public float AdaptiveHookWindowBonusSeconds = 0.4f;
         public int AssistCooldownCatches = 2;
     }
 

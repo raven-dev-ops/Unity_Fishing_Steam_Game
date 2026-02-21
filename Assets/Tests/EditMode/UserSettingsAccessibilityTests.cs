@@ -62,5 +62,24 @@ namespace RavenDevOps.Fishing.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void AccessibilitySettings_DefaultsMatchLaunchReadabilityBaseline()
+        {
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
+
+            var go = new GameObject("UserSettings_Accessibility_Defaults");
+            var settings = go.AddComponent<UserSettingsService>();
+
+            Assert.That(settings.SubtitlesEnabled, Is.True);
+            Assert.That(settings.SubtitleScale, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(settings.SubtitleBackgroundOpacity, Is.EqualTo(0.72f).Within(0.001f));
+            Assert.That(settings.ReadabilityBoost, Is.False);
+            Assert.That(settings.ReducedMotion, Is.False);
+            Assert.That(settings.ReelInputToggle, Is.False);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
