@@ -62,25 +62,59 @@ function Get-ExternalReferences {
         return @()
     }
 
-    $args = @(
-        "--files-with-matches",
-        "--fixed-strings",
-        "--glob", "!$PlaceholderRoot/**",
-        "--glob", "!**/*.meta",
-        $GuidValue,
-        "Assets"
-    )
+    $rg = Get-Command rg -ErrorAction SilentlyContinue
+    if ($null -ne $rg) {
+        $args = @(
+            "--files-with-matches",
+            "--fixed-strings",
+            "--glob", "!$PlaceholderRoot/**",
+            "--glob", "!**/*.meta",
+            $GuidValue,
+            "Assets"
+        )
 
-    $results = & rg @args 2>$null
-    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) {
-        throw "rg failed while scanning references for guid '$GuidValue'."
+        $results = & rg @args 2>$null
+        if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) {
+            throw "rg failed while scanning references for guid '$GuidValue'."
+        }
+
+        if ($null -eq $results) {
+            return @()
+        }
+
+        return @($results | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     }
 
-    if ($null -eq $results) {
+    $normalizedPlaceholderRoot = $PlaceholderRoot.Replace('\', '/').TrimEnd('/')
+    $candidatePaths = Get-ChildItem -Path "Assets" -Recurse -File | Where-Object {
+        $normalizedPath = $_.FullName.Replace('\', '/')
+        $assetRelativePath = $normalizedPath
+        $assetsIndex = $normalizedPath.LastIndexOf('/Assets/')
+        if ($assetsIndex -ge 0) {
+            $assetRelativePath = $normalizedPath.Substring($assetsIndex + 1)
+        }
+
+        if ($assetRelativePath.StartsWith($normalizedPlaceholderRoot + '/', [StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+
+        if ($assetRelativePath.EndsWith(".meta", [StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+
+        return $true
+    } | Select-Object -ExpandProperty FullName
+
+    if ($null -eq $candidatePaths -or @($candidatePaths).Count -eq 0) {
         return @()
     }
 
-    return @($results | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $matches = Select-String -Path $candidatePaths -Pattern $GuidValue -SimpleMatch -List -ErrorAction SilentlyContinue
+    if ($null -eq $matches) {
+        return @()
+    }
+
+    return @($matches | Select-Object -ExpandProperty Path -Unique)
 }
 
 if (-not (Test-Path -LiteralPath $PlaceholderManifestPath -PathType Leaf)) {
