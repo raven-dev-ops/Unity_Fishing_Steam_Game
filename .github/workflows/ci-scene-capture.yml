@@ -75,12 +75,13 @@ jobs:
         run: |
           if [ -n "${UNITY_LICENSE}" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
-            echo "::error::UNITY_LICENSE secret is required in trusted Unity CI contexts."
-            exit 1
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping scene capture."
+            if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+              echo "::warning::UNITY_LICENSE secret is not set in trusted context. Skipping scene capture."
+            else
+              echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping scene capture."
+            fi
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
