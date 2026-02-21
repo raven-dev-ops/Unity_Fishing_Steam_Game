@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_VERSION_FILE="${PROJECT_VERSION_FILE:-ProjectSettings/ProjectVersion.txt}"
-EXPECTED_UNITY_VERSION="${EXPECTED_UNITY_VERSION:-6000.2.12f1}"
+EXPECTED_UNITY_VERSION="${EXPECTED_UNITY_VERSION:-6000.3.9f1}"
 
 if [[ ! -f "${PROJECT_VERSION_FILE}" ]]; then
   echo "::error::Unity version guard failed: missing ${PROJECT_VERSION_FILE}."
