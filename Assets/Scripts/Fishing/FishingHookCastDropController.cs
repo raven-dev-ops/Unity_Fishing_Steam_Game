@@ -15,6 +15,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _dockSnapLerp = 16f;
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
+        [SerializeField] private bool _matchAutoReelSpeedToDropSpeed = true;
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
         [SerializeField] private float _castHoldReleaseGraceSeconds = 0.2f;
@@ -253,9 +254,10 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var targetY = _hookController.GetDockedY(_dockOffsetY);
+            var reelSpeed = ResolveAutoReelSpeed();
 
             var position = hookTransform.position;
-            position.y = Mathf.MoveTowards(position.y, targetY, Mathf.Max(0.1f, _autoReelSpeed) * Time.deltaTime);
+            position.y = Mathf.MoveTowards(position.y, targetY, reelSpeed * Time.deltaTime);
             hookTransform.position = position;
 
             if (Mathf.Abs(position.y - targetY) <= 0.01f)
@@ -413,6 +415,16 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Abs(_moveHookAction.ReadValue<float>()) > Mathf.Clamp01(_manualOverrideThreshold);
+        }
+
+        private float ResolveAutoReelSpeed()
+        {
+            if (_matchAutoReelSpeedToDropSpeed)
+            {
+                return Mathf.Max(0.1f, _autoDropSpeed);
+            }
+
+            return Mathf.Max(0.1f, _autoReelSpeed);
         }
 
         private void SubscribeToStateMachine()

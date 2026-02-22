@@ -11,9 +11,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private HookMovementController _hookController;
         [SerializeField] private Vector2 _shipXBounds = new Vector2(-9f, 9f);
         [SerializeField] private Vector2 _hookYBounds = new Vector2(-8f, -1f);
+        [SerializeField] private bool _clampHorizontalMovement = false;
         [SerializeField] private Material _fallbackSkybox;
         [SerializeField] private bool _ensureDirectionalLight = true;
         [SerializeField] private bool _autoCreateBoundaryColliders = true;
+        [SerializeField] private bool _createHorizontalBoundaryColliders = false;
         [SerializeField] private string _boundaryRootName = "__FishingBoundaries";
         [SerializeField] private Vector3 _playAreaCenter = new Vector3(0f, -4.5f, 0f);
         [SerializeField] private Vector3 _playAreaSize = new Vector3(20f, 9f, 1f);
@@ -91,7 +93,11 @@ namespace RavenDevOps.Fishing.Fishing
             if (_ship != null)
             {
                 var shipPos = _ship.position;
-                shipPos.x = Mathf.Clamp(shipPos.x, minX, maxX);
+                if (_clampHorizontalMovement)
+                {
+                    shipPos.x = Mathf.Clamp(shipPos.x, minX, maxX);
+                }
+
                 if (!IsFinite(shipPos))
                 {
                     shipPos = new Vector3(Mathf.Clamp(transform.position.x, minX, maxX), transform.position.y, transform.position.z);
@@ -103,7 +109,11 @@ namespace RavenDevOps.Fishing.Fishing
             if (_hook != null)
             {
                 var hookPos = _hook.position;
-                hookPos.x = Mathf.Clamp(hookPos.x, minX, maxX);
+                if (_clampHorizontalMovement)
+                {
+                    hookPos.x = Mathf.Clamp(hookPos.x, minX, maxX);
+                }
+
                 hookPos.y = Mathf.Clamp(hookPos.y, minHookY, maxHookY);
                 if (!IsFinite(hookPos))
                 {
@@ -174,8 +184,17 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var half = _playAreaSize * 0.5f;
-            CreateOrUpdateBoundary(root.transform, "Left", new Vector3(_playAreaCenter.x - half.x, _playAreaCenter.y, _playAreaCenter.z), new Vector3(_boundaryThickness, _playAreaSize.y, 1f));
-            CreateOrUpdateBoundary(root.transform, "Right", new Vector3(_playAreaCenter.x + half.x, _playAreaCenter.y, _playAreaCenter.z), new Vector3(_boundaryThickness, _playAreaSize.y, 1f));
+            if (_createHorizontalBoundaryColliders)
+            {
+                CreateOrUpdateBoundary(root.transform, "Left", new Vector3(_playAreaCenter.x - half.x, _playAreaCenter.y, _playAreaCenter.z), new Vector3(_boundaryThickness, _playAreaSize.y, 1f));
+                CreateOrUpdateBoundary(root.transform, "Right", new Vector3(_playAreaCenter.x + half.x, _playAreaCenter.y, _playAreaCenter.z), new Vector3(_boundaryThickness, _playAreaSize.y, 1f));
+            }
+            else
+            {
+                RemoveBoundary(root.transform, "Left");
+                RemoveBoundary(root.transform, "Right");
+            }
+
             CreateOrUpdateBoundary(root.transform, "Top", new Vector3(_playAreaCenter.x, _playAreaCenter.y + half.y, _playAreaCenter.z), new Vector3(_playAreaSize.x, _boundaryThickness, 1f));
             CreateOrUpdateBoundary(root.transform, "Bottom", new Vector3(_playAreaCenter.x, _playAreaCenter.y - half.y, _playAreaCenter.z), new Vector3(_playAreaSize.x, _boundaryThickness, 1f));
 
@@ -202,6 +221,29 @@ namespace RavenDevOps.Fishing.Fishing
             collider.size = new Vector2(size.x, size.y);
             collider.offset = Vector2.zero;
             collider.isTrigger = false;
+        }
+
+        private static void RemoveBoundary(Transform root, string name)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            var child = root.Find(name);
+            if (child == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Object.Destroy(child.gameObject);
+            }
+            else
+            {
+                Object.DestroyImmediate(child.gameObject);
+            }
         }
 
         private static bool HasDirectionalLight()

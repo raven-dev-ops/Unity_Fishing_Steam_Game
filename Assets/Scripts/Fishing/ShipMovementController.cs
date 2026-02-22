@@ -11,6 +11,9 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private float _fallbackSpeed = 6f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-9f, 9f);
+        [SerializeField] private bool _clampHorizontalPosition = false;
+        [SerializeField] private bool _useTravelDistanceForTier = true;
+        [SerializeField] private float _distanceUnitsPerTier = 14f;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -21,8 +24,10 @@ namespace RavenDevOps.Fishing.Fishing
 
         public int DistanceTierCap { get; private set; } = 1;
         public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
+        public float DistanceTraveledUnits => _distanceTraveledUnits;
         private InputAction _moveShipAction;
         private float _smoothedAxis;
+        private float _distanceTraveledUnits;
 
         private void Awake()
         {
@@ -67,6 +72,13 @@ namespace RavenDevOps.Fishing.Fishing
                 return 1;
             }
 
+            if (_useTravelDistanceForTier)
+            {
+                var unitsPerTier = Mathf.Max(0.5f, _distanceUnitsPerTier);
+                var tierByDistance = 1 + Mathf.FloorToInt(Mathf.Max(0f, _distanceTraveledUnits) / unitsPerTier);
+                return Mathf.Clamp(tierByDistance, 1, tierCap);
+            }
+
             var minX = Mathf.Min(_xBounds.x, _xBounds.y);
             var maxX = Mathf.Max(_xBounds.x, _xBounds.y);
             if (Mathf.Approximately(minX, maxX))
@@ -99,9 +111,15 @@ namespace RavenDevOps.Fishing.Fishing
             _smoothedAxis = Mathf.MoveTowards(_smoothedAxis, rawAxis, Mathf.Max(0.01f, _axisSmoothing) * Time.deltaTime);
 
             var p = transform.position;
+            var previousX = p.x;
             p.x += _smoothedAxis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
-            p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
+            if (_clampHorizontalPosition)
+            {
+                p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
+            }
+
             transform.position = p;
+            TrackTravelDistance(previousX, p.x);
         }
 
         private float ResolveMoveSpeed()
@@ -170,6 +188,32 @@ namespace RavenDevOps.Fishing.Fishing
 #endif
 
             return Mathf.Clamp(axis, -1f, 1f);
+        }
+
+        private void TrackTravelDistance(float previousX, float currentX)
+        {
+            if (!IsFinite(previousX) || !IsFinite(currentX))
+            {
+                return;
+            }
+
+            var delta = Mathf.Abs(currentX - previousX);
+            if (delta <= 0f)
+            {
+                return;
+            }
+
+            if (delta > 25f)
+            {
+                return;
+            }
+
+            _distanceTraveledUnits += delta;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 }

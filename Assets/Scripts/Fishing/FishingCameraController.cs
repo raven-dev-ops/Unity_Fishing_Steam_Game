@@ -13,6 +13,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _xPadding = 2.4f;
         [SerializeField] private float _yPadding = 1.25f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-10f, 10f);
+        [SerializeField] private bool _limitHorizontalRange = false;
         [SerializeField] private Vector2 _yBounds = new Vector2(-7f, 6f);
         [SerializeField] private float _minOrthoSize = 5.6f;
         [SerializeField] private float _maxOrthoSize = 11f;
@@ -62,10 +63,14 @@ namespace RavenDevOps.Fishing.Fishing
                     1f - Mathf.Exp(-sizeLerp * Time.unscaledDeltaTime));
             }
 
-            desired.x = Mathf.Clamp(
-                _ship.position.x + _offset.x,
-                Mathf.Min(_xBounds.x, _xBounds.y),
-                Mathf.Max(_xBounds.x, _xBounds.y));
+            desired.x = _ship.position.x + _offset.x;
+            if (_limitHorizontalRange)
+            {
+                desired.x = Mathf.Clamp(
+                    desired.x,
+                    Mathf.Min(_xBounds.x, _xBounds.y),
+                    Mathf.Max(_xBounds.x, _xBounds.y));
+            }
             desired.y = ResolveTargetCameraY(targetSize, out var hookAlignedY);
             var minYBound = Mathf.Min(_yBounds.x, _yBounds.y);
             var maxYBound = Mathf.Max(_yBounds.x, _yBounds.y);

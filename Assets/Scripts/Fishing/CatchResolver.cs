@@ -65,6 +65,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _environmentConfigured;
         private bool _conditionConfigured;
         private bool _biteSelectionResolvedForCurrentDrop;
+        private bool _biteApproachStarted;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
@@ -202,6 +203,7 @@ namespace RavenDevOps.Fishing.Fishing
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
             _toggleReelActive = false;
             _biteSelectionResolvedForCurrentDrop = false;
+            _biteApproachStarted = false;
             _ambientFishController?.ResolveBoundFish(caught: false);
 
             _hudOverlay?.SetFishingFailure(string.Empty);
@@ -226,6 +228,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookedFish = _targetFish;
             _hookedElapsedSeconds = 0f;
+            _biteApproachStarted = false;
             _ambientFishController?.SetBoundFishHooked(_hook != null ? _hook.transform : null);
             _activeHookReactionWindowSeconds = _assistService.ResolveHookWindow(_hookReactionWindowSeconds, out var adaptiveWindowActivated);
             _audioManager?.PlaySfx(_hookSfx);
@@ -275,6 +278,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 _biteSelectionResolvedForCurrentDrop = false;
+                _biteApproachStarted = false;
                 _inWaterElapsedSeconds = 0f;
                 _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
                 return;
@@ -295,10 +299,27 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _inWaterElapsedSeconds += Time.deltaTime;
-            if (_inWaterElapsedSeconds >= _biteTimerSeconds)
+            if (_inWaterElapsedSeconds < _biteTimerSeconds)
             {
-                _stateMachine?.SetHooked();
+                return;
             }
+
+            if (!_biteApproachStarted)
+            {
+                _biteApproachStarted = true;
+                if (TryBeginBiteApproach())
+                {
+                    _hudOverlay?.SetFishingStatus("A fish is circling the hook...");
+                    return;
+                }
+            }
+
+            if (!IsBiteApproachComplete())
+            {
+                return;
+            }
+
+            _stateMachine?.SetHooked();
         }
 
         private void TickHookedWindow()
@@ -388,6 +409,7 @@ namespace RavenDevOps.Fishing.Fishing
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
             _toggleReelActive = false;
+            _biteApproachStarted = false;
             _stateMachine?.ResetToCast();
         }
 
@@ -632,6 +654,7 @@ namespace RavenDevOps.Fishing.Fishing
             _biteTimerSeconds = UnityEngine.Random.Range(minBite, maxBite);
             _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
             _inWaterElapsedSeconds = 0f;
+            _biteApproachStarted = false;
             if (pityActivated)
             {
                 _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: activity increased. Waiting for a bite...");
@@ -650,6 +673,26 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _ambientFishController.TryBindFish(_targetFish.id, out _);
+        }
+
+        private bool TryBeginBiteApproach()
+        {
+            if (_ambientFishController == null || _hook == null)
+            {
+                return false;
+            }
+
+            return _ambientFishController.BeginBoundFishApproach(_hook.transform);
+        }
+
+        private bool IsBiteApproachComplete()
+        {
+            if (_ambientFishController == null)
+            {
+                return true;
+            }
+
+            return _ambientFishController.IsBoundFishApproachComplete();
         }
 
         private bool ResolveIsReeling()

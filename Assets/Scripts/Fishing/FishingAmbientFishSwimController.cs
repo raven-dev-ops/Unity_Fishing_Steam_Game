@@ -18,15 +18,20 @@ namespace RavenDevOps.Fishing.Fishing
             public float baseY;
             public float phase;
             public float spawnDelay;
+            public float approachTimeoutAt;
+            public float hookedOffsetSign;
             public bool active;
             public bool reserved;
             public bool hooked;
+            public bool approaching;
         }
 
         [SerializeField] private string _fishNameToken = "FishingFish";
         [SerializeField] private Vector2 _xBounds = new Vector2(-9.8f, 9.8f);
         [SerializeField] private Vector2 _yBounds = new Vector2(-3.2f, -1.55f);
         [SerializeField] private bool _dynamicWaterBand = true;
+        [SerializeField] private bool _dynamicHorizontalBand = true;
+        [SerializeField] private float _horizontalHalfSpan = 9.8f;
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
@@ -41,6 +46,14 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _searchInactive = true;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionSpeedScale = 0.55f;
+        [SerializeField] private float _biteApproachSpeed = 1.45f;
+        [SerializeField] private float _biteApproachStopDistance = 0.14f;
+        [SerializeField] private float _biteApproachMaxDurationSeconds = 2.6f;
+        [SerializeField] private Vector2 _biteApproachHookOffset = new Vector2(0.28f, 0.08f);
+        [SerializeField] private float _hookedFollowLerp = 6f;
+        [SerializeField] private float _hookedStruggleAmplitude = 0.08f;
+        [SerializeField] private float _hookedStruggleFrequency = 6.8f;
+        [SerializeField] private float _escapedFishSpeedMultiplier = 1.65f;
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
 
@@ -96,6 +109,10 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     activeCount++;
                     TickTrack(track, now, speedScale);
+                }
+                else if (track.approaching)
+                {
+                    TickApproachTrack(track);
                 }
                 else if (track.hooked)
                 {
@@ -174,6 +191,9 @@ namespace RavenDevOps.Fishing.Fishing
                     active = false,
                     reserved = false,
                     hooked = false,
+                    approaching = false,
+                    approachTimeoutAt = 0f,
+                    hookedOffsetSign = 1f,
                     spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y),
                     phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f)
                 };
@@ -217,13 +237,44 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.reserved = true;
             track.hooked = false;
+            track.approaching = false;
             track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
             track.renderer.enabled = true;
+            track.hookedOffsetSign = track.direction >= 0f ? 1f : -1f;
 
             _boundTrack = track;
             _boundHookTransform = null;
             fishTransform = track.transform;
             return true;
+        }
+
+        public bool BeginBoundFishApproach(Transform hookTransform)
+        {
+            if (_boundTrack == null || _boundTrack.transform == null || _boundTrack.renderer == null || hookTransform == null)
+            {
+                return false;
+            }
+
+            _boundHookTransform = hookTransform;
+            _boundTrack.reserved = true;
+            _boundTrack.hooked = false;
+            _boundTrack.active = false;
+            _boundTrack.approaching = true;
+            _boundTrack.approachTimeoutAt = Time.time + Mathf.Max(0.2f, _biteApproachMaxDurationSeconds);
+            _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
+            _boundTrack.renderer.enabled = true;
+            _boundTrack.renderer.color = Color.Lerp(_boundTrack.baseColor, Color.white, 0.34f);
+            return true;
+        }
+
+        public bool IsBoundFishApproachComplete()
+        {
+            if (_boundTrack == null || _boundTrack.transform == null || _boundTrack.renderer == null)
+            {
+                return true;
+            }
+
+            return !_boundTrack.approaching;
         }
 
         public void SetBoundFishHooked(Transform hookTransform)
@@ -236,8 +287,13 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.reserved = true;
             _boundTrack.hooked = true;
             _boundTrack.active = false;
+            _boundTrack.approaching = false;
             _boundTrack.renderer.enabled = true;
             _boundHookTransform = hookTransform;
+            if (hookTransform != null)
+            {
+                _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
+            }
         }
 
         public void ResolveBoundFish(bool caught)
@@ -248,11 +304,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var track = _boundTrack;
+            var hookTransform = _boundHookTransform;
             _boundTrack = null;
             _boundHookTransform = null;
 
             track.hooked = false;
             track.reserved = false;
+            track.approaching = false;
             if (track.renderer != null)
             {
                 track.renderer.color = track.baseColor;
@@ -271,10 +329,18 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.active = true;
             track.renderer.enabled = true;
-            track.direction = UnityEngine.Random.value < 0.5f ? 1f : -1f;
+            if (hookTransform != null)
+            {
+                track.direction = ResolveHookSideSign(track.transform.position.x, hookTransform.position.x);
+            }
+            else
+            {
+                track.direction = UnityEngine.Random.value < 0.5f ? 1f : -1f;
+            }
+
             track.speed = UnityEngine.Random.Range(
                 Mathf.Min(_speedRange.x, _speedRange.y),
-                Mathf.Max(_speedRange.x, _speedRange.y)) * 1.15f;
+                Mathf.Max(_speedRange.x, _speedRange.y)) * Mathf.Max(1f, _escapedFishSpeedMultiplier);
             track.baseY = Mathf.Clamp(
                 track.transform.position.y,
                 Mathf.Min(_yBounds.x, _yBounds.y),
@@ -325,11 +391,54 @@ namespace RavenDevOps.Fishing.Fishing
                     SpawnTrack(track);
                     track.reserved = true;
                     track.hooked = false;
+                    track.approaching = false;
                     track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
                     return;
                 }
 
                 DespawnTrack(track);
+            }
+        }
+
+        private void TickApproachTrack(SwimTrack track)
+        {
+            if (track == null || track.transform == null || track.renderer == null)
+            {
+                return;
+            }
+
+            if (_boundHookTransform == null)
+            {
+                track.approaching = false;
+                return;
+            }
+
+            var side = Mathf.Abs(track.hookedOffsetSign) > 0.01f
+                ? Mathf.Sign(track.hookedOffsetSign)
+                : ResolveHookSideSign(track.transform.position.x, _boundHookTransform.position.x);
+            var targetPosition = _boundHookTransform.position + new Vector3(Mathf.Abs(_biteApproachHookOffset.x) * side, _biteApproachHookOffset.y, 0f);
+            var currentPosition = track.transform.position;
+            var nextPosition = Vector3.MoveTowards(
+                currentPosition,
+                targetPosition,
+                Mathf.Max(0.1f, _biteApproachSpeed) * Time.deltaTime);
+
+            var sway = Mathf.Sin((Time.time * (_hookedStruggleFrequency * 0.5f)) + track.phase) * (_hookedStruggleAmplitude * 0.35f);
+            nextPosition.y = Mathf.Lerp(nextPosition.y, targetPosition.y + sway, 1f - Mathf.Exp(-5f * Time.deltaTime));
+            track.transform.position = new Vector3(nextPosition.x, nextPosition.y, currentPosition.z);
+
+            var xDelta = targetPosition.x - currentPosition.x;
+            if (Mathf.Abs(xDelta) > 0.01f)
+            {
+                track.renderer.flipX = xDelta < 0f;
+            }
+
+            var stopDistance = Mathf.Max(0.02f, _biteApproachStopDistance);
+            if ((track.transform.position - targetPosition).sqrMagnitude <= (stopDistance * stopDistance)
+                || Time.time >= track.approachTimeoutAt)
+            {
+                track.approaching = false;
+                track.active = false;
             }
         }
 
@@ -346,9 +455,15 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var side = track.direction >= 0f ? 1f : -1f;
-            var targetPosition = _boundHookTransform.position + new Vector3(0.28f * side, 0.08f, 0f);
-            track.transform.position = Vector3.Lerp(track.transform.position, targetPosition, Time.deltaTime * 14f);
+            var side = Mathf.Abs(track.hookedOffsetSign) > 0.01f ? Mathf.Sign(track.hookedOffsetSign) : (track.direction >= 0f ? 1f : -1f);
+            var baseTarget = _boundHookTransform.position + new Vector3(Mathf.Abs(_biteApproachHookOffset.x) * side, _biteApproachHookOffset.y, 0f);
+            var struggle = new Vector3(
+                Mathf.Sin((Time.time * _hookedStruggleFrequency) + track.phase) * _hookedStruggleAmplitude,
+                Mathf.Cos((Time.time * (_hookedStruggleFrequency * 0.7f)) + track.phase) * (_hookedStruggleAmplitude * 0.45f),
+                0f);
+            var targetPosition = baseTarget + struggle;
+            var blend = 1f - Mathf.Exp(-Mathf.Max(0.2f, _hookedFollowLerp) * Time.deltaTime);
+            track.transform.position = Vector3.Lerp(track.transform.position, targetPosition, blend);
             track.renderer.flipX = side < 0f;
         }
 
@@ -369,6 +484,11 @@ namespace RavenDevOps.Fishing.Fishing
             track.baseY = UnityEngine.Random.Range(bottom, top);
             track.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+            track.approachTimeoutAt = 0f;
+            track.approaching = false;
+            track.hooked = false;
+            track.reserved = false;
+            track.hookedOffsetSign = track.direction >= 0f ? 1f : -1f;
 
             var scaleMultiplier = UnityEngine.Random.Range(
                 Mathf.Min(_scaleMultiplierRange.x, _scaleMultiplierRange.y),
@@ -395,6 +515,8 @@ namespace RavenDevOps.Fishing.Fishing
         private void DespawnTrack(SwimTrack track)
         {
             track.active = false;
+            track.approaching = false;
+            track.hooked = false;
             if (track.renderer != null)
             {
                 track.renderer.enabled = false;
@@ -414,6 +536,12 @@ namespace RavenDevOps.Fishing.Fishing
             if (_ship == null)
             {
                 return;
+            }
+
+            if (_dynamicHorizontalBand)
+            {
+                var horizontalHalfSpan = Mathf.Max(2f, Mathf.Abs(_horizontalHalfSpan));
+                _xBounds = new Vector2(_ship.position.x - horizontalHalfSpan, _ship.position.x + horizontalHalfSpan);
             }
 
             var top = _ship.position.y - Mathf.Abs(_bandTopOffsetBelowShip);
@@ -446,6 +574,17 @@ namespace RavenDevOps.Fishing.Fishing
                 _hook ??= hookController.transform;
                 _ship ??= hookController.ShipTransform;
             }
+        }
+
+        private static float ResolveHookSideSign(float fishX, float hookX)
+        {
+            var delta = fishX - hookX;
+            if (Mathf.Abs(delta) < 0.01f)
+            {
+                return UnityEngine.Random.value < 0.5f ? -1f : 1f;
+            }
+
+            return Mathf.Sign(delta);
         }
     }
 }

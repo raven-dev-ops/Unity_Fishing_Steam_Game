@@ -67,7 +67,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingFailReason.LineSnap:
                     return "Line snapped: tension stayed too high.";
                 case FishingFailReason.FishEscaped:
-                    return "Fish escaped: stamina was not depleted before escape.";
+                    return "Fish escaped: it unhooked and swam away before you reeled it in.";
                 default:
                     return "Catch failed.";
             }
