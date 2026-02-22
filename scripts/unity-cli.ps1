@@ -486,6 +486,147 @@ function Invoke-GeneratedFileCleanup {
     }
 }
 
+function Test-UnityEditorProcessRunning {
+    try {
+        $processes = Get-Process -Name 'Unity' -ErrorAction SilentlyContinue
+        return $processes -ne $null -and $processes.Count -gt 0
+    }
+    catch {
+        return $false
+    }
+}
+
+function Remove-StaleProjectLockFiles {
+    param([string]$Root)
+
+    if (Test-UnityEditorProcessRunning) {
+        Write-Warning 'Unity CLI: Unity editor process detected; skipping stale lock cleanup.'
+        return
+    }
+
+    $lockFiles = @(
+        (Join-Path $Root 'Library/ArtifactDB-lock'),
+        (Join-Path $Root 'Library/SourceAssetDB-lock'),
+        (Join-Path $Root 'Temp/UnityLockfile')
+    )
+
+    foreach ($lockFile in $lockFiles) {
+        if (-not (Test-Path -LiteralPath $lockFile -PathType Leaf)) {
+            continue
+        }
+
+        try {
+            Remove-Item -LiteralPath $lockFile -Force
+            Write-Host "Unity CLI: removed stale lock '$lockFile'."
+        }
+        catch {
+            Write-Warning "Unity CLI: failed to remove lock '$lockFile' ($($_.Exception.Message))."
+        }
+    }
+}
+
+function Resolve-TestResultsPathFromArguments {
+    param(
+        [string]$Root,
+        [System.Collections.Generic.List[string]]$Arguments
+    )
+
+    for ($index = 0; $index -lt $Arguments.Count; $index++) {
+        $value = $Arguments[$index]
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            continue
+        }
+
+        if ([string]::Equals($value, '-testResults', [System.StringComparison]::OrdinalIgnoreCase) -or
+            [string]::Equals($value, '/testResults', [System.StringComparison]::OrdinalIgnoreCase)) {
+            if (($index + 1) -lt $Arguments.Count) {
+                $rawPath = $Arguments[$index + 1]
+                if ([System.IO.Path]::IsPathRooted($rawPath)) {
+                    return $rawPath
+                }
+
+                return (Join-Path $Root $rawPath)
+            }
+        }
+
+        if ($value.StartsWith('-testResults=', [System.StringComparison]::OrdinalIgnoreCase) -or
+            $value.StartsWith('/testResults=', [System.StringComparison]::OrdinalIgnoreCase)) {
+            $parts = $value.Split('=', 2)
+            if ($parts.Length -eq 2 -and -not [string]::IsNullOrWhiteSpace($parts[1])) {
+                if ([System.IO.Path]::IsPathRooted($parts[1])) {
+                    return $parts[1]
+                }
+
+                return (Join-Path $Root $parts[1])
+            }
+        }
+    }
+
+    return $null
+}
+
+function Get-FileStateSnapshot {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return [pscustomobject]@{
+            Exists         = $false
+            LastWriteUtc   = [DateTime]::MinValue
+            LengthInBytes  = 0
+        }
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    return [pscustomobject]@{
+        Exists         = $true
+        LastWriteUtc   = $item.LastWriteTimeUtc
+        LengthInBytes  = $item.Length
+    }
+}
+
+function Assert-TestResultsWereUpdated {
+    param(
+        [string]$TestResultsPath,
+        [object]$BeforeSnapshot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TestResultsPath)) {
+        throw 'Unity CLI: unable to resolve test results path for test task.'
+    }
+
+    if (-not (Test-Path -LiteralPath $TestResultsPath -PathType Leaf)) {
+        throw "Unity CLI: test results file not found at '$TestResultsPath'."
+    }
+
+    $afterSnapshot = Get-FileStateSnapshot -Path $TestResultsPath
+    $wasUpdated = -not $BeforeSnapshot.Exists -or
+        $afterSnapshot.LastWriteUtc -gt $BeforeSnapshot.LastWriteUtc -or
+        $afterSnapshot.LengthInBytes -ne $BeforeSnapshot.LengthInBytes
+    if (-not $wasUpdated) {
+        throw "Unity CLI: test results were not updated at '$TestResultsPath'. Unity likely failed before tests executed (for example stale project lock files)."
+    }
+}
+
+function Get-TestRunSummary {
+    param([string]$TestResultsPath)
+
+    try {
+        [xml]$xml = Get-Content -LiteralPath $TestResultsPath -Raw
+        $run = $xml.'test-run'
+        return [pscustomobject]@{
+            Result = [string]$run.result
+            Total = [int]$run.total
+            Passed = [int]$run.passed
+            Failed = [int]$run.failed
+            Skipped = [int]$run.skipped
+            Inconclusive = [int]$run.inconclusive
+        }
+    }
+    catch {
+        throw "Unity CLI: failed to parse test results from '$TestResultsPath' ($($_.Exception.Message))."
+    }
+}
+
 function Test-ArgumentPresent {
     param(
         [System.Collections.Generic.List[string]]$Arguments,
@@ -518,6 +659,21 @@ function Test-ArgumentPresent {
     }
 
     return $false
+}
+
+function Convert-ToProcessArgumentString {
+    param([string]$Value)
+
+    if ($null -eq $Value) {
+        return '""'
+    }
+
+    $escaped = $Value.Replace('"', '\"')
+    if ($escaped.Length -eq 0 -or $escaped -match '\s') {
+        return '"' + $escaped + '"'
+    }
+
+    return $escaped
 }
 
 function Get-DefaultTestResultsPath {
@@ -599,6 +755,13 @@ if ($isTestTask -and -not (Test-ArgumentPresent -Arguments $args -ArgumentNames 
     $args.Add($defaultTestResults)
 }
 
+$testResultsPath = $null
+$testResultsBeforeSnapshot = $null
+if ($isTestTask) {
+    $testResultsPath = Resolve-TestResultsPathFromArguments -Root $root -Arguments $args
+    $testResultsBeforeSnapshot = Get-FileStateSnapshot -Path $testResultsPath
+}
+
 Write-Host "Unity CLI: $unityExe"
 Write-Host "Project: $root"
 Write-Host "Task: $Task"
@@ -615,8 +778,18 @@ else {
     Write-Host 'GeneratedFileCleanup: disabled'
 }
 
+Remove-StaleProjectLockFiles -Root $root
+
+$unityExitCode = 0
+$argumentString = (($args | ForEach-Object { Convert-ToProcessArgumentString -Value $_ }) -join ' ')
+
 try {
-    & $unityExe @args
+    $unityProcess = Start-Process -FilePath $unityExe -ArgumentList $argumentString -PassThru -Wait
+    if ($null -eq $unityProcess) {
+        throw 'Unity CLI: failed to launch Unity process.'
+    }
+
+    $unityExitCode = $unityProcess.ExitCode
 }
 finally {
     if ($cleanupEnabled) {
@@ -624,8 +797,16 @@ finally {
     }
 }
 
-$exitCode = $LASTEXITCODE
-if ($null -eq $exitCode) {
-    $exitCode = 0
+$exitCode = $unityExitCode
+
+if ($isTestTask) {
+    Assert-TestResultsWereUpdated -TestResultsPath $testResultsPath -BeforeSnapshot $testResultsBeforeSnapshot
+    $testSummary = Get-TestRunSummary -TestResultsPath $testResultsPath
+    Write-Host ("Unity CLI: test summary => total={0}, passed={1}, failed={2}, skipped={3}, inconclusive={4}, result={5}" -f `
+            $testSummary.Total, $testSummary.Passed, $testSummary.Failed, $testSummary.Skipped, $testSummary.Inconclusive, $testSummary.Result)
+    if ($testSummary.Failed -gt 0 -and $exitCode -eq 0) {
+        $exitCode = 1
+    }
 }
+
 exit $exitCode
