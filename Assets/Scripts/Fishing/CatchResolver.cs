@@ -382,6 +382,13 @@ namespace RavenDevOps.Fishing.Fishing
                 _biteSelectionResolvedForCurrentDrop = true;
                 if (!TryResolveTargetFishForCurrentDepth())
                 {
+                    // Even without a rolled target fish (for example, empty runtime catalogs),
+                    // collisions should still be able to hook ambient fish.
+                    if (TryHookTargetFishOnCollision())
+                    {
+                        _stateMachine?.SetHooked();
+                    }
+
                     return;
                 }
             }

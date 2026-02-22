@@ -33,9 +33,11 @@ namespace RavenDevOps.Fishing.Fishing
         public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
         public float DistanceTraveledUnits => _distanceTraveledUnits;
         public bool SteeringLockedForFishingState => IsSteeringLockedByFishingState();
+        public float CurrentHorizontalVelocity => _currentHorizontalVelocity;
         private InputAction _moveShipAction;
         private float _smoothedAxis;
         private float _distanceTraveledUnits;
+        private float _currentHorizontalVelocity;
 
         private void Awake()
         {
@@ -122,6 +124,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (IsSteeringLockedByFishingState())
             {
                 _smoothedAxis = 0f;
+                _currentHorizontalVelocity = 0f;
                 return;
             }
 
@@ -157,6 +160,7 @@ namespace RavenDevOps.Fishing.Fishing
                 p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
             }
 
+            _currentHorizontalVelocity = (p.x - previousX) / Mathf.Max(0.0001f, Time.deltaTime);
             transform.position = p;
             TrackTravelDistance(previousX, p.x);
         }

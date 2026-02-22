@@ -18,13 +18,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _waveAmplitude = 0.04f;
         [SerializeField] private float _waveFrequency = 2.4f;
         [SerializeField] private float _waveSpeed = 2.1f;
-        [SerializeField] private float _shipDragSlackHorizontal = 0.34f;
-        [SerializeField] private float _shipDragSlackSag = 0.18f;
+        [SerializeField] private float _shipDragSlackHorizontal = 1.1f;
+        [SerializeField] private float _shipDragSlackSag = 0.3f;
         [SerializeField] private float _shipDragSlackMaxVelocity = 12f;
         [SerializeField] private float _shipVelocitySmoothing = 9f;
+        [SerializeField] private float _shipDragTowardHookBias = 1.8f;
+        [SerializeField, Range(0f, 1f)] private float _movingWaveSuppression = 0.85f;
 
         private LineRenderer _renderer;
         private SpriteRenderer _hookRenderer;
+        private ShipMovementController _shipMovement;
         private bool _hasRecordedShipX;
         private float _lastShipX;
         private float _smoothedShipVelocityX;
@@ -53,6 +56,8 @@ namespace RavenDevOps.Fishing.Fishing
             _shipDragSlackSag = Mathf.Max(0f, _shipDragSlackSag);
             _shipDragSlackMaxVelocity = Mathf.Max(0.1f, _shipDragSlackMaxVelocity);
             _shipVelocitySmoothing = Mathf.Max(0.1f, _shipVelocitySmoothing);
+            _shipDragTowardHookBias = Mathf.Max(1f, _shipDragTowardHookBias);
+            _movingWaveSuppression = Mathf.Clamp01(_movingWaveSuppression);
             if (!Application.isPlaying)
             {
                 CacheRenderer();
@@ -100,11 +105,14 @@ namespace RavenDevOps.Fishing.Fishing
             var normal = new Vector3(-direction.y, direction.x, 0f);
             var shipVelocityX = ResolveSmoothedShipVelocityX();
             var velocityRatio = Mathf.Clamp01(Mathf.Abs(shipVelocityX) / Mathf.Max(0.1f, _shipDragSlackMaxVelocity));
+            var normalizedLength = Mathf.Clamp01(length / 3.5f);
             var sag = Mathf.Sin(Mathf.Clamp01(length / 4.5f) * Mathf.PI * 0.5f) * _sagAmount;
-            sag += _shipDragSlackSag * velocityRatio * Mathf.Clamp01(length / 3.5f);
-            var wave = _waveAmplitude * Mathf.Clamp01(length / 6f);
+            sag += _shipDragSlackSag * velocityRatio * normalizedLength;
+            var waveMotionScale = Mathf.Lerp(1f, 1f - Mathf.Clamp01(_movingWaveSuppression), velocityRatio);
+            var wave = _waveAmplitude * Mathf.Clamp01(length / 6f) * Mathf.Max(0.05f, waveMotionScale);
             var wavePhase = Time.time * _waveSpeed;
-            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * Mathf.Clamp01(length / 3.5f);
+            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * normalizedLength;
+            var dragBiasPower = Mathf.Max(1f, _shipDragTowardHookBias);
 
             for (var i = 0; i < segments; i++)
             {
@@ -123,7 +131,7 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var point = Vector3.Lerp(start, end, t);
                 var centerWeight = Mathf.Sin(t * Mathf.PI);
-                var dragWeight = centerWeight * centerWeight;
+                var dragWeight = centerWeight * Mathf.Pow(t, dragBiasPower);
                 point.y -= centerWeight * sag;
                 point.x += dragOffsetX * dragWeight;
                 point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave * centerWeight);
@@ -150,7 +158,14 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var deltaTime = Mathf.Max(0.0001f, Time.deltaTime);
-            var rawVelocityX = (shipX - _lastShipX) / deltaTime;
+            if (_shipMovement == null && _ship != null)
+            {
+                _shipMovement = _ship.GetComponent<ShipMovementController>();
+            }
+
+            var rawVelocityX = _shipMovement != null
+                ? _shipMovement.CurrentHorizontalVelocity
+                : (shipX - _lastShipX) / deltaTime;
             _lastShipX = shipX;
 
             var blend = 1f - Mathf.Exp(-Mathf.Max(0.1f, _shipVelocitySmoothing) * deltaTime);
