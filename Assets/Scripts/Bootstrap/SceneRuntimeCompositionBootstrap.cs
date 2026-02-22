@@ -158,15 +158,16 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var canvas = CreateCanvas(root.transform, "HarborCanvas", 240);
-            var status = CreateText(canvas.transform, "HarborStatus", "Harbor ready.", 18, TextAnchor.UpperLeft, new Vector2(12f, -48f), new Vector2(760f, 66f));
-            CreateText(
-                canvas.transform,
+            var infoPanel = CreateTopRightPanel(canvas.transform, "HarborInfoPanel", new Vector2(20f, 20f), new Vector2(760f, 130f), new Color(0.04f, 0.10f, 0.17f, 0.76f));
+            var status = CreateTopLeftText(infoPanel.transform, "HarborStatus", "Harbor ready.", 18, TextAnchor.UpperLeft, new Vector2(18f, 58f), new Vector2(724f, 58f));
+            CreateTopLeftText(
+                infoPanel.transform,
                 "HarborControls",
                 "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause.",
                 18,
                 TextAnchor.UpperLeft,
-                new Vector2(12f, -12f),
-                new Vector2(920f, 42f));
+                new Vector2(18f, 16f),
+                new Vector2(724f, 40f));
 
             var player = FindSceneObject(scene, "HarborShipMain");
             if (player == null)
@@ -244,19 +245,20 @@ namespace RavenDevOps.Fishing.Core
 
             EnsureEventSystem(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
-            var telemetryText = CreateText(canvas.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(12f, -12f), new Vector2(540f, 36f));
-            var tensionText = CreateText(canvas.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(12f, -44f), new Vector2(540f, 36f));
-            var conditionText = CreateText(canvas.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(12f, -76f), new Vector2(760f, 36f));
-            var statusText = CreateText(canvas.transform, "FishingStatusText", "Press Space to cast.", 18, TextAnchor.UpperLeft, new Vector2(12f, -108f), new Vector2(980f, 44f));
-            var failureText = CreateText(canvas.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(12f, -140f), new Vector2(980f, 44f));
-            CreateText(
-                canvas.transform,
+            var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 252f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
+            var telemetryText = CreateTopLeftText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
+            var tensionText = CreateTopLeftText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
+            var conditionText = CreateTopLeftText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
+            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
+            var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 150f), new Vector2(844f, 38f));
+            CreateTopLeftText(
+                infoPanel.transform,
                 "FishingControls",
                 "Fishing: Left/Right move ship, Up/Down move hook, Space action, Esc pause, H return to harbor from pause.",
                 16,
-                TextAnchor.LowerLeft,
-                new Vector2(12f, 12f),
-                new Vector2(1100f, 38f));
+                TextAnchor.UpperLeft,
+                new Vector2(18f, 192f),
+                new Vector2(844f, 52f));
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
@@ -408,6 +410,49 @@ namespace RavenDevOps.Fishing.Core
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = size;
             rect.anchoredPosition = anchoredPosition;
+            var text = go.AddComponent<Text>();
+            text.font = GetDefaultFont();
+            text.fontSize = Mathf.Max(10, fontSize);
+            text.alignment = alignment;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.color = new Color(0.96f, 0.98f, 1f, 1f);
+            text.text = value ?? string.Empty;
+            return text;
+        }
+
+        private static GameObject CreateTopRightPanel(Transform parent, string name, Vector2 marginFromTopRight, Vector2 size, Color color)
+        {
+            var panel = new GameObject(name);
+            panel.transform.SetParent(parent, worldPositionStays: false);
+            var rect = panel.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(-Mathf.Abs(marginFromTopRight.x), -Mathf.Abs(marginFromTopRight.y));
+            var image = panel.AddComponent<Image>();
+            image.color = color;
+            return panel;
+        }
+
+        private static Text CreateTopLeftText(
+            Transform parent,
+            string name,
+            string value,
+            int fontSize,
+            TextAnchor alignment,
+            Vector2 marginFromTopLeft,
+            Vector2 size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, worldPositionStays: false);
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
             var text = go.AddComponent<Text>();
             text.font = GetDefaultFont();
             text.fontSize = Mathf.Max(10, fontSize);
