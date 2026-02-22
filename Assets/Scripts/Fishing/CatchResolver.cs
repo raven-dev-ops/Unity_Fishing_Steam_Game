@@ -617,6 +617,13 @@ namespace RavenDevOps.Fishing.Fishing
                 return true;
             }
 
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Space))
+            {
+                return true;
+            }
+#endif
+
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
         }
@@ -628,6 +635,13 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 return true;
             }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.Space))
+            {
+                return true;
+            }
+#endif
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.isPressed;

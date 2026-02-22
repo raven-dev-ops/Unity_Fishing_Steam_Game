@@ -98,12 +98,13 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            if (_moveHookAction == null)
-            {
-                return;
-            }
-
-            var rawAxis = Mathf.Clamp(_moveHookAction.ReadValue<float>(), -1f, 1f);
+            var mappedAxis = _moveHookAction != null
+                ? Mathf.Clamp(_moveHookAction.ReadValue<float>(), -1f, 1f)
+                : 0f;
+            var keyboardAxis = ResolveKeyboardHookAxis();
+            var rawAxis = Mathf.Abs(keyboardAxis) > Mathf.Abs(mappedAxis)
+                ? keyboardAxis
+                : mappedAxis;
             if (Mathf.Abs(rawAxis) < Mathf.Clamp01(_inputDeadzone))
             {
                 rawAxis = 0f;
@@ -132,6 +133,41 @@ namespace RavenDevOps.Fishing.Fishing
             _moveHookAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveHook")
                 : null;
+        }
+
+        private static float ResolveKeyboardHookAxis()
+        {
+            var axis = 0f;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.downArrowKey.isPressed || keyboard.sKey.isPressed)
+                {
+                    axis -= 1f;
+                }
+
+                if (keyboard.upArrowKey.isPressed || keyboard.wKey.isPressed)
+                {
+                    axis += 1f;
+                }
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (Mathf.Abs(axis) < 0.01f)
+            {
+                if (UnityEngine.Input.GetKey(KeyCode.DownArrow) || UnityEngine.Input.GetKey(KeyCode.S))
+                {
+                    axis -= 1f;
+                }
+
+                if (UnityEngine.Input.GetKey(KeyCode.UpArrow) || UnityEngine.Input.GetKey(KeyCode.W))
+                {
+                    axis += 1f;
+                }
+            }
+#endif
+
+            return Mathf.Clamp(axis, -1f, 1f);
         }
     }
 }

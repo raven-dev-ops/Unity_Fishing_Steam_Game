@@ -61,13 +61,15 @@ namespace RavenDevOps.Fishing.Fishing
         private void Update()
         {
             RefreshActionsIfNeeded();
-            if (_moveShipAction == null)
-            {
-                return;
-            }
 
             var speed = ResolveMoveSpeed();
-            var rawAxis = Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f);
+            var mappedAxis = _moveShipAction != null
+                ? Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f)
+                : 0f;
+            var keyboardAxis = ResolveKeyboardShipAxis();
+            var rawAxis = Mathf.Abs(keyboardAxis) > Mathf.Abs(mappedAxis)
+                ? keyboardAxis
+                : mappedAxis;
             if (Mathf.Abs(rawAxis) < Mathf.Clamp01(_inputDeadzone))
             {
                 rawAxis = 0f;
@@ -112,6 +114,41 @@ namespace RavenDevOps.Fishing.Fishing
             _moveShipAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveShip")
                 : null;
+        }
+
+        private static float ResolveKeyboardShipAxis()
+        {
+            var axis = 0f;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.leftArrowKey.isPressed || keyboard.aKey.isPressed)
+                {
+                    axis -= 1f;
+                }
+
+                if (keyboard.rightArrowKey.isPressed || keyboard.dKey.isPressed)
+                {
+                    axis += 1f;
+                }
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (Mathf.Abs(axis) < 0.01f)
+            {
+                if (UnityEngine.Input.GetKey(KeyCode.LeftArrow) || UnityEngine.Input.GetKey(KeyCode.A))
+                {
+                    axis -= 1f;
+                }
+
+                if (UnityEngine.Input.GetKey(KeyCode.RightArrow) || UnityEngine.Input.GetKey(KeyCode.D))
+                {
+                    axis += 1f;
+                }
+            }
+#endif
+
+            return Mathf.Clamp(axis, -1f, 1f);
         }
     }
 }
