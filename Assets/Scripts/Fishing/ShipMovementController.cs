@@ -39,6 +39,8 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
+            // Keep horizontal sailing unconstrained during fishing.
+            _clampHorizontalPosition = false;
             // Guarantee steering remains available while hook is down.
             _allowSteeringWhileHookDown = true;
 

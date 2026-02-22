@@ -36,6 +36,11 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
+            // Never horizontally clamp ship/hook from this controller.
+            _clampHorizontalMovement = false;
+            _createHorizontalBoundaryColliders = false;
+            _autoCreateBoundaryColliders = false;
+
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
         }
@@ -45,6 +50,7 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureReferences();
             EnsureVisualBaseline();
             TryApplyPhaseTwoEnvironmentOverride();
+            RemoveLegacyBoundaryRoot();
             EnsureBoundaryColliders();
         }
 
@@ -199,6 +205,29 @@ namespace RavenDevOps.Fishing.Fishing
             CreateOrUpdateBoundary(root.transform, "Bottom", new Vector3(_playAreaCenter.x, _playAreaCenter.y - half.y, _playAreaCenter.z), new Vector3(_playAreaSize.x, _boundaryThickness, 1f));
 
             _boundariesReady = true;
+        }
+
+        private void RemoveLegacyBoundaryRoot()
+        {
+            if (string.IsNullOrWhiteSpace(_boundaryRootName))
+            {
+                return;
+            }
+
+            var root = GameObject.Find(_boundaryRootName);
+            if (root == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(root);
+            }
+            else
+            {
+                DestroyImmediate(root);
+            }
         }
 
         private static void CreateOrUpdateBoundary(Transform root, string name, Vector3 center, Vector3 size)
