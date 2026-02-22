@@ -44,6 +44,60 @@ namespace RavenDevOps.Fishing.UI
         private Resolution[] _resolutions = Array.Empty<Resolution>();
         private int _resolutionIndex;
 
+        public void Configure(
+            Slider masterSlider,
+            Slider musicSlider,
+            Slider sfxSlider,
+            Slider voSlider,
+            Slider inputSensitivitySlider,
+            Slider uiScaleSlider,
+            Slider subtitleScaleSlider,
+            Slider subtitleBackgroundOpacitySlider,
+            Toggle fullscreenToggle,
+            Toggle subtitlesToggle,
+            Toggle highContrastFishingCuesToggle,
+            Toggle reelInputToggle,
+            Toggle reducedMotionToggle,
+            Toggle readabilityBoostToggle,
+            Toggle steamRichPresenceToggle,
+            TMP_Text displayModeText,
+            TMP_Text resolutionText,
+            TMP_Text inputSensitivityText,
+            TMP_Text uiScaleText,
+            TMP_Text subtitleScaleText,
+            TMP_Text subtitleBackgroundOpacityText,
+            TMP_Text fishingActionBindingText,
+            TMP_Text harborInteractBindingText,
+            TMP_Text menuCancelBindingText,
+            TMP_Text returnHarborBindingText)
+        {
+            _masterSlider = masterSlider;
+            _musicSlider = musicSlider;
+            _sfxSlider = sfxSlider;
+            _voSlider = voSlider;
+            _inputSensitivitySlider = inputSensitivitySlider;
+            _uiScaleSlider = uiScaleSlider;
+            _subtitleScaleSlider = subtitleScaleSlider;
+            _subtitleBackgroundOpacitySlider = subtitleBackgroundOpacitySlider;
+            _fullscreenToggle = fullscreenToggle;
+            _subtitlesToggle = subtitlesToggle;
+            _highContrastFishingCuesToggle = highContrastFishingCuesToggle;
+            _reelInputToggle = reelInputToggle;
+            _reducedMotionToggle = reducedMotionToggle;
+            _readabilityBoostToggle = readabilityBoostToggle;
+            _steamRichPresenceToggle = steamRichPresenceToggle;
+            _displayModeText = displayModeText;
+            _resolutionText = resolutionText;
+            _inputSensitivityText = inputSensitivityText;
+            _uiScaleText = uiScaleText;
+            _subtitleScaleText = subtitleScaleText;
+            _subtitleBackgroundOpacityText = subtitleBackgroundOpacityText;
+            _fishingActionBindingText = fishingActionBindingText;
+            _harborInteractBindingText = harborInteractBindingText;
+            _menuCancelBindingText = menuCancelBindingText;
+            _returnHarborBindingText = returnHarborBindingText;
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);

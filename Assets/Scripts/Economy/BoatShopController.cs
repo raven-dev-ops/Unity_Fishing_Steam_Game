@@ -40,7 +40,7 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var price = ResolvePrice(boatId);
-            if (price <= 0)
+            if (price < 0)
             {
                 return false;
             }
@@ -80,7 +80,7 @@ namespace RavenDevOps.Fishing.Economy
                 return shipDefinition.price;
             }
 
-            return 0;
+            return -1;
         }
     }
 }

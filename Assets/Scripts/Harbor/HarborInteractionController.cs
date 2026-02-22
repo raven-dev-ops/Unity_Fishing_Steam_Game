@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
@@ -17,6 +18,9 @@ namespace RavenDevOps.Fishing.Harbor
 
         private WorldInteractable _active;
         private InputAction _interactAction;
+        public WorldInteractable ActiveInteractable => _active;
+
+        public event Action<WorldInteractable> ActiveInteractableChanged;
 
         public void Configure(
             Transform player,
@@ -102,6 +106,8 @@ namespace RavenDevOps.Fishing.Harbor
             {
                 _active.SetHighlighted(true);
             }
+
+            ActiveInteractableChanged?.Invoke(_active);
 
             if (_worldAura != null)
             {

@@ -6,12 +6,14 @@ using System.Reflection;
 using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Fishing;
+using RavenDevOps.Fishing.Harbor;
 using RavenDevOps.Fishing.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Tests.PlayMode
 {
@@ -30,6 +32,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         };
 
         private const string SceneCaptureEnabledEnvVar = "RAVEN_SCENE_CAPTURE_ENABLED";
+        private const string MainMenuScenePath = "Assets/Scenes/02_MainMenu.unity";
+        private const string HarborScenePath = "Assets/Scenes/03_Harbor.unity";
         private const string FishingScenePath = "Assets/Scenes/04_Fishing.unity";
 
         [TearDown]
@@ -78,6 +82,97 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             Assert.That(capturedFiles.Count, Is.EqualTo(ScenePaths.Length));
             Debug.Log($"SCENE_CAPTURE_OUTPUT: {outputDirectory}");
+        }
+
+        [UnityTest]
+        public IEnumerator MainMenuScene_ComposesProfileAndSettingsPanels()
+        {
+            yield return LoadScene(MainMenuScenePath);
+            yield return null;
+
+            var runtimeRoot = GameObject.Find("__SceneRuntime");
+            Assert.That(runtimeRoot, Is.Not.Null, "Expected main menu runtime root.");
+            Assert.That(runtimeRoot.GetComponent<MainMenuController>(), Is.Not.Null, "Expected main menu controller.");
+            Assert.That(runtimeRoot.GetComponent<ProfileMenuController>(), Is.Not.Null, "Expected profile menu controller.");
+            Assert.That(runtimeRoot.GetComponent<SettingsMenuController>(), Is.Not.Null, "Expected settings menu controller.");
+
+            Assert.That(FindSceneObject("ProfilePanel"), Is.Not.Null, "Expected profile panel.");
+            Assert.That(FindSceneObject("ProfileDayText"), Is.Not.Null, "Expected profile day text.");
+            Assert.That(FindSceneObject("ProfileCopecsText"), Is.Not.Null, "Expected profile copecs text.");
+            Assert.That(FindSceneObject("ProfileObjectiveText"), Is.Not.Null, "Expected profile objective text.");
+            Assert.That(FindSceneObject("ProfileCatchLogText"), Is.Not.Null, "Expected profile catch-log text.");
+            Assert.That(FindSceneObject("ProfileResetButton"), Is.Not.Null, "Expected profile reset button.");
+            Assert.That(FindSceneObject("ProfileResetObjectivesButton"), Is.Not.Null, "Expected profile reset-objectives button.");
+            Assert.That(FindSceneObject("ProfileBackButton"), Is.Not.Null, "Expected profile back button.");
+
+            Assert.That(FindSceneObject("SettingsPanel"), Is.Not.Null, "Expected settings panel.");
+            Assert.That(FindSceneObject("SettingMasterSlider"), Is.Not.Null, "Expected master volume slider.");
+            Assert.That(FindSceneObject("SettingMusicSlider"), Is.Not.Null, "Expected music slider.");
+            Assert.That(FindSceneObject("SettingSfxSlider"), Is.Not.Null, "Expected sfx slider.");
+            Assert.That(FindSceneObject("SettingVoSlider"), Is.Not.Null, "Expected vo slider.");
+            Assert.That(FindSceneObject("SettingInputSensitivitySlider"), Is.Not.Null, "Expected input-sensitivity slider.");
+            Assert.That(FindSceneObject("SettingUiScaleSlider"), Is.Not.Null, "Expected UI-scale slider.");
+            Assert.That(FindSceneObject("SettingSubtitleScaleSlider"), Is.Not.Null, "Expected subtitle-scale slider.");
+            Assert.That(FindSceneObject("SettingSubtitleBackgroundOpacitySlider"), Is.Not.Null, "Expected subtitle-background slider.");
+            Assert.That(FindSceneObject("SettingFullscreenToggle"), Is.Not.Null, "Expected fullscreen toggle.");
+            Assert.That(FindSceneObject("SettingSubtitlesToggle"), Is.Not.Null, "Expected subtitles toggle.");
+            Assert.That(FindSceneObject("SettingHighContrastFishingCuesToggle"), Is.Not.Null, "Expected high-contrast toggle.");
+            Assert.That(FindSceneObject("SettingReelInputToggle"), Is.Not.Null, "Expected reel-input toggle.");
+            Assert.That(FindSceneObject("SettingReducedMotionToggle"), Is.Not.Null, "Expected reduced-motion toggle.");
+            Assert.That(FindSceneObject("SettingReadabilityBoostToggle"), Is.Not.Null, "Expected readability-boost toggle.");
+            Assert.That(FindSceneObject("SettingSteamRichPresenceToggle"), Is.Not.Null, "Expected Steam Rich Presence toggle.");
+            Assert.That(FindSceneObject("SettingResolutionPrevButton"), Is.Not.Null, "Expected previous-resolution button.");
+            Assert.That(FindSceneObject("SettingResolutionNextButton"), Is.Not.Null, "Expected next-resolution button.");
+            Assert.That(FindSceneObject("SettingRebindFishingActionButton"), Is.Not.Null, "Expected rebind fishing-action button.");
+            Assert.That(FindSceneObject("SettingRebindHarborInteractButton"), Is.Not.Null, "Expected rebind harbor-interact button.");
+            Assert.That(FindSceneObject("SettingRebindMenuCancelButton"), Is.Not.Null, "Expected rebind menu-cancel button.");
+            Assert.That(FindSceneObject("SettingRebindReturnHarborButton"), Is.Not.Null, "Expected rebind return-harbor button.");
+            Assert.That(FindSceneObject("SettingResetRebindsButton"), Is.Not.Null, "Expected reset rebinds button.");
+            Assert.That(FindSceneObject("SettingsBackButton"), Is.Not.Null, "Expected settings back button.");
+        }
+
+        [UnityTest]
+        public IEnumerator HarborScene_ComposesRuntimeHudAndInteractionFlow()
+        {
+            yield return LoadScene(HarborScenePath);
+            yield return null;
+
+            var runtimeRoot = GameObject.Find("__SceneRuntime");
+            Assert.That(runtimeRoot, Is.Not.Null, "Expected harbor runtime root.");
+            Assert.That(runtimeRoot.GetComponent<HarborInteractionController>(), Is.Not.Null, "Expected harbor interaction controller.");
+            Assert.That(runtimeRoot.GetComponent<HarborSceneInteractionRouter>(), Is.Not.Null, "Expected harbor interaction router.");
+            Assert.That(runtimeRoot.GetComponent<HarborPauseMenuController>(), Is.Not.Null, "Expected harbor pause menu controller.");
+
+            Assert.That(FindSceneObject("HarborHudRoot"), Is.Not.Null, "Expected harbor HUD root.");
+            Assert.That(FindSceneObject("HarborActionPanel"), Is.Not.Null, "Expected harbor action panel.");
+            Assert.That(FindSceneObject("HarborHookShopButton"), Is.Not.Null, "Expected harbor hook shop button.");
+            Assert.That(FindSceneObject("HarborBoatShopButton"), Is.Not.Null, "Expected harbor boat shop button.");
+            Assert.That(FindSceneObject("HarborFishShopButton"), Is.Not.Null, "Expected harbor fish shop button.");
+            Assert.That(FindSceneObject("HarborSailButton"), Is.Not.Null, "Expected harbor sail button.");
+            Assert.That(FindSceneObject("HarborPauseButton"), Is.Not.Null, "Expected harbor pause button.");
+
+            Assert.That(FindSceneObject("HarborInfoPanel"), Is.Not.Null, "Expected harbor info panel.");
+            var statusTextGo = FindSceneObject("HarborStatus");
+            Assert.That(statusTextGo, Is.Not.Null, "Expected harbor status text object.");
+            var statusText = statusTextGo.GetComponent<Text>();
+            Assert.That(statusText, Is.Not.Null, "Expected Text on harbor status object.");
+            Assert.That(string.IsNullOrWhiteSpace(statusText.text), Is.False, "Expected harbor status text to be populated.");
+
+            var selectionTextGo = FindSceneObject("HarborSelection");
+            Assert.That(selectionTextGo, Is.Not.Null, "Expected harbor selection text object.");
+            var selectionText = selectionTextGo.GetComponent<Text>();
+            Assert.That(selectionText, Is.Not.Null, "Expected Text on harbor selection object.");
+            Assert.That(selectionText.text, Does.StartWith("Nearby"), "Expected harbor selection hint text.");
+
+            Assert.That(FindSceneObject("HarborEconomy"), Is.Not.Null, "Expected harbor economy text.");
+            Assert.That(FindSceneObject("HarborEquipment"), Is.Not.Null, "Expected harbor equipment text.");
+            Assert.That(FindSceneObject("HarborCargo"), Is.Not.Null, "Expected harbor cargo text.");
+            Assert.That(FindSceneObject("HarborActivityLog"), Is.Not.Null, "Expected harbor activity log text.");
+
+            Assert.That(FindSceneObject("HarborPausePanel"), Is.Not.Null, "Expected harbor pause panel.");
+            Assert.That(FindSceneObject("HarborPauseResumeButton"), Is.Not.Null, "Expected harbor pause resume button.");
+            Assert.That(FindSceneObject("HarborPauseMainMenuButton"), Is.Not.Null, "Expected harbor pause main-menu button.");
+            Assert.That(FindSceneObject("HarborPauseExitButton"), Is.Not.Null, "Expected harbor pause exit button.");
         }
 
         [UnityTest]

@@ -18,6 +18,8 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameObject _exitPanel;
         [SerializeField] private GameObject _exitConfirmButton;
         [SerializeField] private GameObject _exitCancelButton;
+        [SerializeField] private GameObject _profileDefaultSelection;
+        [SerializeField] private GameObject _settingsDefaultSelection;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private InputActionMapController _inputMapController;
 
@@ -33,7 +35,9 @@ namespace RavenDevOps.Fishing.UI
             GameObject settingsPanel,
             GameObject exitPanel = null,
             GameObject exitConfirmButton = null,
-            GameObject exitCancelButton = null)
+            GameObject exitCancelButton = null,
+            GameObject profileDefaultSelection = null,
+            GameObject settingsDefaultSelection = null)
         {
             _startButton = startButton;
             _profileButton = profileButton;
@@ -44,6 +48,8 @@ namespace RavenDevOps.Fishing.UI
             _exitPanel = exitPanel;
             _exitConfirmButton = exitConfirmButton;
             _exitCancelButton = exitCancelButton;
+            _profileDefaultSelection = profileDefaultSelection;
+            _settingsDefaultSelection = settingsDefaultSelection;
         }
 
         private void Awake()
@@ -121,11 +127,13 @@ namespace RavenDevOps.Fishing.UI
         public void OpenProfile()
         {
             ShowSingleSubmenu(_profilePanel);
+            SetSelected(_profileDefaultSelection != null ? _profileDefaultSelection : _profileButton);
         }
 
         public void OpenSettings()
         {
             ShowSingleSubmenu(_settingsPanel);
+            SetSelected(_settingsDefaultSelection != null ? _settingsDefaultSelection : _settingsButton);
         }
 
         public void OpenExitPanel()
@@ -151,6 +159,18 @@ namespace RavenDevOps.Fishing.UI
         {
             HideSubmenus();
             SetSelected(_exitButton);
+        }
+
+        public void CloseProfilePanel()
+        {
+            HideSubmenus();
+            SetSelected(_profileButton);
+        }
+
+        public void CloseSettingsPanel()
+        {
+            HideSubmenus();
+            SetSelected(_settingsButton);
         }
 
         private void HideSubmenus()

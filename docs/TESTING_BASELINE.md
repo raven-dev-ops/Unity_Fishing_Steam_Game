@@ -98,6 +98,8 @@ Unity.exe -batchmode -nographics -quit `
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions
   - Non-Steam fallback guard-path checks
+  - Main-menu runtime composition checks (Profile panel telemetry/actions + Settings controls/rebinds)
+  - Harbor scene runtime composition checks (action panel, harbor status telemetry, pause menu)
   - Fishing scene runtime composition checks (HUD/objective/pause controls/controllers)
   - Fishing backdrop camera coverage checks
   - Fishing ambient fish concurrency cap checks

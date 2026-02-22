@@ -12,9 +12,9 @@ End-to-end regression checklist for the MVP loop.
 
 ## Run Order
 1. Launch and verify no boot errors.
-2. Main Menu keyboard navigation (arrows + Enter + Esc).
+2. Main Menu keyboard navigation (arrows + Enter + Esc), including Profile and Settings submenu open/close.
 3. Main Menu controller navigation (stick/dpad + South + East).
-4. Harbor movement and interactable selection.
+4. Harbor movement and interactable selection (world highlights + left action panel buttons).
 5. Hook shop purchase/equip flow.
 6. Boat shop purchase/equip flow.
 7. Fishing departure and in-scene controls.
@@ -27,7 +27,7 @@ End-to-end regression checklist for the MVP loop.
 14. Verify XP/level progression updates and next unlock text in profile.
 15. Complete objective milestones and verify objective progress/reward updates.
 16. Purchase locked/unlocked gear paths behave per progression level.
-17. Pause menu resume/return harbor/exit behavior.
+17. Pause menu resume/return harbor/main-menu/exit behavior.
 18. Rebind core actions in Settings, relaunch, and verify persistence.
 19. Toggle subtitles/high-contrast/UI scale, relaunch, and verify accessibility persistence.
 20. Toggle reel input mode (hold/toggle) and verify fishing reel behavior updates correctly.

@@ -26,6 +26,31 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private MetaLoopRuntimeService _metaLoopService;
         [SerializeField] private UserSettingsService _settingsService;
 
+        public void Configure(
+            TMP_Text dayText,
+            TMP_Text copecsText,
+            TMP_Text totalFishText,
+            TMP_Text farthestDistanceText,
+            TMP_Text levelText,
+            TMP_Text xpProgressText,
+            TMP_Text nextUnlockText,
+            TMP_Text objectiveText,
+            TMP_Text catchLogText,
+            int maxCatchLogEntries = 8)
+        {
+            _dayText = dayText;
+            _copecsText = copecsText;
+            _totalFishText = totalFishText;
+            _farthestDistanceText = farthestDistanceText;
+            _levelText = levelText;
+            _xpProgressText = xpProgressText;
+            _nextUnlockText = nextUnlockText;
+            _objectiveText = objectiveText;
+            _catchLogText = catchLogText;
+            _maxCatchLogEntries = Mathf.Max(1, maxCatchLogEntries);
+            Refresh();
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);

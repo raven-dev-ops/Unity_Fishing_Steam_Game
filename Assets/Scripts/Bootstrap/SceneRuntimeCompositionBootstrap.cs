@@ -129,12 +129,110 @@ namespace RavenDevOps.Fishing.Core
             var settingsButton = CreateButton(canvas.transform, "SettingsButton", "Settings", new Vector2(0f, -48f), new Vector2(300f, 56f));
             var exitButton = CreateButton(canvas.transform, "ExitButton", "Exit", new Vector2(0f, -116f), new Vector2(300f, 56f));
 
-            var profilePanel = CreatePanel(canvas.transform, "ProfilePanel", new Vector2(0f, -250f), new Vector2(560f, 132f), new Color(0.08f, 0.14f, 0.22f, 0.86f));
-            CreateText(profilePanel.transform, "ProfilePanelText", "Profile panel is active.\nUse Enter to start or Esc to close.", 20, TextAnchor.MiddleCenter, Vector2.zero, new Vector2(520f, 94f));
+            var profilePanel = CreatePanel(canvas.transform, "ProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.08f, 0.14f, 0.22f, 0.92f));
+            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Captain Profile", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
+            CreateTopLeftTmpText(
+                profilePanel.transform,
+                "ProfileHintText",
+                "View progression, objective status, and recent catches. Use Esc or Back to return.",
+                16,
+                TextAlignmentOptions.TopLeft,
+                new Vector2(24f, 62f),
+                new Vector2(820f, 38f));
+
+            var profileStatsPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileStatsPanel", new Vector2(22f, 104f), new Vector2(620f, 500f), new Color(0.09f, 0.16f, 0.25f, 0.92f));
+            var profileDayText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileDayText", "Day -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(576f, 32f));
+            var profileCopecsText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileCopecsText", "Copecs: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 56f), new Vector2(576f, 32f));
+            var profileTotalFishText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileTotalFishText", "Total Fish Caught: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 94f), new Vector2(576f, 32f));
+            var profileFarthestDistanceText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileFarthestDistanceText", "Farthest Distance Tier: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 132f), new Vector2(576f, 32f));
+            var profileLevelText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileLevelText", "Level: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 170f), new Vector2(576f, 32f));
+            var profileXpProgressText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileXpProgressText", "XP: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 208f), new Vector2(576f, 32f));
+            var profileNextUnlockText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileNextUnlockText", "Next Unlock: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 246f), new Vector2(576f, 32f));
+            var profileObjectiveText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileObjectiveText", "Objective: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 286f), new Vector2(576f, 192f));
+
+            var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 500f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
+            var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 460f));
+
+            var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -314f), new Vector2(240f, 52f));
+            var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -314f), new Vector2(240f, 52f));
+            var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -314f), new Vector2(240f, 52f));
             profilePanel.SetActive(false);
 
-            var settingsPanel = CreatePanel(canvas.transform, "SettingsPanel", new Vector2(0f, -250f), new Vector2(560f, 132f), new Color(0.10f, 0.16f, 0.23f, 0.86f));
-            CreateText(settingsPanel.transform, "SettingsPanelText", "Settings panel is active.\nUse Esc to return.", 20, TextAnchor.MiddleCenter, Vector2.zero, new Vector2(520f, 94f));
+            var settingsPanel = CreatePanel(canvas.transform, "SettingsPanel", new Vector2(0f, -8f), new Vector2(1480f, 840f), new Color(0.10f, 0.16f, 0.23f, 0.94f));
+            CreateTopLeftTmpText(settingsPanel.transform, "SettingsTitleText", "Settings", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(520f, 48f));
+            CreateTopLeftTmpText(
+                settingsPanel.transform,
+                "SettingsHintText",
+                "Adjust runtime settings, display controls, accessibility, and keyboard bindings.",
+                16,
+                TextAlignmentOptions.TopLeft,
+                new Vector2(24f, 62f),
+                new Vector2(980f, 38f));
+
+            var settingsAudioPanel = CreateTopLeftPanel(settingsPanel.transform, "SettingsAudioPanel", new Vector2(22f, 104f), new Vector2(710f, 300f), new Color(0.12f, 0.20f, 0.30f, 0.92f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingsAudioTitle", "Audio", 24, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(300f, 36f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMasterLabel", "Master Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 62f), new Vector2(190f, 26f));
+            var masterSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMasterSlider", new Vector2(220f, 64f), new Vector2(460f, 28f), 0f, 1f);
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMusicLabel", "Music Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(190f, 26f));
+            var musicSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMusicSlider", new Vector2(220f, 112f), new Vector2(460f, 28f), 0f, 1f);
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingSfxLabel", "SFX Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 158f), new Vector2(190f, 26f));
+            var sfxSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingSfxSlider", new Vector2(220f, 160f), new Vector2(460f, 28f), 0f, 1f);
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingVoLabel", "Voice Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 206f), new Vector2(190f, 26f));
+            var voSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingVoSlider", new Vector2(220f, 208f), new Vector2(460f, 28f), 0f, 1f);
+
+            var settingsGameplayPanel = CreateTopLeftPanel(settingsPanel.transform, "SettingsGameplayPanel", new Vector2(22f, 422f), new Vector2(710f, 322f), new Color(0.12f, 0.20f, 0.30f, 0.92f));
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingsGameplayTitle", "Gameplay and Accessibility", 24, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(400f, 36f));
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingInputSensitivityLabel", "Input Sensitivity", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 62f), new Vector2(190f, 26f));
+            var inputSensitivitySlider = CreateTopLeftSlider(settingsGameplayPanel.transform, "SettingInputSensitivitySlider", new Vector2(220f, 64f), new Vector2(330f, 28f), 0.5f, 2f);
+            var inputSensitivityValueText = CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingInputSensitivityValueText", "Input Sensitivity: 1.00x", 15, TextAlignmentOptions.TopLeft, new Vector2(560f, 62f), new Vector2(134f, 26f));
+
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingUiScaleLabel", "UI Scale", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 108f), new Vector2(190f, 26f));
+            var uiScaleSlider = CreateTopLeftSlider(settingsGameplayPanel.transform, "SettingUiScaleSlider", new Vector2(220f, 110f), new Vector2(330f, 28f), 0.8f, 1.5f);
+            var uiScaleValueText = CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingUiScaleValueText", "UI Scale: 1.00x", 15, TextAlignmentOptions.TopLeft, new Vector2(560f, 108f), new Vector2(134f, 26f));
+
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingSubtitleScaleLabel", "Subtitle Scale", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 154f), new Vector2(190f, 26f));
+            var subtitleScaleSlider = CreateTopLeftSlider(settingsGameplayPanel.transform, "SettingSubtitleScaleSlider", new Vector2(220f, 156f), new Vector2(330f, 28f), 0.8f, 1.5f);
+            var subtitleScaleValueText = CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingSubtitleScaleValueText", "Subtitle Scale: 1.00x", 15, TextAlignmentOptions.TopLeft, new Vector2(560f, 154f), new Vector2(134f, 26f));
+
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingSubtitleBackgroundLabel", "Subtitle Background", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 200f), new Vector2(190f, 26f));
+            var subtitleBackgroundOpacitySlider = CreateTopLeftSlider(settingsGameplayPanel.transform, "SettingSubtitleBackgroundOpacitySlider", new Vector2(220f, 202f), new Vector2(330f, 28f), 0f, 1f);
+            var subtitleBackgroundOpacityValueText = CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingSubtitleBackgroundOpacityValueText", "Subtitle Background: 72%", 15, TextAlignmentOptions.TopLeft, new Vector2(560f, 200f), new Vector2(134f, 26f));
+
+            var subtitlesToggle = CreateTopLeftToggle(settingsGameplayPanel.transform, "SettingSubtitlesToggle", new Vector2(18f, 248f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingSubtitlesToggleLabel", "Subtitles", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 250f), new Vector2(220f, 26f));
+            var highContrastFishingCuesToggle = CreateTopLeftToggle(settingsGameplayPanel.transform, "SettingHighContrastFishingCuesToggle", new Vector2(320f, 248f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingHighContrastFishingCuesToggleLabel", "High Contrast Cues", 16, TextAlignmentOptions.TopLeft, new Vector2(358f, 250f), new Vector2(300f, 26f));
+
+            var settingsSystemPanel = CreateTopLeftPanel(settingsPanel.transform, "SettingsSystemPanel", new Vector2(748f, 104f), new Vector2(710f, 640f), new Color(0.12f, 0.20f, 0.30f, 0.92f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingsDisplayTitle", "Display and Input", 24, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(320f, 36f));
+            var fullscreenToggle = CreateTopLeftToggle(settingsSystemPanel.transform, "SettingFullscreenToggle", new Vector2(18f, 64f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingFullscreenToggleLabel", "Fullscreen Window", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 66f), new Vector2(220f, 26f));
+            var displayModeText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingDisplayModeText", "Display: Fullscreen Window", 15, TextAlignmentOptions.TopLeft, new Vector2(286f, 66f), new Vector2(404f, 26f));
+            var resolutionText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingResolutionText", "Resolution: --", 15, TextAlignmentOptions.TopLeft, new Vector2(18f, 104f), new Vector2(672f, 26f));
+            var resolutionPrevButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingResolutionPrevButton", "Prev", new Vector2(18f, 136f), new Vector2(150f, 40f));
+            var resolutionNextButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingResolutionNextButton", "Next", new Vector2(540f, 136f), new Vector2(150f, 40f));
+
+            var reelInputToggle = CreateTopLeftToggle(settingsSystemPanel.transform, "SettingReelInputToggle", new Vector2(18f, 194f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingReelInputToggleLabel", "Reel Input Toggle", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 196f), new Vector2(220f, 26f));
+            var reducedMotionToggle = CreateTopLeftToggle(settingsSystemPanel.transform, "SettingReducedMotionToggle", new Vector2(18f, 232f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingReducedMotionToggleLabel", "Reduced Motion", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 234f), new Vector2(220f, 26f));
+            var readabilityBoostToggle = CreateTopLeftToggle(settingsSystemPanel.transform, "SettingReadabilityBoostToggle", new Vector2(18f, 270f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingReadabilityBoostToggleLabel", "Readability Boost", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 272f), new Vector2(220f, 26f));
+            var steamRichPresenceToggle = CreateTopLeftToggle(settingsSystemPanel.transform, "SettingSteamRichPresenceToggle", new Vector2(18f, 308f), new Vector2(32f, 32f));
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingSteamRichPresenceToggleLabel", "Steam Rich Presence", 16, TextAlignmentOptions.TopLeft, new Vector2(56f, 310f), new Vector2(260f, 26f));
+
+            CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingsBindingsTitle", "Keyboard Rebinds", 22, TextAlignmentOptions.TopLeft, new Vector2(18f, 358f), new Vector2(260f, 34f));
+            var fishingActionBindingText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingFishingActionBindingText", "Action: --", 15, TextAlignmentOptions.TopLeft, new Vector2(18f, 398f), new Vector2(470f, 26f));
+            var rebindFishingActionButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingRebindFishingActionButton", "Rebind", new Vector2(534f, 394f), new Vector2(156f, 34f));
+            var harborInteractBindingText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingHarborInteractBindingText", "Interact: --", 15, TextAlignmentOptions.TopLeft, new Vector2(18f, 438f), new Vector2(470f, 26f));
+            var rebindHarborInteractButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingRebindHarborInteractButton", "Rebind", new Vector2(534f, 434f), new Vector2(156f, 34f));
+            var menuCancelBindingText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingMenuCancelBindingText", "Cancel: --", 15, TextAlignmentOptions.TopLeft, new Vector2(18f, 478f), new Vector2(470f, 26f));
+            var rebindMenuCancelButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingRebindMenuCancelButton", "Rebind", new Vector2(534f, 474f), new Vector2(156f, 34f));
+            var returnHarborBindingText = CreateTopLeftTmpText(settingsSystemPanel.transform, "SettingReturnHarborBindingText", "Return Harbor: --", 15, TextAlignmentOptions.TopLeft, new Vector2(18f, 518f), new Vector2(470f, 26f));
+            var rebindReturnHarborButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingRebindReturnHarborButton", "Rebind", new Vector2(534f, 514f), new Vector2(156f, 34f));
+            var resetRebindsButton = CreateTopLeftButton(settingsSystemPanel.transform, "SettingResetRebindsButton", "Reset Rebinds", new Vector2(18f, 566f), new Vector2(672f, 40f));
+
+            var settingsBackButton = CreateButton(settingsPanel.transform, "SettingsBackButton", "Back", new Vector2(0f, -370f), new Vector2(240f, 52f));
             settingsPanel.SetActive(false);
 
             var exitPanel = CreatePanel(canvas.transform, "ExitPanel", new Vector2(0f, -244f), new Vector2(560f, 176f), new Color(0.11f, 0.08f, 0.08f, 0.90f));
@@ -153,7 +251,50 @@ namespace RavenDevOps.Fishing.Core
                 settingsPanel,
                 exitPanel,
                 exitConfirmButton.gameObject,
-                exitCancelButton.gameObject);
+                exitCancelButton.gameObject,
+                profileBackButton.gameObject,
+                settingsBackButton.gameObject);
+
+            var profileController = GetOrAddComponent<ProfileMenuController>(root);
+            profileController.Configure(
+                profileDayText,
+                profileCopecsText,
+                profileTotalFishText,
+                profileFarthestDistanceText,
+                profileLevelText,
+                profileXpProgressText,
+                profileNextUnlockText,
+                profileObjectiveText,
+                profileCatchLogText,
+                10);
+
+            var settingsController = GetOrAddComponent<SettingsMenuController>(root);
+            settingsController.Configure(
+                masterSlider,
+                musicSlider,
+                sfxSlider,
+                voSlider,
+                inputSensitivitySlider,
+                uiScaleSlider,
+                subtitleScaleSlider,
+                subtitleBackgroundOpacitySlider,
+                fullscreenToggle,
+                subtitlesToggle,
+                highContrastFishingCuesToggle,
+                reelInputToggle,
+                reducedMotionToggle,
+                readabilityBoostToggle,
+                steamRichPresenceToggle,
+                displayModeText,
+                resolutionText,
+                inputSensitivityValueText,
+                uiScaleValueText,
+                subtitleScaleValueText,
+                subtitleBackgroundOpacityValueText,
+                fishingActionBindingText,
+                harborInteractBindingText,
+                menuCancelBindingText,
+                returnHarborBindingText);
 
             startButton.onClick.AddListener(controller.StartGame);
             profileButton.onClick.AddListener(controller.OpenProfile);
@@ -161,6 +302,34 @@ namespace RavenDevOps.Fishing.Core
             exitButton.onClick.AddListener(controller.OpenExitPanel);
             exitConfirmButton.onClick.AddListener(controller.ConfirmExit);
             exitCancelButton.onClick.AddListener(controller.CancelExit);
+            profileResetButton.onClick.AddListener(profileController.ResetProfile);
+            profileResetObjectivesButton.onClick.AddListener(profileController.ResetObjectivesForQa);
+            profileBackButton.onClick.AddListener(controller.CloseProfilePanel);
+
+            masterSlider.onValueChanged.AddListener(settingsController.OnMasterVolumeChanged);
+            musicSlider.onValueChanged.AddListener(settingsController.OnMusicVolumeChanged);
+            sfxSlider.onValueChanged.AddListener(settingsController.OnSfxVolumeChanged);
+            voSlider.onValueChanged.AddListener(settingsController.OnVoVolumeChanged);
+            inputSensitivitySlider.onValueChanged.AddListener(settingsController.OnInputSensitivityChanged);
+            uiScaleSlider.onValueChanged.AddListener(settingsController.OnUiScaleChanged);
+            subtitleScaleSlider.onValueChanged.AddListener(settingsController.OnSubtitleScaleChanged);
+            subtitleBackgroundOpacitySlider.onValueChanged.AddListener(settingsController.OnSubtitleBackgroundOpacityChanged);
+            fullscreenToggle.onValueChanged.AddListener(settingsController.OnFullscreenChanged);
+            subtitlesToggle.onValueChanged.AddListener(settingsController.OnSubtitlesChanged);
+            highContrastFishingCuesToggle.onValueChanged.AddListener(settingsController.OnHighContrastFishingCuesChanged);
+            reelInputToggle.onValueChanged.AddListener(settingsController.OnReelInputToggleChanged);
+            reducedMotionToggle.onValueChanged.AddListener(settingsController.OnReducedMotionChanged);
+            readabilityBoostToggle.onValueChanged.AddListener(settingsController.OnReadabilityBoostChanged);
+            steamRichPresenceToggle.onValueChanged.AddListener(settingsController.OnSteamRichPresenceChanged);
+            resolutionPrevButton.onClick.AddListener(settingsController.OnPreviousResolutionPressed);
+            resolutionNextButton.onClick.AddListener(settingsController.OnNextResolutionPressed);
+            rebindFishingActionButton.onClick.AddListener(settingsController.OnRebindFishingActionPressed);
+            rebindHarborInteractButton.onClick.AddListener(settingsController.OnRebindHarborInteractPressed);
+            rebindMenuCancelButton.onClick.AddListener(settingsController.OnRebindMenuCancelPressed);
+            rebindReturnHarborButton.onClick.AddListener(settingsController.OnRebindReturnHarborPressed);
+            resetRebindsButton.onClick.AddListener(settingsController.OnResetRebindsPressed);
+            settingsBackButton.onClick.AddListener(controller.CloseSettingsPanel);
+
             AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(20f, 10f), 26f);
 
             if (EventSystem.current != null)
@@ -177,17 +346,56 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
+            EnsureEventSystem(scene);
             var canvas = CreateCanvas(root.transform, "HarborCanvas", 240);
-            var infoPanel = CreateTopRightPanel(canvas.transform, "HarborInfoPanel", new Vector2(20f, 20f), new Vector2(760f, 130f), new Color(0.04f, 0.10f, 0.17f, 0.76f));
-            var status = CreateTopLeftText(infoPanel.transform, "HarborStatus", "Harbor ready.", 18, TextAnchor.UpperLeft, new Vector2(18f, 58f), new Vector2(724f, 58f));
+            var hudRoot = new GameObject("HarborHudRoot");
+            hudRoot.transform.SetParent(canvas.transform, worldPositionStays: false);
+
+            var actionPanel = CreateTopLeftPanel(
+                hudRoot.transform,
+                "HarborActionPanel",
+                new Vector2(20f, 20f),
+                new Vector2(430f, 430f),
+                new Color(0.05f, 0.10f, 0.18f, 0.80f));
+            CreateText(actionPanel.transform, "HarborActionTitle", "Harbor Operations", 30, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(376f, 64f));
+            CreateText(actionPanel.transform, "HarborActionHint", "Select an action, or move near world markers and press Enter.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
+            var hookButton = CreateButton(actionPanel.transform, "HarborHookShopButton", "Hook Shop", new Vector2(0f, 64f), new Vector2(320f, 52f));
+            var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 2f), new Vector2(320f, 52f));
+            var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -60f), new Vector2(320f, 52f));
+            var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -122f), new Vector2(320f, 52f));
+            var pauseButton = CreateButton(actionPanel.transform, "HarborPauseButton", "Pause", new Vector2(0f, -184f), new Vector2(320f, 50f));
+            var actionSelectionAura = CreateSelectionAura(actionPanel.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
+            AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
+
+            var infoPanel = CreateTopRightPanel(
+                hudRoot.transform,
+                "HarborInfoPanel",
+                new Vector2(20f, 20f),
+                new Vector2(760f, 304f),
+                new Color(0.04f, 0.10f, 0.17f, 0.78f));
+            var status = CreateTopLeftText(infoPanel.transform, "HarborStatus", "Harbor ready.", 20, TextAnchor.UpperLeft, new Vector2(18f, 18f), new Vector2(724f, 42f));
+            var selection = CreateTopLeftText(infoPanel.transform, "HarborSelection", "Nearby target: none.", 18, TextAnchor.UpperLeft, new Vector2(18f, 56f), new Vector2(724f, 42f));
+            var economy = CreateTopLeftText(infoPanel.transform, "HarborEconomy", "Copecs: 0", 18, TextAnchor.UpperLeft, new Vector2(18f, 94f), new Vector2(724f, 42f));
+            var equipment = CreateTopLeftText(infoPanel.transform, "HarborEquipment", "Equipped Ship: Ship Lv1 | Hook: Hook Lv1", 18, TextAnchor.UpperLeft, new Vector2(18f, 132f), new Vector2(724f, 42f));
+            var cargo = CreateTopLeftText(infoPanel.transform, "HarborCargo", "Cargo: 0 fish | Trips: 0 | Level: 1", 18, TextAnchor.UpperLeft, new Vector2(18f, 170f), new Vector2(724f, 42f));
+            var activityLog = CreateTopLeftText(infoPanel.transform, "HarborActivityLog", "Recent Activity:\n- Harbor systems online.", 16, TextAnchor.UpperLeft, new Vector2(18f, 206f), new Vector2(724f, 94f));
             CreateTopLeftText(
                 infoPanel.transform,
                 "HarborControls",
-                "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause.",
-                18,
+                "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause, click actions on the left panel.",
+                16,
                 TextAnchor.UpperLeft,
-                new Vector2(18f, 16f),
-                new Vector2(724f, 40f));
+                new Vector2(18f, 272f),
+                new Vector2(724f, 30f));
+
+            var pauseRoot = CreatePanel(canvas.transform, "HarborPausePanel", Vector2.zero, new Vector2(440f, 292f), new Color(0.04f, 0.09f, 0.15f, 0.86f));
+            CreateText(pauseRoot.transform, "HarborPauseTitle", "Harbor Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 96f), new Vector2(320f, 62f));
+            var pauseResumeButton = CreateButton(pauseRoot.transform, "HarborPauseResumeButton", "Resume", new Vector2(0f, 34f), new Vector2(250f, 48f));
+            var pauseMainMenuButton = CreateButton(pauseRoot.transform, "HarborPauseMainMenuButton", "Main Menu", new Vector2(0f, -24f), new Vector2(250f, 48f));
+            var pauseExitButton = CreateButton(pauseRoot.transform, "HarborPauseExitButton", "Exit", new Vector2(0f, -82f), new Vector2(250f, 48f));
+            var pauseSelectionAura = CreateSelectionAura(pauseRoot.transform, "HarborPauseSelectionAura", new Vector2(284f, 56f));
+            AttachSelectionAura(pauseRoot, pauseSelectionAura, new Vector2(16f, 8f), 24f);
+            pauseRoot.SetActive(false);
 
             var player = FindSceneObject(scene, "HarborShipMain");
             if (player == null)
@@ -252,7 +460,27 @@ namespace RavenDevOps.Fishing.Core
 
             var fishShop = GetOrAddComponent<FishShopController>(root);
             var router = GetOrAddComponent<HarborSceneInteractionRouter>(root);
-            router.Configure(interactables, hookShop, boatShop, fishShop, status);
+            router.Configure(interactables, hookShop, boatShop, fishShop, status, selection, economy, equipment, cargo, activityLog, interactionController);
+
+            hookButton.onClick.AddListener(router.OnHookShopRequested);
+            boatButton.onClick.AddListener(router.OnBoatShopRequested);
+            fishButton.onClick.AddListener(router.OnFishShopRequested);
+            sailButton.onClick.AddListener(router.OnSailRequested);
+            pauseButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
+
+            var pauseController = GetOrAddComponent<HarborPauseMenuController>(root);
+            pauseController.Configure(
+                pauseRoot,
+                hudRoot,
+                pauseResumeButton.gameObject);
+            pauseResumeButton.onClick.AddListener(pauseController.OnResumePressed);
+            pauseMainMenuButton.onClick.AddListener(pauseController.OnMainMenuPressed);
+            pauseExitButton.onClick.AddListener(pauseController.OnExitGamePressed);
+
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(sailButton.gameObject);
+            }
         }
 
         private static void ComposeFishing(Scene scene)
@@ -573,6 +801,21 @@ namespace RavenDevOps.Fishing.Core
             return panel;
         }
 
+        private static GameObject CreateTopLeftPanel(Transform parent, string name, Vector2 marginFromTopLeft, Vector2 size, Color color)
+        {
+            var panel = new GameObject(name);
+            panel.transform.SetParent(parent, worldPositionStays: false);
+            var rect = panel.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+            var image = panel.AddComponent<Image>();
+            image.color = color;
+            return panel;
+        }
+
         private static Text CreateTopLeftText(
             Transform parent,
             string name,
@@ -680,6 +923,131 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return button;
+        }
+
+        private static Slider CreateTopLeftSlider(
+            Transform parent,
+            string name,
+            Vector2 marginFromTopLeft,
+            Vector2 size,
+            float minValue,
+            float maxValue,
+            bool wholeNumbers = false)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, worldPositionStays: false);
+
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+
+            var slider = go.AddComponent<Slider>();
+            slider.minValue = minValue;
+            slider.maxValue = maxValue;
+            slider.wholeNumbers = wholeNumbers;
+            slider.direction = Slider.Direction.LeftToRight;
+
+            var background = new GameObject("Background");
+            background.transform.SetParent(go.transform, worldPositionStays: false);
+            var backgroundRect = background.AddComponent<RectTransform>();
+            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(1f, 0.5f);
+            backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(0f, 12f);
+            backgroundRect.anchoredPosition = Vector2.zero;
+            var backgroundImage = background.AddComponent<Image>();
+            backgroundImage.color = new Color(0.11f, 0.16f, 0.22f, 0.95f);
+
+            var fillArea = new GameObject("Fill Area");
+            fillArea.transform.SetParent(go.transform, worldPositionStays: false);
+            var fillAreaRect = fillArea.AddComponent<RectTransform>();
+            fillAreaRect.anchorMin = new Vector2(0f, 0f);
+            fillAreaRect.anchorMax = new Vector2(1f, 1f);
+            fillAreaRect.offsetMin = new Vector2(10f, 6f);
+            fillAreaRect.offsetMax = new Vector2(-10f, -6f);
+
+            var fill = new GameObject("Fill");
+            fill.transform.SetParent(fillArea.transform, worldPositionStays: false);
+            var fillRect = fill.AddComponent<RectTransform>();
+            fillRect.anchorMin = new Vector2(0f, 0f);
+            fillRect.anchorMax = new Vector2(1f, 1f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            var fillImage = fill.AddComponent<Image>();
+            fillImage.color = new Color(0.26f, 0.54f, 0.80f, 0.98f);
+
+            var handleSlideArea = new GameObject("Handle Slide Area");
+            handleSlideArea.transform.SetParent(go.transform, worldPositionStays: false);
+            var handleSlideRect = handleSlideArea.AddComponent<RectTransform>();
+            handleSlideRect.anchorMin = new Vector2(0f, 0f);
+            handleSlideRect.anchorMax = new Vector2(1f, 1f);
+            handleSlideRect.offsetMin = new Vector2(10f, 0f);
+            handleSlideRect.offsetMax = new Vector2(-10f, 0f);
+
+            var handle = new GameObject("Handle");
+            handle.transform.SetParent(handleSlideArea.transform, worldPositionStays: false);
+            var handleRect = handle.AddComponent<RectTransform>();
+            handleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            handleRect.anchorMax = new Vector2(0.5f, 0.5f);
+            handleRect.pivot = new Vector2(0.5f, 0.5f);
+            handleRect.sizeDelta = new Vector2(22f, 22f);
+            var handleImage = handle.AddComponent<Image>();
+            handleImage.color = new Color(0.93f, 0.97f, 1f, 0.98f);
+
+            slider.fillRect = fillRect;
+            slider.handleRect = handleRect;
+            slider.targetGraphic = handleImage;
+
+            return slider;
+        }
+
+        private static Toggle CreateTopLeftToggle(
+            Transform parent,
+            string name,
+            Vector2 marginFromTopLeft,
+            Vector2 size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, worldPositionStays: false);
+
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+
+            var toggle = go.AddComponent<Toggle>();
+
+            var background = new GameObject("Background");
+            background.transform.SetParent(go.transform, worldPositionStays: false);
+            var backgroundRect = background.AddComponent<RectTransform>();
+            backgroundRect.anchorMin = new Vector2(0.5f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(0.5f, 0.5f);
+            backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(24f, 24f);
+            backgroundRect.anchoredPosition = Vector2.zero;
+            var backgroundImage = background.AddComponent<Image>();
+            backgroundImage.color = new Color(0.11f, 0.16f, 0.22f, 0.95f);
+
+            var checkmark = new GameObject("Checkmark");
+            checkmark.transform.SetParent(background.transform, worldPositionStays: false);
+            var checkmarkRect = checkmark.AddComponent<RectTransform>();
+            checkmarkRect.anchorMin = new Vector2(0.5f, 0.5f);
+            checkmarkRect.anchorMax = new Vector2(0.5f, 0.5f);
+            checkmarkRect.pivot = new Vector2(0.5f, 0.5f);
+            checkmarkRect.sizeDelta = new Vector2(14f, 14f);
+            checkmarkRect.anchoredPosition = Vector2.zero;
+            var checkmarkImage = checkmark.AddComponent<Image>();
+            checkmarkImage.color = new Color(0.26f, 0.56f, 0.84f, 0.98f);
+
+            toggle.targetGraphic = backgroundImage;
+            toggle.graphic = checkmarkImage;
+
+            return toggle;
         }
 
         private static Font GetDefaultFont()
