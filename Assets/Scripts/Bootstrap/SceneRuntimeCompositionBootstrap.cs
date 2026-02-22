@@ -1596,7 +1596,7 @@ namespace RavenDevOps.Fishing.Core
                     id = "fish_cod",
                     minDistanceTier = 1,
                     maxDistanceTier = 2,
-                    minDepth = 10f,
+                    minDepth = 22f,
                     maxDepth = 42f,
                     rarityWeight = 9,
                     baseValue = 18,

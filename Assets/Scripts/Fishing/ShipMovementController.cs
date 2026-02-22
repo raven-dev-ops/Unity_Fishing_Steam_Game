@@ -31,6 +31,7 @@ namespace RavenDevOps.Fishing.Fishing
         public int CargoCapacity { get; private set; } = 12;
         public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
         public float DistanceTraveledUnits => _distanceTraveledUnits;
+        public bool SteeringLockedForFishingState => IsSteeringLockedByFishingState();
         private InputAction _moveShipAction;
         private float _smoothedAxis;
         private float _distanceTraveledUnits;
@@ -75,6 +76,11 @@ namespace RavenDevOps.Fishing.Fishing
         public void SetSpeedMultiplier(float multiplier)
         {
             _speedMultiplier = Mathf.Max(0.1f, multiplier);
+        }
+
+        public void ConfigureFishingStateMachine(FishingActionStateMachine fishingActionStateMachine)
+        {
+            _fishingActionStateMachine = fishingActionStateMachine;
         }
 
         public int ResolveDistanceTier(float xPosition)
@@ -249,6 +255,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             switch (_fishingActionStateMachine.State)
             {
+                case FishingActionState.InWater:
                 case FishingActionState.Hooked:
                 case FishingActionState.Reel:
                     return true;

@@ -31,6 +31,13 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _minimumFishSpawnDepth = 20f;
         [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
+        [SerializeField] private bool _enableReelStruggleEscape = true;
+        [SerializeField] private float _reelEscapeDrainWhileReeling = 0.45f;
+        [SerializeField] private float _reelEscapeDrainWhileIdle = 1f;
+        [SerializeField] private float _minimumReelEscapeWindowSeconds = 6f;
+        [SerializeField] private float _reelTensionBase = 0.22f;
+        [SerializeField] private float _reelTensionAmplitude = 0.2f;
+        [SerializeField] private float _reelTensionFrequency = 5.6f;
         [SerializeField] private bool _enableNoBitePity = true;
         [SerializeField] private int _noBitePityThresholdCasts = 2;
         [SerializeField] private float _pityBiteDelayScale = 0.5f;
@@ -73,6 +80,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _biteSelectionResolvedForCurrentDrop;
         private bool _biteApproachStarted;
         private bool _haulCatchInProgress;
+        private float _reelEscapeTimeRemaining;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _moveHookAction;
@@ -208,6 +216,7 @@ namespace RavenDevOps.Fishing.Fishing
             _biteTimerSeconds = 0f;
             _lastTensionState = FishingTensionState.None;
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
+            _reelEscapeTimeRemaining = 0f;
             _biteSelectionResolvedForCurrentDrop = false;
             _biteApproachStarted = false;
             _ambientFishController?.ResolveBoundFish(caught: false);
@@ -275,10 +284,16 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _haulCatchInProgress = true;
-            _catchSucceeded = true;
+            _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
-            _encounterModel.End();
-            _hudOverlay?.SetFishingStatus("Fish secured. Reeling to boat...");
+            _reelEscapeTimeRemaining = _enableReelStruggleEscape
+                ? ResolveReelEscapeWindowSeconds(_hookedFish)
+                : float.PositiveInfinity;
+            _encounterModel.Begin(_hookedFish, Mathf.Clamp01(_reelTensionBase));
+            var reelInstruction = IsReelToggleModeEnabled()
+                ? "Fish secured. Auto reeling to boat..."
+                : "Fish secured. Hold Up/W to reel before it escapes.";
+            _hudOverlay?.SetFishingStatus(reelInstruction);
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
             _lastTensionState = FishingTensionState.Safe;
@@ -376,13 +391,53 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            var isReeling = IsReelEffortActive();
+            UpdateReelEscapeTimer(isReeling);
+            if (_enableReelStruggleEscape && _reelEscapeTimeRemaining <= 0f)
+            {
+                _pendingFailReason = FishingFailReason.FishEscaped;
+                _catchSucceeded = false;
+                _stateMachine?.SetResolve();
+                return;
+            }
+
             var remainingDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
-            _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
-            _hudOverlay?.SetFishingStatus($"Reeling catch... {remainingDepth:0.0} depth to boat.");
+            var tension = ResolveReelTension(isReeling);
+            var tensionState = FishEncounterModel.ResolveTensionState(tension);
+            if (_lastTensionState != tensionState)
+            {
+                if (tensionState == FishingTensionState.Warning)
+                {
+                    _audioManager?.PlaySfx(_tensionWarningSfx);
+                }
+                else if (tensionState == FishingTensionState.Critical)
+                {
+                    _audioManager?.PlaySfx(_tensionCriticalSfx);
+                }
+
+                _lastTensionState = tensionState;
+            }
+
+            _hudOverlay?.SetFishingTension(tension, tensionState);
+            var escapeSuffix = _enableReelStruggleEscape
+                ? $"{Mathf.Max(0f, _reelEscapeTimeRemaining):0.0}s"
+                : "n/a";
+            if (!isReeling && !IsReelToggleModeEnabled())
+            {
+                _hudOverlay?.SetFishingStatus(
+                    $"Fish struggling... hold Up/W to reel. Escape in {escapeSuffix}.");
+            }
+            else
+            {
+                _hudOverlay?.SetFishingStatus(
+                    $"Reeling catch... {remainingDepth:0.0} depth to boat | Escape {escapeSuffix}.");
+            }
 
             if (IsHookAtBoat())
             {
                 _haulCatchInProgress = false;
+                _catchSucceeded = true;
+                _pendingFailReason = FishingFailReason.None;
                 _stateMachine?.SetResolve();
             }
         }
@@ -431,6 +486,7 @@ namespace RavenDevOps.Fishing.Fishing
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
+            _reelEscapeTimeRemaining = 0f;
             _biteApproachStarted = false;
             _stateMachine?.ResetToCast();
         }
@@ -748,6 +804,55 @@ namespace RavenDevOps.Fishing.Fishing
 
             var completionDepth = Mathf.Max(0.05f, _haulCompletionDepthThreshold);
             return _hook.CurrentDepth <= completionDepth;
+        }
+
+        private float ResolveReelEscapeWindowSeconds(FishDefinition fish)
+        {
+            if (fish == null)
+            {
+                return Mathf.Max(0.5f, _minimumReelEscapeWindowSeconds);
+            }
+
+            return Mathf.Max(
+                Mathf.Max(0.5f, _minimumReelEscapeWindowSeconds),
+                Mathf.Max(0.5f, fish.escapeSeconds));
+        }
+
+        private void UpdateReelEscapeTimer(bool isReeling)
+        {
+            if (!_enableReelStruggleEscape || float.IsInfinity(_reelEscapeTimeRemaining))
+            {
+                return;
+            }
+
+            var drainPerSecond = isReeling
+                ? Mathf.Max(0.05f, _reelEscapeDrainWhileReeling)
+                : Mathf.Max(0.05f, _reelEscapeDrainWhileIdle);
+            _reelEscapeTimeRemaining = Mathf.Max(0f, _reelEscapeTimeRemaining - (drainPerSecond * Time.deltaTime));
+        }
+
+        private float ResolveReelTension(bool isReeling)
+        {
+            var frequency = Mathf.Max(0.1f, _reelTensionFrequency);
+            var amplitude = Mathf.Abs(_reelTensionAmplitude);
+            var oscillation = Mathf.Sin(Time.time * frequency) * amplitude;
+            var reelingBias = isReeling ? 0.08f : -0.05f;
+            return Mathf.Clamp01(_reelTensionBase + oscillation + reelingBias);
+        }
+
+        private bool IsReelEffortActive()
+        {
+            if (IsReelToggleModeEnabled())
+            {
+                return true;
+            }
+
+            return IsUpInputHeldForReelStart();
+        }
+
+        private bool IsReelToggleModeEnabled()
+        {
+            return _settingsService != null && _settingsService.ReelInputToggle;
         }
 
         private int ResolveCurrentCargoCapacity()

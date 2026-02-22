@@ -11,6 +11,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private HookMovementController _hookController;
         [SerializeField] private Transform _ship;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _dockOffsetY = 0.65f;
         [SerializeField] private float _dockSnapLerp = 16f;
         [SerializeField] private float _initialAutoCastDepth = 25f;
@@ -56,6 +57,7 @@ namespace RavenDevOps.Fishing.Fishing
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             if (_hookController == null)
             {
                 RuntimeServiceRegistry.TryGet(out _hookController);
@@ -274,6 +276,11 @@ namespace RavenDevOps.Fishing.Fishing
         {
             var hookTransform = _hookController.transform;
             if (hookTransform == null || _ship == null)
+            {
+                return;
+            }
+
+            if (!ShouldApplyReelMotion())
             {
                 return;
             }
@@ -619,6 +626,21 @@ namespace RavenDevOps.Fishing.Fishing
             _hookController.GetWorldDepthBounds(out var minY, out var maxY);
             var targetY = _ship.position.y - Mathf.Max(0.1f, depth);
             return Mathf.Clamp(targetY, minY, maxY);
+        }
+
+        private bool ShouldApplyReelMotion()
+        {
+            if (_stateMachine == null || _stateMachine.State != FishingActionState.Reel)
+            {
+                return true;
+            }
+
+            if (_settingsService != null && _settingsService.ReelInputToggle)
+            {
+                return true;
+            }
+
+            return IsUpInputHeld();
         }
 
         private void SubscribeToStateMachine()
