@@ -39,6 +39,9 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
+            // Guarantee steering remains available while hook is down.
+            _allowSteeringWhileHookDown = true;
+
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
@@ -125,9 +128,18 @@ namespace RavenDevOps.Fishing.Fishing
                 ? Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f)
                 : 0f;
             var keyboardAxis = ResolveKeyboardShipAxis();
-            var rawAxis = Mathf.Abs(keyboardAxis) > Mathf.Abs(mappedAxis)
-                ? keyboardAxis
-                : mappedAxis;
+            var gamepadAxis = ResolveGamepadShipAxis();
+            var rawAxis = mappedAxis;
+            if (Mathf.Abs(keyboardAxis) > Mathf.Abs(rawAxis))
+            {
+                rawAxis = keyboardAxis;
+            }
+
+            if (Mathf.Abs(gamepadAxis) > Mathf.Abs(rawAxis))
+            {
+                rawAxis = gamepadAxis;
+            }
+
             if (Mathf.Abs(rawAxis) < Mathf.Clamp01(_inputDeadzone))
             {
                 rawAxis = 0f;
@@ -212,6 +224,20 @@ namespace RavenDevOps.Fishing.Fishing
             }
 #endif
 
+            return Mathf.Clamp(axis, -1f, 1f);
+        }
+
+        private static float ResolveGamepadShipAxis()
+        {
+            var gamepad = Gamepad.current;
+            if (gamepad == null)
+            {
+                return 0f;
+            }
+
+            var leftStickX = gamepad.leftStick.x.ReadValue();
+            var dpadX = gamepad.dpad.x.ReadValue();
+            var axis = Mathf.Abs(dpadX) > Mathf.Abs(leftStickX) ? dpadX : leftStickX;
             return Mathf.Clamp(axis, -1f, 1f);
         }
 
