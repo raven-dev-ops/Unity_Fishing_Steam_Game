@@ -24,6 +24,7 @@ namespace RavenDevOps.Fishing.Fishing
             public bool reserved;
             public bool hooked;
             public bool approaching;
+            public float offscreenSeconds;
         }
 
         [SerializeField] private string _fishNameToken = "FishingFish";
@@ -40,6 +41,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
         [SerializeField] private float _edgeBuffer = 1.35f;
+        [SerializeField] private float _offscreenDespawnSeconds = 2.8f;
+        [SerializeField] private float _offscreenDespawnDistance = 3.25f;
         [SerializeField] private float _bobAmplitude = 0.14f;
         [SerializeField] private float _bobFrequency = 1.45f;
         [SerializeField] private int _maxConcurrentFish = 3;
@@ -54,6 +57,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _hookedStruggleAmplitude = 0.08f;
         [SerializeField] private float _hookedStruggleFrequency = 6.8f;
         [SerializeField] private float _escapedFishSpeedMultiplier = 1.65f;
+        [SerializeField] private Camera _runtimeCamera;
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
 
@@ -195,7 +199,8 @@ namespace RavenDevOps.Fishing.Fishing
                     approachTimeoutAt = 0f,
                     hookedOffsetSign = 1f,
                     spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y),
-                    phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f)
+                    phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
+                    offscreenSeconds = 0f
                 };
 
                 renderer.enabled = false;
@@ -382,21 +387,31 @@ namespace RavenDevOps.Fishing.Fishing
             p.y = track.baseY + Mathf.Sin((now * _bobFrequency) + track.phase) * _bobAmplitude;
             track.transform.position = p;
 
-            var minX = Mathf.Min(_xBounds.x, _xBounds.y) - Mathf.Abs(_edgeBuffer);
-            var maxX = Mathf.Max(_xBounds.x, _xBounds.y) + Mathf.Abs(_edgeBuffer);
-            if (p.x < minX || p.x > maxX)
+            if (TryResolveDistanceOutsideViewport(p, out var outsideDistance))
             {
-                if (track.reserved)
+                track.offscreenSeconds += Time.deltaTime;
+                var despawnByDistance = outsideDistance >= Mathf.Max(0.5f, _offscreenDespawnDistance);
+                var despawnByTime = track.offscreenSeconds >= Mathf.Max(0.25f, _offscreenDespawnSeconds);
+                if (despawnByDistance || despawnByTime)
                 {
-                    SpawnTrack(track);
-                    track.reserved = true;
-                    track.hooked = false;
-                    track.approaching = false;
-                    track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
+                    if (track.reserved)
+                    {
+                        SpawnTrack(track);
+                        track.reserved = true;
+                        track.hooked = false;
+                        track.approaching = false;
+                        track.offscreenSeconds = 0f;
+                        track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
+                        return;
+                    }
+
+                    DespawnTrack(track);
                     return;
                 }
-
-                DespawnTrack(track);
+            }
+            else
+            {
+                track.offscreenSeconds = 0f;
             }
         }
 
@@ -488,6 +503,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.approaching = false;
             track.hooked = false;
             track.reserved = false;
+            track.offscreenSeconds = 0f;
             track.hookedOffsetSign = track.direction >= 0f ? 1f : -1f;
 
             var scaleMultiplier = UnityEngine.Random.Range(
@@ -502,6 +518,12 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.renderer.color = track.baseColor;
             track.renderer.flipX = track.direction < 0f;
+
+            if (TryResolveCameraWorldBounds(out var cameraLeft, out var cameraRight, out _, out _))
+            {
+                left = cameraLeft;
+                right = cameraRight;
+            }
 
             var spawnX = track.direction > 0f
                 ? left - Mathf.Abs(_edgeBuffer)
@@ -523,6 +545,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+            track.offscreenSeconds = 0f;
         }
 
         private void UpdateDynamicWaterBand()
@@ -574,6 +597,70 @@ namespace RavenDevOps.Fishing.Fishing
                 _hook ??= hookController.transform;
                 _ship ??= hookController.ShipTransform;
             }
+        }
+
+        private bool TryResolveDistanceOutsideViewport(Vector3 worldPosition, out float outsideDistance)
+        {
+            outsideDistance = 0f;
+            if (!TryResolveCameraWorldBounds(out var left, out var right, out var bottom, out var top))
+            {
+                return false;
+            }
+
+            var outsideX = 0f;
+            if (worldPosition.x < left)
+            {
+                outsideX = left - worldPosition.x;
+            }
+            else if (worldPosition.x > right)
+            {
+                outsideX = worldPosition.x - right;
+            }
+
+            var outsideY = 0f;
+            if (worldPosition.y < bottom)
+            {
+                outsideY = bottom - worldPosition.y;
+            }
+            else if (worldPosition.y > top)
+            {
+                outsideY = worldPosition.y - top;
+            }
+
+            outsideDistance = Mathf.Max(outsideX, outsideY);
+            return outsideDistance > 0.001f;
+        }
+
+        private bool TryResolveCameraWorldBounds(out float left, out float right, out float bottom, out float top)
+        {
+            left = 0f;
+            right = 0f;
+            bottom = 0f;
+            top = 0f;
+
+            if (_runtimeCamera == null)
+            {
+                _runtimeCamera = Camera.main;
+                if (_runtimeCamera == null)
+                {
+                    _runtimeCamera = FindAnyObjectByType<Camera>(FindObjectsInactive.Exclude);
+                }
+            }
+
+            if (_runtimeCamera == null || !_runtimeCamera.orthographic)
+            {
+                return false;
+            }
+
+            var halfHeight = Mathf.Max(0.01f, _runtimeCamera.orthographicSize);
+            var halfWidth = Mathf.Max(0.01f, halfHeight * Mathf.Max(0.01f, _runtimeCamera.aspect));
+            var cameraPosition = _runtimeCamera.transform.position;
+
+            left = cameraPosition.x - halfWidth;
+            right = cameraPosition.x + halfWidth;
+            bottom = cameraPosition.y - halfHeight;
+            top = cameraPosition.y + halfHeight;
+            return true;
         }
 
         private static float ResolveHookSideSign(float fishX, float hookX)
