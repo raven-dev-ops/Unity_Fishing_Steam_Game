@@ -24,6 +24,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _axisSmoothing = 10f;
         [SerializeField] private bool _movementEnabled = true;
         [SerializeField] private SpriteSwayMotion2D _swayMotion;
+        [SerializeField] private bool _enableHorizontalLag = true;
+        [SerializeField] private float _horizontalLagPerVelocitySeconds = 0.5f;
+        [SerializeField] private float _maxHorizontalLagDistance = 6f;
+        [SerializeField] private float _horizontalLagSmoothing = 5f;
+        [SerializeField] private float _horizontalFollowSmoothing = 8f;
 
         public float MaxDepth
         {
@@ -48,10 +53,15 @@ namespace RavenDevOps.Fishing.Fishing
         private float _smoothedAxis;
         private float _baseMaxDepth;
         private float _minDepthBelowSurface;
+        private ShipMovementController _shipMovement;
+        private bool _hasRecordedShipXForLag;
+        private float _lastShipXForLag;
+        private float _horizontalLagOffset;
 
         public void ConfigureShipTransform(Transform shipTransform)
         {
             _shipTransform = shipTransform;
+            ResetHorizontalLagState();
         }
 
         private void Awake()
@@ -71,6 +81,15 @@ namespace RavenDevOps.Fishing.Fishing
             _baseMaxDepth = Mathf.Max(Mathf.Abs(_depthBounds.x), Mathf.Abs(_depthBounds.y));
             _distanceTier = Mathf.Max(1, _distanceTier);
             RefreshHookStats();
+            ResetHorizontalLagState();
+        }
+
+        private void OnValidate()
+        {
+            _horizontalLagPerVelocitySeconds = Mathf.Max(0f, _horizontalLagPerVelocitySeconds);
+            _maxHorizontalLagDistance = Mathf.Max(0f, _maxHorizontalLagDistance);
+            _horizontalLagSmoothing = Mathf.Max(0.1f, _horizontalLagSmoothing);
+            _horizontalFollowSmoothing = Mathf.Max(0.1f, _horizontalFollowSmoothing);
         }
 
         private void OnEnable()
@@ -153,7 +172,26 @@ namespace RavenDevOps.Fishing.Fishing
             if (_shipTransform != null)
             {
                 var p = transform.position;
-                p.x = _shipTransform.position.x;
+                if (!_enableHorizontalLag)
+                {
+                    p.x = _shipTransform.position.x;
+                    transform.position = p;
+                    return;
+                }
+
+                var shipVelocityX = ResolveShipVelocityXForLag();
+                var maxLag = Mathf.Max(0f, _maxHorizontalLagDistance);
+                var targetLagOffset = Mathf.Clamp(
+                    -shipVelocityX * Mathf.Max(0f, _horizontalLagPerVelocitySeconds),
+                    -maxLag,
+                    maxLag);
+
+                var lagBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, _horizontalLagSmoothing) * Time.deltaTime);
+                _horizontalLagOffset = Mathf.Lerp(_horizontalLagOffset, targetLagOffset, lagBlend);
+
+                var targetX = _shipTransform.position.x + _horizontalLagOffset;
+                var followBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, _horizontalFollowSmoothing) * Time.deltaTime);
+                p.x = Mathf.Lerp(p.x, targetX, followBlend);
                 transform.position = p;
             }
         }
@@ -278,6 +316,46 @@ namespace RavenDevOps.Fishing.Fishing
             var p = transform.position;
             p.y = Mathf.Clamp(p.y, minY, maxY);
             transform.position = p;
+        }
+
+        private float ResolveShipVelocityXForLag()
+        {
+            if (_shipTransform == null)
+            {
+                ResetHorizontalLagState();
+                return 0f;
+            }
+
+            if (_shipMovement == null)
+            {
+                _shipMovement = _shipTransform.GetComponent<ShipMovementController>();
+            }
+
+            if (_shipMovement != null)
+            {
+                return _shipMovement.CurrentHorizontalVelocity;
+            }
+
+            var shipX = _shipTransform.position.x;
+            if (!_hasRecordedShipXForLag)
+            {
+                _hasRecordedShipXForLag = true;
+                _lastShipXForLag = shipX;
+                return 0f;
+            }
+
+            var deltaTime = Mathf.Max(0.0001f, Time.deltaTime);
+            var velocityX = (shipX - _lastShipXForLag) / deltaTime;
+            _lastShipXForLag = shipX;
+            return velocityX;
+        }
+
+        private void ResetHorizontalLagState()
+        {
+            _hasRecordedShipXForLag = false;
+            _lastShipXForLag = _shipTransform != null ? _shipTransform.position.x : 0f;
+            _horizontalLagOffset = 0f;
+            _shipMovement = null;
         }
     }
 }

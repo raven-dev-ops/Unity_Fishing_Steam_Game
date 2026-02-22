@@ -1203,6 +1203,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool IsAmbientPresenceAllowed()
         {
+            // Keep ambient fish active while an encounter is in progress so
+            // non-hooked fish do not abruptly despawn the moment a hook occurs.
+            if (_boundTrack != null && (_boundTrack.hooked || _boundTrack.approaching || _boundTrack.reserved))
+            {
+                return true;
+            }
+
             EnsureAnchors();
             var thresholdDepth = Mathf.Max(0.1f, Mathf.Abs(_minimumAmbientSpawnDepth));
             if (_hook == null || _ship == null)

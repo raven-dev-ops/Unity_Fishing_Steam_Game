@@ -126,6 +126,9 @@ namespace RavenDevOps.Fishing.Fishing
                     SetHookVisible(true);
                     TickAutoReelIn();
                     break;
+                case FishingActionState.Hooked:
+                    SetHookVisible(true);
+                    break;
             }
         }
 
@@ -175,6 +178,18 @@ namespace RavenDevOps.Fishing.Fishing
                 _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
                     ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
                     : 0f;
+                _hookController.SetMovementEnabled(false);
+                SetHookVisible(true);
+                return;
+            }
+
+            if (next == FishingActionState.Hooked)
+            {
+                _autoDropActive = false;
+                _autoReelActive = false;
+                _autoLowerActive = false;
+                _autoRaiseActive = false;
+                _levelOneReelPulseTimeRemaining = 0f;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -231,6 +246,15 @@ namespace RavenDevOps.Fishing.Fishing
                     _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
                         ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
                         : 0f;
+                    _hookController.SetMovementEnabled(false);
+                    SetHookVisible(true);
+                    break;
+                case FishingActionState.Hooked:
+                    _autoDropActive = false;
+                    _autoReelActive = false;
+                    _autoLowerActive = false;
+                    _autoRaiseActive = false;
+                    _levelOneReelPulseTimeRemaining = 0f;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
