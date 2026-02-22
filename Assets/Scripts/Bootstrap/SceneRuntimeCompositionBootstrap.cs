@@ -266,12 +266,12 @@ namespace RavenDevOps.Fishing.Core
             var telemetryText = CreateTopLeftText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
             var tensionText = CreateTopLeftText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
             var conditionText = CreateTopLeftText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
+            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast and drop hook.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
             var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 150f), new Vector2(844f, 38f));
             CreateTopLeftText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Left/Right move ship, Up/Down move hook, Space action, Esc pause, H return to harbor from pause.",
+                "Fishing: Left/Right move ship, Space casts and auto-drops hook, Up/Down adjusts depth, Esc pause, H return to harbor from pause.",
                 16,
                 TextAnchor.UpperLeft,
                 new Vector2(18f, 192f),
@@ -318,14 +318,26 @@ namespace RavenDevOps.Fishing.Core
 
             var shipMovement = GetOrAddComponent<ShipMovementController>(shipObject);
             shipMovement.RefreshShipStats();
+            GetOrAddComponent<FishingBoatFloatMotion2D>(shipObject);
 
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
             hookMovement.RefreshHookStats();
 
+            var dockedHookPosition = hookObject.transform.position;
+            dockedHookPosition.y = Mathf.Clamp(
+                shipObject.transform.position.y - 0.65f,
+                -Mathf.Abs(hookMovement.MaxDepth),
+                shipObject.transform.position.y);
+            hookObject.transform.position = dockedHookPosition;
+
             var stateMachine = GetOrAddComponent<FishingActionStateMachine>(root);
             var spawner = GetOrAddComponent<FishSpawner>(root);
             spawner.SetFallbackDefinitions(CreateDefaultFishDefinitions());
+            GetOrAddComponent<FishingAmbientFishSwimController>(root);
+
+            var hookDropController = GetOrAddComponent<FishingHookCastDropController>(root);
+            hookDropController.Configure(stateMachine, hookMovement, shipObject.transform);
 
             var hud = GetOrAddComponent<SimpleFishingHudOverlay>(root);
             hud.Configure(telemetryText, tensionText, statusText, failureText, conditionText);

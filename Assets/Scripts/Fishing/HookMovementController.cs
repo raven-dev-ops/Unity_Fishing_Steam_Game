@@ -19,6 +19,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _speedMultiplier = 1f;
         [SerializeField] private float _inputDeadzone = 0.12f;
         [SerializeField] private float _axisSmoothing = 10f;
+        [SerializeField] private bool _movementEnabled = true;
 
         public float MaxDepth
         {
@@ -70,6 +71,15 @@ namespace RavenDevOps.Fishing.Fishing
             _speedMultiplier = Mathf.Max(0.1f, multiplier);
         }
 
+        public void SetMovementEnabled(bool enabled)
+        {
+            _movementEnabled = enabled;
+            if (!enabled)
+            {
+                _smoothedAxis = 0f;
+            }
+        }
+
         private void LateUpdate()
         {
             if (_shipTransform != null)
@@ -83,6 +93,11 @@ namespace RavenDevOps.Fishing.Fishing
         private void Update()
         {
             RefreshActionsIfNeeded();
+            if (!_movementEnabled)
+            {
+                return;
+            }
+
             if (_moveHookAction == null)
             {
                 return;

@@ -245,8 +245,8 @@ namespace RavenDevOps.Fishing.EditorTools
                 root,
                 0f,
                 false);
-            AttachBackdropFit(farBackdrop, 1.04f);
-            AttachBackdropFit(veilBackdrop, 1.02f);
+            AttachBackdropFit(farBackdrop, 1.04f, true);
+            AttachBackdropFit(veilBackdrop, 1.02f, true);
 
             CreateSprite(
                 "TopBadge",
@@ -523,6 +523,12 @@ namespace RavenDevOps.Fishing.EditorTools
             var name = spriteObject.name ?? string.Empty;
             var phase = ComputePhase(name);
 
+            if (string.Equals(sceneName, "04_Fishing", StringComparison.Ordinal)
+                && NameContains(name, "FishingShip"))
+            {
+                return;
+            }
+
             if (NameContains(name, "Ship"))
             {
                 AddSway(spriteObject, new Vector2(0.09f, 0.05f), 0.18f, 2f, 0.12f, 0.02f, 0.10f, phase);
@@ -556,7 +562,7 @@ namespace RavenDevOps.Fishing.EditorTools
             }
         }
 
-        private static void AttachBackdropFit(GameObject spriteObject, float scaleMultiplier)
+        private static void AttachBackdropFit(GameObject spriteObject, float scaleMultiplier, bool followCamera)
         {
             if (spriteObject == null)
             {
@@ -569,7 +575,7 @@ namespace RavenDevOps.Fishing.EditorTools
                 fit = spriteObject.AddComponent<SceneBackdropFit2D>();
             }
 
-            fit.Configure(scaleMultiplier, true);
+            fit.Configure(scaleMultiplier, true, followCamera);
         }
 
         private static Sprite ResolveBackdropSprite(string sceneName)

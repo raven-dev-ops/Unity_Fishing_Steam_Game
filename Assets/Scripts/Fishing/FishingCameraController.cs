@@ -8,15 +8,15 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
-        [SerializeField] private Vector3 _offset = new Vector3(0f, 4f, -7f);
-        [SerializeField] private float _followLerp = 8f;
-        [SerializeField] private float _xPadding = 1.75f;
-        [SerializeField] private float _yPadding = 1.25f;
-        [SerializeField] private Vector2 _xBounds = new Vector2(-12f, 12f);
-        [SerializeField] private Vector2 _yBounds = new Vector2(-14f, 14f);
-        [SerializeField] private float _minOrthoSize = 4.5f;
-        [SerializeField] private float _maxOrthoSize = 7f;
-        [SerializeField] private float _maxTrackedDepth = 14f;
+        [SerializeField] private Vector3 _offset = new Vector3(0f, 0.85f, -10f);
+        [SerializeField] private float _followLerp = 9f;
+        [SerializeField] private float _xPadding = 2.4f;
+        [SerializeField] private float _yPadding = 2.8f;
+        [SerializeField] private Vector2 _xBounds = new Vector2(-10f, 10f);
+        [SerializeField] private Vector2 _yBounds = new Vector2(-7f, 6f);
+        [SerializeField] private float _minOrthoSize = 5.4f;
+        [SerializeField] private float _maxOrthoSize = 7.4f;
+        [SerializeField] private float _maxTrackedDepth = 10f;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionFollowScale = 0.45f;
         [SerializeField] private float _reducedMotionSizeLerpScale = 0.4f;

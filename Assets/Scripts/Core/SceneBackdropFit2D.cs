@@ -10,6 +10,8 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private Camera _targetCamera;
         [SerializeField] private bool _useMainCamera = true;
         [SerializeField] private bool _coverViewport = true;
+        [SerializeField] private bool _followCameraPosition = true;
+        [SerializeField] private bool _preserveDepth = true;
         [SerializeField, Min(0.1f)] private float _scaleMultiplier = 1f;
         [SerializeField] private bool _preserveZScale = true;
 
@@ -19,10 +21,14 @@ namespace RavenDevOps.Fishing.Core
         private float _lastOrthographicSize = -1f;
         private Sprite _lastSprite;
 
-        public void Configure(float scaleMultiplier, bool coverViewport = true)
+        public void Configure(
+            float scaleMultiplier,
+            bool coverViewport = true,
+            bool followCameraPosition = true)
         {
             _scaleMultiplier = Mathf.Max(0.1f, scaleMultiplier);
             _coverViewport = coverViewport;
+            _followCameraPosition = followCameraPosition;
             FitToCamera(force: true);
         }
 
@@ -102,6 +108,15 @@ namespace RavenDevOps.Fishing.Core
                 targetScale,
                 targetScale,
                 _preserveZScale ? currentScale.z : targetScale);
+
+            if (_followCameraPosition)
+            {
+                var currentPosition = transform.position;
+                transform.position = new Vector3(
+                    camera.transform.position.x,
+                    camera.transform.position.y,
+                    _preserveDepth ? currentPosition.z : camera.transform.position.z);
+            }
 
             _lastAspect = camera.aspect;
             _lastOrthographicSize = camera.orthographicSize;
