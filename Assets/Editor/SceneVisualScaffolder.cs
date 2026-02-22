@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,13 +20,10 @@ namespace RavenDevOps.Fishing.EditorTools
             "Assets/Scenes/04_Fishing.unity"
         };
 
-        private static readonly string[] SheetPaths =
+        private static readonly string[] SpriteSearchRoots =
         {
-            "Assets/Art/Sheets/Icons/icons_fish_sheet_v01.png",
-            "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
-            "Assets/Art/Sheets/Icons/icons_ships_sheet_v01.png",
-            "Assets/Art/Sheets/Icons/icons_ui_sheet_v01.png",
-            "Assets/Art/Sheets/Icons/icons_misc_sheet_v01.png"
+            "Assets/Art/Sheets/Icons",
+            "Assets/Art/Source/Icons"
         };
 
         private static Dictionary<string, Sprite> _spritesByName;
@@ -79,15 +77,20 @@ namespace RavenDevOps.Fishing.EditorTools
         private static Dictionary<string, Sprite> BuildSpriteLookup()
         {
             var lookup = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < SheetPaths.Length; i++)
+            for (var i = 0; i < SpriteSearchRoots.Length; i++)
             {
-                var path = SheetPaths[i];
-                var assets = AssetDatabase.LoadAllAssetsAtPath(path);
-                for (var j = 0; j < assets.Length; j++)
+                var searchRoot = SpriteSearchRoots[i];
+                var textureGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { searchRoot });
+                for (var guidIndex = 0; guidIndex < textureGuids.Length; guidIndex++)
                 {
-                    if (assets[j] is Sprite sprite && sprite != null && !lookup.ContainsKey(sprite.name))
+                    var path = AssetDatabase.GUIDToAssetPath(textureGuids[guidIndex]);
+                    var assets = AssetDatabase.LoadAllAssetsAtPath(path);
+                    for (var j = 0; j < assets.Length; j++)
                     {
-                        lookup.Add(sprite.name, sprite);
+                        if (assets[j] is Sprite sprite && sprite != null && !lookup.ContainsKey(sprite.name))
+                        {
+                            lookup.Add(sprite.name, sprite);
+                        }
                     }
                 }
             }
@@ -100,14 +103,25 @@ namespace RavenDevOps.Fishing.EditorTools
             var roots = scene.GetRootGameObjects();
             for (var i = 0; i < roots.Length; i++)
             {
-                UnityEngine.Object.DestroyImmediate(roots[i]);
+                var root = roots[i];
+                if (root == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(root.name, "__SceneVisuals", StringComparison.Ordinal)
+                    || string.Equals(root.name, "Main Camera", StringComparison.Ordinal))
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
             }
         }
 
         private static void BuildSceneVisuals(string scenePath)
         {
             var sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
-            var root = new GameObject("__SceneVisuals").transform;
+            var rootGo = new GameObject("__SceneVisuals");
+            var root = rootGo.transform;
             root.position = Vector3.zero;
 
             CreateSceneCamera(sceneName);
@@ -133,6 +147,8 @@ namespace RavenDevOps.Fishing.EditorTools
                     BuildFishingScene(root, ref sorting);
                     break;
             }
+
+            ApplySceneOrchestration(sceneName, rootGo);
         }
 
         private static void CreateSceneCamera(string sceneName)
@@ -146,20 +162,64 @@ namespace RavenDevOps.Fishing.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = ResolveBackgroundColor(sceneName);
             camera.transform.position = new Vector3(0f, 0f, -10f);
+            camera.nearClipPlane = -20f;
+            camera.farClipPlane = 30f;
+
+            cameraGo.AddComponent<AudioListener>();
         }
 
         private static void AddBackdrop(string sceneName, Transform root, ref int sorting)
         {
-            var bg = ResolveSprite("photo_yyyymmdd_hhmmss_mmm", "icons_misc_sheet_v01_0", "icon_test");
-            var badge = ResolveSprite("icon_test", "icons_ui_sheet_v01_0");
+            var bg = ResolveSprite("photo_yyyymmdd_hhmmss_mmm_v01", "photo_yyyymmdd_hhmmss_mmm", "icons_misc_sheet_v01_0");
+            var badge = ResolveSprite("icon_test_v01", "icon_test", "icons_ui_sheet_v01_0");
+
+            var farScale = new Vector2(7.4f, 6.6f);
+            var veilScale = new Vector2(6.2f, 4.4f);
+            var farTint = new Color(0.92f, 0.96f, 1f, 0.92f);
+            var veilTint = new Color(0.75f, 0.88f, 1f, 0.35f);
+            var badgeTint = new Color(1f, 0.95f, 0.75f, 0.95f);
+            var badgePosition = new Vector3(0f, 3.3f, 0f);
+
+            switch (sceneName)
+            {
+                case "00_Boot":
+                    farTint = new Color(0.60f, 0.70f, 0.84f, 0.95f);
+                    veilTint = new Color(0.70f, 0.82f, 1f, 0.34f);
+                    break;
+                case "01_Cinematic":
+                    farScale = new Vector2(8.6f, 6.8f);
+                    farTint = new Color(0.70f, 0.74f, 0.88f, 0.92f);
+                    veilTint = new Color(0.82f, 0.86f, 1f, 0.28f);
+                    badgeTint = new Color(1f, 0.93f, 0.72f, 0.92f);
+                    break;
+                case "02_MainMenu":
+                    farTint = new Color(0.62f, 0.76f, 0.90f, 0.93f);
+                    veilTint = new Color(0.76f, 0.89f, 1f, 0.30f);
+                    break;
+                case "03_Harbor":
+                    farScale = new Vector2(8.8f, 6.9f);
+                    veilScale = new Vector2(7.1f, 4.7f);
+                    farTint = new Color(0.58f, 0.78f, 0.90f, 0.92f);
+                    veilTint = new Color(0.70f, 0.90f, 1f, 0.32f);
+                    badgeTint = new Color(1f, 0.96f, 0.82f, 0.90f);
+                    break;
+                case "04_Fishing":
+                    farScale = new Vector2(9.2f, 7.2f);
+                    veilScale = new Vector2(7.3f, 4.9f);
+                    farTint = new Color(0.52f, 0.82f, 0.96f, 0.90f);
+                    veilTint = new Color(0.62f, 0.89f, 1f, 0.40f);
+                    badgeTint = new Color(1f, 0.97f, 0.82f, 0.85f);
+                    badgePosition = new Vector3(0f, 3.1f, 0f);
+                    break;
+            }
 
             CreateSprite(
                 "BackdropFar",
                 bg,
                 new Vector3(0f, 0f, 0f),
-                new Vector2(7.4f, 6.6f),
+                farScale,
                 sorting++,
-                Color.white,
+                farTint,
                 root,
                 0f,
                 false);
@@ -168,9 +228,9 @@ namespace RavenDevOps.Fishing.EditorTools
                 "BackdropVeil",
                 bg,
                 new Vector3(0f, -0.15f, 0f),
-                new Vector2(6.2f, 4.4f),
+                veilScale,
                 sorting++,
-                new Color(0.75f, 0.88f, 1f, 0.35f),
+                veilTint,
                 root,
                 0f,
                 false);
@@ -178,10 +238,10 @@ namespace RavenDevOps.Fishing.EditorTools
             CreateSprite(
                 "TopBadge",
                 badge,
-                new Vector3(0f, 3.3f, 0f),
+                badgePosition,
                 new Vector2(1.2f, 1.2f),
                 sorting++,
-                new Color(1f, 0.95f, 0.75f, 0.95f),
+                badgeTint,
                 root,
                 0f,
                 false);
@@ -228,11 +288,9 @@ namespace RavenDevOps.Fishing.EditorTools
 
             CreateSprite("MenuHookL1", ResolveSprite("hook_lv1", "hook_icon_coastal"), new Vector3(-4.25f, 0.9f, 0f), new Vector2(0.82f, 0.82f), sorting++, new Color(0.88f, 0.97f, 1f, 0.95f), root, 0f, false);
             CreateSprite("MenuHookL2", ResolveSprite("hook_lv2", "hook_lv1"), new Vector3(-4.25f, -0.35f, 0f), new Vector2(0.82f, 0.82f), sorting++, new Color(0.88f, 0.97f, 1f, 0.95f), root, 0f, false);
-            CreateSprite("MenuHookL3", ResolveSprite("hook_lv3", "hook_lv2"), new Vector3(-4.25f, -1.6f, 0f), new Vector2(0.82f, 0.82f), sorting++, new Color(0.88f, 0.97f, 1f, 0.95f), root, 0f, false);
 
             CreateSprite("MenuFishR1", ResolveSprite("fish_cod", "fish_a"), new Vector3(4.25f, 0.9f, 0f), new Vector2(0.96f, 0.96f), sorting++, Color.white, root, -12f, true);
             CreateSprite("MenuFishR2", ResolveSprite("fish_coastal_snapper", "fish_b"), new Vector3(4.25f, -0.35f, 0f), new Vector2(0.96f, 0.96f), sorting++, Color.white, root, -5f, true);
-            CreateSprite("MenuFishR3", ResolveSprite("fish_heavy", "fish_valid"), new Vector3(4.25f, -1.6f, 0f), new Vector2(0.96f, 0.96f), sorting++, Color.white, root, 7f, true);
         }
 
         private static void BuildHarborScene(Transform root, ref int sorting)
@@ -265,6 +323,210 @@ namespace RavenDevOps.Fishing.EditorTools
             CreateSprite("FishingFishMid", ResolveSprite("fish_heavy", "fish_pack"), new Vector3(0.2f, -2.55f, 0f), new Vector2(1.08f, 1.08f), sorting++, Color.white, root, 3f, false);
             CreateSprite("FishingFishRightA", ResolveSprite("fish_light", "fish_valid"), new Vector3(2.25f, -2.2f, 0f), new Vector2(0.95f, 0.95f), sorting++, Color.white, root, -12f, true);
             CreateSprite("FishingFishRightB", ResolveSprite("fish_surface", "fish_icon_coastal"), new Vector3(3.95f, -2.0f, 0f), new Vector2(0.93f, 0.93f), sorting++, Color.white, root, 12f, false);
+        }
+
+        private static void ApplySceneOrchestration(string sceneName, GameObject sceneRoot)
+        {
+            if (sceneRoot == null)
+            {
+                return;
+            }
+
+            var root = sceneRoot.transform;
+            var stageBackdrop = CreateStageRoot(root, "Stage_Backdrop");
+            var stageWorld = CreateStageRoot(root, "Stage_World");
+            var stageActors = CreateStageRoot(root, "Stage_Actors");
+            var stageForeground = CreateStageRoot(root, "Stage_Foreground");
+
+            var children = new List<Transform>();
+            for (var i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child == stageBackdrop || child == stageWorld || child == stageActors || child == stageForeground)
+                {
+                    continue;
+                }
+
+                children.Add(child);
+            }
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                var targetStage = ResolveStageForObject(sceneName, child.name, stageBackdrop, stageWorld, stageActors, stageForeground);
+                child.SetParent(targetStage, worldPositionStays: true);
+                TryAttachSway(sceneName, child.gameObject);
+            }
+
+            var orchestrator = sceneRoot.GetComponent<SceneVisualOrchestrator2D>();
+            if (orchestrator == null)
+            {
+                orchestrator = sceneRoot.AddComponent<SceneVisualOrchestrator2D>();
+            }
+
+            var stageDefinitions = new[]
+            {
+                new SceneVisualOrchestrator2D.StageDefinition("Backdrop", stageBackdrop, 0f, 0.45f),
+                new SceneVisualOrchestrator2D.StageDefinition("World", stageWorld, 0.16f, 0.50f),
+                new SceneVisualOrchestrator2D.StageDefinition("Actors", stageActors, 0.12f, 0.44f),
+                new SceneVisualOrchestrator2D.StageDefinition("Foreground", stageForeground, 0.10f, 0.38f)
+            };
+
+            var initialDelay = string.Equals(sceneName, "00_Boot", StringComparison.Ordinal) ? 0.08f : 0.04f;
+            orchestrator.ConfigureStages(stageDefinitions, initialDelay);
+            orchestrator.ShowAllImmediate();
+        }
+
+        private static Transform CreateStageRoot(Transform parent, string name)
+        {
+            var stage = new GameObject(name).transform;
+            stage.SetParent(parent, worldPositionStays: false);
+            stage.localPosition = Vector3.zero;
+            stage.localRotation = Quaternion.identity;
+            stage.localScale = Vector3.one;
+            return stage;
+        }
+
+        private static Transform ResolveStageForObject(
+            string sceneName,
+            string objectName,
+            Transform backdrop,
+            Transform world,
+            Transform actors,
+            Transform foreground)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return world;
+            }
+
+            if (NameContains(objectName, "Backdrop")
+                || NameContains(objectName, "Veil"))
+            {
+                return backdrop;
+            }
+
+            if (NameContains(objectName, "Dock")
+                || NameContains(objectName, "Ship"))
+            {
+                return world;
+            }
+
+            if (NameContains(objectName, "Fish"))
+            {
+                return actors;
+            }
+
+            if (NameContains(objectName, "Line")
+                || NameContains(objectName, "Surface"))
+            {
+                return string.Equals(sceneName, "04_Fishing", StringComparison.Ordinal) ? world : foreground;
+            }
+
+            if (NameContains(objectName, "Hook")
+                || NameContains(objectName, "Badge"))
+            {
+                return foreground;
+            }
+
+            return world;
+        }
+
+        private static void TryAttachSway(string sceneName, GameObject spriteObject)
+        {
+            if (spriteObject == null || spriteObject.GetComponent<SpriteRenderer>() == null)
+            {
+                return;
+            }
+
+            if (spriteObject.GetComponent<SpriteSwayMotion2D>() != null)
+            {
+                return;
+            }
+
+            var name = spriteObject.name ?? string.Empty;
+            var phase = ComputePhase(name);
+
+            if (NameContains(name, "Ship"))
+            {
+                AddSway(spriteObject, new Vector2(0.09f, 0.05f), 0.18f, 2f, 0.12f, 0.02f, 0.10f, phase);
+                return;
+            }
+
+            if (NameContains(name, "Fish"))
+            {
+                AddSway(spriteObject, new Vector2(0.20f, 0.11f), 0.29f, 8f, 0.23f, 0.03f, 0.18f, phase);
+                return;
+            }
+
+            if (NameContains(name, "Hook"))
+            {
+                AddSway(spriteObject, new Vector2(0.06f, 0.13f), 0.24f, 6f, 0.20f, 0.01f, 0.11f, phase);
+                return;
+            }
+
+            if (NameContains(name, "Line") || NameContains(name, "Surface"))
+            {
+                var lineAmplitude = string.Equals(sceneName, "04_Fishing", StringComparison.Ordinal)
+                    ? new Vector2(0.02f, 0.06f)
+                    : new Vector2(0.02f, 0.03f);
+                AddSway(spriteObject, lineAmplitude, 0.22f, 1.5f, 0.14f, 0.005f, 0.08f, phase);
+                return;
+            }
+
+            if (NameContains(name, "Badge"))
+            {
+                AddSway(spriteObject, new Vector2(0.03f, 0.04f), 0.12f, 2f, 0.10f, 0.01f, 0.06f, phase);
+            }
+        }
+
+        private static bool NameContains(string source, string token)
+        {
+            return !string.IsNullOrEmpty(source)
+                && !string.IsNullOrEmpty(token)
+                && source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static float ComputePhase(string value)
+        {
+            unchecked
+            {
+                var hash = 17;
+                for (var i = 0; i < value.Length; i++)
+                {
+                    hash = (hash * 31) + value[i];
+                }
+
+                var positive = hash & 0x7fffffff;
+                return (positive % 720) / 57.29578f;
+            }
+        }
+
+        private static void AddSway(
+            GameObject spriteObject,
+            Vector2 positionAmplitude,
+            float positionFrequency,
+            float rotationAmplitude,
+            float rotationFrequency,
+            float scaleAmplitude,
+            float scaleFrequency,
+            float phaseOffset)
+        {
+            if (spriteObject == null)
+            {
+                return;
+            }
+
+            var sway = spriteObject.AddComponent<SpriteSwayMotion2D>();
+            sway.Configure(
+                positionAmplitude,
+                positionFrequency,
+                rotationAmplitude,
+                rotationFrequency,
+                scaleAmplitude,
+                scaleFrequency,
+                phaseOffset,
+                false);
         }
 
         private static float ResolveCameraSize(string sceneName)
@@ -315,17 +577,23 @@ namespace RavenDevOps.Fishing.EditorTools
             for (var i = 0; i < candidates.Length; i++)
             {
                 var candidate = candidates[i];
-                if (!string.IsNullOrWhiteSpace(candidate) && _spritesByName.TryGetValue(candidate, out var sprite) && sprite != null)
+                if (string.IsNullOrWhiteSpace(candidate))
+                {
+                    continue;
+                }
+
+                if (_spritesByName.TryGetValue(candidate, out var sprite) && sprite != null)
                 {
                     return sprite;
                 }
-            }
 
-            foreach (var pair in _spritesByName)
-            {
-                if (pair.Value != null)
+                if (!candidate.EndsWith("_v01", StringComparison.OrdinalIgnoreCase))
                 {
-                    return pair.Value;
+                    var versionedCandidate = $"{candidate}_v01";
+                    if (_spritesByName.TryGetValue(versionedCandidate, out sprite) && sprite != null)
+                    {
+                        return sprite;
+                    }
                 }
             }
 

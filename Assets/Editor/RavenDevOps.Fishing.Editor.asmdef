@@ -2,6 +2,7 @@
   "name": "RavenDevOps.Fishing.Editor",
   "rootNamespace": "RavenDevOps.Fishing.EditorTools",
   "references": [
+    "RavenDevOps.Fishing.Core",
     "RavenDevOps.Fishing.Data",
     "RavenDevOps.Fishing.Tools"
   ],
