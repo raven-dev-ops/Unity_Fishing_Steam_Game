@@ -14,6 +14,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _clampHorizontalPosition = false;
         [SerializeField] private bool _useTravelDistanceForTier = true;
         [SerializeField] private float _distanceUnitsPerTier = 14f;
+        [SerializeField] private bool _disableSteeringWhileHookCast = true;
+        [SerializeField] private FishingActionStateMachine _fishingActionStateMachine;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -94,6 +96,11 @@ namespace RavenDevOps.Fishing.Fishing
         private void Update()
         {
             RefreshActionsIfNeeded();
+            if (IsSteeringLockedByFishingState())
+            {
+                _smoothedAxis = 0f;
+                return;
+            }
 
             var speed = ResolveMoveSpeed();
             var mappedAxis = _moveShipAction != null
@@ -214,6 +221,34 @@ namespace RavenDevOps.Fishing.Fishing
         private static bool IsFinite(float value)
         {
             return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private bool IsSteeringLockedByFishingState()
+        {
+            if (!_disableSteeringWhileHookCast)
+            {
+                return false;
+            }
+
+            ResolveFishingStateMachine();
+            return _fishingActionStateMachine != null
+                && _fishingActionStateMachine.State != FishingActionState.Cast;
+        }
+
+        private void ResolveFishingStateMachine()
+        {
+            if (_fishingActionStateMachine != null)
+            {
+                return;
+            }
+
+            RuntimeServiceRegistry.TryGet(out _fishingActionStateMachine);
+            if (_fishingActionStateMachine != null)
+            {
+                return;
+            }
+
+            _fishingActionStateMachine = FindAnyObjectByType<FishingActionStateMachine>(FindObjectsInactive.Include);
         }
     }
 }
