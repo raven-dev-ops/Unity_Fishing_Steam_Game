@@ -26,6 +26,7 @@ namespace RavenDevOps.Fishing.Fishing
             public bool reserved;
             public bool hooked;
             public bool approaching;
+            public bool settled;
             public float offscreenSeconds;
         }
 
@@ -327,6 +328,7 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.hooked = false;
             _boundTrack.active = false;
             _boundTrack.approaching = true;
+            _boundTrack.settled = false;
             _boundTrack.approachTimeoutAt = Time.time + Mathf.Max(0.2f, _biteApproachMaxDurationSeconds);
             _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
             _boundTrack.renderer.enabled = true;
@@ -355,10 +357,31 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.hooked = true;
             _boundTrack.active = false;
             _boundTrack.approaching = false;
+            _boundTrack.settled = false;
             _boundTrack.renderer.enabled = true;
             _boundHookTransform = hookTransform;
             if (hookTransform != null)
             {
+                _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
+            }
+        }
+
+        public void SetBoundFishSettled(Transform hookTransform)
+        {
+            if (_boundTrack == null || _boundTrack.transform == null || _boundTrack.renderer == null)
+            {
+                return;
+            }
+
+            _boundTrack.reserved = true;
+            _boundTrack.hooked = true;
+            _boundTrack.active = false;
+            _boundTrack.approaching = false;
+            _boundTrack.settled = true;
+            _boundTrack.renderer.enabled = true;
+            if (hookTransform != null)
+            {
+                _boundHookTransform = hookTransform;
                 _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
             }
         }
@@ -378,6 +401,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.hooked = false;
             track.reserved = false;
             track.approaching = false;
+            track.settled = false;
             if (track.renderer != null)
             {
                 track.renderer.color = track.baseColor;
@@ -577,6 +601,13 @@ namespace RavenDevOps.Fishing.Fishing
 
             var side = Mathf.Abs(track.hookedOffsetSign) > 0.01f ? Mathf.Sign(track.hookedOffsetSign) : (track.direction >= 0f ? 1f : -1f);
             var baseTarget = _boundHookTransform.position + new Vector3(Mathf.Abs(_biteApproachHookOffset.x) * side, _biteApproachHookOffset.y, 0f);
+            if (track.settled)
+            {
+                track.transform.position = new Vector3(baseTarget.x, baseTarget.y, track.transform.position.z);
+                track.renderer.flipX = side < 0f;
+                return;
+            }
+
             var struggle = new Vector3(
                 Mathf.Sin((Time.time * _hookedStruggleFrequency) + track.phase) * _hookedStruggleAmplitude,
                 Mathf.Cos((Time.time * (_hookedStruggleFrequency * 0.7f)) + track.phase) * (_hookedStruggleAmplitude * 0.45f),
@@ -614,6 +645,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.approachTimeoutAt = 0f;
             track.approaching = false;
             track.hooked = false;
+            track.settled = false;
             track.reserved = false;
             track.offscreenSeconds = 0f;
             track.hookedOffsetSign = track.direction >= 0f ? 1f : -1f;
@@ -670,6 +702,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.active = false;
             track.approaching = false;
             track.hooked = false;
+            track.settled = false;
             if (track.renderer != null)
             {
                 track.renderer.enabled = false;

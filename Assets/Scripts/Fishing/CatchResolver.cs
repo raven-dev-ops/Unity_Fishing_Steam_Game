@@ -32,11 +32,14 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
         [SerializeField] private float _hookCollisionRadius = 0.22f;
-        [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
+        [SerializeField] private float _haulCompletionDepthThreshold = 20f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
         [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
         [SerializeField] private bool _enableReelStruggleEscape = true;
+        [SerializeField] private bool _useFishTypeEscapeChance = true;
+        [SerializeField, Range(0f, 1f)] private float _fishTypeEscapeChanceFloor = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float _fishTypeEscapeChanceCeiling = 0.85f;
         [SerializeField] private float _reelEscapeDrainWhileReeling = 0.45f;
         [SerializeField] private float _reelEscapeDrainWhileIdle = 1f;
         [SerializeField] private float _minimumReelEscapeWindowSeconds = 6f;
@@ -255,7 +258,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to line up fish, then collide hook to hook.");
+            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, then reel to depth 20 to secure the catch.");
         }
 
         private void BeginHookedPhase()
@@ -311,9 +314,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _levelOneReelPulseTimeRemaining = Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds);
             }
 
-            _reelEscapeTimeRemaining = _enableReelStruggleEscape
-                ? ResolveReelEscapeWindowSeconds(_hookedFish)
-                : float.PositiveInfinity;
+            _reelEscapeTimeRemaining = ResolveInitialReelEscapeTimer(_hookedFish);
             _encounterModel.Begin(_hookedFish, Mathf.Clamp01(_reelTensionBase));
             var reelInstruction = ResolveReelInstruction();
             _hudOverlay?.SetFishingStatus(reelInstruction);
@@ -454,7 +455,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             var isReeling = IsReelEffortActive();
             UpdateReelEscapeTimer(isReeling);
-            if (_enableReelStruggleEscape && _reelEscapeTimeRemaining <= 0f)
+            var hasActiveEscapeRisk = _enableReelStruggleEscape && !float.IsInfinity(_reelEscapeTimeRemaining);
+            if (hasActiveEscapeRisk && _reelEscapeTimeRemaining <= 0f)
             {
                 _pendingFailReason = FishingFailReason.FishEscaped;
                 _catchSucceeded = false;
@@ -463,6 +465,8 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var remainingDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
+            var catchDepthThreshold = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
+            var remainingDepthUntilSecured = Mathf.Max(0f, remainingDepth - catchDepthThreshold);
             var tension = ResolveReelTension(isReeling);
             var tensionState = FishEncounterModel.ResolveTensionState(tension);
             if (_lastTensionState != tensionState)
@@ -480,22 +484,23 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _hudOverlay?.SetFishingTension(tension, tensionState);
-            var escapeSuffix = _enableReelStruggleEscape
-                ? $"{Mathf.Max(0f, _reelEscapeTimeRemaining):0.0}s"
-                : "n/a";
+            var escapeStatus = hasActiveEscapeRisk
+                ? $"Escape in {Mathf.Max(0f, _reelEscapeTimeRemaining):0.0}s."
+                : "Escape risk low.";
             if (!isReeling && !IsReelToggleModeEnabled())
             {
                 _hudOverlay?.SetFishingStatus(
-                    $"Fish struggling... {ResolveReelFailPrompt()} Escape in {escapeSuffix}.");
+                    $"Fish struggling... {ResolveReelFailPrompt()} {escapeStatus}");
             }
             else
             {
                 _hudOverlay?.SetFishingStatus(
-                    $"Reeling catch... {remainingDepth:0.0} depth to boat | Escape {escapeSuffix}.");
+                    $"Reeling catch... {remainingDepthUntilSecured:0.0} depth until secured | {escapeStatus}");
             }
 
             if (IsHookAtBoat())
             {
+                _ambientFishController?.SetBoundFishSettled(_hook != null ? _hook.transform : null);
                 _haulCatchInProgress = false;
                 _catchSucceeded = true;
                 _pendingFailReason = FishingFailReason.None;
@@ -981,6 +986,63 @@ namespace RavenDevOps.Fishing.Fishing
             return Mathf.Max(
                 Mathf.Max(0.5f, _minimumReelEscapeWindowSeconds),
                 Mathf.Max(0.5f, fish.escapeSeconds));
+        }
+
+        private float ResolveInitialReelEscapeTimer(FishDefinition fish)
+        {
+            if (!_enableReelStruggleEscape)
+            {
+                return float.PositiveInfinity;
+            }
+
+            if (!_useFishTypeEscapeChance)
+            {
+                return ResolveReelEscapeWindowSeconds(fish);
+            }
+
+            if (fish == null)
+            {
+                return ResolveReelEscapeWindowSeconds(fish);
+            }
+
+            var escapeChance = ResolveFishTypeEscapeChance(fish);
+            var roll = (_randomSource ?? new UnityFishingRandomSource()).Range(0f, 1f);
+            if (roll <= escapeChance)
+            {
+                return ResolveReelEscapeWindowSeconds(fish);
+            }
+
+            return float.PositiveInfinity;
+        }
+
+        private float ResolveFishTypeEscapeChance(FishDefinition fish)
+        {
+            if (fish == null)
+            {
+                return Mathf.Clamp01(Mathf.Min(_fishTypeEscapeChanceFloor, _fishTypeEscapeChanceCeiling));
+            }
+
+            var minChance = Mathf.Clamp01(Mathf.Min(_fishTypeEscapeChanceFloor, _fishTypeEscapeChanceCeiling));
+            var maxChance = Mathf.Clamp01(Mathf.Max(_fishTypeEscapeChanceFloor, _fishTypeEscapeChanceCeiling));
+
+            var escapeSeconds = Mathf.Max(0.1f, fish.escapeSeconds);
+            if (escapeSeconds <= 1f)
+            {
+                return 1f;
+            }
+
+            var escapePressure = 1f - Mathf.Clamp01((escapeSeconds - 3f) / 9f);
+            var staminaPressure = Mathf.Clamp01((Mathf.Max(0.1f, fish.fightStamina) - 3f) / 9f);
+            var pullPressure = Mathf.Clamp01((Mathf.Max(0.1f, fish.pullIntensity) - 0.8f) / 1.6f);
+            var rarityPressure = Mathf.Clamp01((Mathf.Max(1, fish.rarityWeight) - 1f) / 12f);
+
+            var weightedDifficulty = Mathf.Clamp01(
+                (escapePressure * 0.5f) +
+                (staminaPressure * 0.28f) +
+                (pullPressure * 0.17f) +
+                (rarityPressure * 0.05f));
+
+            return Mathf.Lerp(minChance, maxChance, weightedDifficulty);
         }
 
         private void UpdateReelEscapeTimer(bool isReeling)
