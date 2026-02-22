@@ -20,6 +20,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _shipViewportY = 0.84f;
         [SerializeField] private float _hookViewportMinY = 0.12f;
         [SerializeField] private float _hookFollowBlend = 0.22f;
+        [SerializeField] private float _hookFollowStartDepth = 15f;
+        [SerializeField] private float _hookFollowTransitionDepth = 4f;
+        [SerializeField] private float _deepFollowHookViewportY = 0.3f;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionFollowScale = 0.45f;
         [SerializeField] private float _reducedMotionSizeLerpScale = 0.4f;
@@ -63,11 +66,11 @@ namespace RavenDevOps.Fishing.Fishing
                 _ship.position.x + _offset.x,
                 Mathf.Min(_xBounds.x, _xBounds.y),
                 Mathf.Max(_xBounds.x, _xBounds.y));
-            desired.y = ResolveTargetCameraY(targetSize);
-            desired.y = Mathf.Clamp(
-                desired.y,
-                Mathf.Min(_yBounds.x, _yBounds.y),
-                Mathf.Max(_yBounds.x, _yBounds.y));
+            desired.y = ResolveTargetCameraY(targetSize, out var hookAlignedY);
+            var minYBound = Mathf.Min(_yBounds.x, _yBounds.y);
+            var maxYBound = Mathf.Max(_yBounds.x, _yBounds.y);
+            var dynamicMinY = Mathf.Min(minYBound, hookAlignedY);
+            desired.y = Mathf.Clamp(desired.y, dynamicMinY, maxYBound);
             desired.z = _offset.z;
 
             transform.position = Vector3.Lerp(transform.position, desired, 1f - Mathf.Exp(-followLerp * Time.unscaledDeltaTime));
@@ -95,15 +98,25 @@ namespace RavenDevOps.Fishing.Fishing
             return Mathf.Clamp(targetSize, _minOrthoSize, _maxOrthoSize);
         }
 
-        private float ResolveTargetCameraY(float orthoSize)
+        private float ResolveTargetCameraY(float orthoSize, out float hookAlignedY)
         {
             var shipViewportY = Mathf.Clamp(_shipViewportY, 0.55f, 0.95f);
             var hookViewportMinY = Mathf.Clamp(_hookViewportMinY, 0.01f, shipViewportY - 0.1f);
+            var deepFollowHookViewportY = Mathf.Clamp(_deepFollowHookViewportY, hookViewportMinY, shipViewportY - 0.08f);
+            var depthFromShip = Mathf.Max(0f, _ship.position.y - _hook.position.y);
+            var depthRatio = Mathf.Clamp01(depthFromShip / Mathf.Max(0.1f, _maxTrackedDepth));
+            var baseBlend = Mathf.Clamp01(_hookFollowBlend) * depthRatio;
+
+            var deepFollowStartDepth = Mathf.Max(0f, _hookFollowStartDepth);
+            var deepFollowTransitionDepth = Mathf.Max(0.1f, _hookFollowTransitionDepth);
+            var deepFollowRatio = Mathf.Clamp01((depthFromShip - deepFollowStartDepth) / deepFollowTransitionDepth);
+            deepFollowRatio = Mathf.SmoothStep(0f, 1f, deepFollowRatio);
+
+            var targetHookViewportY = Mathf.Lerp(hookViewportMinY, deepFollowHookViewportY, deepFollowRatio);
 
             var anchorY = _ship.position.y - ((shipViewportY - 0.5f) * 2f * orthoSize);
-            var hookAlignedY = _hook.position.y + ((0.5f - hookViewportMinY) * 2f * orthoSize);
-            var depthRatio = Mathf.Clamp01(Mathf.Max(0f, _ship.position.y - _hook.position.y) / Mathf.Max(0.1f, _maxTrackedDepth));
-            var blend = Mathf.Clamp01(_hookFollowBlend) * depthRatio;
+            hookAlignedY = _hook.position.y + ((0.5f - targetHookViewportY) * 2f * orthoSize);
+            var blend = Mathf.Clamp01(baseBlend + ((1f - baseBlend) * deepFollowRatio));
             return Mathf.Lerp(anchorY, hookAlignedY, blend);
         }
     }
