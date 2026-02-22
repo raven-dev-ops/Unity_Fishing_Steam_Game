@@ -490,10 +490,17 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            EnsureAnchors();
             var left = Mathf.Min(_xBounds.x, _xBounds.y);
             var right = Mathf.Max(_xBounds.x, _xBounds.y);
             var top = Mathf.Max(_yBounds.x, _yBounds.y);
             var bottom = Mathf.Min(_yBounds.x, _yBounds.y);
+            if (_ship != null)
+            {
+                var minimumDepthTopY = _ship.position.y - Mathf.Abs(_minimumAmbientSpawnDepth);
+                top = Mathf.Min(top, minimumDepthTopY);
+                bottom = Mathf.Min(bottom, top - 0.5f);
+            }
 
             track.direction = UnityEngine.Random.value < 0.5f ? 1f : -1f;
             track.speed = UnityEngine.Random.Range(Mathf.Min(_speedRange.x, _speedRange.y), Mathf.Max(_speedRange.x, _speedRange.y));

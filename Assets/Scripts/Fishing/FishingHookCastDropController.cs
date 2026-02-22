@@ -13,21 +13,23 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private float _dockOffsetY = 0.65f;
         [SerializeField] private float _dockSnapLerp = 16f;
+        [SerializeField] private float _initialAutoCastDepth = 25f;
+        [SerializeField] private float _autoRetractDepth = 20f;
+        [SerializeField] private float _downDoubleTapWindowSeconds = 0.35f;
+        [SerializeField] private float _autoLowerSpeed = 7f;
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private bool _matchAutoReelSpeedToDropSpeed = true;
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
-        [SerializeField] private bool _requireCastHoldForAutoDrop = true;
-        [SerializeField] private float _castHoldReleaseGraceSeconds = 0.2f;
-        [SerializeField] private float _minimumInitialDropDistance = 10f;
 
         private InputAction _moveHookAction;
         private InputAction _actionInput;
         private bool _autoDropActive;
         private bool _autoReelActive;
+        private bool _autoLowerActive;
         private bool _stateMachineSubscribed;
-        private float _inWaterElapsed;
-        private float _castStartY;
+        private float _lastDownPressTime = -10f;
+        private bool _axisDownHeldLastFrame;
         private SpriteRenderer _hookRenderer;
 
         public void Configure(
@@ -108,6 +110,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingActionState.InWater:
                     SetHookVisible(true);
                     TickAutoDrop();
+                    TickInWaterControl();
                     break;
                 case FishingActionState.Reel:
                     SetHookVisible(true);
@@ -126,8 +129,8 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.Cast)
             {
                 _autoDropActive = false;
-                _inWaterElapsed = 0f;
                 _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
+                _autoLowerActive = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(_autoReelActive);
                 return;
@@ -136,9 +139,10 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.InWater)
             {
                 _autoDropActive = true;
-                _inWaterElapsed = 0f;
-                _castStartY = _hookController.transform.position.y;
                 _autoReelActive = false;
+                _autoLowerActive = false;
+                _lastDownPressTime = -10f;
+                _axisDownHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -147,16 +151,16 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.Reel)
             {
                 _autoDropActive = false;
-                _inWaterElapsed = 0f;
                 _autoReelActive = true;
+                _autoLowerActive = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
             }
 
             _autoDropActive = false;
-            _inWaterElapsed = 0f;
             _autoReelActive = false;
+            _autoLowerActive = false;
             _hookController.SetMovementEnabled(true);
             SetHookVisible(true);
         }
@@ -172,31 +176,32 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 case FishingActionState.Cast:
                     _autoDropActive = false;
-                    _inWaterElapsed = 0f;
                     _autoReelActive = false;
+                    _autoLowerActive = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(false);
                     SnapHookToDock();
                     break;
                 case FishingActionState.InWater:
                     _autoDropActive = true;
-                    _inWaterElapsed = 0f;
-                    _castStartY = _hookController.transform.position.y;
                     _autoReelActive = false;
+                    _autoLowerActive = false;
+                    _lastDownPressTime = -10f;
+                    _axisDownHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
                 case FishingActionState.Reel:
                     _autoDropActive = false;
-                    _inWaterElapsed = 0f;
                     _autoReelActive = true;
+                    _autoLowerActive = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
                 default:
                     _autoDropActive = false;
-                    _inWaterElapsed = 0f;
                     _autoReelActive = false;
+                    _autoLowerActive = false;
                     _hookController.SetMovementEnabled(true);
                     SetHookVisible(true);
                     break;
@@ -227,26 +232,8 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _hookController.SetMovementEnabled(false);
-            _inWaterElapsed += Time.deltaTime;
             RefreshMoveHookAction();
             RefreshActionInput();
-            var droppedDistance = Mathf.Max(0f, _castStartY - _hookController.transform.position.y);
-            if (_requireCastHoldForAutoDrop
-                && _inWaterElapsed > Mathf.Max(0f, _castHoldReleaseGraceSeconds)
-                && droppedDistance >= Mathf.Max(0f, _minimumInitialDropDistance)
-                && !IsActionHeld())
-            {
-                _autoDropActive = false;
-                _hookController.SetMovementEnabled(true);
-                return;
-            }
-
-            if (droppedDistance >= Mathf.Max(0f, _minimumInitialDropDistance) && IsManualHookInputActive())
-            {
-                _autoDropActive = false;
-                _hookController.SetMovementEnabled(true);
-                return;
-            }
 
             var hookTransform = _hookController.transform;
             if (hookTransform == null)
@@ -254,12 +241,12 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hookController.GetWorldDepthBounds(out var minY, out _);
+            var targetY = ResolveWorldYForDepth(_initialAutoCastDepth);
             var position = hookTransform.position;
-            position.y = Mathf.MoveTowards(position.y, minY, Mathf.Max(0.1f, _autoDropSpeed) * Time.deltaTime);
+            position.y = Mathf.MoveTowards(position.y, targetY, Mathf.Max(0.1f, _autoDropSpeed) * Time.deltaTime);
             hookTransform.position = position;
 
-            if (Mathf.Abs(position.y - minY) <= 0.01f)
+            if (Mathf.Abs(position.y - targetY) <= 0.01f)
             {
                 _autoDropActive = false;
                 _hookController.SetMovementEnabled(true);
@@ -286,6 +273,101 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoReelActive = false;
                 _hookController.SetMovementEnabled(false);
             }
+        }
+
+        private void TickInWaterControl()
+        {
+            if (_stateMachine == null || _stateMachine.State != FishingActionState.InWater || _hookController == null)
+            {
+                return;
+            }
+
+            if (_autoDropActive)
+            {
+                return;
+            }
+
+            if (_autoLowerActive)
+            {
+                TickAutoLower();
+            }
+            else if (IsDownPressedThisFrame())
+            {
+                var now = Time.unscaledTime;
+                if (now - _lastDownPressTime <= Mathf.Max(0.1f, _downDoubleTapWindowSeconds))
+                {
+                    StartAutoLower();
+                }
+
+                _lastDownPressTime = now;
+            }
+
+            TryAutoRetractAtThreshold();
+        }
+
+        private void TickAutoLower()
+        {
+            if (_hookController == null || _hookController.transform == null)
+            {
+                _autoLowerActive = false;
+                return;
+            }
+
+            if (IsUpInputHeld())
+            {
+                _autoLowerActive = false;
+                _hookController.SetMovementEnabled(true);
+                return;
+            }
+
+            _hookController.SetMovementEnabled(false);
+            _hookController.GetWorldDepthBounds(out var minY, out _);
+            var hookTransform = _hookController.transform;
+            var position = hookTransform.position;
+            position.y = Mathf.MoveTowards(position.y, minY, Mathf.Max(0.1f, _autoLowerSpeed) * Time.deltaTime);
+            hookTransform.position = position;
+
+            if (Mathf.Abs(position.y - minY) <= 0.01f)
+            {
+                _autoLowerActive = false;
+                _hookController.SetMovementEnabled(true);
+            }
+        }
+
+        private void StartAutoLower()
+        {
+            if (_autoDropActive || _autoReelActive || _stateMachine == null || _stateMachine.State != FishingActionState.InWater)
+            {
+                return;
+            }
+
+            _autoLowerActive = true;
+            _hookController.SetMovementEnabled(false);
+        }
+
+        private void TryAutoRetractAtThreshold()
+        {
+            if (_stateMachine == null
+                || _hookController == null
+                || _stateMachine.State != FishingActionState.InWater
+                || _autoDropActive)
+            {
+                return;
+            }
+
+            if (!IsUpInputHeld())
+            {
+                return;
+            }
+
+            if (_hookController.CurrentDepth > Mathf.Max(0.1f, _autoRetractDepth))
+            {
+                return;
+            }
+
+            _autoLowerActive = false;
+            _hookController.SetMovementEnabled(false);
+            _stateMachine.ResetToCast();
         }
 
         private void RefreshMoveHookAction()
@@ -408,6 +490,55 @@ namespace RavenDevOps.Fishing.Fishing
             return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
         }
 
+        private bool IsDownPressedThisFrame()
+        {
+            RefreshMoveHookAction();
+
+            var keyboardPressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                keyboardPressed = keyboard.downArrowKey.wasPressedThisFrame || keyboard.sKey.wasPressedThisFrame;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            keyboardPressed = keyboardPressed
+                || UnityEngine.Input.GetKeyDown(KeyCode.DownArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.S);
+#endif
+
+            var threshold = Mathf.Clamp01(_manualOverrideThreshold);
+            var axisDown = _moveHookAction != null && _moveHookAction.ReadValue<float>() < -threshold;
+            var axisPressed = axisDown && !_axisDownHeldLastFrame;
+            _axisDownHeldLastFrame = axisDown;
+            return keyboardPressed || axisPressed;
+        }
+
+        private bool IsUpInputHeld()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && (keyboard.upArrowKey.isPressed || keyboard.wKey.isPressed))
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.UpArrow) || UnityEngine.Input.GetKey(KeyCode.W))
+            {
+                return true;
+            }
+#endif
+
+            RefreshMoveHookAction();
+            if (_moveHookAction == null)
+            {
+                return false;
+            }
+
+            var threshold = Mathf.Clamp01(_manualOverrideThreshold);
+            return _moveHookAction.ReadValue<float>() > threshold;
+        }
+
         private bool IsManualHookInputActive()
         {
             var keyboard = Keyboard.current;
@@ -446,6 +577,18 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(0.1f, _autoReelSpeed);
+        }
+
+        private float ResolveWorldYForDepth(float depth)
+        {
+            if (_hookController == null || _ship == null)
+            {
+                return _hookController != null ? _hookController.transform.position.y : 0f;
+            }
+
+            _hookController.GetWorldDepthBounds(out var minY, out var maxY);
+            var targetY = _ship.position.y - Mathf.Max(0.1f, depth);
+            return Mathf.Clamp(targetY, minY, maxY);
         }
 
         private void SubscribeToStateMachine()
