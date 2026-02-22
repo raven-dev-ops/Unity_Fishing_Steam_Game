@@ -301,6 +301,13 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            if (IsActionHeldForCastDepth())
+            {
+                _inWaterElapsedSeconds = 0f;
+                _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
+                return;
+            }
+
             _inWaterElapsedSeconds += Time.deltaTime;
             if (_inWaterElapsedSeconds >= _biteTimerSeconds)
             {
@@ -677,6 +684,12 @@ namespace RavenDevOps.Fishing.Fishing
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.isPressed;
+        }
+
+        private bool IsActionHeldForCastDepth()
+        {
+            var mappedIsPressed = _reelAction != null && _reelAction.IsPressed();
+            return mappedIsPressed || IsFallbackActionHeld();
         }
 
         private void SubscribeToStateMachine()
