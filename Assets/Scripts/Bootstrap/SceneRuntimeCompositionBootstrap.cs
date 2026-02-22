@@ -620,6 +620,7 @@ namespace RavenDevOps.Fishing.Core
                 hookLv1Button.gameObject,
                 boatLv1Button.gameObject,
                 fishSellButton.gameObject,
+                sailButton,
                 new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button },
                 new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button },
                 new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon },

@@ -7,11 +7,13 @@ using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Economy;
+using RavenDevOps.Fishing.Harbor;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Tests.PlayMode
 {
@@ -276,11 +278,229 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 "Expected fallback fishing skybox key to resolve.");
         }
 
+        [UnityTest]
+        public IEnumerator HarborSailFlow_CargoFullBlocksDepartureUntilCargoSold()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborSailGuard");
+            yield return null;
+
+            saveManager.Current.fishInventory.Clear();
+            saveManager.Current.fishInventory.Add(new FishInventoryEntry
+            {
+                fishId = "fish_cod",
+                distanceTier = 1,
+                count = 12
+            });
+            saveManager.Save(forceImmediate: true);
+
+            var statusText = CreateUiText("HarborStatusText_SailGuard");
+            var cargoText = CreateUiText("HarborCargoText_SailGuard");
+            var sailButton = CreateUiButton("HarborSailButton_SailGuard");
+
+            var routerRoot = new GameObject("HarborRouter_SailGuard");
+            routerRoot.SetActive(false);
+            _createdRoots.Add(routerRoot);
+            var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
+            SetPrivateField(router, "_saveManager", saveManager);
+            router.Configure(
+                interactables: new List<WorldInteractable>(),
+                hookShop: null,
+                boatShop: null,
+                fishShop: null,
+                statusText: statusText,
+                cargoText: cargoText,
+                sailButton: sailButton);
+
+            routerRoot.SetActive(true);
+            yield return null;
+
+            Assert.That(sailButton.interactable, Is.False, "Expected sailing to be disabled when cargo is full.");
+
+            router.OnSailRequested();
+            yield return null;
+
+            Assert.That(statusText.text, Does.Contain("Cargo full"));
+
+            saveManager.ClearFishInventory();
+            saveManager.Save(forceImmediate: true);
+            yield return null;
+
+            Assert.That(sailButton.interactable, Is.True, "Expected sailing to be re-enabled once cargo is sold/cleared.");
+
+            router.OnSailRequested();
+            yield return null;
+
+            Assert.That(statusText.text, Does.Contain("Casting off"));
+        }
+
+        [UnityTest]
+        public IEnumerator HarborFishMarketSale_ClearsCargoAndCreditsBalance()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborFishSale");
+            yield return null;
+
+            saveManager.Current.copecs = 5;
+            saveManager.Current.fishInventory.Clear();
+            saveManager.Current.fishInventory.Add(new FishInventoryEntry
+            {
+                fishId = "fish_cod",
+                distanceTier = 1,
+                count = 2
+            });
+            saveManager.Current.fishInventory.Add(new FishInventoryEntry
+            {
+                fishId = "fish_herring",
+                distanceTier = 3,
+                count = 1
+            });
+            saveManager.Save(forceImmediate: true);
+
+            var summaryCalculator = CreateComponent<SellSummaryCalculator>("SellSummaryCalculator_HarborFishSale");
+            summaryCalculator.SetDistanceTierStep(0.25f);
+            var fishShop = CreateComponent<FishShopController>("FishShopController_HarborFishSale");
+            yield return null;
+
+            var statusText = CreateUiText("HarborStatusText_FishSale");
+            var fishInfoText = CreateUiText("HarborFishInfoText_FishSale");
+            var routerRoot = new GameObject("HarborRouter_FishSale");
+            routerRoot.SetActive(false);
+            _createdRoots.Add(routerRoot);
+            var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
+            SetPrivateField(router, "_saveManager", saveManager);
+            router.Configure(
+                interactables: new List<WorldInteractable>(),
+                hookShop: null,
+                boatShop: null,
+                fishShop: fishShop,
+                statusText: statusText,
+                fishShopInfoText: fishInfoText);
+
+            routerRoot.SetActive(true);
+            yield return null;
+
+            router.OnFishShopSellRequested();
+            yield return null;
+
+            Assert.That(saveManager.Current.fishInventory, Is.Empty);
+            Assert.That(saveManager.Current.copecs, Is.EqualTo(40));
+            Assert.That(statusText.text, Does.Contain("Sold 3 fish for 35 copecs"));
+        }
+
+        [UnityTest]
+        public IEnumerator HarborHookShopButtons_RespectUnlockAndAffordabilityRules()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborHookButtons");
+            yield return null;
+
+            saveManager.Current.copecs = 40;
+            saveManager.Current.ownedHooks = new List<string> { "hook_lv1" };
+            saveManager.Current.equippedHookId = "hook_lv1";
+            saveManager.Current.progression ??= new ProgressionData();
+            saveManager.Current.progression.unlockedContentIds ??= new List<string>();
+            saveManager.Current.progression.unlockedContentIds.Remove("hook_lv2");
+            saveManager.Current.progression.unlockedContentIds.Remove("hook_lv3");
+            saveManager.Save(forceImmediate: true);
+
+            var hookShop = CreateComponent<HookShopController>("HookShopController_HarborHookButtons");
+            SetPrivateField(
+                hookShop,
+                "_items",
+                new List<ShopItem>
+                {
+                    new ShopItem { id = "hook_lv1", price = 0, valueTier = 1 },
+                    new ShopItem { id = "hook_lv2", price = 120, valueTier = 2 },
+                    new ShopItem { id = "hook_lv3", price = 320, valueTier = 3 }
+                });
+            yield return null;
+
+            var statusText = CreateUiText("HarborStatusText_HookButtons");
+            var hookInfoText = CreateUiText("HarborHookInfoText_HookButtons");
+            var hookLv1Button = CreateUiButton("HarborHookLv1Button_HookButtons");
+            var hookLv2Button = CreateUiButton("HarborHookLv2Button_HookButtons");
+            var hookLv3Button = CreateUiButton("HarborHookLv3Button_HookButtons");
+            var hookLv1Icon = CreateUiImage("HarborHookLv1Icon_HookButtons");
+            var hookLv2Icon = CreateUiImage("HarborHookLv2Icon_HookButtons");
+            var hookLv3Icon = CreateUiImage("HarborHookLv3Icon_HookButtons");
+
+            var routerRoot = new GameObject("HarborRouter_HookButtons");
+            routerRoot.SetActive(false);
+            _createdRoots.Add(routerRoot);
+            var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
+            SetPrivateField(router, "_saveManager", saveManager);
+            router.Configure(
+                interactables: new List<WorldInteractable>(),
+                hookShop: hookShop,
+                boatShop: null,
+                fishShop: null,
+                statusText: statusText,
+                hookShopInfoText: hookInfoText,
+                hookShopButtons: new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button },
+                hookShopIcons: new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon });
+
+            routerRoot.SetActive(true);
+            yield return null;
+
+            Assert.That(hookLv1Button.interactable, Is.True);
+            Assert.That(hookLv2Button.interactable, Is.False, "Expected Lv2 to remain locked before unlock conditions are met.");
+            Assert.That(hookLv3Button.interactable, Is.False, "Expected Lv3 to remain locked before unlock conditions are met.");
+
+            saveManager.Current.copecs = 240;
+            if (!saveManager.Current.progression.unlockedContentIds.Contains("hook_lv2"))
+            {
+                saveManager.Current.progression.unlockedContentIds.Add("hook_lv2");
+            }
+
+            saveManager.Save(forceImmediate: true);
+            yield return null;
+
+            Assert.That(hookLv2Button.interactable, Is.True, "Expected Lv2 to become available when unlocked and affordable.");
+            var hookLv2AffordableColor = hookLv2Icon.color;
+            Assert.That(hookLv2AffordableColor.g, Is.GreaterThan(0.9f));
+
+            saveManager.Current.copecs = 10;
+            saveManager.Save(forceImmediate: true);
+            yield return null;
+
+            Assert.That(hookLv2Button.interactable, Is.False, "Expected Lv2 to disable when copecs drop below price.");
+            var hookLv2UnaffordableColor = hookLv2Icon.color;
+            Assert.That(hookLv2UnaffordableColor.r, Is.GreaterThan(hookLv2UnaffordableColor.g));
+        }
+
         private T CreateComponent<T>(string rootName) where T : Component
         {
             var root = new GameObject(rootName);
             _createdRoots.Add(root);
             return root.AddComponent<T>();
+        }
+
+        private Text CreateUiText(string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            _createdRoots.Add(go);
+            var text = go.GetComponent<Text>();
+            text.text = string.Empty;
+            return text;
+        }
+
+        private Button CreateUiButton(string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+            _createdRoots.Add(go);
+            var button = go.GetComponent<Button>();
+            button.transition = Selectable.Transition.None;
+
+            var labelGo = new GameObject($"{name}_Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            labelGo.transform.SetParent(go.transform, worldPositionStays: false);
+            var label = labelGo.GetComponent<Text>();
+            label.text = name;
+            return button;
+        }
+
+        private Image CreateUiImage(string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            _createdRoots.Add(go);
+            return go.GetComponent<Image>();
         }
 
         private void BackupAndClearSaveFiles()

@@ -50,6 +50,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameObject _hookShopDefaultSelection;
         [SerializeField] private GameObject _boatShopDefaultSelection;
         [SerializeField] private GameObject _fishShopDefaultSelection;
+        [SerializeField] private Button _sailButton;
         [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
         [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
         [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
@@ -85,6 +86,7 @@ namespace RavenDevOps.Fishing.Core
             GameObject hookShopDefaultSelection = null,
             GameObject boatShopDefaultSelection = null,
             GameObject fishShopDefaultSelection = null,
+            Button sailButton = null,
             List<Button> hookShopButtons = null,
             List<Button> boatShopButtons = null,
             List<Image> hookShopIcons = null,
@@ -112,6 +114,7 @@ namespace RavenDevOps.Fishing.Core
             _hookShopDefaultSelection = hookShopDefaultSelection;
             _boatShopDefaultSelection = boatShopDefaultSelection;
             _fishShopDefaultSelection = fishShopDefaultSelection;
+            _sailButton = sailButton;
             AssignUiList(_hookShopButtons, hookShopButtons);
             AssignUiList(_boatShopButtons, boatShopButtons);
             AssignUiList(_hookShopIcons, hookShopIcons);
@@ -550,6 +553,15 @@ namespace RavenDevOps.Fishing.Core
 
         private void HandleSail()
         {
+            if (_saveManager != null && _saveManager.Current != null && IsCargoFull(_saveManager.Current, out var fishCount, out var cargoCapacity))
+            {
+                SetStatus($"Cargo full ({fishCount}/{cargoCapacity}). Sell fish at the market before sailing.");
+                PushActivity("Departure blocked: cargo is full.");
+                PlaySfx(SfxEvent.UiCancel);
+                RefreshSaveSnapshot();
+                return;
+            }
+
             PlaySfx(SfxEvent.Depart);
             SetStatus("Casting off for fishing grounds...");
             PushActivity("Departure confirmed. Sailing to fishing waters.");
@@ -582,7 +594,7 @@ namespace RavenDevOps.Fishing.Core
             {
                 SetText(_hookShopInfoText, "Hook inventory unavailable.");
                 RefreshHookShopButtons(null);
-                RefreshShopIcons(_hookShopIcons, HookMenuOrder, isHookCatalog: true, enabledStateFallback: false);
+                RefreshShopIcons(_hookShopIcons, _hookShopButtons, HookMenuOrder, save: null, isHookCatalog: true);
                 return;
             }
 
@@ -613,7 +625,7 @@ namespace RavenDevOps.Fishing.Core
 
             SetText(_hookShopInfoText, output);
             RefreshHookShopButtons(save);
-            RefreshShopIcons(_hookShopIcons, HookMenuOrder, isHookCatalog: true, enabledStateFallback: true);
+            RefreshShopIcons(_hookShopIcons, _hookShopButtons, HookMenuOrder, save, isHookCatalog: true);
         }
 
         private void RefreshBoatShopDetails()
@@ -622,7 +634,7 @@ namespace RavenDevOps.Fishing.Core
             {
                 SetText(_boatShopInfoText, "Boat inventory unavailable.");
                 RefreshBoatShopButtons(null);
-                RefreshShopIcons(_boatShopIcons, ShipMenuOrder, isHookCatalog: false, enabledStateFallback: false);
+                RefreshShopIcons(_boatShopIcons, _boatShopButtons, ShipMenuOrder, save: null, isHookCatalog: false);
                 return;
             }
 
@@ -653,7 +665,7 @@ namespace RavenDevOps.Fishing.Core
 
             SetText(_boatShopInfoText, output);
             RefreshBoatShopButtons(save);
-            RefreshShopIcons(_boatShopIcons, ShipMenuOrder, isHookCatalog: false, enabledStateFallback: true);
+            RefreshShopIcons(_boatShopIcons, _boatShopButtons, ShipMenuOrder, save, isHookCatalog: false);
         }
 
         private void RefreshFishShopDetails()
@@ -804,7 +816,7 @@ namespace RavenDevOps.Fishing.Core
             }
         }
 
-        private void RefreshShopIcons(List<Image> iconList, string[] itemOrder, bool isHookCatalog, bool enabledStateFallback)
+        private void RefreshShopIcons(List<Image> iconList, List<Button> buttonList, string[] itemOrder, SaveDataV1 save, bool isHookCatalog)
         {
             if (itemOrder == null || iconList == null)
             {
@@ -827,10 +839,75 @@ namespace RavenDevOps.Fishing.Core
                 var itemId = itemOrder[i];
                 var iconSprite = ResolveShopIcon(itemId, isHookCatalog) ?? GetFallbackShopIconSprite();
                 icon.sprite = iconSprite;
-                icon.color = enabledStateFallback
-                    ? new Color(1f, 1f, 1f, 0.98f)
-                    : new Color(0.5f, 0.5f, 0.5f, 0.85f);
+                var button = buttonList != null && i >= 0 && i < buttonList.Count
+                    ? buttonList[i]
+                    : null;
+                icon.color = ResolveShopIconColor(itemId, save, isHookCatalog, button);
             }
+        }
+
+        private Color ResolveShopIconColor(string itemId, SaveDataV1 save, bool isHookCatalog, Button button)
+        {
+            if (save == null || _saveManager == null)
+            {
+                return new Color(0.5f, 0.5f, 0.5f, 0.85f);
+            }
+
+            var normalizedItemId = string.IsNullOrWhiteSpace(itemId)
+                ? string.Empty
+                : itemId.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedItemId))
+            {
+                return new Color(0.5f, 0.5f, 0.5f, 0.85f);
+            }
+
+            var isOwned = isHookCatalog
+                ? save.ownedHooks != null && save.ownedHooks.Contains(normalizedItemId)
+                : save.ownedShips != null && save.ownedShips.Contains(normalizedItemId);
+            var isEquipped = isHookCatalog
+                ? string.Equals(save.equippedHookId, normalizedItemId, StringComparison.Ordinal)
+                : string.Equals(save.equippedShipId, normalizedItemId, StringComparison.Ordinal);
+            if (isEquipped)
+            {
+                return new Color(1f, 0.92f, 0.52f, 1f);
+            }
+
+            if (isOwned)
+            {
+                return new Color(0.86f, 1f, 0.9f, 0.98f);
+            }
+
+            if (!_saveManager.IsContentUnlocked(normalizedItemId))
+            {
+                return new Color(0.56f, 0.56f, 0.56f, 0.85f);
+            }
+
+            var orderedIds = isHookCatalog ? HookMenuOrder : ShipMenuOrder;
+            var ownedIds = isHookCatalog ? save.ownedHooks : save.ownedShips;
+            if (!HasRequiredPreviousTier(ownedIds, normalizedItemId, orderedIds, out _))
+            {
+                return new Color(0.56f, 0.56f, 0.56f, 0.85f);
+            }
+
+            var price = isHookCatalog
+                ? (_hookShop != null ? _hookShop.GetPrice(normalizedItemId) : -1)
+                : (_boatShop != null ? _boatShop.GetPrice(normalizedItemId) : -1);
+            if (price < 0)
+            {
+                return new Color(0.56f, 0.56f, 0.56f, 0.85f);
+            }
+
+            if (save.copecs < Mathf.Max(0, price))
+            {
+                return new Color(0.86f, 0.66f, 0.66f, 0.92f);
+            }
+
+            if (button != null && !button.interactable)
+            {
+                return new Color(0.66f, 0.66f, 0.66f, 0.88f);
+            }
+
+            return new Color(1f, 1f, 1f, 0.98f);
         }
 
         private Sprite ResolveShopIcon(string itemId, bool isHookCatalog)
@@ -1039,33 +1116,22 @@ namespace RavenDevOps.Fishing.Core
                 SetText(_economyText, "Copecs: unavailable");
                 SetText(_equipmentText, "Gear: unavailable");
                 SetText(_cargoText, "Cargo: unavailable");
+                RefreshSailButton(save: null, allowSail: false, fishCount: 0, cargoCapacity: 0);
                 return;
             }
 
             var save = _saveManager.Current;
-            var fishCount = 0;
-            if (save.fishInventory != null)
-            {
-                for (var i = 0; i < save.fishInventory.Count; i++)
-                {
-                    var entry = save.fishInventory[i];
-                    if (entry == null)
-                    {
-                        continue;
-                    }
-
-                    fishCount += Mathf.Max(0, entry.count);
-                }
-            }
-
+            var fishCount = CountCargoFish(save);
             var totalTrips = save.stats != null ? Mathf.Max(0, save.stats.totalTrips) : 0;
             var cargoCapacity = ResolveCargoCapacity(save.equippedShipId);
-            var cargoStatus = fishCount >= cargoCapacity
+            var isCargoFull = fishCount >= cargoCapacity;
+            var cargoStatus = isCargoFull
                 ? " (FULL)"
                 : string.Empty;
             SetText(_economyText, $"Copecs: {Mathf.Max(0, save.copecs)}");
             SetText(_equipmentText, $"Equipped Ship: {ToDisplayLabel(save.equippedShipId)} | Hook: {ToDisplayLabel(save.equippedHookId)}");
             SetText(_cargoText, $"Cargo: {fishCount}/{cargoCapacity} fish{cargoStatus} | Trips: {totalTrips} | Level: {_saveManager.CurrentLevel}");
+            RefreshSailButton(save, !isCargoFull, fishCount, cargoCapacity);
         }
 
         private void RefreshSelectionHint(WorldInteractable interactable)
@@ -1197,6 +1263,57 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return Mathf.Max(1, _fallbackCargoCapacityTier1);
+        }
+
+        private bool IsCargoFull(SaveDataV1 save, out int fishCount, out int cargoCapacity)
+        {
+            fishCount = CountCargoFish(save);
+            cargoCapacity = ResolveCargoCapacity(save != null ? save.equippedShipId : string.Empty);
+            return fishCount >= cargoCapacity;
+        }
+
+        private static int CountCargoFish(SaveDataV1 save)
+        {
+            if (save == null || save.fishInventory == null || save.fishInventory.Count == 0)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var i = 0; i < save.fishInventory.Count; i++)
+            {
+                var entry = save.fishInventory[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                count += Mathf.Max(0, entry.count);
+            }
+
+            return count;
+        }
+
+        private void RefreshSailButton(SaveDataV1 save, bool allowSail, int fishCount, int cargoCapacity)
+        {
+            if (_sailButton == null)
+            {
+                return;
+            }
+
+            if (save == null)
+            {
+                ApplyShopButtonState(_sailButton, false, "Sail Out");
+                return;
+            }
+
+            if (!allowSail)
+            {
+                ApplyShopButtonState(_sailButton, false, $"Sell Cargo ({fishCount}/{cargoCapacity})");
+                return;
+            }
+
+            ApplyShopButtonState(_sailButton, true, "Sail Out");
         }
     }
 }
