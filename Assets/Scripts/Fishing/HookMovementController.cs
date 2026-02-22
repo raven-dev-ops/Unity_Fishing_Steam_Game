@@ -14,7 +14,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _depthBounds = new Vector2(-8f, -1f);
         [SerializeField] private float _distanceTierDepthStep = 0.5f;
         [SerializeField] private int _distanceTier = 1;
-        [SerializeField] private float _minimumOperationalMaxDepth = 8f;
+        [SerializeField] private float _minimumOperationalMaxDepth = 100f;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
