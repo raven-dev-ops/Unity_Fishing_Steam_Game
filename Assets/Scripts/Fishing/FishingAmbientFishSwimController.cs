@@ -126,6 +126,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             UpdateDynamicWaterBand();
+            var allowAmbientPresence = IsAmbientPresenceAllowed();
 
             if (_boundTrack != null && (_boundTrack.transform == null || _boundTrack.renderer == null))
             {
@@ -149,6 +150,12 @@ namespace RavenDevOps.Fishing.Fishing
 
                 if (track.active)
                 {
+                    if (!allowAmbientPresence && !track.reserved && !track.hooked && !track.approaching)
+                    {
+                        DespawnTrack(track);
+                        continue;
+                    }
+
                     activeCount++;
                     TickTrack(track, now, speedScale);
                 }
@@ -171,6 +178,11 @@ namespace RavenDevOps.Fishing.Fishing
 
             for (var i = 0; i < _tracks.Count; i++)
             {
+                if (!allowAmbientPresence)
+                {
+                    break;
+                }
+
                 if (activeCount >= Mathf.Max(1, _maxConcurrentFish))
                 {
                     break;
@@ -613,15 +625,21 @@ namespace RavenDevOps.Fishing.Fishing
             track.renderer.color = track.baseColor;
             track.renderer.flipX = track.direction < 0f;
 
-            if (TryResolveCameraWorldBounds(out var cameraLeft, out var cameraRight, out _, out _))
+            if (!TryResolveCameraWorldBounds(out var cameraLeft, out var cameraRight, out _, out _))
             {
-                left = cameraLeft;
-                right = cameraRight;
+                track.active = false;
+                track.renderer.enabled = false;
+                track.spawnDelay = RandomSpawnDelay();
+                return;
             }
 
+            left = cameraLeft;
+            right = cameraRight;
+
+            var edgeBuffer = Mathf.Max(0.75f, Mathf.Abs(_edgeBuffer));
             var spawnX = track.direction > 0f
-                ? left - Mathf.Abs(_edgeBuffer)
-                : right + Mathf.Abs(_edgeBuffer);
+                ? left - edgeBuffer
+                : right + edgeBuffer;
             track.transform.position = new Vector3(spawnX, track.baseY, track.transform.position.z);
 
             track.active = true;
@@ -1035,6 +1053,19 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return hasComparableTrack ? nearestDistance : float.MaxValue;
+        }
+
+        private bool IsAmbientPresenceAllowed()
+        {
+            EnsureAnchors();
+            var thresholdDepth = Mathf.Max(0.1f, Mathf.Abs(_minimumAmbientSpawnDepth));
+            if (_hook == null || _ship == null)
+            {
+                return false;
+            }
+
+            var currentDepth = Mathf.Max(0f, _ship.position.y - _hook.position.y);
+            return currentDepth >= thresholdDepth;
         }
 
         private void EnsureAnchors()

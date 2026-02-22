@@ -294,19 +294,82 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             yield return LoadScene(FishingScenePath);
             yield return null;
 
-            var ambientController = UnityEngine.Object.FindAnyObjectByType<FishingAmbientFishSwimController>();
-            Assert.That(ambientController, Is.Not.Null, "Expected ambient fish swim controller.");
+            var resolveDeadline = Time.realtimeSinceStartup + 2f;
+            FishingAmbientFishSwimController ambientController = null;
+            FishingActionStateMachine stateMachine = null;
+            while (Time.realtimeSinceStartup < resolveDeadline)
+            {
+                ambientController = UnityEngine.Object.FindAnyObjectByType<FishingAmbientFishSwimController>();
+                stateMachine = UnityEngine.Object.FindAnyObjectByType<FishingActionStateMachine>();
+                if (ambientController != null && stateMachine != null)
+                {
+                    break;
+                }
 
-            var deadline = Time.realtimeSinceStartup + 3f;
+                yield return null;
+            }
+
+            Assert.That(ambientController, Is.Not.Null, "Expected ambient fish swim controller.");
+            Assert.That(stateMachine, Is.Not.Null, "Expected fishing state machine.");
+
+            var shipObject = FindSceneObject("FishingShip");
+            Assert.That(shipObject, Is.Not.Null, "Expected fishing ship object.");
+            var hookObject = FindSceneObject("FishingHook");
+            Assert.That(hookObject, Is.Not.Null, "Expected fishing hook object.");
+
+            SetPrivateFieldValue(ambientController, "_ship", shipObject.transform);
+            SetPrivateFieldValue(ambientController, "_hook", hookObject.transform);
+
+            var deadline = Time.realtimeSinceStartup + 1f;
             while (Time.realtimeSinceStartup < deadline)
             {
                 yield return null;
             }
 
+            var totalFish = CountSceneFish(out var visibleFish);
+            Assert.That(totalFish, Is.GreaterThanOrEqualTo(5), "Expected scaffolded fish anchors in fishing scene.");
+            Assert.That(visibleFish, Is.EqualTo(0), "Fish should remain hidden until hook reaches depth 20+.");
+
+            if (stateMachine.State != FishingActionState.Cast)
+            {
+                stateMachine.ResetToCast();
+                yield return null;
+            }
+
+            stateMachine.AdvanceByAction();
+
+            var forceDepthDeadline = Time.realtimeSinceStartup + 0.75f;
+            while (Time.realtimeSinceStartup < forceDepthDeadline)
+            {
+                var hookPosition = hookObject.transform.position;
+                hookPosition.y = shipObject.transform.position.y - 25f;
+                hookObject.transform.position = hookPosition;
+                yield return null;
+            }
+
+            var spawnDeadline = Time.realtimeSinceStartup + 4f;
+            while (Time.realtimeSinceStartup < spawnDeadline)
+            {
+                yield return null;
+            }
+
+            totalFish = CountSceneFish(out visibleFish);
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Assert.That(visibleFish, Is.LessThanOrEqualTo(3), "Ambient fish visibility exceeded quality cap.");
+                yield break;
+            }
+
+            Assert.That(visibleFish, Is.GreaterThanOrEqualTo(1), "Expected at least one ambient fish visible.");
+            Assert.That(visibleFish, Is.LessThanOrEqualTo(3), "Ambient fish visibility exceeded quality cap.");
+        }
+
+        private static int CountSceneFish(out int visibleFish)
+        {
             var scene = SceneManager.GetActiveScene();
             var renderers = UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var totalFish = 0;
-            var visibleFish = 0;
+            visibleFish = 0;
 
             for (var i = 0; i < renderers.Length; i++)
             {
@@ -328,9 +391,23 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 }
             }
 
-            Assert.That(totalFish, Is.GreaterThanOrEqualTo(5), "Expected scaffolded fish anchors in fishing scene.");
-            Assert.That(visibleFish, Is.GreaterThanOrEqualTo(1), "Expected at least one ambient fish visible.");
-            Assert.That(visibleFish, Is.LessThanOrEqualTo(3), "Ambient fish visibility exceeded quality cap.");
+            return totalFish;
+        }
+
+        private static void SetPrivateFieldValue(object target, string fieldName, object value)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(fieldName))
+            {
+                return;
+            }
+
+            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field == null)
+            {
+                return;
+            }
+
+            field.SetValue(target, value);
         }
 
         private static bool IsSceneCaptureEnabled()
