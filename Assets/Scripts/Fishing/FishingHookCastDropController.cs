@@ -16,6 +16,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _initialAutoCastDepth = 25f;
         [SerializeField] private float _autoRetractDepth = 20f;
         [SerializeField] private float _downDoubleTapWindowSeconds = 0.35f;
+        [SerializeField] private float _upDoubleTapWindowSeconds = 0.35f;
         [SerializeField] private float _autoLowerSpeed = 7f;
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
@@ -23,13 +24,15 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
 
         private InputAction _moveHookAction;
-        private InputAction _actionInput;
         private bool _autoDropActive;
         private bool _autoReelActive;
         private bool _autoLowerActive;
+        private bool _autoRaiseActive;
         private bool _stateMachineSubscribed;
         private float _lastDownPressTime = -10f;
+        private float _lastUpPressTime = -10f;
         private bool _axisDownHeldLastFrame;
+        private bool _axisUpHeldLastFrame;
         private SpriteRenderer _hookRenderer;
 
         public void Configure(
@@ -130,7 +133,9 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoDropActive = false;
                 _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
                 _autoLowerActive = false;
+                _autoRaiseActive = false;
                 _axisDownHeldLastFrame = false;
+                _axisUpHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(_autoReelActive);
                 return;
@@ -141,8 +146,11 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoDropActive = true;
                 _autoReelActive = false;
                 _autoLowerActive = false;
+                _autoRaiseActive = false;
                 _lastDownPressTime = -10f;
+                _lastUpPressTime = -10f;
                 _axisDownHeldLastFrame = false;
+                _axisUpHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -153,6 +161,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoDropActive = false;
                 _autoReelActive = true;
                 _autoLowerActive = false;
+                _autoRaiseActive = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -161,6 +170,7 @@ namespace RavenDevOps.Fishing.Fishing
             _autoDropActive = false;
             _autoReelActive = false;
             _autoLowerActive = false;
+            _autoRaiseActive = false;
             _hookController.SetMovementEnabled(true);
             SetHookVisible(true);
         }
@@ -178,7 +188,9 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoDropActive = false;
                     _autoReelActive = false;
                     _autoLowerActive = false;
+                    _autoRaiseActive = false;
                     _axisDownHeldLastFrame = false;
+                    _axisUpHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(false);
                     SnapHookToDock();
@@ -187,8 +199,11 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoDropActive = true;
                     _autoReelActive = false;
                     _autoLowerActive = false;
+                    _autoRaiseActive = false;
                     _lastDownPressTime = -10f;
+                    _lastUpPressTime = -10f;
                     _axisDownHeldLastFrame = false;
+                    _axisUpHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
@@ -196,6 +211,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoDropActive = false;
                     _autoReelActive = true;
                     _autoLowerActive = false;
+                    _autoRaiseActive = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
@@ -203,6 +219,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoDropActive = false;
                     _autoReelActive = false;
                     _autoLowerActive = false;
+                    _autoRaiseActive = false;
                     _hookController.SetMovementEnabled(true);
                     SetHookVisible(true);
                     break;
@@ -234,7 +251,6 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookController.SetMovementEnabled(false);
             RefreshMoveHookAction();
-            RefreshActionInput();
 
             var hookTransform = _hookController.transform;
             if (hookTransform == null)
@@ -288,19 +304,37 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            if (_autoLowerActive)
+            if (_autoRaiseActive)
+            {
+                TickAutoRaiseToRetractDepth();
+            }
+            else if (_autoLowerActive)
             {
                 TickAutoLower();
             }
-            else if (IsDownPressedThisFrame())
+            else
             {
-                var now = Time.unscaledTime;
-                if (now - _lastDownPressTime <= Mathf.Max(0.1f, _downDoubleTapWindowSeconds))
+                if (IsDownPressedThisFrame())
                 {
-                    StartAutoLower();
+                    var now = Time.unscaledTime;
+                    if (now - _lastDownPressTime <= Mathf.Max(0.1f, _downDoubleTapWindowSeconds))
+                    {
+                        StartAutoLower();
+                    }
+
+                    _lastDownPressTime = now;
                 }
 
-                _lastDownPressTime = now;
+                if (IsUpPressedThisFrame())
+                {
+                    var now = Time.unscaledTime;
+                    if (now - _lastUpPressTime <= Mathf.Max(0.1f, _upDoubleTapWindowSeconds))
+                    {
+                        StartAutoRaise();
+                    }
+
+                    _lastUpPressTime = now;
+                }
             }
 
             TryAutoRetractAtThreshold();
@@ -343,7 +377,51 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _autoLowerActive = true;
+            _autoRaiseActive = false;
             _hookController.SetMovementEnabled(false);
+        }
+
+        private void StartAutoRaise()
+        {
+            if (_autoDropActive || _autoReelActive || _stateMachine == null || _stateMachine.State != FishingActionState.InWater)
+            {
+                return;
+            }
+
+            _autoRaiseActive = true;
+            _autoLowerActive = false;
+            _hookController.SetMovementEnabled(false);
+        }
+
+        private void TickAutoRaiseToRetractDepth()
+        {
+            if (_hookController == null || _hookController.transform == null)
+            {
+                _autoRaiseActive = false;
+                return;
+            }
+
+            if (IsDownInputHeld())
+            {
+                _autoRaiseActive = false;
+                _hookController.SetMovementEnabled(true);
+                return;
+            }
+
+            _hookController.SetMovementEnabled(false);
+            var hookTransform = _hookController.transform;
+            var targetY = ResolveWorldYForDepth(_autoRetractDepth);
+            var position = hookTransform.position;
+            position.y = Mathf.MoveTowards(position.y, targetY, ResolveAutoReelSpeed() * Time.deltaTime);
+            hookTransform.position = position;
+
+            if (_hookController.CurrentDepth <= Mathf.Max(0.1f, _autoRetractDepth) + 0.05f
+                || Mathf.Abs(position.y - targetY) <= 0.01f)
+            {
+                _autoRaiseActive = false;
+                _hookController.SetMovementEnabled(false);
+                _stateMachine?.ResetToCast();
+            }
         }
 
         private void TryAutoRetractAtThreshold()
@@ -351,7 +429,8 @@ namespace RavenDevOps.Fishing.Fishing
             if (_stateMachine == null
                 || _hookController == null
                 || _stateMachine.State != FishingActionState.InWater
-                || _autoDropActive)
+                || _autoDropActive
+                || _autoRaiseActive)
             {
                 return;
             }
@@ -367,6 +446,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _autoLowerActive = false;
+            _autoRaiseActive = false;
             _hookController.SetMovementEnabled(false);
             _stateMachine.ResetToCast();
         }
@@ -380,18 +460,6 @@ namespace RavenDevOps.Fishing.Fishing
 
             _moveHookAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveHook")
-                : null;
-        }
-
-        private void RefreshActionInput()
-        {
-            if (_actionInput != null)
-            {
-                return;
-            }
-
-            _actionInput = _inputMapController != null
-                ? _inputMapController.FindAction("Fishing/Action")
                 : null;
         }
 
@@ -431,32 +499,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool WasCastInputPressedThisFrame()
         {
-            return IsDownPressedThisFrame() || WasActionPressedThisFrame();
-        }
-
-        private bool WasActionPressedThisFrame()
-        {
-            RefreshActionInput();
-            if (_actionInput != null && _actionInput.WasPressedThisFrame())
-            {
-                return true;
-            }
-
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
-            {
-                return true;
-            }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
-
-            var gamepad = Gamepad.current;
-            return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+            return IsDownPressedThisFrame();
         }
 
         private bool IsDownPressedThisFrame()
@@ -480,6 +523,30 @@ namespace RavenDevOps.Fishing.Fishing
             var axisDown = _moveHookAction != null && _moveHookAction.ReadValue<float>() < -threshold;
             var axisPressed = axisDown && !_axisDownHeldLastFrame;
             _axisDownHeldLastFrame = axisDown;
+            return keyboardPressed || axisPressed;
+        }
+
+        private bool IsUpPressedThisFrame()
+        {
+            RefreshMoveHookAction();
+
+            var keyboardPressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                keyboardPressed = keyboard.upArrowKey.wasPressedThisFrame || keyboard.wKey.wasPressedThisFrame;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            keyboardPressed = keyboardPressed
+                || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.W);
+#endif
+
+            var threshold = Mathf.Clamp01(_manualOverrideThreshold);
+            var axisUp = _moveHookAction != null && _moveHookAction.ReadValue<float>() > threshold;
+            var axisPressed = axisUp && !_axisUpHeldLastFrame;
+            _axisUpHeldLastFrame = axisUp;
             return keyboardPressed || axisPressed;
         }
 
@@ -508,23 +575,16 @@ namespace RavenDevOps.Fishing.Fishing
             return _moveHookAction.ReadValue<float>() > threshold;
         }
 
-        private bool IsManualHookInputActive()
+        private bool IsDownInputHeld()
         {
             var keyboard = Keyboard.current;
-            if (keyboard != null
-                && (keyboard.upArrowKey.isPressed
-                    || keyboard.downArrowKey.isPressed
-                    || keyboard.wKey.isPressed
-                    || keyboard.sKey.isPressed))
+            if (keyboard != null && (keyboard.downArrowKey.isPressed || keyboard.sKey.isPressed))
             {
                 return true;
             }
 
 #if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKey(KeyCode.UpArrow)
-                || UnityEngine.Input.GetKey(KeyCode.DownArrow)
-                || UnityEngine.Input.GetKey(KeyCode.W)
-                || UnityEngine.Input.GetKey(KeyCode.S))
+            if (UnityEngine.Input.GetKey(KeyCode.DownArrow) || UnityEngine.Input.GetKey(KeyCode.S))
             {
                 return true;
             }
@@ -535,7 +595,8 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
-            return Mathf.Abs(_moveHookAction.ReadValue<float>()) > Mathf.Clamp01(_manualOverrideThreshold);
+            var threshold = Mathf.Clamp01(_manualOverrideThreshold);
+            return _moveHookAction.ReadValue<float>() < -threshold;
         }
 
         private float ResolveAutoReelSpeed()

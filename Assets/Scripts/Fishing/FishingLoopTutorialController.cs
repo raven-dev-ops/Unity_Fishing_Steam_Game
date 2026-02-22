@@ -1,5 +1,4 @@
 using RavenDevOps.Fishing.Core;
-using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
 
@@ -20,13 +19,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private CatchResolver _catchResolver;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
-        [SerializeField] private InputRebindingService _rebindService;
         [SerializeField] private int _maxRecoveryFailures = 3;
 
         private TutorialStep _step = TutorialStep.None;
         private bool _isActive;
         private int _failureCount;
-        private string _actionLabel = "Action";
         private IFishingHudOverlay _hudOverlay;
 
         private void Awake()
@@ -34,13 +31,11 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _rebindService, this, warnIfMissing: false);
             _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
             if (_hudOverlay == null)
             {
                 _hudOverlay = FindFishingHudOverlay();
             }
-            RefreshBindings();
         }
 
         private void OnEnable()
@@ -118,7 +113,6 @@ namespace RavenDevOps.Fishing.Fishing
             _isActive = true;
             _step = TutorialStep.Cast;
             _failureCount = 0;
-            RefreshBindings();
             _saveManager?.MarkFishingLoopTutorialStarted();
             PushPrompt();
         }
@@ -199,11 +193,11 @@ namespace RavenDevOps.Fishing.Fishing
             switch (step)
             {
                 case TutorialStep.Cast:
-                    return $"Tutorial: Press {_actionLabel} to cast your line.";
+                    return "Tutorial: Press Down Arrow or S to cast to depth 25.";
                 case TutorialStep.Hook:
-                    return $"Tutorial: Wait for a bite, then press {_actionLabel} quickly to set the hook.";
+                    return "Tutorial: Wait for a bite, then press Up Arrow or W to start reeling.";
                 case TutorialStep.Reel:
-                    return $"Tutorial: Hold {_actionLabel} to reel. Ease off when tension reaches critical.";
+                    return "Tutorial: Double-tap Up Arrow or W to auto-reel toward depth 20.";
                 default:
                     return string.Empty;
             }
@@ -214,9 +208,9 @@ namespace RavenDevOps.Fishing.Fishing
             switch (failReason)
             {
                 case FishingFailReason.MissedHook:
-                    return "Press Action right when the bite happens.";
+                    return "Press Up Arrow or W quickly when the fish bites.";
                 case FishingFailReason.LineSnap:
-                    return "Release reel briefly when tension is critical.";
+                    return "Keep steady reeling and avoid abrupt depth changes.";
                 case FishingFailReason.FishEscaped:
                     return "Start reeling earlier and keep steady pressure.";
                 default:
@@ -227,18 +221,6 @@ namespace RavenDevOps.Fishing.Fishing
         private void OnSaveDataChanged(SaveDataV1 data)
         {
             EvaluateActivation();
-        }
-
-        private void RefreshBindings()
-        {
-            if (_rebindService == null)
-            {
-                _actionLabel = "Action";
-                return;
-            }
-
-            var display = _rebindService.GetDisplayBindingForAction("Fishing/Action");
-            _actionLabel = string.IsNullOrWhiteSpace(display) ? "Action" : display;
         }
 
         private static IFishingHudOverlay FindFishingHudOverlay()

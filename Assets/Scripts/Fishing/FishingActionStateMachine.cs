@@ -9,6 +9,7 @@ namespace RavenDevOps.Fishing.Fishing
     public sealed class FishingActionStateMachine : MonoBehaviour
     {
         [SerializeField] private FishingActionState _state = FishingActionState.Cast;
+        [SerializeField] private bool _allowInputDrivenAdvance;
         [SerializeField] private InputActionMapController _inputMapController;
 
         private InputAction _actionInput;
@@ -24,6 +25,11 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
+            if (!_allowInputDrivenAdvance)
+            {
+                return;
+            }
+
             RefreshActionsIfNeeded();
             if (WasActionPressedThisFrame())
             {
@@ -105,19 +111,6 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 return true;
             }
-
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
-            {
-                return true;
-            }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;

@@ -75,9 +75,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _haulCatchInProgress;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
-        private InputAction _reelAction;
         private InputAction _moveHookAction;
-        private bool _toggleReelActive;
         private bool _stateMachineSubscribed;
         private ShipMovementController _shipMovement;
 
@@ -155,7 +153,7 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureTutorialController();
             EnsureEnvironmentController();
             EnsureConditionController();
-            RefreshReelAction();
+            RefreshInputActions();
 
             if (_stateMachine == null)
             {
@@ -210,7 +208,6 @@ namespace RavenDevOps.Fishing.Fishing
             _biteTimerSeconds = 0f;
             _lastTensionState = FishingTensionState.None;
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
-            _toggleReelActive = false;
             _biteSelectionResolvedForCurrentDrop = false;
             _biteApproachStarted = false;
             _ambientFishController?.ResolveBoundFish(caught: false);
@@ -285,7 +282,6 @@ namespace RavenDevOps.Fishing.Fishing
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
             _lastTensionState = FishingTensionState.Safe;
-            _toggleReelActive = false;
         }
 
         private void TickInWater()
@@ -419,7 +415,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 var reason = _outcomeDomainService.BuildFailureReasonText(_pendingFailReason);
                 _hudOverlay?.SetFishingFailure(reason);
-                _hudOverlay?.SetFishingStatus("Press Action to cast again.");
+                _hudOverlay?.SetFishingStatus("Press Down/S to cast again.");
                 _saveManager?.RecordCatchFailure(_hookedFish != null ? _hookedFish.id : string.Empty, _currentDistanceTier, reason);
                 PlayFailureSfx(_pendingFailReason);
             }
@@ -435,7 +431,6 @@ namespace RavenDevOps.Fishing.Fishing
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
-            _toggleReelActive = false;
             _biteApproachStarted = false;
             _stateMachine?.ResetToCast();
         }
@@ -496,16 +491,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
-        private void RefreshReelAction()
+        private void RefreshInputActions()
         {
-            if (_reelAction != null)
+            if (_moveHookAction != null)
             {
                 return;
             }
 
-            _reelAction = _inputMapController != null
-                ? _inputMapController.FindAction("Fishing/Action")
-                : null;
             _moveHookAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveHook")
                 : null;
@@ -784,78 +776,28 @@ namespace RavenDevOps.Fishing.Fishing
             return FallbackCargoCapacityTier1;
         }
 
-        private bool ResolveIsReeling()
-        {
-            var fallbackPressedThisFrame = IsFallbackActionPressedThisFrame();
-            var fallbackIsPressed = IsFallbackActionHeld();
-            var mappedPressedThisFrame = _reelAction != null && _reelAction.WasPressedThisFrame();
-            var mappedIsPressed = _reelAction != null && _reelAction.IsPressed();
-
-            var toggleMode = _settingsService != null && _settingsService.ReelInputToggle;
-            if (!toggleMode)
-            {
-                _toggleReelActive = false;
-                return mappedIsPressed || fallbackIsPressed;
-            }
-
-            if (mappedPressedThisFrame || fallbackPressedThisFrame)
-            {
-                _toggleReelActive = !_toggleReelActive;
-            }
-
-            return _toggleReelActive;
-        }
-
-        private string ResolveReelHintText()
-        {
-            var toggleMode = _settingsService != null && _settingsService.ReelInputToggle;
-            return toggleMode
-                ? "Press Action to toggle reel."
-                : "Hold Action to reel.";
-        }
-
-        private static bool IsFallbackActionPressedThisFrame()
-        {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
-            {
-                return true;
-            }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKeyDown(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
-
-            var gamepad = Gamepad.current;
-            return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
-        }
-
-        private static bool IsFallbackActionHeld()
-        {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.isPressed)
-            {
-                return true;
-            }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKey(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
-
-            var gamepad = Gamepad.current;
-            return gamepad != null && gamepad.buttonSouth.isPressed;
-        }
-
         private bool IsActionHeldForCastDepth()
         {
-            var mappedIsPressed = _reelAction != null && _reelAction.IsPressed();
-            return mappedIsPressed || IsFallbackActionHeld();
+            var axis = _moveHookAction != null ? _moveHookAction.ReadValue<float>() : 0f;
+            if (axis < -0.25f)
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && (keyboard.downArrowKey.isPressed || keyboard.sKey.isPressed))
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.DownArrow) || UnityEngine.Input.GetKey(KeyCode.S))
+            {
+                return true;
+            }
+#endif
+
+            return false;
         }
 
         private bool IsUpInputHeldForReelStart()
