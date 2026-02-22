@@ -32,7 +32,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
         [SerializeField] private float _hookCollisionRadius = 0.22f;
-        [SerializeField] private float _haulCompletionDepthThreshold = 20f;
+        [SerializeField] private float _haulCompletionDepthThreshold = 25f;
         [SerializeField] private float _boatArrivalDepthThreshold = 1.1f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
@@ -297,7 +297,9 @@ namespace RavenDevOps.Fishing.Fishing
             }
             else
             {
-                _hudOverlay?.SetFishingStatus("Casting to 25m. Steer left/right to hook fish on collision, reel to 20m to secure, then bring it to the boat.");
+                var secureDepth = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
+                _hudOverlay?.SetFishingStatus(
+                    $"Casting to 25m. Steer left/right to hook fish on collision, reel to {secureDepth:0}m to secure, then bring it to the boat.");
             }
         }
 

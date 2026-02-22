@@ -24,6 +24,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private bool _matchAutoReelSpeedToDropSpeed = true;
+        [SerializeField] private bool _autoReelWhenWithinShallowDepth = true;
+        [SerializeField] private float _autoReelShallowDepthThreshold = 25f;
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
         [SerializeField] private float _levelTwoReelSpeedMultiplier = 2f;
@@ -720,6 +722,15 @@ namespace RavenDevOps.Fishing.Fishing
             if (_stateMachine == null || _stateMachine.State != FishingActionState.Reel)
             {
                 return true;
+            }
+
+            if (_autoReelWhenWithinShallowDepth && _hookController != null)
+            {
+                var shallowDepthThreshold = Mathf.Max(0.1f, _autoReelShallowDepthThreshold);
+                if (_hookController.CurrentDepth <= shallowDepthThreshold)
+                {
+                    return true;
+                }
             }
 
             switch (ResolveHookReelInputMode())
