@@ -217,6 +217,12 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborPauseResumeButton"), Is.Not.Null, "Expected harbor pause resume button.");
             Assert.That(FindSceneObject("HarborPauseMainMenuButton"), Is.Not.Null, "Expected harbor pause main-menu button.");
             Assert.That(FindSceneObject("HarborPauseExitButton"), Is.Not.Null, "Expected harbor pause exit button.");
+
+            // Keep the harbor scene alive long enough for PerfSanityRunner to emit a window sample.
+            for (var frame = 0; frame < 240; frame++)
+            {
+                yield return null;
+            }
         }
 
         [UnityTest]

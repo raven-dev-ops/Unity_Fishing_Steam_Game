@@ -1550,7 +1550,13 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var perfRunner = GetOrAddComponent<PerfSanityRunner>(root);
-            perfRunner.Configure(label, sampleFrames: 240, emitWarningsOnBudgetFailure: true, hardwareTier: "minimum");
+            perfRunner.Configure(
+                label,
+                sampleFrames: 240,
+                emitWarningsOnBudgetFailure: true,
+                hardwareTier: "minimum",
+                emitSampleLogs: Application.isBatchMode,
+                maxSampleLogsPerScene: 6);
         }
 
         private static List<DialogueLine> CreateHarborTutorialDialogueLines()

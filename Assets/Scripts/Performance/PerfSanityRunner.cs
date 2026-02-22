@@ -1,6 +1,5 @@
 using System.Globalization;
 using UnityEngine;
-using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -13,6 +12,8 @@ namespace RavenDevOps.Fishing.Performance
         [SerializeField] private Text _fpsLabel;
         [SerializeField] private int _sampleFrames = 300;
         [SerializeField] private bool _emitWarningsOnBudgetFailure = true;
+        [SerializeField] private bool _emitSampleLogs = true;
+        [SerializeField] private int _maxSampleLogsPerScene = 6;
         [SerializeField] private float _targetAverageFps = 60f;
         [SerializeField] private float _targetP95FrameMs = 25f;
         [SerializeField] private float _targetGcDeltaKb = 64f;
@@ -25,17 +26,24 @@ namespace RavenDevOps.Fishing.Performance
         private int _frameCounter;
         private float _elapsedSeconds;
         private long _gcWindowStartBytes;
-        private long _gcWindowAllocatedBytes;
-        private ProfilerRecorder _gcAllocatedInFrameRecorder;
-        private bool _gcAllocatedInFrameRecorderStarted;
         private float _lastBudgetWarningTime = -999f;
         private string _lastBudgetWarningSignature = string.Empty;
+        private string _sampleLogScene = string.Empty;
+        private int _sampleLogsForScene;
 
-        public void Configure(Text fpsLabel, int sampleFrames = 300, bool emitWarningsOnBudgetFailure = true, string hardwareTier = "minimum")
+        public void Configure(
+            Text fpsLabel,
+            int sampleFrames = 300,
+            bool emitWarningsOnBudgetFailure = true,
+            string hardwareTier = "minimum",
+            bool emitSampleLogs = true,
+            int maxSampleLogsPerScene = 6)
         {
             _fpsLabel = fpsLabel;
             _sampleFrames = Mathf.Max(1, sampleFrames);
             _emitWarningsOnBudgetFailure = emitWarningsOnBudgetFailure;
+            _emitSampleLogs = emitSampleLogs;
+            _maxSampleLogsPerScene = Mathf.Max(0, maxSampleLogsPerScene);
             if (!string.IsNullOrWhiteSpace(hardwareTier))
             {
                 _hardwareTier = hardwareTier.Trim();
@@ -47,19 +55,18 @@ namespace RavenDevOps.Fishing.Performance
 
         private void OnEnable()
         {
-            StartGcRecorderIfNeeded();
             EnsureSampleBuffers();
             ResetWindow();
         }
 
         private void OnDisable()
         {
-            StopGcRecorder();
         }
 
         private void OnValidate()
         {
             _sampleFrames = Mathf.Max(1, _sampleFrames);
+            _maxSampleLogsPerScene = Mathf.Max(0, _maxSampleLogsPerScene);
             EnsureSampleBuffers();
         }
 
@@ -72,7 +79,6 @@ namespace RavenDevOps.Fishing.Performance
             _elapsedSeconds += deltaTime;
             _windowFrameDurations[_windowSampleCount] = deltaTime;
             _windowSampleCount++;
-            AccumulateGcAllocatedBytesForCurrentFrame();
 
             if (_frameCounter < _sampleFrames)
             {
@@ -88,7 +94,6 @@ namespace RavenDevOps.Fishing.Performance
             _frameCounter = 0;
             _elapsedSeconds = 0f;
             _windowSampleCount = 0;
-            _gcWindowAllocatedBytes = 0L;
             _gcWindowStartBytes = System.GC.GetTotalMemory(false);
         }
 
@@ -112,8 +117,11 @@ namespace RavenDevOps.Fishing.Performance
 
             var avgFrameMs = avgFrameSeconds * 1000f;
             var p95FrameMs = ResolvePercentileFrameMsNoAlloc(_windowFrameDurations, _windowFrameDurationsScratch, _windowSampleCount, 0.95f);
-            var gcDeltaBytes = ResolveGcDeltaBytes();
-            var gcDeltaKb = gcDeltaBytes / 1024f;
+            // Budgeting uses average GC allocation per frame so thresholds stay stable across sample window sizes.
+            var gcDeltaKb = ResolveGcDeltaKbPerFrame(_windowSampleCount);
+            var avgFpsFailed = avgFps < _targetAverageFps;
+            var p95Failed = p95FrameMs > _targetP95FrameMs;
+            var gcFailed = gcDeltaKb > _targetGcDeltaKb;
 
             if (_fpsLabel != null)
             {
@@ -134,17 +142,26 @@ namespace RavenDevOps.Fishing.Performance
                 p95FrameMs,
                 gcDeltaKb);
 
-            Debug.Log(sampleLog);
+            if (!string.Equals(_sampleLogScene, sceneName, System.StringComparison.Ordinal))
+            {
+                _sampleLogScene = sceneName;
+                _sampleLogsForScene = 0;
+            }
+
+            var budgetViolation = avgFpsFailed || p95Failed || gcFailed;
+            var underSceneLogCap = _sampleLogsForScene < _maxSampleLogsPerScene;
+            if (_emitSampleLogs && (underSceneLogCap || budgetViolation))
+            {
+                Debug.Log(sampleLog);
+                _sampleLogsForScene++;
+            }
 
             if (!_emitWarningsOnBudgetFailure)
             {
                 return;
             }
 
-            var avgFpsFailed = avgFps < _targetAverageFps;
-            var p95Failed = p95FrameMs > _targetP95FrameMs;
-            var gcFailed = gcDeltaKb > _targetGcDeltaKb;
-            if (avgFpsFailed || p95Failed || gcFailed)
+            if (budgetViolation)
             {
                 var signature = string.Format(
                     CultureInfo.InvariantCulture,
@@ -228,58 +245,21 @@ namespace RavenDevOps.Fishing.Performance
             return scratchBuffer[index] * 1000f;
         }
 
-        private void StartGcRecorderIfNeeded()
-        {
-            if (_gcAllocatedInFrameRecorderStarted)
-            {
-                return;
-            }
-
-            StopGcRecorder();
-            try
-            {
-                _gcAllocatedInFrameRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame");
-                _gcAllocatedInFrameRecorderStarted = _gcAllocatedInFrameRecorder.Valid;
-            }
-            catch
-            {
-                _gcAllocatedInFrameRecorderStarted = false;
-            }
-        }
-
-        private void StopGcRecorder()
-        {
-            if (_gcAllocatedInFrameRecorder.Valid)
-            {
-                _gcAllocatedInFrameRecorder.Dispose();
-            }
-
-            _gcAllocatedInFrameRecorderStarted = false;
-        }
-
-        private void AccumulateGcAllocatedBytesForCurrentFrame()
-        {
-            if (!_gcAllocatedInFrameRecorderStarted || !_gcAllocatedInFrameRecorder.Valid)
-            {
-                return;
-            }
-
-            var gcAllocatedForFrame = _gcAllocatedInFrameRecorder.LastValue;
-            if (gcAllocatedForFrame > 0L)
-            {
-                _gcWindowAllocatedBytes += gcAllocatedForFrame;
-            }
-        }
-
         private long ResolveGcDeltaBytes()
         {
-            if (_gcAllocatedInFrameRecorderStarted && _gcAllocatedInFrameRecorder.Valid)
-            {
-                return System.Math.Max(0L, _gcWindowAllocatedBytes);
-            }
-
             var gcDeltaBytes = System.GC.GetTotalMemory(false) - _gcWindowStartBytes;
             return System.Math.Max(0L, gcDeltaBytes);
+        }
+
+        private float ResolveGcDeltaKbPerFrame(int sampleCount)
+        {
+            if (sampleCount <= 0)
+            {
+                return 0f;
+            }
+
+            var gcDeltaBytesPerFrame = (double)ResolveGcDeltaBytes() / sampleCount;
+            return (float)(gcDeltaBytesPerFrame / 1024d);
         }
 
         private static string NormalizeTier(string value)
