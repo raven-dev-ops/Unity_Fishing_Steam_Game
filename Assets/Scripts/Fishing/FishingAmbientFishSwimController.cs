@@ -37,10 +37,15 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _dynamicHorizontalBand = true;
         [SerializeField] private float _horizontalHalfSpan = 9.8f;
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
-        [SerializeField] private float _minimumAmbientSpawnDepth = 20f;
+        [SerializeField] private float _minimumAmbientSpawnDepth = 30f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
         [SerializeField] private float _maxBandHeight = 90f;
+        [SerializeField] private bool _spawnAheadWhileDescending = true;
+        [SerializeField] private float _descendingAheadCameraLengths = 2.5f;
+        [SerializeField] private float _descendingAheadBandHeight = 22f;
+        [SerializeField] private float _descendingSpawnCadenceMultiplier = 2.5f;
+        [SerializeField] private float _descendingDetectionMinMetersPerSecond = 0.35f;
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
@@ -81,6 +86,9 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _spawnIntervalDefaultsCaptured;
         private Vector2 _defaultSpawnIntervalRange;
         private bool _subscribedToFishSpawner;
+        private bool _hasLastHookY;
+        private float _lastHookY;
+        private bool _isHookDescending;
 
         private void Awake()
         {
@@ -129,8 +137,10 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            UpdateHookDescentState();
             UpdateDynamicWaterBand();
             var allowAmbientPresence = IsAmbientPresenceAllowed();
+            var descendingSpawnCadenceMultiplier = ResolveDescendingSpawnCadenceMultiplier();
 
             if (_boundTrack != null && (_boundTrack.transform == null || _boundTrack.renderer == null))
             {
@@ -175,7 +185,7 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     if (!track.reserved)
                     {
-                        track.spawnDelay -= Time.deltaTime;
+                        track.spawnDelay -= Time.deltaTime * descendingSpawnCadenceMultiplier;
                     }
                 }
             }
@@ -631,6 +641,12 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (TryResolveDistanceOutsideViewport(p, out var outsideDistance))
             {
+                if (ShouldRetainOffscreenTrackWhileDescending(track, p, outsideDistance))
+                {
+                    track.offscreenSeconds = 0f;
+                    return;
+                }
+
                 track.offscreenSeconds += Time.deltaTime;
                 var despawnByDistance = outsideDistance >= Mathf.Max(0.5f, _offscreenDespawnDistance);
                 var despawnByTime = track.offscreenSeconds >= Mathf.Max(0.25f, _offscreenDespawnSeconds);
@@ -1254,6 +1270,12 @@ namespace RavenDevOps.Fishing.Fishing
             if (_hook != null)
             {
                 bottom = Mathf.Min(bottom, _hook.position.y - Mathf.Abs(_bandBottomOffsetBelowHook));
+
+                if (TryResolveDescendingAheadSpawnBand(out var descendingTop, out var descendingBottom))
+                {
+                    top = Mathf.Min(top, descendingTop);
+                    bottom = Mathf.Min(bottom, descendingBottom);
+                }
             }
 
             if (top - bottom > maxBand)
@@ -1262,6 +1284,68 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _yBounds = new Vector2(bottom, top);
+        }
+
+        private bool TryResolveDescendingAheadSpawnBand(out float top, out float bottom)
+        {
+            top = 0f;
+            bottom = 0f;
+            if (!_spawnAheadWhileDescending || !_isHookDescending || _hook == null)
+            {
+                return false;
+            }
+
+            if (!TryResolveCameraWorldBounds(out _, out _, out var cameraBottom, out var cameraTop))
+            {
+                return false;
+            }
+
+            var cameraLength = Mathf.Max(0.5f, cameraTop - cameraBottom);
+            var aheadCameraLengths = Mathf.Max(0.5f, _descendingAheadCameraLengths);
+            var aheadDistance = cameraLength * aheadCameraLengths;
+            var bandHeight = Mathf.Max(1f, _descendingAheadBandHeight);
+            var maxBand = Mathf.Max(bandHeight, _maxBandHeight);
+            aheadDistance = Mathf.Min(aheadDistance, maxBand);
+
+            top = _hook.position.y - Mathf.Abs(_bandBottomOffsetBelowHook) - aheadDistance;
+            bottom = top - bandHeight;
+            return true;
+        }
+
+        private float ResolveDescendingSpawnCadenceMultiplier()
+        {
+            if (!_spawnAheadWhileDescending || !_isHookDescending)
+            {
+                return 1f;
+            }
+
+            return Mathf.Max(1f, _descendingSpawnCadenceMultiplier);
+        }
+
+        private void UpdateHookDescentState()
+        {
+            EnsureAnchors();
+            if (_hook == null)
+            {
+                _isHookDescending = false;
+                _hasLastHookY = false;
+                _lastHookY = 0f;
+                return;
+            }
+
+            var currentHookY = _hook.position.y;
+            if (!_hasLastHookY)
+            {
+                _hasLastHookY = true;
+                _lastHookY = currentHookY;
+                _isHookDescending = false;
+                return;
+            }
+
+            var deltaTime = Mathf.Max(0.0001f, Time.deltaTime);
+            var velocityY = (currentHookY - _lastHookY) / deltaTime;
+            _lastHookY = currentHookY;
+            _isHookDescending = velocityY <= -Mathf.Max(0.05f, _descendingDetectionMinMetersPerSecond);
         }
 
         private float ResolveSpawnY(float bottom, float top)
@@ -1346,6 +1430,31 @@ namespace RavenDevOps.Fishing.Fishing
                 _hook ??= hookController.transform;
                 _ship ??= hookController.ShipTransform;
             }
+        }
+
+        private bool ShouldRetainOffscreenTrackWhileDescending(SwimTrack track, Vector3 worldPosition, float outsideDistance)
+        {
+            if (track == null
+                || !_spawnAheadWhileDescending
+                || !_isHookDescending
+                || _hook == null)
+            {
+                return false;
+            }
+
+            if (worldPosition.y >= _hook.position.y - 0.1f)
+            {
+                return false;
+            }
+
+            if (!TryResolveCameraWorldBounds(out _, out _, out var cameraBottom, out var cameraTop))
+            {
+                return false;
+            }
+
+            var cameraLength = Mathf.Max(0.5f, cameraTop - cameraBottom);
+            var protectedDistance = cameraLength * Mathf.Max(1f, _descendingAheadCameraLengths + 0.5f);
+            return outsideDistance <= protectedDistance;
         }
 
         private bool TryResolveDistanceOutsideViewport(Vector3 worldPosition, out float outsideDistance)
