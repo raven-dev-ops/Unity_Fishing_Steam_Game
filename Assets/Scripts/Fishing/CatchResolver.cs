@@ -64,6 +64,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _tutorialConfigured;
         private bool _environmentConfigured;
         private bool _conditionConfigured;
+        private bool _biteSelectionResolvedForCurrentDrop;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
@@ -200,6 +201,7 @@ namespace RavenDevOps.Fishing.Fishing
             _lastTensionState = FishingTensionState.None;
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
             _toggleReelActive = false;
+            _biteSelectionResolvedForCurrentDrop = false;
             _ambientFishController?.ResolveBoundFish(caught: false);
 
             _hudOverlay?.SetFishingFailure(string.Empty);
@@ -212,39 +214,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             RefreshDistanceTier();
-            _targetFish = _spawner.RollFish(_currentDistanceTier, _hook.CurrentDepth);
-            var pityActivated = false;
-            if (_targetFish == null && _spawner != null && _assistService.TryActivateNoBitePity())
-            {
-                _targetFish = _spawner.RollFishByDistanceOnly(_currentDistanceTier);
-                pityActivated = _targetFish != null;
-                if (pityActivated)
-                {
-                    StructuredLogService.LogInfo(
-                        "fishing-assist",
-                        $"assist=no_bite_pity status=activated distance_tier={_currentDistanceTier}");
-                }
-            }
-
-            _assistService.RecordCastResult(_targetFish != null);
-            if (_targetFish == null)
-            {
-                _hudOverlay?.SetFishingStatus("No bite in this zone. Recast or change depth.");
-                return;
-            }
-
-            BindAmbientFishToTarget();
-            var minBite = Mathf.Max(0f, _targetFish.minBiteDelaySeconds);
-            var maxBite = Mathf.Max(minBite, _targetFish.maxBiteDelaySeconds);
-            _biteTimerSeconds = UnityEngine.Random.Range(minBite, maxBite);
-            _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
-            if (pityActivated)
-            {
-                _hudOverlay?.SetFishingStatus("Fishing assist active: activity increased. Waiting for a bite...");
-                return;
-            }
-
-            _hudOverlay?.SetFishingStatus("Waiting for a bite...");
+            _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
         }
 
         private void BeginHookedPhase()
@@ -296,15 +266,31 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickInWater()
         {
-            if (_targetFish == null)
+            if (IsActionHeldForCastDepth())
             {
+                if (_targetFish != null)
+                {
+                    _ambientFishController?.ResolveBoundFish(caught: false);
+                    _targetFish = null;
+                }
+
+                _biteSelectionResolvedForCurrentDrop = false;
+                _inWaterElapsedSeconds = 0f;
+                _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
                 return;
             }
 
-            if (IsActionHeldForCastDepth())
+            if (!_biteSelectionResolvedForCurrentDrop)
             {
-                _inWaterElapsedSeconds = 0f;
-                _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
+                _biteSelectionResolvedForCurrentDrop = true;
+                if (!TryResolveTargetFishForCurrentDepth())
+                {
+                    return;
+                }
+            }
+
+            if (_targetFish == null)
+            {
                 return;
             }
 
@@ -606,6 +592,54 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return null;
+        }
+
+        private bool TryResolveTargetFishForCurrentDepth()
+        {
+            if (_spawner == null || _hook == null)
+            {
+                _hudOverlay?.SetFishingStatus("Missing fishing dependencies.");
+                return false;
+            }
+
+            RefreshDistanceTier();
+            var depth = Mathf.Max(0f, _hook.CurrentDepth);
+            _targetFish = _spawner.RollFish(_currentDistanceTier, depth);
+
+            var pityActivated = false;
+            if (_targetFish == null && _assistService.TryActivateNoBitePity())
+            {
+                _targetFish = _spawner.RollFishByDistanceOnly(_currentDistanceTier);
+                pityActivated = _targetFish != null;
+                if (pityActivated)
+                {
+                    StructuredLogService.LogInfo(
+                        "fishing-assist",
+                        $"assist=no_bite_pity status=activated distance_tier={_currentDistanceTier}");
+                }
+            }
+
+            _assistService.RecordCastResult(_targetFish != null);
+            if (_targetFish == null)
+            {
+                _hudOverlay?.SetFishingStatus($"No fish at depth {depth:0}. Hold Action to change depth and release again.");
+                return false;
+            }
+
+            BindAmbientFishToTarget();
+            var minBite = Mathf.Max(0f, _targetFish.minBiteDelaySeconds);
+            var maxBite = Mathf.Max(minBite, _targetFish.maxBiteDelaySeconds);
+            _biteTimerSeconds = UnityEngine.Random.Range(minBite, maxBite);
+            _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
+            _inWaterElapsedSeconds = 0f;
+            if (pityActivated)
+            {
+                _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: activity increased. Waiting for a bite...");
+                return true;
+            }
+
+            _hudOverlay?.SetFishingStatus($"Waiting for a bite at depth {depth:0}...");
+            return true;
         }
 
         private void BindAmbientFishToTarget()
