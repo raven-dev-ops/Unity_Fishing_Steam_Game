@@ -130,6 +130,8 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _hudOverlay = FindFishingHudOverlay();
             }
+
+            EnsureAmbientFishControllerReference();
         }
 
         private void Awake()
@@ -139,14 +141,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
-            if (_ambientFishController == null)
-            {
-                _ambientFishController = GetComponent<FishingAmbientFishSwimController>();
-                if (_ambientFishController == null)
-                {
-                    _ambientFishController = FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
-                }
-            }
+            EnsureAmbientFishControllerReference();
 
             _randomSource ??= new UnityFishingRandomSource();
             _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
@@ -163,6 +158,22 @@ namespace RavenDevOps.Fishing.Fishing
             ConfigureAssistService();
         }
 
+        private void EnsureAmbientFishControllerReference()
+        {
+            if (_ambientFishController != null)
+            {
+                return;
+            }
+
+            _ambientFishController = GetComponent<FishingAmbientFishSwimController>();
+            if (_ambientFishController != null)
+            {
+                return;
+            }
+
+            _ambientFishController = FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
+        }
+
         private void OnEnable()
         {
             SubscribeToStateMachine();
@@ -175,6 +186,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
+            EnsureAmbientFishControllerReference();
             RefreshDistanceTier();
             UpdateHudTelemetry();
             EnsureCameraController();
