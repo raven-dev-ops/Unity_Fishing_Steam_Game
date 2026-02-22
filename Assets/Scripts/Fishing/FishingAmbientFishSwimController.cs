@@ -24,12 +24,12 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _xBounds = new Vector2(-9.8f, 9.8f);
         [SerializeField] private Vector2 _yBounds = new Vector2(-3.2f, -1.55f);
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
-        [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.2f, 1.15f);
+        [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
         [SerializeField] private float _edgeBuffer = 1.35f;
         [SerializeField] private float _bobAmplitude = 0.14f;
         [SerializeField] private float _bobFrequency = 1.45f;
-        [SerializeField] private int _maxConcurrentFish = 4;
+        [SerializeField] private int _maxConcurrentFish = 3;
         [SerializeField] private bool _searchInactive = true;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionSpeedScale = 0.55f;

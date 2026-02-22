@@ -97,4 +97,7 @@ Unity.exe -batchmode -nographics -quit `
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions
   - Non-Steam fallback guard-path checks
+  - Fishing scene runtime composition checks (HUD/objective/pause controls/controllers)
+  - Fishing backdrop camera coverage checks
+  - Fishing ambient fish concurrency cap checks
   - Headless scene screenshot capture (env-gated in CI)

@@ -262,20 +262,21 @@ namespace RavenDevOps.Fishing.Core
 
             EnsureEventSystem(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
-            var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 252f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
+            var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 292f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
             var telemetryText = CreateTopLeftText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
             var tensionText = CreateTopLeftText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
             var conditionText = CreateTopLeftText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
-            var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 150f), new Vector2(844f, 38f));
+            var objectiveText = CreateTopLeftText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAnchor.UpperLeft, new Vector2(18f, 110f), new Vector2(844f, 34f));
+            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAnchor.UpperLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
+            var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 176f), new Vector2(844f, 36f));
             CreateTopLeftText(
                 infoPanel.transform,
                 "FishingControls",
                 "Fishing: Left/Right move ship, Space cast/reel, Up/Down depth adjust while in water, Esc pause, H return harbor from pause.",
                 16,
                 TextAnchor.UpperLeft,
-                new Vector2(18f, 192f),
-                new Vector2(844f, 52f));
+                new Vector2(18f, 212f),
+                new Vector2(844f, 56f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
             menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
 
@@ -363,7 +364,7 @@ namespace RavenDevOps.Fishing.Core
             hookDropController.Configure(stateMachine, hookMovement, shipObject.transform);
 
             var hud = GetOrAddComponent<SimpleFishingHudOverlay>(root);
-            hud.Configure(telemetryText, tensionText, statusText, failureText, conditionText);
+            hud.Configure(telemetryText, tensionText, statusText, failureText, conditionText, objectiveText);
 
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);

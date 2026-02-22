@@ -12,17 +12,51 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private Text _statusText;
         [SerializeField] private Text _failureText;
         [SerializeField] private Text _conditionsText;
+        [SerializeField] private Text _objectiveText;
+        [SerializeField] private ObjectivesService _objectivesService;
+        [SerializeField] private string _objectiveFallbackText = "Objective: Follow current task goals.";
 
         private int _distanceTier = 1;
         private float _depth;
 
-        public void Configure(Text telemetryText, Text tensionText, Text statusText, Text failureText, Text conditionsText)
+        public void Configure(
+            Text telemetryText,
+            Text tensionText,
+            Text statusText,
+            Text failureText,
+            Text conditionsText,
+            Text objectiveText)
         {
             _telemetryText = telemetryText;
             _tensionText = tensionText;
             _statusText = statusText;
             _failureText = failureText;
             _conditionsText = conditionsText;
+            _objectiveText = objectiveText;
+            RefreshObjectiveLabel();
+        }
+
+        private void Awake()
+        {
+            RuntimeServiceRegistry.Resolve(ref _objectivesService, this, warnIfMissing: false);
+        }
+
+        private void OnEnable()
+        {
+            if (_objectivesService != null)
+            {
+                _objectivesService.ObjectiveLabelChanged += OnObjectiveLabelChanged;
+            }
+
+            RefreshObjectiveLabel();
+        }
+
+        private void OnDisable()
+        {
+            if (_objectivesService != null)
+            {
+                _objectivesService.ObjectiveLabelChanged -= OnObjectiveLabelChanged;
+            }
         }
 
         public void SetFishingTelemetry(int distanceTier, float depth)
@@ -71,6 +105,39 @@ namespace RavenDevOps.Fishing.Core
                     ? string.Empty
                     : $"Conditions: {conditionLabel}";
             }
+        }
+
+        private void OnObjectiveLabelChanged(string label)
+        {
+            ApplyObjectiveLabel(label);
+        }
+
+        private void RefreshObjectiveLabel()
+        {
+            if (_objectiveText == null)
+            {
+                return;
+            }
+
+            if (_objectivesService == null)
+            {
+                ApplyObjectiveLabel(_objectiveFallbackText);
+                return;
+            }
+
+            ApplyObjectiveLabel(_objectivesService.BuildActiveObjectiveLabel());
+        }
+
+        private void ApplyObjectiveLabel(string label)
+        {
+            if (_objectiveText == null)
+            {
+                return;
+            }
+
+            _objectiveText.text = string.IsNullOrWhiteSpace(label)
+                ? _objectiveFallbackText
+                : label;
         }
     }
 }

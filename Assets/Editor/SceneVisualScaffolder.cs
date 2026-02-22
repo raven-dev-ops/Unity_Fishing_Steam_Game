@@ -335,11 +335,17 @@ namespace RavenDevOps.Fishing.EditorTools
             CreateSprite("FishingShip", ResolveSprite("ship_lv2", "ship_lv1", "ship_coastal_runner"), new Vector3(0f, 2.45f, 0f), new Vector2(0.98f, 0.98f), sorting++, Color.white, root, 0f, false);
             CreateSprite("FishingHook", ResolveSprite("hook_lv3", "hook_lv2", "hook_lv1"), new Vector3(0f, -1.1f, 0f), new Vector2(0.64f, 0.64f), sorting++, new Color(0.9f, 0.97f, 1f, 0.98f), root, 0f, false);
 
-            CreateSprite("FishingFishLeftA", ResolveSprite("fish_cod", "fish_a"), new Vector3(-4.2f, -2.65f, 0f), new Vector2(0.76f, 0.76f), sorting++, Color.white, root, 8f, false);
-            CreateSprite("FishingFishLeftB", ResolveSprite("fish_coastal_snapper", "fish_b"), new Vector3(-2.4f, -2.25f, 0f), new Vector2(0.78f, 0.78f), sorting++, Color.white, root, -8f, true);
-            CreateSprite("FishingFishMid", ResolveSprite("fish_heavy", "fish_pack"), new Vector3(0.4f, -2.8f, 0f), new Vector2(0.82f, 0.82f), sorting++, Color.white, root, 3f, false);
-            CreateSprite("FishingFishRightA", ResolveSprite("fish_light", "fish_valid"), new Vector3(2.7f, -2.35f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, -12f, true);
-            CreateSprite("FishingFishRightB", ResolveSprite("fish_surface", "fish_icon_coastal"), new Vector3(4.6f, -2.1f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, 12f, false);
+            var fishLeftA = CreateSprite("FishingFishLeftA", ResolveSprite("fish_cod", "fish_a"), new Vector3(-4.2f, -2.65f, 0f), new Vector2(0.76f, 0.76f), sorting++, Color.white, root, 8f, false);
+            var fishLeftB = CreateSprite("FishingFishLeftB", ResolveSprite("fish_coastal_snapper", "fish_b"), new Vector3(-2.4f, -2.25f, 0f), new Vector2(0.78f, 0.78f), sorting++, Color.white, root, -8f, true);
+            var fishMid = CreateSprite("FishingFishMid", ResolveSprite("fish_heavy", "fish_pack"), new Vector3(0.4f, -2.8f, 0f), new Vector2(0.82f, 0.82f), sorting++, Color.white, root, 3f, false);
+            var fishRightA = CreateSprite("FishingFishRightA", ResolveSprite("fish_light", "fish_valid"), new Vector3(2.7f, -2.35f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, -12f, true);
+            var fishRightB = CreateSprite("FishingFishRightB", ResolveSprite("fish_surface", "fish_icon_coastal"), new Vector3(4.6f, -2.1f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, 12f, false);
+
+            SetSpriteRendererEnabled(fishLeftA, false);
+            SetSpriteRendererEnabled(fishLeftB, false);
+            SetSpriteRendererEnabled(fishMid, false);
+            SetSpriteRendererEnabled(fishRightA, false);
+            SetSpriteRendererEnabled(fishRightB, false);
         }
 
         private static void ApplySceneOrchestration(string sceneName, GameObject sceneRoot)
@@ -454,7 +460,6 @@ namespace RavenDevOps.Fishing.EditorTools
             }
 
             orchestrator.ConfigureStages(stageDefinitions, initialDelay, loopSequence, loopDelay);
-            orchestrator.ShowAllImmediate();
         }
 
         private static Transform CreateStageRoot(Transform parent, string name)
@@ -753,6 +758,20 @@ namespace RavenDevOps.Fishing.EditorTools
             renderer.color = color;
             renderer.flipX = flipX;
             return go;
+        }
+
+        private static void SetSpriteRendererEnabled(GameObject target, bool enabled)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var renderer = target.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.enabled = enabled;
+            }
         }
     }
 }
