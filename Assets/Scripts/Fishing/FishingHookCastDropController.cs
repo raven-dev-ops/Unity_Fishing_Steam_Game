@@ -15,7 +15,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _dockSnapLerp = 16f;
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
-        [SerializeField] private float _manualOverrideThreshold = 0.22f;
+        [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
         [SerializeField] private float _castHoldReleaseGraceSeconds = 0.12f;
         [SerializeField] private float _minimumInitialDropDistance = 0.85f;
@@ -211,7 +211,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            if (_moveHookAction != null && Mathf.Abs(_moveHookAction.ReadValue<float>()) > Mathf.Clamp01(_manualOverrideThreshold))
+            if (droppedDistance >= Mathf.Max(0f, _minimumInitialDropDistance) && IsManualHookInputActive())
             {
                 _autoDropActive = false;
                 return;
@@ -359,6 +359,36 @@ namespace RavenDevOps.Fishing.Fishing
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+        }
+
+        private bool IsManualHookInputActive()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null
+                && (keyboard.upArrowKey.isPressed
+                    || keyboard.downArrowKey.isPressed
+                    || keyboard.wKey.isPressed
+                    || keyboard.sKey.isPressed))
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.UpArrow)
+                || UnityEngine.Input.GetKey(KeyCode.DownArrow)
+                || UnityEngine.Input.GetKey(KeyCode.W)
+                || UnityEngine.Input.GetKey(KeyCode.S))
+            {
+                return true;
+            }
+#endif
+
+            if (_moveHookAction == null)
+            {
+                return false;
+            }
+
+            return Mathf.Abs(_moveHookAction.ReadValue<float>()) > Mathf.Clamp01(_manualOverrideThreshold);
         }
 
         private void SubscribeToStateMachine()
