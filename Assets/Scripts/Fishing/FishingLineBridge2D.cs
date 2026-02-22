@@ -20,6 +20,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _waveSpeed = 2.1f;
 
         private LineRenderer _renderer;
+        private SpriteRenderer _hookRenderer;
 
         public void Configure(Transform ship, Transform hook, float lineThickness = 0.05f, float shipOffsetY = -0.36f)
         {
@@ -51,6 +52,13 @@ namespace RavenDevOps.Fishing.Fishing
             CacheRenderer();
             if (_renderer == null || _ship == null || _hook == null)
             {
+                return;
+            }
+
+            CacheHookRenderer();
+            if (_hookRenderer != null && !_hookRenderer.enabled)
+            {
+                _renderer.enabled = false;
                 return;
             }
 
@@ -109,6 +117,14 @@ namespace RavenDevOps.Fishing.Fishing
             if (_renderer == null)
             {
                 _renderer = GetComponent<LineRenderer>();
+            }
+        }
+
+        private void CacheHookRenderer()
+        {
+            if (_hookRenderer == null && _hook != null)
+            {
+                _hookRenderer = _hook.GetComponent<SpriteRenderer>();
             }
         }
 

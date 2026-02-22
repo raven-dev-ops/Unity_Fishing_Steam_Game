@@ -17,12 +17,15 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private float _manualOverrideThreshold = 0.22f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
+        [SerializeField] private float _castHoldReleaseGraceSeconds = 0.12f;
 
         private InputAction _moveHookAction;
         private InputAction _actionInput;
         private bool _autoDropActive;
         private bool _autoReelActive;
         private bool _stateMachineSubscribed;
+        private float _inWaterElapsed;
+        private SpriteRenderer _hookRenderer;
 
         public void Configure(
             FishingActionStateMachine stateMachine,
@@ -38,6 +41,7 @@ namespace RavenDevOps.Fishing.Fishing
             SubscribeToStateMachine();
             _hookController = hookController;
             _ship = ship;
+            CacheHookRenderer();
             ApplyStateImmediate();
         }
 
@@ -53,6 +57,8 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _ship = _hookController.ShipTransform;
             }
+
+            CacheHookRenderer();
         }
 
         private void OnEnable()
@@ -78,15 +84,18 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingActionState.Cast:
                     if (_autoReelActive)
                     {
+                        SetHookVisible(true);
                         TickAutoReelIn();
                     }
                     else
                     {
+                        SetHookVisible(false);
                         SnapHookToDock();
                     }
 
                     break;
                 case FishingActionState.InWater:
+                    SetHookVisible(true);
                     TickAutoDrop();
                     break;
             }
@@ -102,22 +111,28 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.Cast)
             {
                 _autoDropActive = false;
+                _inWaterElapsed = 0f;
                 _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
                 _hookController.SetMovementEnabled(false);
+                SetHookVisible(_autoReelActive);
                 return;
             }
 
             if (next == FishingActionState.InWater)
             {
-                _autoDropActive = !_requireCastHoldForAutoDrop || IsActionHeld();
+                _autoDropActive = true;
+                _inWaterElapsed = 0f;
                 _autoReelActive = false;
                 _hookController.SetMovementEnabled(true);
+                SetHookVisible(true);
                 return;
             }
 
             _autoDropActive = false;
+            _inWaterElapsed = 0f;
             _autoReelActive = false;
             _hookController.SetMovementEnabled(true);
+            SetHookVisible(true);
         }
 
         private void ApplyStateImmediate()
@@ -131,19 +146,25 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 case FishingActionState.Cast:
                     _autoDropActive = false;
+                    _inWaterElapsed = 0f;
                     _autoReelActive = false;
                     _hookController.SetMovementEnabled(false);
+                    SetHookVisible(false);
                     SnapHookToDock();
                     break;
                 case FishingActionState.InWater:
-                    _autoDropActive = !_requireCastHoldForAutoDrop || IsActionHeld();
+                    _autoDropActive = true;
+                    _inWaterElapsed = 0f;
                     _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
+                    SetHookVisible(true);
                     break;
                 default:
                     _autoDropActive = false;
+                    _inWaterElapsed = 0f;
                     _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
+                    SetHookVisible(true);
                     break;
             }
         }
@@ -171,9 +192,12 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            _inWaterElapsed += Time.deltaTime;
             RefreshMoveHookAction();
             RefreshActionInput();
-            if (_requireCastHoldForAutoDrop && !IsActionHeld())
+            if (_requireCastHoldForAutoDrop
+                && _inWaterElapsed > Mathf.Max(0f, _castHoldReleaseGraceSeconds)
+                && !IsActionHeld())
             {
                 _autoDropActive = false;
                 return;
@@ -244,6 +268,27 @@ namespace RavenDevOps.Fishing.Fishing
             _actionInput = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/Action")
                 : null;
+        }
+
+        private void CacheHookRenderer()
+        {
+            if (_hookRenderer != null || _hookController == null)
+            {
+                return;
+            }
+
+            _hookRenderer = _hookController.GetComponent<SpriteRenderer>();
+        }
+
+        private void SetHookVisible(bool visible)
+        {
+            CacheHookRenderer();
+            if (_hookRenderer == null)
+            {
+                return;
+            }
+
+            _hookRenderer.enabled = visible;
         }
 
         private bool IsActionHeld()
