@@ -12,6 +12,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private InputActionMapController _inputMapController;
 
         private InputAction _actionInput;
+        private int _lastAdvanceFrame = -1;
 
         public FishingActionState State => _state;
         public event Action<FishingActionState, FishingActionState> StateChanged;
@@ -32,6 +33,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         public void AdvanceByAction()
         {
+            var frame = Time.frameCount;
+            if (_lastAdvanceFrame == frame)
+            {
+                return;
+            }
+
+            _lastAdvanceFrame = frame;
             switch (_state)
             {
                 case FishingActionState.Cast:
