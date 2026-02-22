@@ -20,61 +20,49 @@ namespace RavenDevOps.Fishing.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureBootstrap()
         {
-            if (GameFlowOrchestrator.Instance != null || GameObject.Find(ServicesObjectName) != null)
+            var servicesGo = GameObject.Find(ServicesObjectName);
+            if (servicesGo == null && GameFlowOrchestrator.Instance != null)
             {
-                return;
+                servicesGo = GameFlowOrchestrator.Instance.gameObject;
+                servicesGo.name = ServicesObjectName;
             }
 
-            var servicesGo = new GameObject(ServicesObjectName);
+            if (servicesGo == null)
+            {
+                servicesGo = new GameObject(ServicesObjectName);
+            }
+
             Object.DontDestroyOnLoad(servicesGo);
 
-            var gameFlow = servicesGo.AddComponent<GameFlowManager>();
-            var sceneLoader = servicesGo.AddComponent<SceneLoader>();
-            var inputRouter = servicesGo.AddComponent<InputContextRouter>();
-            var inputMapController = servicesGo.AddComponent<InputActionMapController>();
-            var inputRebindingService = servicesGo.AddComponent<InputRebindingService>();
-            var userSettings = servicesGo.AddComponent<UserSettingsService>();
-            var fallbackCameraService = servicesGo.AddComponent<FallbackCameraService>();
-            var saveManager = servicesGo.AddComponent<SaveManager>();
-            var addressablesPilotLoader = servicesGo.AddComponent<AddressablesPilotCatalogLoader>();
-            var metaLoopService = servicesGo.AddComponent<MetaLoopRuntimeService>();
-            var objectivesService = servicesGo.AddComponent<ObjectivesService>();
-            var uiAccessibilityService = servicesGo.AddComponent<GlobalUiAccessibilityService>();
-            var photoModeService = servicesGo.AddComponent<PhotoModeRuntimeService>();
-            var audioManager = servicesGo.AddComponent<AudioManager>();
-            var crashDiagnostics = servicesGo.AddComponent<CrashDiagnosticsService>();
-            var steamBootstrap = servicesGo.AddComponent<SteamBootstrap>();
-            var steamStatsService = servicesGo.AddComponent<SteamStatsService>();
-            var steamCloudSyncService = servicesGo.AddComponent<SteamCloudSyncService>();
-            var steamRichPresenceService = servicesGo.AddComponent<SteamRichPresenceService>();
-            var orchestrator = servicesGo.AddComponent<GameFlowOrchestrator>();
-            var inputDriver = servicesGo.AddComponent<KeyboardFlowInputDriver>();
-            var structuredLogger = servicesGo.AddComponent<Logging.StructuredLogService>();
+            var gameFlow = GetOrAddService<GameFlowManager>(servicesGo);
+            var sceneLoader = GetOrAddService<SceneLoader>(servicesGo);
+            var inputRouter = GetOrAddService<InputContextRouter>(servicesGo);
+            var inputMapController = GetOrAddService<InputActionMapController>(servicesGo);
+            var inputRebindingService = GetOrAddService<InputRebindingService>(servicesGo);
+            GetOrAddService<UserSettingsService>(servicesGo);
+            GetOrAddService<FallbackCameraService>(servicesGo);
+            var saveManager = GetOrAddService<SaveManager>(servicesGo);
+            GetOrAddService<AddressablesPilotCatalogLoader>(servicesGo);
+            GetOrAddService<CatalogService>(servicesGo);
+            GetOrAddService<MetaLoopRuntimeService>(servicesGo);
+            GetOrAddService<SellSummaryCalculator>(servicesGo);
+            GetOrAddService<ObjectivesService>(servicesGo);
+            GetOrAddService<GlobalUiAccessibilityService>(servicesGo);
+            GetOrAddService<PhotoModeRuntimeService>(servicesGo);
+            GetOrAddService<AudioManager>(servicesGo);
+            GetOrAddService<SceneMusicController>(servicesGo);
+            GetOrAddService<SfxTriggerRouter>(servicesGo);
+            GetOrAddService<CrashDiagnosticsService>(servicesGo);
+            GetOrAddService<SteamBootstrap>(servicesGo);
+            GetOrAddService<SteamStatsService>(servicesGo);
+            GetOrAddService<SteamCloudSyncService>(servicesGo);
+            GetOrAddService<SteamRichPresenceService>(servicesGo);
+            var orchestrator = GetOrAddService<GameFlowOrchestrator>(servicesGo);
+            var inputDriver = GetOrAddComponent<KeyboardFlowInputDriver>(servicesGo);
+            GetOrAddService<Logging.StructuredLogService>(servicesGo);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            servicesGo.AddComponent<Logging.DevelopmentLogConsole>();
+            GetOrAddComponent<Logging.DevelopmentLogConsole>(servicesGo);
 #endif
-
-            RuntimeServiceRegistry.Register(gameFlow);
-            RuntimeServiceRegistry.Register(sceneLoader);
-            RuntimeServiceRegistry.Register(inputRouter);
-            RuntimeServiceRegistry.Register(inputMapController);
-            RuntimeServiceRegistry.Register(inputRebindingService);
-            RuntimeServiceRegistry.Register(userSettings);
-            RuntimeServiceRegistry.Register(fallbackCameraService);
-            RuntimeServiceRegistry.Register(saveManager);
-            RuntimeServiceRegistry.Register(addressablesPilotLoader);
-            RuntimeServiceRegistry.Register(metaLoopService);
-            RuntimeServiceRegistry.Register(objectivesService);
-            RuntimeServiceRegistry.Register(uiAccessibilityService);
-            RuntimeServiceRegistry.Register(photoModeService);
-            RuntimeServiceRegistry.Register(audioManager);
-            RuntimeServiceRegistry.Register(crashDiagnostics);
-            RuntimeServiceRegistry.Register(steamBootstrap);
-            RuntimeServiceRegistry.Register(steamStatsService);
-            RuntimeServiceRegistry.Register(steamCloudSyncService);
-            RuntimeServiceRegistry.Register(steamRichPresenceService);
-            RuntimeServiceRegistry.Register(orchestrator);
-            RuntimeServiceRegistry.Register(structuredLogger);
 
             var inputActions = Resources.Load<InputActionAsset>(InputActionsResourcePath);
             if (inputActions == null)
@@ -130,6 +118,29 @@ namespace RavenDevOps.Fishing.Core
             rect.offsetMax = Vector2.zero;
 
             return fade;
+        }
+
+        private static T GetOrAddService<T>(GameObject root) where T : Component
+        {
+            var component = GetOrAddComponent<T>(root);
+            RuntimeServiceRegistry.Register(component);
+            return component;
+        }
+
+        private static T GetOrAddComponent<T>(GameObject root) where T : Component
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var component = root.GetComponent<T>();
+            if (component == null)
+            {
+                component = root.AddComponent<T>();
+            }
+
+            return component;
         }
     }
 }

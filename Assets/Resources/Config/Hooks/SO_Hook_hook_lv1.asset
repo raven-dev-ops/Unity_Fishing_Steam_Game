@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cc90d894d3434abce91e397783c756, type: 3}
+  m_Name: SO_Hook_hook_lv1
+  m_EditorClassIdentifier: RavenDevOps.Fishing.Data::RavenDevOps.Fishing.Data.HookDefinitionSO
+  id: hook_lv1
+  icon: {fileID: -5717297548280234298, guid: 41902eec228b6d247a1e38d19812d49f, type: 3}
+  price: 0
+  maxDepth: 40

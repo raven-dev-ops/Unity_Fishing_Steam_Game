@@ -366,6 +366,12 @@ namespace RavenDevOps.Fishing.Core
             var canvas = CreateCanvas(root.transform, "HarborCanvas", 240);
             var hudRoot = new GameObject("HarborHudRoot");
             hudRoot.transform.SetParent(canvas.transform, worldPositionStays: false);
+            var hudRootRect = hudRoot.AddComponent<RectTransform>();
+            hudRootRect.anchorMin = Vector2.zero;
+            hudRootRect.anchorMax = Vector2.one;
+            hudRootRect.pivot = new Vector2(0.5f, 0.5f);
+            hudRootRect.anchoredPosition = Vector2.zero;
+            hudRootRect.sizeDelta = Vector2.zero;
 
             var actionPanel = CreatePanel(
                 hudRoot.transform,
@@ -421,6 +427,9 @@ namespace RavenDevOps.Fishing.Core
             var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
             var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
             var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
+            var hookLv1Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv1Icon", new Vector2(-204f, 18f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv2Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv2Icon", new Vector2(-204f, -42f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv3Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv3Icon", new Vector2(-204f, -102f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
             var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
             hookShopPanel.SetActive(false);
 
@@ -443,6 +452,9 @@ namespace RavenDevOps.Fishing.Core
             var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
             var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
             var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
+            var boatLv1Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv1Icon", new Vector2(-204f, 18f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv2Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv2Icon", new Vector2(-204f, -42f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv3Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv3Icon", new Vector2(-204f, -102f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
             var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
             boatShopPanel.SetActive(false);
 
@@ -557,7 +569,11 @@ namespace RavenDevOps.Fishing.Core
                 hookButton.gameObject,
                 hookLv1Button.gameObject,
                 boatLv1Button.gameObject,
-                fishSellButton.gameObject);
+                fishSellButton.gameObject,
+                new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button },
+                new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button },
+                new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon },
+                new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon });
 
             hookButton.onClick.AddListener(router.OnHookShopRequested);
             boatButton.onClick.AddListener(router.OnBoatShopRequested);
@@ -605,12 +621,12 @@ namespace RavenDevOps.Fishing.Core
             var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
             var conditionText = CreateTopLeftTmpText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
             var objectiveText = CreateTopLeftTmpText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
+            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Down Arrow or S to cast. Use Up Arrow or W to reel.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
             var failureText = CreateTopLeftTmpText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 176f), new Vector2(844f, 36f));
             CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Left/Right move ship, Space cast/reel, Up/Down depth adjust while in water, Esc pause, H return harbor from pause.",
+                "Fishing: Left/Right move ship while uncast. Down/S casts and lowers. Up/W reels and can auto-reel on double tap. Esc pause, H return harbor.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(18f, 212f),
@@ -979,7 +995,7 @@ namespace RavenDevOps.Fishing.Core
 
             text.fontSize = Mathf.Max(10, fontSize);
             text.alignment = alignment;
-            text.enableWordWrapping = true;
+            text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Overflow;
             text.color = new Color(0.96f, 0.98f, 1f, 1f);
             text.text = value ?? string.Empty;
@@ -1012,6 +1028,28 @@ namespace RavenDevOps.Fishing.Core
             labelText.raycastTarget = false;
 
             return button;
+        }
+
+        private static Image CreateImageElement(
+            Transform parent,
+            string name,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            Color color)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, worldPositionStays: false);
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+            var image = go.AddComponent<Image>();
+            image.color = color;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            return image;
         }
 
         private static Button CreateTopLeftButton(

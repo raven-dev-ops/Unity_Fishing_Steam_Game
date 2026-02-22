@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RavenDevOps.Fishing.Core;
@@ -32,6 +33,12 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var save = _saveManager.Current;
+            if (save == null)
+            {
+                return false;
+            }
+
+            save.ownedHooks ??= new List<string>();
             if (!_saveManager.IsContentUnlocked(hookId))
             {
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
@@ -46,6 +53,12 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var wasOwned = save.ownedHooks.Contains(hookId);
+            if (!wasOwned && !HasRequiredPreviousTierOwnership(hookId, save, out var requiredHookId))
+            {
+                Debug.Log($"HookShopController: '{hookId}' requires prior tier '{requiredHookId}' ownership.");
+                return false;
+            }
+
             if (!wasOwned)
             {
                 if (save.copecs < price)
@@ -86,6 +99,33 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             return -1;
+        }
+
+        private bool HasRequiredPreviousTierOwnership(string hookId, SaveDataV1 save, out string requiredHookId)
+        {
+            requiredHookId = string.Empty;
+            if (save == null || save.ownedHooks == null || _items == null || _items.Count == 0)
+            {
+                return true;
+            }
+
+            var target = _items.FirstOrDefault(x => x != null && string.Equals(x.id, hookId, StringComparison.Ordinal));
+            if (target == null)
+            {
+                return true;
+            }
+
+            var requiredTier = _items
+                .Where(x => x != null && x.valueTier < target.valueTier)
+                .OrderByDescending(x => x.valueTier)
+                .FirstOrDefault();
+            if (requiredTier == null || string.IsNullOrWhiteSpace(requiredTier.id))
+            {
+                return true;
+            }
+
+            requiredHookId = requiredTier.id;
+            return save.ownedHooks.Contains(requiredTier.id);
         }
     }
 }

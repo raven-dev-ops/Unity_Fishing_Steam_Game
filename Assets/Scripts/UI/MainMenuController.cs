@@ -1,3 +1,4 @@
+using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
 using UnityEngine;
@@ -75,6 +76,7 @@ namespace RavenDevOps.Fishing.UI
 
             if (_cancelAction != null && _cancelAction.WasPressedThisFrame())
             {
+                PlaySfx(SfxEvent.UiCancel);
                 HideSubmenus();
                 SetSelected(_startButton);
             }
@@ -121,23 +123,27 @@ namespace RavenDevOps.Fishing.UI
 
         public void StartGame()
         {
+            PlaySfx(SfxEvent.UiSelect);
             _orchestrator?.RequestStartGame();
         }
 
         public void OpenProfile()
         {
+            PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_profilePanel);
             SetSelected(_profileDefaultSelection != null ? _profileDefaultSelection : _profileButton);
         }
 
         public void OpenSettings()
         {
+            PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_settingsPanel);
             SetSelected(_settingsDefaultSelection != null ? _settingsDefaultSelection : _settingsButton);
         }
 
         public void OpenExitPanel()
         {
+            PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_exitPanel);
             if (_exitCancelButton != null)
             {
@@ -152,23 +158,27 @@ namespace RavenDevOps.Fishing.UI
 
         public void ConfirmExit()
         {
+            PlaySfx(SfxEvent.UiSelect);
             _orchestrator?.RequestExitGame();
         }
 
         public void CancelExit()
         {
+            PlaySfx(SfxEvent.UiCancel);
             HideSubmenus();
             SetSelected(_exitButton);
         }
 
         public void CloseProfilePanel()
         {
+            PlaySfx(SfxEvent.UiCancel);
             HideSubmenus();
             SetSelected(_profileButton);
         }
 
         public void CloseSettingsPanel()
         {
+            PlaySfx(SfxEvent.UiCancel);
             HideSubmenus();
             SetSelected(_settingsButton);
         }
@@ -223,6 +233,11 @@ namespace RavenDevOps.Fishing.UI
                     ? _inputMapController.FindAction("UI/Cancel")
                     : null;
             }
+        }
+
+        private static void PlaySfx(SfxEvent eventType)
+        {
+            RuntimeServiceRegistry.Get<SfxTriggerRouter>()?.Play(eventType);
         }
     }
 }

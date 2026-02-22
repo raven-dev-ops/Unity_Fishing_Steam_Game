@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RavenDevOps.Fishing.Core;
@@ -32,6 +33,12 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var save = _saveManager.Current;
+            if (save == null)
+            {
+                return false;
+            }
+
+            save.ownedShips ??= new List<string>();
             if (!_saveManager.IsContentUnlocked(boatId))
             {
                 var unlockLevel = _saveManager.GetUnlockLevel(boatId);
@@ -46,6 +53,12 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var wasOwned = save.ownedShips.Contains(boatId);
+            if (!wasOwned && !HasRequiredPreviousTierOwnership(boatId, save, out var requiredBoatId))
+            {
+                Debug.Log($"BoatShopController: '{boatId}' requires prior tier '{requiredBoatId}' ownership.");
+                return false;
+            }
+
             if (!wasOwned)
             {
                 if (save.copecs < price)
@@ -86,6 +99,33 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             return -1;
+        }
+
+        private bool HasRequiredPreviousTierOwnership(string boatId, SaveDataV1 save, out string requiredBoatId)
+        {
+            requiredBoatId = string.Empty;
+            if (save == null || save.ownedShips == null || _items == null || _items.Count == 0)
+            {
+                return true;
+            }
+
+            var target = _items.FirstOrDefault(x => x != null && string.Equals(x.id, boatId, StringComparison.Ordinal));
+            if (target == null)
+            {
+                return true;
+            }
+
+            var requiredTier = _items
+                .Where(x => x != null && x.valueTier < target.valueTier)
+                .OrderByDescending(x => x.valueTier)
+                .FirstOrDefault();
+            if (requiredTier == null || string.IsNullOrWhiteSpace(requiredTier.id))
+            {
+                return true;
+            }
+
+            requiredBoatId = requiredTier.id;
+            return save.ownedShips.Contains(requiredTier.id);
         }
     }
 }

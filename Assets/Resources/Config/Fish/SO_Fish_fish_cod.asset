@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e75d08160a13400c9567ddf0e7ee3de5, type: 3}
+  m_Name: SO_Fish_fish_cod
+  m_EditorClassIdentifier: RavenDevOps.Fishing.Data::RavenDevOps.Fishing.Data.FishDefinitionSO
+  id: fish_cod
+  icon: {fileID: -7342439737021700517, guid: 0e0c4380f080df54fb1f1020486c5590, type: 3}
+  minDistanceTier: 1
+  maxDistanceTier: 2
+  minDepth: 22
+  maxDepth: 55
+  rarityWeight: 12
+  baseValue: 18
+  minBiteDelaySeconds: 0.9
+  maxBiteDelaySeconds: 2.1
+  fightStamina: 4.5
+  pullIntensity: 1
+  escapeSeconds: 7
+  minCatchWeightKg: 0.5
+  maxCatchWeightKg: 2

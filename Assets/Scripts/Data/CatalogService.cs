@@ -9,6 +9,7 @@ namespace RavenDevOps.Fishing.Data
     {
         [SerializeField] private GameConfigSO _gameConfig;
         [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
+        [SerializeField] private string _defaultConfigResourcePath = "Config/SO_GameConfig";
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, ShipDefinitionSO> _shipById = new Dictionary<string, ShipDefinitionSO>();
@@ -34,6 +35,7 @@ namespace RavenDevOps.Fishing.Data
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _addressablesPilotLoader, this, warnIfMissing: false);
             _addressablesPilotLoader ??= GetComponent<AddressablesPilotCatalogLoader>();
+            EnsureGameConfigReference();
             RequestPhaseOneFishLoad();
             RequestPhaseTwoAudioLoad();
             RequestPhaseTwoEnvironmentLoad();
@@ -88,6 +90,25 @@ namespace RavenDevOps.Fishing.Data
         public bool TryGetPhaseTwoEnvironmentMaterial(string key, out Material material)
         {
             return _phaseTwoEnvironmentById.TryGetValue(NormalizeLookupKey(key), out material) && material != null;
+        }
+
+        private void EnsureGameConfigReference()
+        {
+            if (_gameConfig != null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_defaultConfigResourcePath))
+            {
+                return;
+            }
+
+            _gameConfig = Resources.Load<GameConfigSO>(_defaultConfigResourcePath);
+            if (_gameConfig != null)
+            {
+                Debug.Log($"CatalogService: loaded default GameConfigSO from Resources/{_defaultConfigResourcePath}.");
+            }
         }
 
         private void BuildFishCatalog()

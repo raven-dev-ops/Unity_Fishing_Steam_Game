@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc1b3fdaf3d0482cb2b68fde5341ea94, type: 3}
+  m_Name: SO_GameConfig
+  m_EditorClassIdentifier: RavenDevOps.Fishing.Data::RavenDevOps.Fishing.Data.GameConfigSO
+  fishDefinitions:
+  - {fileID: 11400000, guid: 4df657d6b5a7b80419e497efc6a95233, type: 2}
+  - {fileID: 11400000, guid: 692deb35450930b40b5eeb904c7e3e94, type: 2}
+  - {fileID: 11400000, guid: 69869b5665cd9784c9abaace48837cc9, type: 2}
+  shipDefinitions:
+  - {fileID: 11400000, guid: f3efd57182a1c8a4daee367ca1ebacd7, type: 2}
+  - {fileID: 11400000, guid: cfdc8d002f635754aabcd87329d5dda4, type: 2}
+  - {fileID: 11400000, guid: a157b097d2c3d6e40b97b2847919d13c, type: 2}
+  hookDefinitions:
+  - {fileID: 11400000, guid: 60ff380f30b93e246b784d80865c1e10, type: 2}
+  - {fileID: 11400000, guid: 0c1e4afc335c8254697d76564315896d, type: 2}
+  - {fileID: 11400000, guid: c32226e457d2ec74995193ff2423a52e, type: 2}

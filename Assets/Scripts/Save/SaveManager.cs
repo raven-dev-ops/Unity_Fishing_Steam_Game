@@ -782,20 +782,8 @@ namespace RavenDevOps.Fishing.Save
                 return;
             }
 
-            if (unlock.unlockType == ProgressionUnlockType.Ship)
-            {
-                if (!_current.ownedShips.Contains(unlock.unlockId))
-                {
-                    _current.ownedShips.Add(unlock.unlockId);
-                }
-            }
-            else if (unlock.unlockType == ProgressionUnlockType.Hook)
-            {
-                if (!_current.ownedHooks.Contains(unlock.unlockId))
-                {
-                    _current.ownedHooks.Add(unlock.unlockId);
-                }
-            }
+            // Progression unlocks gate availability in shops.
+            // Ownership of ships/hooks is now granted only through shop purchase/upgrade flow.
         }
 
         private void BackupCorruptSaveFile(string reason)

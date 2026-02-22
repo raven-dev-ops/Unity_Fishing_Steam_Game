@@ -110,6 +110,58 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ShopUpgradeFlow_RequiresPriorTierAndSufficientCopecs()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_UpgradeRules");
+            yield return null;
+
+            saveManager.AddCopecs(400);
+            saveManager.Save(forceImmediate: true);
+
+            var hookShop = CreateComponent<HookShopController>("HookShopController_UpgradeRules");
+            var boatShop = CreateComponent<BoatShopController>("BoatShopController_UpgradeRules");
+            SetPrivateField(
+                hookShop,
+                "_items",
+                new List<ShopItem>
+                {
+                    new ShopItem { id = "hook_t1", price = 40, valueTier = 1 },
+                    new ShopItem { id = "hook_t2", price = 120, valueTier = 2 },
+                    new ShopItem { id = "hook_t3", price = 300, valueTier = 3 }
+                });
+            SetPrivateField(
+                boatShop,
+                "_items",
+                new List<ShopItem>
+                {
+                    new ShopItem { id = "boat_t1", price = 60, valueTier = 1 },
+                    new ShopItem { id = "boat_t2", price = 180, valueTier = 2 },
+                    new ShopItem { id = "boat_t3", price = 360, valueTier = 3 }
+                });
+            yield return null;
+
+            Assert.That(hookShop.BuyOrEquip("hook_t3"), Is.False);
+            Assert.That(hookShop.BuyOrEquip("hook_t2"), Is.False);
+            Assert.That(hookShop.BuyOrEquip("hook_t1"), Is.True);
+            Assert.That(hookShop.BuyOrEquip("hook_t2"), Is.True);
+            Assert.That(hookShop.BuyOrEquip("hook_t3"), Is.False);
+
+            Assert.That(boatShop.BuyOrEquip("boat_t3"), Is.False);
+            Assert.That(boatShop.BuyOrEquip("boat_t2"), Is.False);
+            Assert.That(boatShop.BuyOrEquip("boat_t1"), Is.True);
+            Assert.That(boatShop.BuyOrEquip("boat_t2"), Is.True);
+            Assert.That(boatShop.BuyOrEquip("boat_t3"), Is.False);
+
+            saveManager.AddCopecs(700);
+            yield return null;
+
+            Assert.That(hookShop.BuyOrEquip("hook_t3"), Is.True);
+            Assert.That(boatShop.BuyOrEquip("boat_t3"), Is.True);
+            Assert.That(saveManager.Current.ownedHooks, Contains.Item("hook_t3"));
+            Assert.That(saveManager.Current.ownedShips, Contains.Item("boat_t3"));
+        }
+
+        [UnityTest]
         public IEnumerator SaveLoadRoundtrip_PersistsAcrossSceneTransitions()
         {
             var originalActiveScene = SceneManager.GetActiveScene();
