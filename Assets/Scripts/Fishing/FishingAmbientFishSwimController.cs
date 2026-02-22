@@ -36,7 +36,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
-        [SerializeField] private float _maxBandHeight = 12f;
+        [SerializeField] private float _maxBandHeight = 90f;
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
@@ -496,7 +496,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.direction = UnityEngine.Random.value < 0.5f ? 1f : -1f;
             track.speed = UnityEngine.Random.Range(Mathf.Min(_speedRange.x, _speedRange.y), Mathf.Max(_speedRange.x, _speedRange.y));
-            track.baseY = UnityEngine.Random.Range(bottom, top);
+            track.baseY = ResolveSpawnY(bottom, top);
             track.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
             track.approachTimeoutAt = 0f;
@@ -583,6 +583,56 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _yBounds = new Vector2(bottom, top);
+        }
+
+        private float ResolveSpawnY(float bottom, float top)
+        {
+            var minY = Mathf.Min(bottom, top);
+            var maxY = Mathf.Max(bottom, top);
+            if (Mathf.Abs(maxY - minY) <= 0.001f)
+            {
+                return minY;
+            }
+
+            const int attempts = 7;
+            var bestY = UnityEngine.Random.Range(minY, maxY);
+            var bestSpacing = EvaluateSpawnYSpacing(bestY);
+            for (var i = 0; i < attempts; i++)
+            {
+                var candidate = UnityEngine.Random.Range(minY, maxY);
+                var spacing = EvaluateSpawnYSpacing(candidate);
+                if (spacing > bestSpacing)
+                {
+                    bestSpacing = spacing;
+                    bestY = candidate;
+                }
+            }
+
+            return bestY;
+        }
+
+        private float EvaluateSpawnYSpacing(float candidateY)
+        {
+            var hasComparableTrack = false;
+            var nearestDistance = float.MaxValue;
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var track = _tracks[i];
+                if (track == null || !track.active || track.transform == null || track.renderer == null || !track.renderer.enabled)
+                {
+                    continue;
+                }
+
+                hasComparableTrack = true;
+                var trackY = track.transform.position.y;
+                var distance = Mathf.Abs(candidateY - trackY);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                }
+            }
+
+            return hasComparableTrack ? nearestDistance : float.MaxValue;
         }
 
         private void EnsureAnchors()
