@@ -143,7 +143,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(raised, Is.True, "Expected CatchResolved to fire.");
             Assert.That(success, Is.False, "Expected failed catch when reel effort is not applied.");
             Assert.That(failReason, Is.EqualTo(FishingFailReason.FishEscaped), "Expected fish to escape during reel struggle.");
-            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.Cast));
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Escaped fish should not reset the hook/cast state.");
+            Assert.That(hookController.CurrentDepth, Is.GreaterThan(5f), "Hook should remain in the water after fish escape.");
 
             Object.Destroy(root);
             Object.Destroy(ship.gameObject);

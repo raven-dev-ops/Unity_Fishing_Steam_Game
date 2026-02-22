@@ -71,6 +71,11 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
+        public void SetInWater()
+        {
+            SetState(FishingActionState.InWater);
+        }
+
         public void ResetToCast()
         {
             SetState(FishingActionState.Cast);

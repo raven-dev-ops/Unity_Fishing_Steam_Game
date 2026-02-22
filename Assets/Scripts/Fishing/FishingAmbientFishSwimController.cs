@@ -66,9 +66,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _hookedStruggleAmplitude = 0.08f;
         [SerializeField] private float _hookedStruggleFrequency = 6.8f;
         [SerializeField] private float _escapedFishSpeedMultiplier = 1.65f;
+        [SerializeField] private bool _enforceCatchableSpawnRules = true;
         [SerializeField] private Camera _runtimeCamera;
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
+        [SerializeField] private ShipMovementController _shipMovement;
 
         private readonly List<SwimTrack> _tracks = new List<SwimTrack>(16);
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
@@ -85,6 +87,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _shipMovement, this, warnIfMissing: false);
             CaptureDefaultSpawnIntervalRange();
             RebuildCatalogSpriteLookup();
         }
@@ -463,14 +466,19 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
+            var enforceCatchableRules = IsCatchableSpawnEnforcementActive();
             var collisionRadius = Mathf.Max(0.02f, hookRadius);
             SwimTrack collidedTrack = null;
             var bestDistanceSqr = float.MaxValue;
 
             if (IsTrackCollidingWithHook(_boundTrack, hookTransform, collisionRadius, out var boundDistanceSqr))
             {
-                collidedTrack = _boundTrack;
-                bestDistanceSqr = boundDistanceSqr;
+                BackfillTrackFishIdForCollision(_boundTrack);
+                if (!enforceCatchableRules || !string.IsNullOrWhiteSpace(_boundTrack.fishId))
+                {
+                    collidedTrack = _boundTrack;
+                    bestDistanceSqr = boundDistanceSqr;
+                }
             }
 
             for (var i = 0; i < _tracks.Count; i++)
@@ -495,6 +503,12 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
+                BackfillTrackFishIdForCollision(track);
+                if (enforceCatchableRules && string.IsNullOrWhiteSpace(track.fishId))
+                {
+                    continue;
+                }
+
                 if (distanceSqr >= bestDistanceSqr)
                 {
                     continue;
@@ -505,6 +519,11 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             if (collidedTrack == null)
+            {
+                return false;
+            }
+
+            if (enforceCatchableRules && string.IsNullOrWhiteSpace(collidedTrack.fishId))
             {
                 return false;
             }
@@ -749,7 +768,15 @@ namespace RavenDevOps.Fishing.Fishing
                 Mathf.Max(_scaleMultiplierRange.x, _scaleMultiplierRange.y));
             track.transform.localScale = track.baseScale * scaleMultiplier;
 
+            var enforceCatchableRules = IsCatchableSpawnEnforcementActive();
             var resolvedFishId = NormalizeFishId(preferredFishId);
+            if (string.IsNullOrEmpty(resolvedFishId)
+                && enforceCatchableRules
+                && TryResolveCatchableFishIdForSpawn(track.baseY, out var catchableFishId))
+            {
+                resolvedFishId = catchableFishId;
+            }
+
             var preferredSprite = ResolveSpriteForFishId(resolvedFishId);
             if (preferredSprite != null)
             {
@@ -760,11 +787,27 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 var randomSprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
                 track.renderer.sprite = randomSprite;
-                track.fishId = ResolveFishIdForSprite(randomSprite);
+                var resolvedFromSprite = ResolveFishIdForSprite(randomSprite);
+                if (!string.IsNullOrEmpty(resolvedFishId))
+                {
+                    track.fishId = resolvedFishId;
+                }
+                else
+                {
+                    track.fishId = resolvedFromSprite;
+                }
             }
             else
             {
                 track.fishId = string.Empty;
+            }
+
+            if (enforceCatchableRules && string.IsNullOrEmpty(track.fishId))
+            {
+                track.active = false;
+                track.renderer.enabled = false;
+                track.spawnDelay = RandomSpawnDelay();
+                return;
             }
 
             track.renderer.color = track.baseColor;
@@ -789,6 +832,76 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.active = true;
             track.renderer.enabled = true;
+        }
+
+        private bool IsCatchableSpawnEnforcementActive()
+        {
+            if (!_enforceCatchableSpawnRules)
+            {
+                return false;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            return _fishSpawner != null;
+        }
+
+        private void BackfillTrackFishIdForCollision(SwimTrack track)
+        {
+            if (track == null || !string.IsNullOrWhiteSpace(track.fishId))
+            {
+                return;
+            }
+
+            if (track.renderer != null)
+            {
+                var resolvedFromSprite = ResolveFishIdForSprite(track.renderer.sprite);
+                if (!string.IsNullOrWhiteSpace(resolvedFromSprite))
+                {
+                    track.fishId = resolvedFromSprite;
+                    return;
+                }
+            }
+
+            if (track.transform != null
+                && TryResolveCatchableFishIdForSpawn(track.transform.position.y, out var catchableFishId))
+            {
+                track.fishId = catchableFishId;
+            }
+        }
+
+        private bool TryResolveCatchableFishIdForSpawn(float spawnWorldY, out string fishId)
+        {
+            fishId = string.Empty;
+            if (!IsCatchableSpawnEnforcementActive())
+            {
+                return false;
+            }
+
+            EnsureAnchors();
+            if (_ship == null)
+            {
+                return false;
+            }
+
+            if (_shipMovement == null)
+            {
+                _shipMovement = _ship.GetComponent<ShipMovementController>();
+                if (_shipMovement == null)
+                {
+                    RuntimeServiceRegistry.Resolve(ref _shipMovement, this, warnIfMissing: false);
+                }
+            }
+
+            var distanceTier = _shipMovement != null ? Mathf.Max(1, _shipMovement.CurrentDistanceTier) : 1;
+            var depth = Mathf.Max(0f, _ship.position.y - spawnWorldY);
+            var rolledFish = _fishSpawner.RollFish(distanceTier, depth);
+            if (rolledFish == null || string.IsNullOrWhiteSpace(rolledFish.id))
+            {
+                return false;
+            }
+
+            fishId = NormalizeFishId(rolledFish.id);
+            return !string.IsNullOrEmpty(fishId);
         }
 
         private void DespawnTrack(SwimTrack track)

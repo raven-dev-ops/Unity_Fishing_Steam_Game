@@ -155,7 +155,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (next == FishingActionState.InWater)
             {
-                _autoDropActive = true;
+                var shouldAutoDrop = previous == FishingActionState.Cast;
+                _autoDropActive = shouldAutoDrop;
                 _autoReelActive = false;
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
@@ -164,7 +165,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _lastUpPressTime = -10f;
                 _axisDownHeldLastFrame = false;
                 _axisUpHeldLastFrame = false;
-                _hookController.SetMovementEnabled(false);
+                _hookController.SetMovementEnabled(!shouldAutoDrop);
                 SetHookVisible(true);
                 return;
             }

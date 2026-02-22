@@ -95,6 +95,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _targetFishBoundToAmbient;
         private string _pendingCollisionFishId = string.Empty;
         private bool _hasPendingCollisionHookCandidate;
+        private bool _resumeInWaterAfterFishEscaped;
         private bool _haulCatchInProgress;
         private bool _catchSecuredAtThresholdDepth;
         private float _reelEscapeTimeRemaining;
@@ -221,7 +222,16 @@ namespace RavenDevOps.Fishing.Fishing
             switch (next)
             {
                 case FishingActionState.InWater:
-                    BeginCastPhase();
+                    if (_resumeInWaterAfterFishEscaped)
+                    {
+                        _resumeInWaterAfterFishEscaped = false;
+                        BeginCastPhase(playCastSfx: false, recoveredFromEscapedFish: true);
+                    }
+                    else
+                    {
+                        BeginCastPhase();
+                    }
+
                     break;
                 case FishingActionState.Hooked:
                     BeginHookedPhase();
@@ -235,9 +245,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
-        private void BeginCastPhase()
+        private void BeginCastPhase(bool playCastSfx = true, bool recoveredFromEscapedFish = false)
         {
-            _audioManager?.PlaySfx(_castSfx);
+            if (playCastSfx)
+            {
+                _audioManager?.PlaySfx(_castSfx);
+            }
+
             _encounterModel.End();
 
             _targetFish = null;
@@ -277,14 +291,24 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, reel to depth 20 to secure, then bring it to the boat.");
+            if (recoveredFromEscapedFish)
+            {
+                _hudOverlay?.SetFishingStatus("Fish escaped. Keep the hook down and collide with another fish.");
+            }
+            else
+            {
+                _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, reel to depth 20 to secure, then bring it to the boat.");
+            }
         }
 
         private void BeginHookedPhase()
         {
             if (_targetFish == null)
             {
-                EnsureTargetFishForCollisionHook(_pendingCollisionFishId, _hasPendingCollisionHookCandidate);
+                EnsureTargetFishForCollisionHook(
+                    _pendingCollisionFishId,
+                    _hasPendingCollisionHookCandidate,
+                    overwriteExistingTarget: false);
                 if (_targetFish == null)
                 {
                     _pendingFailReason = FishingFailReason.MissedHook;
@@ -404,6 +428,14 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            // Collision hooks should always take priority while the hook is in the water,
+            // even when a timed bite path is active.
+            if (TryHookTargetFishOnCollision())
+            {
+                _stateMachine?.SetHooked();
+                return;
+            }
+
             var baitAttractionEnabled = IsBaitAttractionEnabled() && _targetFishBoundToAmbient;
             if (baitAttractionEnabled)
             {
@@ -450,12 +482,6 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     return;
                 }
-            }
-
-            if (TryHookTargetFishOnCollision())
-            {
-                _stateMachine?.SetHooked();
-                return;
             }
 
             if (!_targetFishBoundToAmbient)
@@ -575,6 +601,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             var resolvedFishId = _hookedFish != null ? _hookedFish.id : string.Empty;
             var resolvedFailReason = _catchSucceeded ? FishingFailReason.None : _pendingFailReason;
+            var shouldResumeInWaterAfterOutcome = !_catchSucceeded && resolvedFailReason == FishingFailReason.FishEscaped;
 
             if (_catchSucceeded && _hookedFish != null)
             {
@@ -599,7 +626,15 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 var reason = _outcomeDomainService.BuildFailureReasonText(_pendingFailReason);
                 _hudOverlay?.SetFishingFailure(reason);
-                _hudOverlay?.SetFishingStatus("Press Down/S to cast again.");
+                if (_pendingFailReason == FishingFailReason.FishEscaped)
+                {
+                    _hudOverlay?.SetFishingStatus("Fish slipped away. Keep fishing at this depth.");
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus("Press Down/S to cast again.");
+                }
+
                 _saveManager?.RecordCatchFailure(_hookedFish != null ? _hookedFish.id : string.Empty, _currentDistanceTier, reason);
                 PlayFailureSfx(_pendingFailReason);
             }
@@ -621,7 +656,16 @@ namespace RavenDevOps.Fishing.Fishing
             _reelEscapeTimeRemaining = 0f;
             _biteApproachStarted = false;
             _targetFishBoundToAmbient = false;
-            _stateMachine?.ResetToCast();
+            if (shouldResumeInWaterAfterOutcome)
+            {
+                _resumeInWaterAfterFishEscaped = true;
+                _stateMachine?.SetInWater();
+            }
+            else
+            {
+                _resumeInWaterAfterFishEscaped = false;
+                _stateMachine?.ResetToCast();
+            }
         }
 
         private void InvokeCatchResolved(bool success, FishingFailReason failReason, string fishId)
@@ -962,7 +1006,10 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 collidedFishId = _ambientFishController.GetBoundFishId();
                 _hasPendingCollisionHookCandidate = true;
-                EnsureTargetFishForCollisionHook(collidedFishId, allowFallbackDefinition: true);
+                EnsureTargetFishForCollisionHook(
+                    collidedFishId,
+                    allowFallbackDefinition: true,
+                    overwriteExistingTarget: true);
                 return true;
             }
 
@@ -972,7 +1019,10 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _hasPendingCollisionHookCandidate = true;
-            EnsureTargetFishForCollisionHook(collidedFishId, allowFallbackDefinition: true);
+            EnsureTargetFishForCollisionHook(
+                collidedFishId,
+                allowFallbackDefinition: true,
+                overwriteExistingTarget: true);
             return true;
         }
 
@@ -996,11 +1046,19 @@ namespace RavenDevOps.Fishing.Fishing
             return true;
         }
 
-        private void EnsureTargetFishForCollisionHook(string fishId, bool allowFallbackDefinition)
+        private void EnsureTargetFishForCollisionHook(
+            string fishId,
+            bool allowFallbackDefinition,
+            bool overwriteExistingTarget)
         {
-            if (_targetFish != null)
+            if (_targetFish != null && !overwriteExistingTarget)
             {
                 return;
+            }
+
+            if (overwriteExistingTarget)
+            {
+                _targetFish = null;
             }
 
             if (!string.IsNullOrWhiteSpace(fishId))
