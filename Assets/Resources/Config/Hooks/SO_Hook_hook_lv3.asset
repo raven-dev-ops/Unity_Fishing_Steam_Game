@@ -15,4 +15,4 @@ MonoBehaviour:
   id: hook_lv3
   icon: {fileID: 5216407504019009018, guid: 41902eec228b6d247a1e38d19812d49f, type: 3}
   price: 320
-  maxDepth: 120
+  maxDepth: 4000

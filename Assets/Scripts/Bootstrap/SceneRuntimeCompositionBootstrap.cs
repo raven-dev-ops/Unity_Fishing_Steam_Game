@@ -671,7 +671,7 @@ namespace RavenDevOps.Fishing.Core
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
             var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 292f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
             var distanceTierText = CreateTopLeftTmpText(infoPanel.transform, "FishingDistanceTierText", "Distance Tier: 1", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(428f, 32f));
-            var depthText = CreateTopLeftTmpText(infoPanel.transform, "FishingDepthText", "Depth: 0.0", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(428f, 32f));
+            var depthText = CreateTopLeftTmpText(infoPanel.transform, "FishingDepthText", "Depth: 0.0 m", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(428f, 32f));
             var copecsText = CreateTopLeftTmpText(infoPanel.transform, "FishingCopecsText", "Copecs: 0", 16, TextAlignmentOptions.TopLeft, new Vector2(454f, 14f), new Vector2(190f, 28f));
             var dayText = CreateTopLeftTmpText(infoPanel.transform, "FishingDayText", "Day 1", 16, TextAlignmentOptions.TopLeft, new Vector2(454f, 42f), new Vector2(190f, 28f));
             var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 32f));

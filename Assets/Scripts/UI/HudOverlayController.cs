@@ -262,7 +262,7 @@ namespace RavenDevOps.Fishing.UI
 
             if (_depthText != null)
             {
-                _depthText.text = inFishing ? $"Depth: {CurrentDepth:0.0}" : string.Empty;
+                _depthText.text = inFishing ? $"Depth: {CurrentDepth:0.0} m" : string.Empty;
             }
 
             if (_tensionStateText != null)

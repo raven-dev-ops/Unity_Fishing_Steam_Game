@@ -11,10 +11,11 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private Transform _shipTransform;
         [SerializeField] private float _verticalSpeed = 4f;
-        [SerializeField] private Vector2 _depthBounds = new Vector2(-8f, -1f);
+        [SerializeField] private Vector2 _depthBounds = new Vector2(-4000f, -1f);
+        [SerializeField] private float _absoluteMaxDepthMeters = 4000f;
         [SerializeField] private float _distanceTierDepthStep = 0.5f;
         [SerializeField] private int _distanceTier = 1;
-        [SerializeField] private float _minimumOperationalMaxDepth = 0f;
+        [SerializeField] private float _minimumOperationalMaxDepth = 4000f;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -35,7 +36,8 @@ namespace RavenDevOps.Fishing.Fishing
             get => Mathf.Abs(_depthBounds.x);
             set
             {
-                _baseMaxDepth = Mathf.Max(0.5f, Mathf.Abs(value));
+                var maxDepthCap = Mathf.Max(0.5f, _absoluteMaxDepthMeters);
+                _baseMaxDepth = Mathf.Clamp(Mathf.Abs(value), 0.5f, maxDepthCap);
                 ApplyDepthBoundsFromTier();
             }
         }
@@ -71,6 +73,8 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            _absoluteMaxDepthMeters = Mathf.Max(0.5f, _absoluteMaxDepthMeters);
+            _minimumOperationalMaxDepth = Mathf.Max(_absoluteMaxDepthMeters, _minimumOperationalMaxDepth);
             _swayMotion ??= GetComponent<SpriteSwayMotion2D>();
             if (_swayMotion != null)
             {
@@ -86,6 +90,8 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnValidate()
         {
+            _absoluteMaxDepthMeters = Mathf.Max(0.5f, _absoluteMaxDepthMeters);
+            _minimumOperationalMaxDepth = Mathf.Max(_absoluteMaxDepthMeters, _minimumOperationalMaxDepth);
             _horizontalLagPerVelocitySeconds = Mathf.Max(0f, _horizontalLagPerVelocitySeconds);
             _maxHorizontalLagDistance = Mathf.Max(0f, _maxHorizontalLagDistance);
             _horizontalLagSmoothing = Mathf.Max(0.1f, _horizontalLagSmoothing);
@@ -107,7 +113,8 @@ namespace RavenDevOps.Fishing.Fishing
 
         public void RefreshHookStats()
         {
-            var resolvedMaxDepth = Mathf.Max(0.5f, _baseMaxDepth);
+            var maxDepthCap = Mathf.Max(0.5f, _absoluteMaxDepthMeters);
+            var resolvedMaxDepth = Mathf.Clamp(_baseMaxDepth, 0.5f, maxDepthCap);
             if (_saveManager == null || _catalogService == null)
             {
                 _baseMaxDepth = resolvedMaxDepth;
@@ -118,7 +125,7 @@ namespace RavenDevOps.Fishing.Fishing
             var equippedId = _saveManager.Current.equippedHookId;
             if (_catalogService.TryGetHook(equippedId, out var hookDefinition))
             {
-                resolvedMaxDepth = Mathf.Max(0.5f, hookDefinition.maxDepth);
+                resolvedMaxDepth = Mathf.Clamp(hookDefinition.maxDepth, 0.5f, maxDepthCap);
             }
 
             _baseMaxDepth = resolvedMaxDepth;
@@ -300,6 +307,9 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 maxDepth = Mathf.Max(maxDepth, enforcedMinimumDepth);
             }
+
+            var maxDepthCap = Mathf.Max(_minDepthBelowSurface + 0.1f, _absoluteMaxDepthMeters);
+            maxDepth = Mathf.Min(maxDepth, maxDepthCap);
 
             _depthBounds = new Vector2(-maxDepth, -_minDepthBelowSurface);
             ClampTransformToDepthBounds();

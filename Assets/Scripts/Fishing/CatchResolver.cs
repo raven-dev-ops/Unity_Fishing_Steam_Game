@@ -297,7 +297,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
             else
             {
-                _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, reel to depth 20 to secure, then bring it to the boat.");
+                _hudOverlay?.SetFishingStatus("Casting to 25m. Steer left/right to hook fish on collision, reel to 20m to secure, then bring it to the boat.");
             }
         }
 
@@ -565,7 +565,7 @@ namespace RavenDevOps.Fishing.Fishing
                 else
                 {
                     _hudOverlay?.SetFishingStatus(
-                        $"Reeling catch... {remainingDepthUntilSecured:0.0} depth until secured | {escapeStatus}");
+                        $"Reeling catch... {remainingDepthUntilSecured:0.0}m until secured | {escapeStatus}");
                 }
 
                 if (IsHookAtCatchSecureDepth())
@@ -576,7 +576,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _lastTensionState = FishingTensionState.Safe;
                     _hudOverlay?.SetFishingTension(0.08f, FishingTensionState.Safe);
                     _hudOverlay?.SetFishingStatus(
-                        $"Catch secured at depth {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}. Keep reeling to bring it aboard.");
+                        $"Catch secured at {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}m. Keep reeling to bring it aboard.");
                 }
             }
             else
@@ -585,7 +585,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _lastTensionState = FishingTensionState.Safe;
                 _hudOverlay?.SetFishingTension(0.06f, FishingTensionState.Safe);
                 _hudOverlay?.SetFishingStatus(
-                    $"Catch secured at depth {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}. Reeling to boat... current depth {currentDepth:0.0}");
+                    $"Catch secured at {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}m. Reeling to boat... current depth {currentDepth:0.0}m");
             }
 
             if (_catchSecuredAtThresholdDepth && IsHookAtBoat())
@@ -892,7 +892,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _targetFish = null;
                 _hudOverlay?.SetFishingStatus(
-                    $"No fish above depth {minimumSpawnDepth:0}. Lower with Down/S to {minimumSpawnDepth:0}+.");
+                    $"No fish above {minimumSpawnDepth:0}m. Lower with Down/S to {minimumSpawnDepth:0}m+.");
                 return false;
             }
 
@@ -914,7 +914,7 @@ namespace RavenDevOps.Fishing.Fishing
             _assistService.RecordCastResult(_targetFish != null);
             if (_targetFish == null)
             {
-                _hudOverlay?.SetFishingStatus($"No fish at depth {depth:0}. Lower with Down/S or reel up with Up/W.");
+                _hudOverlay?.SetFishingStatus($"No fish at {depth:0}m. Lower with Down/S or reel up with Up/W.");
                 return false;
             }
 
@@ -931,15 +931,15 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 if (baitAttractionEnabled)
                 {
-                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: bait attracts fish faster.");
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at {depth:0}m: bait attracts fish faster.");
                 }
                 else if (_targetFishBoundToAmbient)
                 {
-                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: steer to collide hook with fish.");
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at {depth:0}m: steer to collide hook with fish.");
                 }
                 else
                 {
-                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: waiting for a bite...");
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at {depth:0}m: waiting for a bite...");
                 }
 
                 return true;
@@ -947,15 +947,15 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (baitAttractionEnabled)
             {
-                _hudOverlay?.SetFishingStatus($"Bait ready at depth {depth:0}. Keep hook steady to attract fish.");
+                _hudOverlay?.SetFishingStatus($"Bait ready at {depth:0}m. Keep hook steady to attract fish.");
             }
             else if (_targetFishBoundToAmbient)
             {
-                _hudOverlay?.SetFishingStatus($"Fish spotted at depth {depth:0}. Steer left/right so the hook collides to hook it.");
+                _hudOverlay?.SetFishingStatus($"Fish spotted at {depth:0}m. Steer left/right so the hook collides to hook it.");
             }
             else
             {
-                _hudOverlay?.SetFishingStatus($"Waiting for a bite at depth {depth:0}...");
+                _hudOverlay?.SetFishingStatus($"Waiting for a bite at {depth:0}m...");
             }
 
             return true;
@@ -1417,15 +1417,15 @@ namespace RavenDevOps.Fishing.Fishing
             switch (ResolveHookReelInputMode())
             {
                 case HookReelInputMode.Level1Tap:
-                    return $"Fish hooked. Tap Up/W repeatedly to reel to depth {secureDepth:0} before it escapes.";
+                    return $"Fish hooked. Tap Up/W repeatedly to reel to {secureDepth:0}m before it escapes.";
                 case HookReelInputMode.Level2Hold:
-                    return $"Fish hooked. Hold Up/W to reel to depth {secureDepth:0} at double speed.";
+                    return $"Fish hooked. Hold Up/W to reel to {secureDepth:0}m at double speed.";
                 case HookReelInputMode.Level3Auto:
-                    return $"Fish hooked. Auto reel engaged to depth {secureDepth:0}.";
+                    return $"Fish hooked. Auto reel engaged to {secureDepth:0}m.";
                 default:
                     return IsReelToggleModeEnabled()
-                        ? $"Fish hooked. Auto reeling to depth {secureDepth:0}..."
-                        : $"Fish hooked. Hold Up/W to reel to depth {secureDepth:0} before it escapes.";
+                        ? $"Fish hooked. Auto reeling to {secureDepth:0}m..."
+                        : $"Fish hooked. Hold Up/W to reel to {secureDepth:0}m before it escapes.";
             }
         }
 

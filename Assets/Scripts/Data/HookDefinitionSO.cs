@@ -8,6 +8,6 @@ namespace RavenDevOps.Fishing.Data
         public string id;
         public Sprite icon;
         public int price = 100;
-        public float maxDepth = 8f;
+        public float maxDepth = 4000f;
     }
 }

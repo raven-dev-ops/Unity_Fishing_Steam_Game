@@ -193,11 +193,11 @@ namespace RavenDevOps.Fishing.Fishing
             switch (step)
             {
                 case TutorialStep.Cast:
-                    return "Tutorial: Press Down Arrow or S to cast to depth 25.";
+                    return "Tutorial: Press Down Arrow or S to cast to 25m.";
                 case TutorialStep.Hook:
                     return "Tutorial: Steer left/right and collide the hook with a fish, then press Up Arrow or W to reel.";
                 case TutorialStep.Reel:
-                    return "Tutorial: Double-tap Up Arrow or W to auto-reel toward depth 20.";
+                    return "Tutorial: Double-tap Up Arrow or W to auto-reel toward 20m.";
                 default:
                     return string.Empty;
             }
