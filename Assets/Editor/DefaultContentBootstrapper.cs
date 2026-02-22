@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Data;
+using RavenDevOps.Fishing.Tools;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ namespace RavenDevOps.Fishing.EditorTools
         private const string ShipFolder = ConfigFolder + "/Ships";
         private const string HookFolder = ConfigFolder + "/Hooks";
         private const string ConfigAssetPath = ConfigFolder + "/SO_GameConfig.asset";
+        private const string TuningAssetPath = ConfigFolder + "/SO_TuningConfig.asset";
 
         [MenuItem("Raven/Bootstrap Default Content")]
         public static void BootstrapFromMenu()
@@ -144,6 +146,15 @@ namespace RavenDevOps.Fishing.EditorTools
             config.shipDefinitions = new[] { shipLv1, shipLv2, shipLv3 };
             config.hookDefinitions = new[] { hookLv1, hookLv2, hookLv3 };
             EditorUtility.SetDirty(config);
+
+            var tuningConfig = LoadOrCreateAsset<TuningConfigSO>(TuningAssetPath);
+            tuningConfig.waveSpeedA = 0.3f;
+            tuningConfig.waveSpeedB = 0.6f;
+            tuningConfig.shipSpeedMultiplier = 1f;
+            tuningConfig.hookSpeedMultiplier = 1f;
+            tuningConfig.spawnRatePerMinute = 6f;
+            tuningConfig.distanceTierSellStep = 0.25f;
+            EditorUtility.SetDirty(tuningConfig);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

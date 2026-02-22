@@ -29,6 +29,12 @@ namespace RavenDevOps.Fishing.Fishing
             _waveSpeedB = waveSpeedB;
         }
 
+        public void ConfigureLayers(Transform waveLayerA, Transform waveLayerB)
+        {
+            _waveLayerA = waveLayerA;
+            _waveLayerB = waveLayerB;
+        }
+
         private void Update()
         {
             var speedScale = _settingsService != null && _settingsService.ReducedMotion

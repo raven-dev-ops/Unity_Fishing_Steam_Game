@@ -12,6 +12,7 @@
     "RavenDevOps.Fishing.Save",
     "RavenDevOps.Fishing.Steam",
     "RavenDevOps.Fishing.Systems",
+    "RavenDevOps.Fishing.Tools",
     "RavenDevOps.Fishing.UI",
     "Unity.InputSystem",
     "Unity.TextMeshPro"

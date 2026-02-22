@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Save;
+using RavenDevOps.Fishing.Tools;
 using RavenDevOps.Fishing.UI;
 using TMPro;
 using UnityEngine;
@@ -160,6 +162,13 @@ namespace RavenDevOps.Fishing.Core
             var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 500f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
             var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 460f));
 
+            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 612f), new Vector2(1274f, 88f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
+            var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 12f), new Vector2(1238f, 24f));
+            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro", new Vector2(18f, 48f), new Vector2(240f, 30f));
+            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro", new Vector2(272f, 48f), new Vector2(240f, 30f));
+            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tut", new Vector2(526f, 48f), new Vector2(240f, 30f));
+            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tut", new Vector2(780f, 48f), new Vector2(240f, 30f));
+
             var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -314f), new Vector2(240f, 52f));
             var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -314f), new Vector2(240f, 52f));
             var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -314f), new Vector2(240f, 52f));
@@ -275,6 +284,9 @@ namespace RavenDevOps.Fishing.Core
                 profileCatchLogText,
                 10);
 
+            var tutorialControlPanel = GetOrAddComponent<TutorialControlPanel>(root);
+            tutorialControlPanel.Configure(tutorialStatusText);
+
             var settingsController = GetOrAddComponent<SettingsMenuController>(root);
             settingsController.Configure(
                 masterSlider,
@@ -311,6 +323,10 @@ namespace RavenDevOps.Fishing.Core
             exitCancelButton.onClick.AddListener(controller.CancelExit);
             profileResetButton.onClick.AddListener(profileController.ResetProfile);
             profileResetObjectivesButton.onClick.AddListener(profileController.ResetObjectivesForQa);
+            skipIntroTutorialButton.onClick.AddListener(tutorialControlPanel.SkipTutorial);
+            replayIntroTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayTutorial);
+            skipFishingTutorialButton.onClick.AddListener(tutorialControlPanel.SkipFishingTutorial);
+            replayFishingTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayFishingTutorial);
             profileBackButton.onClick.AddListener(controller.CloseProfilePanel);
 
             masterSlider.onValueChanged.AddListener(settingsController.OnMasterVolumeChanged);
@@ -745,6 +761,13 @@ namespace RavenDevOps.Fishing.Core
             dockedHookPosition.y = hookMovement.GetDockedY(0.65f);
             hookObject.transform.position = dockedHookPosition;
 
+            var backdropLayerA = FindSceneObject(scene, "BackdropFar");
+            var backdropLayerB = FindSceneObject(scene, "BackdropVeil");
+            var waveAnimator = GetOrAddComponent<WaveAnimator>(root);
+            waveAnimator.ConfigureLayers(
+                backdropLayerA != null ? backdropLayerA.transform : null,
+                backdropLayerB != null ? backdropLayerB.transform : null);
+
             var stateMachine = GetOrAddComponent<FishingActionStateMachine>(root);
             var spawner = GetOrAddComponent<FishSpawner>(root);
             spawner.SetFallbackDefinitions(CreateDefaultFishDefinitions());
@@ -758,6 +781,22 @@ namespace RavenDevOps.Fishing.Core
 
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
+
+            var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
+            var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);
+            tuningConfigApplier.Configure(
+                tuningConfig,
+                waveAnimator,
+                shipMovement,
+                hookMovement,
+                spawner,
+                RuntimeServiceRegistry.Get<SellSummaryCalculator>());
+            tuningConfigApplier.ApplyNow();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var debugPanelController = GetOrAddComponent<DebugPanelController>(root);
+            debugPanelController.Configure(waveAnimator, spawner, RuntimeServiceRegistry.Get<SaveManager>());
+#endif
 
             GetOrAddComponent<FishingPauseBridge>(root);
 
@@ -832,6 +871,7 @@ namespace RavenDevOps.Fishing.Core
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             go.AddComponent<GraphicRaycaster>();
+            GetOrAddComponent<UiAccessibilityCanvasRegistrant>(go);
             return canvas;
         }
 

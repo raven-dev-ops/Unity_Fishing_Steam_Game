@@ -18,15 +18,27 @@ namespace RavenDevOps.Fishing.Tools
         [SerializeField] private FishSpawner _fishSpawner;
         [SerializeField] private SaveManager _saveManager;
 
+        public void Configure(WaveAnimator waveAnimator, FishSpawner fishSpawner, SaveManager saveManager)
+        {
+            _waveAnimator = waveAnimator;
+            _fishSpawner = fishSpawner;
+            _saveManager = saveManager;
+
+            if (_fishSpawner != null)
+            {
+                _spawnRate = Mathf.Max(0f, _fishSpawner.SpawnRatePerMinute);
+            }
+        }
+
         private void Awake()
         {
-            RuntimeServiceRegistry.Resolve(ref _waveAnimator, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            EnsureDependencies();
         }
 
         private void Update()
         {
+            EnsureDependencies();
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.f1Key.wasPressedThisFrame)
@@ -45,6 +57,8 @@ namespace RavenDevOps.Fishing.Tools
             {
                 return;
             }
+
+            EnsureDependencies();
 
             GUILayout.BeginArea(new Rect(16f, 16f, 320f, 340f), "DEV Debug Panel", GUI.skin.window);
 
@@ -85,6 +99,24 @@ namespace RavenDevOps.Fishing.Tools
 
             GUILayout.EndArea();
 #endif
+        }
+
+        private void EnsureDependencies()
+        {
+            if (_waveAnimator == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _waveAnimator, this, warnIfMissing: false);
+            }
+
+            if (_fishSpawner == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            }
+
+            if (_saveManager == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            }
         }
     }
 }

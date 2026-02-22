@@ -7,6 +7,7 @@ using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Tools;
 using RavenDevOps.Fishing.UI;
 using TMPro;
 using UnityEngine;
@@ -95,12 +96,23 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(runtimeRoot.GetComponent<MainMenuController>(), Is.Not.Null, "Expected main menu controller.");
             Assert.That(runtimeRoot.GetComponent<ProfileMenuController>(), Is.Not.Null, "Expected profile menu controller.");
             Assert.That(runtimeRoot.GetComponent<SettingsMenuController>(), Is.Not.Null, "Expected settings menu controller.");
+            Assert.That(runtimeRoot.GetComponent<TutorialControlPanel>(), Is.Not.Null, "Expected tutorial control panel.");
+
+            var mainMenuCanvas = FindSceneObject("MainMenuCanvas");
+            Assert.That(mainMenuCanvas, Is.Not.Null, "Expected main menu canvas.");
+            Assert.That(mainMenuCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on main menu canvas.");
 
             Assert.That(FindSceneObject("ProfilePanel"), Is.Not.Null, "Expected profile panel.");
             Assert.That(FindSceneObject("ProfileDayText"), Is.Not.Null, "Expected profile day text.");
             Assert.That(FindSceneObject("ProfileCopecsText"), Is.Not.Null, "Expected profile copecs text.");
             Assert.That(FindSceneObject("ProfileObjectiveText"), Is.Not.Null, "Expected profile objective text.");
             Assert.That(FindSceneObject("ProfileCatchLogText"), Is.Not.Null, "Expected profile catch-log text.");
+            Assert.That(FindSceneObject("ProfileTutorialPanel"), Is.Not.Null, "Expected profile tutorial panel.");
+            Assert.That(FindSceneObject("ProfileTutorialStatusText"), Is.Not.Null, "Expected profile tutorial status text.");
+            Assert.That(FindSceneObject("ProfileSkipIntroTutorialButton"), Is.Not.Null, "Expected skip intro tutorial button.");
+            Assert.That(FindSceneObject("ProfileReplayIntroTutorialButton"), Is.Not.Null, "Expected replay intro tutorial button.");
+            Assert.That(FindSceneObject("ProfileSkipFishingTutorialButton"), Is.Not.Null, "Expected skip fishing tutorial button.");
+            Assert.That(FindSceneObject("ProfileReplayFishingTutorialButton"), Is.Not.Null, "Expected replay fishing tutorial button.");
             Assert.That(FindSceneObject("ProfileResetButton"), Is.Not.Null, "Expected profile reset button.");
             Assert.That(FindSceneObject("ProfileResetObjectivesButton"), Is.Not.Null, "Expected profile reset-objectives button.");
             Assert.That(FindSceneObject("ProfileBackButton"), Is.Not.Null, "Expected profile back button.");
@@ -142,6 +154,10 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(runtimeRoot.GetComponent<HarborInteractionController>(), Is.Not.Null, "Expected harbor interaction controller.");
             Assert.That(runtimeRoot.GetComponent<HarborSceneInteractionRouter>(), Is.Not.Null, "Expected harbor interaction router.");
             Assert.That(runtimeRoot.GetComponent<HarborPauseMenuController>(), Is.Not.Null, "Expected harbor pause menu controller.");
+
+            var harborCanvas = FindSceneObject("HarborCanvas");
+            Assert.That(harborCanvas, Is.Not.Null, "Expected harbor canvas.");
+            Assert.That(harborCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on harbor canvas.");
 
             Assert.That(FindSceneObject("HarborHudRoot"), Is.Not.Null, "Expected harbor HUD root.");
             Assert.That(FindSceneObject("HarborActionPanel"), Is.Not.Null, "Expected harbor action panel.");
@@ -211,6 +227,15 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(runtimeRoot.GetComponent<SimpleFishingHudOverlay>(), Is.Not.Null, "Expected simple fishing HUD overlay.");
             Assert.That(runtimeRoot.GetComponent<FishingPauseBridge>(), Is.Not.Null, "Expected fishing pause bridge.");
             Assert.That(runtimeRoot.GetComponent<PauseMenuController>(), Is.Not.Null, "Expected pause menu controller.");
+            Assert.That(runtimeRoot.GetComponent<WaveAnimator>(), Is.Not.Null, "Expected wave animator.");
+            Assert.That(runtimeRoot.GetComponent<TuningConfigApplier>(), Is.Not.Null, "Expected tuning config applier.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Assert.That(runtimeRoot.GetComponent<DebugPanelController>(), Is.Not.Null, "Expected debug panel controller in editor/development.");
+#endif
+
+            var fishingCanvas = FindSceneObject("FishingCanvas");
+            Assert.That(fishingCanvas, Is.Not.Null, "Expected fishing canvas.");
+            Assert.That(fishingCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on fishing canvas.");
 
             Assert.That(FindSceneObject("FishingInfoPanel"), Is.Not.Null, "Expected fishing info panel.");
             var objectiveTextGo = FindSceneObject("FishingObjectiveText");
