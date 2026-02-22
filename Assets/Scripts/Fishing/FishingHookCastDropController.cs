@@ -85,7 +85,6 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             TryEnsureCastTransition();
-            TryEnsureHeldCastTransition();
 
             switch (_stateMachine.State)
             {
@@ -131,6 +130,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoDropActive = false;
                 _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
                 _autoLowerActive = false;
+                _axisDownHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(_autoReelActive);
                 return;
@@ -178,6 +178,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoDropActive = false;
                     _autoReelActive = false;
                     _autoLowerActive = false;
+                    _axisDownHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(false);
                     SnapHookToDock();
@@ -415,36 +416,12 @@ namespace RavenDevOps.Fishing.Fishing
             _hookRenderer.enabled = visible;
         }
 
-        private bool IsActionHeld()
-        {
-            if (_actionInput != null && _actionInput.IsPressed())
-            {
-                return true;
-            }
-
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.spaceKey.isPressed)
-            {
-                return true;
-            }
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (UnityEngine.Input.GetKey(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
-
-            var gamepad = Gamepad.current;
-            return gamepad != null && gamepad.buttonSouth.isPressed;
-        }
-
         private void TryEnsureCastTransition()
         {
             if (_stateMachine == null
                 || _stateMachine.State != FishingActionState.Cast
                 || _autoReelActive
-                || !WasActionPressedThisFrame())
+                || !WasCastInputPressedThisFrame())
             {
                 return;
             }
@@ -452,17 +429,9 @@ namespace RavenDevOps.Fishing.Fishing
             _stateMachine.AdvanceByAction();
         }
 
-        private void TryEnsureHeldCastTransition()
+        private bool WasCastInputPressedThisFrame()
         {
-            if (_stateMachine == null
-                || _stateMachine.State != FishingActionState.Cast
-                || _autoReelActive
-                || !IsActionHeld())
-            {
-                return;
-            }
-
-            _stateMachine.AdvanceByAction();
+            return IsDownPressedThisFrame() || WasActionPressedThisFrame();
         }
 
         private bool WasActionPressedThisFrame()

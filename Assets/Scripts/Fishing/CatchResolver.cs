@@ -76,6 +76,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
+        private InputAction _moveHookAction;
         private bool _toggleReelActive;
         private bool _stateMachineSubscribed;
         private ShipMovementController _shipMovement;
@@ -231,7 +232,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
+            _hudOverlay?.SetFishingStatus("Casting to depth 25. Use Down/S to lower deeper and Up/W to reel up.");
         }
 
         private void BeginHookedPhase()
@@ -252,11 +253,11 @@ namespace RavenDevOps.Fishing.Fishing
                 StructuredLogService.LogInfo(
                     "fishing-assist",
                     $"assist=adaptive_hook_window status=activated base_window={_hookReactionWindowSeconds:0.00} resolved_window={_activeHookReactionWindowSeconds:0.00}");
-                _hudOverlay?.SetFishingStatus("Fish hooked! Assist active: extra hook timing window.");
+                _hudOverlay?.SetFishingStatus("Fish hooked! Assist active: extra hook window. Start reeling with Up/W.");
             }
             else
             {
-                _hudOverlay?.SetFishingStatus("Fish hooked! Press and hold Action to reel.");
+                _hudOverlay?.SetFishingStatus("Fish hooked! Reel up with Up/W.");
             }
 
             _hudOverlay?.SetFishingFailure(string.Empty);
@@ -307,7 +308,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _biteSelectionResolvedForCurrentDrop = false;
                 _biteApproachStarted = false;
                 _inWaterElapsedSeconds = 0f;
-                _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
+                _hudOverlay?.SetFishingStatus("Adjusting cast depth. Use Down/S to lower deeper.");
                 return;
             }
 
@@ -351,6 +352,12 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickHookedWindow()
         {
+            if (IsUpInputHeldForReelStart())
+            {
+                _stateMachine?.AdvanceByAction();
+                return;
+            }
+
             _hookedElapsedSeconds += Time.deltaTime;
             var failReason = _outcomeDomainService.ResolveHookWindowFailure(
                 hasHookedFish: _hookedFish != null,
@@ -498,6 +505,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             _reelAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/Action")
+                : null;
+            _moveHookAction = _inputMapController != null
+                ? _inputMapController.FindAction("Fishing/MoveHook")
                 : null;
         }
 
@@ -657,7 +667,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _targetFish = null;
                 _hudOverlay?.SetFishingStatus(
-                    $"No fish above depth {minimumSpawnDepth:0}. Hold Action to lower to {minimumSpawnDepth:0}+ and release.");
+                    $"No fish above depth {minimumSpawnDepth:0}. Lower with Down/S to {minimumSpawnDepth:0}+.");
                 return false;
             }
 
@@ -679,7 +689,7 @@ namespace RavenDevOps.Fishing.Fishing
             _assistService.RecordCastResult(_targetFish != null);
             if (_targetFish == null)
             {
-                _hudOverlay?.SetFishingStatus($"No fish at depth {depth:0}. Hold Action to change depth and release again.");
+                _hudOverlay?.SetFishingStatus($"No fish at depth {depth:0}. Lower with Down/S or reel up with Up/W.");
                 return false;
             }
 
@@ -846,6 +856,30 @@ namespace RavenDevOps.Fishing.Fishing
         {
             var mappedIsPressed = _reelAction != null && _reelAction.IsPressed();
             return mappedIsPressed || IsFallbackActionHeld();
+        }
+
+        private bool IsUpInputHeldForReelStart()
+        {
+            var moveAxis = _moveHookAction != null ? _moveHookAction.ReadValue<float>() : 0f;
+            if (moveAxis > 0.25f)
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && (keyboard.upArrowKey.isPressed || keyboard.wKey.isPressed))
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.UpArrow) || UnityEngine.Input.GetKey(KeyCode.W))
+            {
+                return true;
+            }
+#endif
+
+            return false;
         }
 
         private void SubscribeToStateMachine()
