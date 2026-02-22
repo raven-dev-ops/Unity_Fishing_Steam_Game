@@ -28,6 +28,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
 
         [SerializeField] private int _currentDistanceTier = 1;
+        [SerializeField] private float _minimumFishSpawnDepth = 15f;
+        [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private bool _enableNoBitePity = true;
         [SerializeField] private int _noBitePityThresholdCasts = 2;
@@ -70,6 +72,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _conditionConfigured;
         private bool _biteSelectionResolvedForCurrentDrop;
         private bool _biteApproachStarted;
+        private bool _haulCatchInProgress;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
@@ -198,6 +201,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             _targetFish = null;
             _hookedFish = null;
+            _haulCatchInProgress = false;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _inWaterElapsedSeconds = 0f;
@@ -272,10 +276,15 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _encounterModel.Begin(_hookedFish, initialTension: 0.25f);
-            _hudOverlay?.SetFishingStatus("Reel steadily. Keep line tension out of critical.");
+            _haulCatchInProgress = true;
+            _catchSucceeded = true;
+            _pendingFailReason = FishingFailReason.None;
+            _encounterModel.End();
+            _hudOverlay?.SetFishingStatus("Fish secured. Reeling to boat...");
             _hudOverlay?.SetFishingFailure(string.Empty);
+            _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
             _lastTensionState = FishingTensionState.Safe;
+            _toggleReelActive = false;
         }
 
         private void TickInWater()
@@ -356,37 +365,21 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickReelFight()
         {
-            var isReeling = ResolveIsReeling();
-            var tensionState = _encounterModel.Step(Time.deltaTime, isReeling, out var landed, out var failReason);
-            _hudOverlay?.SetFishingTension(_encounterModel.TensionNormalized, tensionState);
-            _hudOverlay?.SetFishingStatus(isReeling ? "Reeling..." : ResolveReelHintText());
-
-            if (tensionState != _lastTensionState)
+            if (!_haulCatchInProgress || _hookedFish == null)
             {
-                if (tensionState == FishingTensionState.Warning)
-                {
-                    _audioManager?.PlaySfx(_tensionWarningSfx);
-                }
-                else if (tensionState == FishingTensionState.Critical)
-                {
-                    _audioManager?.PlaySfx(_tensionCriticalSfx);
-                }
-
-                _lastTensionState = tensionState;
-            }
-
-            if (landed)
-            {
-                _catchSucceeded = true;
-                _pendingFailReason = FishingFailReason.None;
+                _pendingFailReason = FishingFailReason.MissedHook;
+                _catchSucceeded = false;
                 _stateMachine?.SetResolve();
                 return;
             }
 
-            if (failReason != FishingFailReason.None)
+            var remainingDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
+            _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
+            _hudOverlay?.SetFishingStatus($"Reeling catch... {remainingDepth:0.0} depth to boat.");
+
+            if (IsHookAtBoat())
             {
-                _catchSucceeded = false;
-                _pendingFailReason = failReason;
+                _haulCatchInProgress = false;
                 _stateMachine?.SetResolve();
             }
         }
@@ -431,6 +424,7 @@ namespace RavenDevOps.Fishing.Fishing
             _encounterModel.End();
             _targetFish = null;
             _hookedFish = null;
+            _haulCatchInProgress = false;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
@@ -658,6 +652,15 @@ namespace RavenDevOps.Fishing.Fishing
 
             RefreshDistanceTier();
             var depth = Mathf.Max(0f, _hook.CurrentDepth);
+            var minimumSpawnDepth = Mathf.Max(0f, _minimumFishSpawnDepth);
+            if (depth < minimumSpawnDepth)
+            {
+                _targetFish = null;
+                _hudOverlay?.SetFishingStatus(
+                    $"No fish above depth {minimumSpawnDepth:0}. Hold Action to lower to {minimumSpawnDepth:0}+ and release.");
+                return false;
+            }
+
             _targetFish = _spawner.RollFish(_currentDistanceTier, depth);
 
             var pityActivated = false;
@@ -732,6 +735,17 @@ namespace RavenDevOps.Fishing.Fishing
             fishCount = _saveManager != null ? _saveManager.GetFishInventoryCount() : 0;
             cargoCapacity = ResolveCurrentCargoCapacity();
             return fishCount >= cargoCapacity;
+        }
+
+        private bool IsHookAtBoat()
+        {
+            if (_hook == null)
+            {
+                return true;
+            }
+
+            var completionDepth = Mathf.Max(0.05f, _haulCompletionDepthThreshold);
+            return _hook.CurrentDepth <= completionDepth;
         }
 
         private int ResolveCurrentCargoCapacity()

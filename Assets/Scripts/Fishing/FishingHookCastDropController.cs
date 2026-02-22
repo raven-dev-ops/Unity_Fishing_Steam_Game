@@ -19,7 +19,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
         [SerializeField] private float _castHoldReleaseGraceSeconds = 0.2f;
-        [SerializeField] private float _minimumInitialDropDistance = 3f;
+        [SerializeField] private float _minimumInitialDropDistance = 10f;
 
         private InputAction _moveHookAction;
         private InputAction _actionInput;
@@ -109,6 +109,10 @@ namespace RavenDevOps.Fishing.Fishing
                     SetHookVisible(true);
                     TickAutoDrop();
                     break;
+                case FishingActionState.Reel:
+                    SetHookVisible(true);
+                    TickAutoReelIn();
+                    break;
             }
         }
 
@@ -135,6 +139,16 @@ namespace RavenDevOps.Fishing.Fishing
                 _inWaterElapsed = 0f;
                 _castStartY = _hookController.transform.position.y;
                 _autoReelActive = false;
+                _hookController.SetMovementEnabled(false);
+                SetHookVisible(true);
+                return;
+            }
+
+            if (next == FishingActionState.Reel)
+            {
+                _autoDropActive = false;
+                _inWaterElapsed = 0f;
+                _autoReelActive = true;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -169,6 +183,13 @@ namespace RavenDevOps.Fishing.Fishing
                     _inWaterElapsed = 0f;
                     _castStartY = _hookController.transform.position.y;
                     _autoReelActive = false;
+                    _hookController.SetMovementEnabled(false);
+                    SetHookVisible(true);
+                    break;
+                case FishingActionState.Reel:
+                    _autoDropActive = false;
+                    _inWaterElapsed = 0f;
+                    _autoReelActive = true;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
