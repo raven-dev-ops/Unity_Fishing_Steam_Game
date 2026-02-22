@@ -82,6 +82,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             TryEnsureCastTransition();
+            TryEnsureHeldCastTransition();
 
             switch (_stateMachine.State)
             {
@@ -90,6 +91,11 @@ namespace RavenDevOps.Fishing.Fishing
                     {
                         SetHookVisible(true);
                         TickAutoReelIn();
+                    }
+                    else if (_autoDropActive)
+                    {
+                        SetHookVisible(true);
+                        TickAutoDrop();
                     }
                     else
                     {
@@ -128,7 +134,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _inWaterElapsed = 0f;
                 _castStartY = _hookController.transform.position.y;
                 _autoReelActive = false;
-                _hookController.SetMovementEnabled(true);
+                _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
             }
@@ -162,7 +168,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _inWaterElapsed = 0f;
                     _castStartY = _hookController.transform.position.y;
                     _autoReelActive = false;
-                    _hookController.SetMovementEnabled(true);
+                    _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
                 default:
@@ -198,6 +204,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            _hookController.SetMovementEnabled(false);
             _inWaterElapsed += Time.deltaTime;
             RefreshMoveHookAction();
             RefreshActionInput();
@@ -208,12 +215,14 @@ namespace RavenDevOps.Fishing.Fishing
                 && !IsActionHeld())
             {
                 _autoDropActive = false;
+                _hookController.SetMovementEnabled(true);
                 return;
             }
 
             if (droppedDistance >= Mathf.Max(0f, _minimumInitialDropDistance) && IsManualHookInputActive())
             {
                 _autoDropActive = false;
+                _hookController.SetMovementEnabled(true);
                 return;
             }
 
@@ -231,6 +240,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (Mathf.Abs(position.y - minY) <= 0.01f)
             {
                 _autoDropActive = false;
+                _hookController.SetMovementEnabled(true);
             }
         }
 
@@ -251,6 +261,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (Mathf.Abs(position.y - targetY) <= 0.01f)
             {
                 _autoReelActive = false;
+                _hookController.SetMovementEnabled(false);
             }
         }
 
@@ -329,6 +340,19 @@ namespace RavenDevOps.Fishing.Fishing
                 || _stateMachine.State != FishingActionState.Cast
                 || _autoReelActive
                 || !WasActionPressedThisFrame())
+            {
+                return;
+            }
+
+            _stateMachine.AdvanceByAction();
+        }
+
+        private void TryEnsureHeldCastTransition()
+        {
+            if (_stateMachine == null
+                || _stateMachine.State != FishingActionState.Cast
+                || _autoReelActive
+                || !IsActionHeld())
             {
                 return;
             }
