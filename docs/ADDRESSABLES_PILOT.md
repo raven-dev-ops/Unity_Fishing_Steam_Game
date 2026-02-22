@@ -20,6 +20,9 @@ Post-1.0 Addressables rollout for scalable content loading beyond MVP eager-cata
   - Resolves optional phase-two skybox material key with fallback material behavior
 - `Assets/Scripts/Bootstrap/RuntimeServicesBootstrap.cs`
   - Registers pilot loader as global runtime service
+- `Assets/Editor/PhaseTwoPilotAssetBootstrapper.cs`
+  - Generates deterministic fallback phase-two audio clips and `fishing_skybox` material in `Resources/Pilot/*`
+  - Supports menu path and batch mode generation
 
 ## Target Content Set
 - Fish definition content set (pilot label: `pilot/fish-definitions`)
@@ -30,6 +33,10 @@ Fallback resource paths:
 - Fish: `Resources/Pilot/FishDefinitions`
 - Audio: `Resources/Pilot/Audio`
 - Environment materials: `Resources/Pilot/Environment/Materials`
+
+Seed/update fallback assets:
+- Menu: `Raven/Bootstrap/Generate Phase-Two Pilot Assets`
+- Batch: `.\scripts\unity-cli.ps1 -Task custom -Method RavenDevOps.Fishing.EditorTools.PhaseTwoPilotAssetBootstrapper.GenerateBatchMode -LogFile phase_two_seed.log`
 
 ## Label/Profile Baseline
 Recommended Addressables labels:
@@ -75,12 +82,13 @@ Recommended profile split:
 
 ## Migration Path
 1. Install Addressables package and configure profiles/groups.
-2. Label pilot fish assets and load through `AddressablesPilotCatalogLoader`.
-3. Label phase-two audio/environment assets and verify key mapping in `CatalogService`.
-4. Verify catalog overlay path through `CatalogService` (base -> pilot overlay).
-5. Validate runtime fallback behavior by disabling Addressables and confirming Resources-based loads.
-6. Compare startup time/memory against baseline using profiler captures.
-7. Promote pilot path into production catalog service once stability criteria are met.
+2. Seed fallback phase-two assets in `Resources/Pilot/*` (audio + skybox material) via `PhaseTwoPilotAssetBootstrapper`.
+3. Label pilot fish assets and load through `AddressablesPilotCatalogLoader`.
+4. Label phase-two audio/environment assets and verify key mapping in `CatalogService`.
+5. Verify catalog overlay path through `CatalogService` (base -> pilot overlay).
+6. Validate runtime fallback behavior by disabling Addressables and confirming Resources-based loads.
+7. Compare startup time/memory against baseline using profiler captures.
+8. Promote pilot path into production catalog service once stability criteria are met.
 
 ## Measurement Checklist
 1. Capture startup memory baseline before pilot migration.
