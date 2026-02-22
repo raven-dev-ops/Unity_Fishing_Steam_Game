@@ -7,8 +7,9 @@ using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.UI;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -42,7 +43,12 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         {
             if (!IsSceneCaptureEnabled())
             {
-                Assert.Ignore($"Scene capture is disabled. Set {SceneCaptureEnabledEnvVar}=1 to enable this test.");
+                Assert.Ignore($"Scene capture is disabled. Clear or set {SceneCaptureEnabledEnvVar}=1 to enable.");
+            }
+
+            if (!IsGraphicsCaptureSupported())
+            {
+                Assert.Ignore("Scene capture requires a graphics device. Run without -nographics for visual capture.");
             }
 
             var outputDirectory = ResolveOutputDirectory();
@@ -58,7 +64,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 Assert.That(loadOperation, Is.Not.Null, $"Failed to start load for scene: {scenePath}");
                 yield return loadOperation;
                 yield return null;
-                yield return new WaitForEndOfFrame();
 
                 var sceneName = Path.GetFileNameWithoutExtension(scenePath);
                 var outputPath = Path.Combine(outputDirectory, SanitizeFileName(sceneName) + ".png");
@@ -93,8 +98,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("FishingInfoPanel"), Is.Not.Null, "Expected fishing info panel.");
             var objectiveTextGo = FindSceneObject("FishingObjectiveText");
             Assert.That(objectiveTextGo, Is.Not.Null, "Expected fishing objective text.");
-            var objectiveText = objectiveTextGo.GetComponent<Text>();
-            Assert.That(objectiveText, Is.Not.Null, "Expected Unity UI Text component for objective.");
+            var objectiveText = objectiveTextGo.GetComponent<TMP_Text>();
+            Assert.That(objectiveText, Is.Not.Null, "Expected TMP_Text component for objective.");
             Assert.That(string.IsNullOrWhiteSpace(objectiveText.text), Is.False, "Expected objective text to be populated.");
             Assert.That(objectiveText.text, Does.StartWith("Objective:"));
 
@@ -103,6 +108,17 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborButton"), Is.Not.Null, "Expected pause harbor button.");
             Assert.That(FindSceneObject("PauseSettingsButton"), Is.Not.Null, "Expected pause settings button.");
             Assert.That(FindSceneObject("PauseExitButton"), Is.Not.Null, "Expected pause exit button.");
+            Assert.That(FindSceneObject("PauseSettingReelInputButton"), Is.Not.Null, "Expected pause reel input setting button.");
+            Assert.That(FindSceneObject("PauseSettingReducedMotionButton"), Is.Not.Null, "Expected pause reduced motion setting button.");
+            Assert.That(FindSceneObject("PauseSettingHighContrastButton"), Is.Not.Null, "Expected pause high contrast setting button.");
+            Assert.That(FindSceneObject("PauseSettingUiScaleDownButton"), Is.Not.Null, "Expected pause UI scale down setting button.");
+            Assert.That(FindSceneObject("PauseSettingUiScaleUpButton"), Is.Not.Null, "Expected pause UI scale up setting button.");
+            Assert.That(FindSceneObject("PauseSettingsBackButton"), Is.Not.Null, "Expected pause settings back button.");
+
+            var dynamicLine = FindSceneObject("FishingDynamicLine");
+            Assert.That(dynamicLine, Is.Not.Null, "Expected fishing dynamic line object.");
+            Assert.That(dynamicLine.GetComponent<LineRenderer>(), Is.Not.Null, "Expected LineRenderer on fishing dynamic line.");
+            Assert.That(dynamicLine.GetComponent<FishingLineBridge2D>(), Is.Not.Null, "Expected FishingLineBridge2D on fishing dynamic line.");
         }
 
         [UnityTest]
@@ -170,12 +186,23 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var raw = Environment.GetEnvironmentVariable(SceneCaptureEnabledEnvVar);
             if (string.IsNullOrWhiteSpace(raw))
             {
+                return true;
+            }
+
+            if (string.Equals(raw, "0", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "false", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "no", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "off", StringComparison.OrdinalIgnoreCase))
+            {
                 return false;
             }
 
-            return string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(raw, "yes", StringComparison.OrdinalIgnoreCase);
+            return true;
+        }
+
+        private static bool IsGraphicsCaptureSupported()
+        {
+            return SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null;
         }
 
         private static string ResolveOutputDirectory()

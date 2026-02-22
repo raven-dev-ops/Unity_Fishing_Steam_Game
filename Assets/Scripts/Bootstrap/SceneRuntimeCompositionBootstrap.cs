@@ -3,6 +3,7 @@ using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
 using RavenDevOps.Fishing.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -16,6 +17,8 @@ namespace RavenDevOps.Fishing.Core
         private const string RuntimeRootName = "__SceneRuntime";
         private static bool _initialized;
         private static Font _defaultFont;
+        private static TMP_FontAsset _defaultTmpFontAsset;
+        private static Material _lineMaterial;
         private static Sprite _solidSprite;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -263,18 +266,18 @@ namespace RavenDevOps.Fishing.Core
             EnsureEventSystem(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
             var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 292f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
-            var telemetryText = CreateTopLeftText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
-            var tensionText = CreateTopLeftText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
-            var conditionText = CreateTopLeftText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
-            var objectiveText = CreateTopLeftText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAnchor.UpperLeft, new Vector2(18f, 110f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAnchor.UpperLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
-            var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 176f), new Vector2(844f, 36f));
-            CreateTopLeftText(
+            var telemetryText = CreateTopLeftTmpText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
+            var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
+            var conditionText = CreateTopLeftTmpText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
+            var objectiveText = CreateTopLeftTmpText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(844f, 34f));
+            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
+            var failureText = CreateTopLeftTmpText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 176f), new Vector2(844f, 36f));
+            CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
                 "Fishing: Left/Right move ship, Space cast/reel, Up/Down depth adjust while in water, Esc pause, H return harbor from pause.",
                 16,
-                TextAnchor.UpperLeft,
+                TextAlignmentOptions.TopLeft,
                 new Vector2(18f, 212f),
                 new Vector2(844f, 56f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
@@ -282,8 +285,15 @@ namespace RavenDevOps.Fishing.Core
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
-            var pauseSettingsPanel = CreatePanel(pauseRoot.transform, "PauseSettingsPanel", new Vector2(0f, -102f), new Vector2(360f, 82f), new Color(0.1f, 0.14f, 0.2f, 0.88f));
-            CreateText(pauseSettingsPanel.transform, "PauseSettingsText", "Settings preview. Press Esc to resume.", 16, TextAnchor.MiddleCenter, Vector2.zero, new Vector2(320f, 64f));
+            var pauseSettingsPanel = CreatePanel(pauseRoot.transform, "PauseSettingsPanel", new Vector2(0f, -38f), new Vector2(392f, 214f), new Color(0.1f, 0.14f, 0.2f, 0.92f));
+            CreateText(pauseSettingsPanel.transform, "PauseSettingsTitle", "Quick Settings", 22, TextAnchor.MiddleCenter, new Vector2(0f, 84f), new Vector2(320f, 36f));
+            var reelInputButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingReelInputButton", "Reel Input: Hold", new Vector2(0f, 44f), new Vector2(320f, 38f));
+            var reducedMotionButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingReducedMotionButton", "Reduced Motion: Off", new Vector2(0f, 2f), new Vector2(320f, 38f));
+            var highContrastButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingHighContrastButton", "High Contrast Cues: Off", new Vector2(0f, -40f), new Vector2(320f, 38f));
+            var uiScaleDownButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingUiScaleDownButton", "-", new Vector2(-110f, -82f), new Vector2(56f, 34f));
+            var uiScaleUpButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingUiScaleUpButton", "+", new Vector2(110f, -82f), new Vector2(56f, 34f));
+            var uiScaleValueText = CreateText(pauseSettingsPanel.transform, "PauseSettingUiScaleValueText", "UI Scale: 1.00x", 17, TextAnchor.MiddleCenter, new Vector2(0f, -82f), new Vector2(164f, 34f));
+            var backSettingsButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingsBackButton", "Back", new Vector2(0f, -124f), new Vector2(220f, 36f));
             pauseSettingsPanel.SetActive(false);
             var pauseSelectionAura = CreateSelectionAura(pauseRoot.transform, "PauseSelectionAura", new Vector2(284f, 56f));
 
@@ -330,11 +340,38 @@ namespace RavenDevOps.Fishing.Core
             {
                 dynamicLineObject = new GameObject("FishingDynamicLine");
                 SceneManager.MoveGameObjectToScene(dynamicLineObject, scene);
-                var lineRenderer = dynamicLineObject.AddComponent<SpriteRenderer>();
-                lineRenderer.sprite = GetSolidSprite();
-                lineRenderer.color = new Color(0.92f, 0.98f, 1f, 0.92f);
-                var shipRenderer = shipObject.GetComponent<SpriteRenderer>();
-                lineRenderer.sortingOrder = shipRenderer != null ? shipRenderer.sortingOrder - 1 : 19;
+            }
+
+            var shipSpriteRenderer = shipObject.GetComponent<SpriteRenderer>();
+            var legacyDynamicLineRenderer = dynamicLineObject.GetComponent<SpriteRenderer>();
+            if (legacyDynamicLineRenderer != null)
+            {
+                legacyDynamicLineRenderer.enabled = false;
+            }
+
+            var dynamicLineRenderer = dynamicLineObject.GetComponent<LineRenderer>();
+            if (dynamicLineRenderer == null)
+            {
+                dynamicLineRenderer = dynamicLineObject.AddComponent<LineRenderer>();
+            }
+
+            dynamicLineRenderer.useWorldSpace = true;
+            dynamicLineRenderer.alignment = LineAlignment.View;
+            dynamicLineRenderer.textureMode = LineTextureMode.Stretch;
+            dynamicLineRenderer.numCapVertices = 2;
+            dynamicLineRenderer.numCornerVertices = 2;
+            dynamicLineRenderer.positionCount = 2;
+            dynamicLineRenderer.sharedMaterial = GetLineMaterial();
+            dynamicLineRenderer.startColor = new Color(0.92f, 0.98f, 1f, 0.92f);
+            dynamicLineRenderer.endColor = new Color(0.92f, 0.98f, 1f, 0.92f);
+            if (shipSpriteRenderer != null)
+            {
+                dynamicLineRenderer.sortingLayerID = shipSpriteRenderer.sortingLayerID;
+                dynamicLineRenderer.sortingOrder = shipSpriteRenderer.sortingOrder - 1;
+            }
+            else
+            {
+                dynamicLineRenderer.sortingOrder = 19;
             }
 
             var lineBridge = GetOrAddComponent<FishingLineBridge2D>(dynamicLineObject);
@@ -373,6 +410,16 @@ namespace RavenDevOps.Fishing.Core
 
             var pauseMenu = GetOrAddComponent<PauseMenuController>(root);
             pauseMenu.Configure(pauseRoot, pauseSettingsPanel);
+            var pauseSettingsController = GetOrAddComponent<PauseSettingsPanelController>(root);
+            pauseSettingsController.Configure(
+                pauseMenu,
+                reelInputButton,
+                reducedMotionButton,
+                highContrastButton,
+                uiScaleDownButton,
+                uiScaleUpButton,
+                uiScaleValueText,
+                backSettingsButton);
             resumeButton.onClick.AddListener(pauseMenu.OnResumePressed);
             harborButton.onClick.AddListener(pauseMenu.OnTownHarborPressed);
             settingsButton.onClick.AddListener(pauseMenu.OnSettingsPressed);
@@ -554,6 +601,39 @@ namespace RavenDevOps.Fishing.Core
             return text;
         }
 
+        private static TMP_Text CreateTopLeftTmpText(
+            Transform parent,
+            string name,
+            string value,
+            int fontSize,
+            TextAlignmentOptions alignment,
+            Vector2 marginFromTopLeft,
+            Vector2 size)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, worldPositionStays: false);
+            var rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+            var text = go.AddComponent<TextMeshProUGUI>();
+            var fontAsset = GetDefaultTmpFontAsset();
+            if (fontAsset != null)
+            {
+                text.font = fontAsset;
+            }
+
+            text.fontSize = Mathf.Max(10, fontSize);
+            text.alignment = alignment;
+            text.enableWordWrapping = true;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.color = new Color(0.96f, 0.98f, 1f, 1f);
+            text.text = value ?? string.Empty;
+            return text;
+        }
+
         private static Button CreateButton(Transform parent, string name, string label, Vector2 anchoredPosition, Vector2 size)
         {
             var go = new GameObject(name);
@@ -621,6 +701,60 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return _defaultFont;
+        }
+
+        private static TMP_FontAsset GetDefaultTmpFontAsset()
+        {
+            if (_defaultTmpFontAsset != null)
+            {
+                return _defaultTmpFontAsset;
+            }
+
+            var configuredFont = TMP_Settings.GetFontAsset();
+            if (configuredFont != null)
+            {
+                _defaultTmpFontAsset = configuredFont;
+                return _defaultTmpFontAsset;
+            }
+
+            var fallbackFont = GetDefaultFont();
+            if (fallbackFont == null)
+            {
+                return null;
+            }
+
+            _defaultTmpFontAsset = TMP_FontAsset.CreateFontAsset(fallbackFont);
+            if (_defaultTmpFontAsset != null)
+            {
+                _defaultTmpFontAsset.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            return _defaultTmpFontAsset;
+        }
+
+        private static Material GetLineMaterial()
+        {
+            if (_lineMaterial != null)
+            {
+                return _lineMaterial;
+            }
+
+            var shader = Shader.Find("Sprites/Default");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            _lineMaterial = new Material(shader)
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            return _lineMaterial;
         }
 
         private static Sprite GetSolidSprite()

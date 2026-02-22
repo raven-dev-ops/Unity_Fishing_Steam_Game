@@ -29,7 +29,8 @@ Headless scene screenshots:
 - Workflow: `.github/workflows/ci-scene-capture.yml`
 - Trigger: manual `workflow_dispatch` only
 - Uses PlayMode test `Assets/Tests/PlayMode/SceneCapturePlayModeTests.cs`
-- Enables screenshot test with env var `RAVEN_SCENE_CAPTURE_ENABLED=1`
+- Screenshot test is enabled by default; set `RAVEN_SCENE_CAPTURE_ENABLED=0` to disable explicitly
+- In `-nographics` environments with `GraphicsDeviceType.Null`, scene capture auto-skips because rendering is unavailable
 - Compares captures to approved baseline in `ci/scene-capture-baseline/` using `scripts/ci/compare-scene-captures.py`
 - Diff thresholds:
   - warn: `SCENE_CAPTURE_WARN_THRESHOLD` (default `0.015`)
@@ -100,4 +101,4 @@ Unity.exe -batchmode -nographics -quit `
   - Fishing scene runtime composition checks (HUD/objective/pause controls/controllers)
   - Fishing backdrop camera coverage checks
   - Fishing ambient fish concurrency cap checks
-  - Headless scene screenshot capture (env-gated in CI)
+  - Headless scene screenshot capture (default-on; explicit env opt-out)

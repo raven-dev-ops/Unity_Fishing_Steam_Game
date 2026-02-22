@@ -1,18 +1,18 @@
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Fishing;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Core
 {
     public sealed class SimpleFishingHudOverlay : MonoBehaviour, IFishingHudOverlay
     {
-        [SerializeField] private Text _telemetryText;
-        [SerializeField] private Text _tensionText;
-        [SerializeField] private Text _statusText;
-        [SerializeField] private Text _failureText;
-        [SerializeField] private Text _conditionsText;
-        [SerializeField] private Text _objectiveText;
+        [SerializeField] private TMP_Text _telemetryText;
+        [SerializeField] private TMP_Text _tensionText;
+        [SerializeField] private TMP_Text _statusText;
+        [SerializeField] private TMP_Text _failureText;
+        [SerializeField] private TMP_Text _conditionsText;
+        [SerializeField] private TMP_Text _objectiveText;
         [SerializeField] private ObjectivesService _objectivesService;
         [SerializeField] private string _objectiveFallbackText = "Objective: Follow current task goals.";
 
@@ -20,12 +20,12 @@ namespace RavenDevOps.Fishing.Core
         private float _depth;
 
         public void Configure(
-            Text telemetryText,
-            Text tensionText,
-            Text statusText,
-            Text failureText,
-            Text conditionsText,
-            Text objectiveText)
+            TMP_Text telemetryText,
+            TMP_Text tensionText,
+            TMP_Text statusText,
+            TMP_Text failureText,
+            TMP_Text conditionsText,
+            TMP_Text objectiveText)
         {
             _telemetryText = telemetryText;
             _tensionText = tensionText;

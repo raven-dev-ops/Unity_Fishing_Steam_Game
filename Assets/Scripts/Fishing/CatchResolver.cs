@@ -21,6 +21,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private MetaLoopRuntimeService _metaLoopService;
+        [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
 
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
@@ -94,6 +95,15 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
+            if (_ambientFishController == null)
+            {
+                _ambientFishController = GetComponent<FishingAmbientFishSwimController>();
+                if (_ambientFishController == null)
+                {
+                    _ambientFishController = FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
+                }
+            }
+
             _randomSource ??= new UnityFishingRandomSource();
             _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
             if (_hudOverlay == null)
@@ -187,6 +197,7 @@ namespace RavenDevOps.Fishing.Fishing
             _lastTensionState = FishingTensionState.None;
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
             _toggleReelActive = false;
+            _ambientFishController?.ResolveBoundFish(caught: false);
 
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0f, FishingTensionState.None);
@@ -218,6 +229,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            BindAmbientFishToTarget();
             var minBite = Mathf.Max(0f, _targetFish.minBiteDelaySeconds);
             var maxBite = Mathf.Max(minBite, _targetFish.maxBiteDelaySeconds);
             _biteTimerSeconds = UnityEngine.Random.Range(minBite, maxBite);
@@ -240,6 +252,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookedFish = _targetFish;
             _hookedElapsedSeconds = 0f;
+            _ambientFishController?.SetBoundFishHooked(_hook != null ? _hook.transform : null);
             _activeHookReactionWindowSeconds = _assistService.ResolveHookWindow(_hookReactionWindowSeconds, out var adaptiveWindowActivated);
             _audioManager?.PlaySfx(_hookSfx);
             if (adaptiveWindowActivated)
@@ -369,6 +382,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             InvokeCatchResolved(_catchSucceeded, resolvedFailReason, resolvedFishId);
             _assistService.RecordCatchOutcome(_catchSucceeded);
+            _ambientFishController?.ResolveBoundFish(_catchSucceeded);
 
             _encounterModel.End();
             _targetFish = null;
@@ -552,6 +566,16 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return null;
+        }
+
+        private void BindAmbientFishToTarget()
+        {
+            if (_ambientFishController == null || _targetFish == null)
+            {
+                return;
+            }
+
+            _ambientFishController.TryBindFish(_targetFish.id, out _);
         }
 
         private bool ResolveIsReeling()

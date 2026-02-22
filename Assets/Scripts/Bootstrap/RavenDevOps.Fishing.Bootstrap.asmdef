@@ -13,7 +13,8 @@
     "RavenDevOps.Fishing.Steam",
     "RavenDevOps.Fishing.Systems",
     "RavenDevOps.Fishing.UI",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

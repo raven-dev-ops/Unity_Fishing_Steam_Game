@@ -15,7 +15,8 @@
     "RavenDevOps.Fishing.Steam",
     "RavenDevOps.Fishing.Systems",
     "RavenDevOps.Fishing.Tools",
-    "RavenDevOps.Fishing.UI"
+    "RavenDevOps.Fishing.UI",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
