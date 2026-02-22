@@ -34,6 +34,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _dynamicHorizontalBand = true;
         [SerializeField] private float _horizontalHalfSpan = 9.8f;
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
+        [SerializeField] private float _minimumAmbientSpawnDepth = 20f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
         [SerializeField] private float _maxBandHeight = 90f;
@@ -567,7 +568,8 @@ namespace RavenDevOps.Fishing.Fishing
                 _xBounds = new Vector2(_ship.position.x - horizontalHalfSpan, _ship.position.x + horizontalHalfSpan);
             }
 
-            var top = _ship.position.y - Mathf.Abs(_bandTopOffsetBelowShip);
+            var topOffset = Mathf.Max(Mathf.Abs(_bandTopOffsetBelowShip), Mathf.Abs(_minimumAmbientSpawnDepth));
+            var top = _ship.position.y - topOffset;
             var minBand = Mathf.Max(1f, _minBandHeight);
             var maxBand = Mathf.Max(minBand, _maxBandHeight);
             var bottom = top - minBand;

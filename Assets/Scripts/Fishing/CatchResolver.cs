@@ -28,7 +28,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
 
         [SerializeField] private int _currentDistanceTier = 1;
-        [SerializeField] private float _minimumFishSpawnDepth = 15f;
+        [SerializeField] private float _minimumFishSpawnDepth = 20f;
         [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private bool _enableNoBitePity = true;
