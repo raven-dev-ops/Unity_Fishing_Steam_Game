@@ -7,7 +7,9 @@ param(
     [string]$UnityPath = '',
     [string]$ProjectPath = '',
     [string]$LogFile = 'unity_cli.log',
-    [string[]]$ExtraArgs
+    [string[]]$ExtraArgs,
+    [switch]$AllowVersionMismatch,
+    [switch]$KeepGeneratedProjectFiles
 )
 
 $ErrorActionPreference = 'Stop'
@@ -85,6 +87,139 @@ function Get-UnityHubEditors {
     }
     catch {
         return @()
+    }
+}
+
+function Get-UnityHubEditorVersionForExe {
+    param(
+        [string]$UnityExePath,
+        [object[]]$HubEditors
+    )
+
+    if ([string]::IsNullOrWhiteSpace($UnityExePath) -or $HubEditors -eq $null) {
+        return ''
+    }
+
+    $normalizedTarget = ''
+    try {
+        $normalizedTarget = (Resolve-Path -LiteralPath $UnityExePath).Path
+    }
+    catch {
+        return ''
+    }
+
+    foreach ($entry in $HubEditors) {
+        if ($null -eq $entry) {
+            continue
+        }
+
+        $version = [string]$entry.version
+        if ([string]::IsNullOrWhiteSpace($version)) {
+            continue
+        }
+
+        $locations = @()
+        if ($entry.location -is [System.Array]) {
+            $locations = @($entry.location)
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace([string]$entry.location)) {
+            $locations = @([string]$entry.location)
+        }
+
+        foreach ($location in $locations) {
+            $candidateExe = Resolve-UnityExeFromHint -PathHint ([string]$location)
+            if ([string]::IsNullOrWhiteSpace($candidateExe)) {
+                continue
+            }
+
+            try {
+                $normalizedCandidate = (Resolve-Path -LiteralPath $candidateExe).Path
+            }
+            catch {
+                continue
+            }
+
+            if ([string]::Equals($normalizedCandidate, $normalizedTarget, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $version
+            }
+        }
+    }
+
+    return ''
+}
+
+function Get-VersionTokenFromPath {
+    param([string]$PathValue)
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return ''
+    }
+
+    if ($PathValue -match '(?<version>\d+\.\d+\.\d+f\d+)') {
+        return $matches['version']
+    }
+
+    return ''
+}
+
+function Get-UnityEditorVersion {
+    param(
+        [string]$UnityExePath,
+        [object[]]$HubEditors
+    )
+
+    $hubVersion = Get-UnityHubEditorVersionForExe -UnityExePath $UnityExePath -HubEditors $HubEditors
+    if (-not [string]::IsNullOrWhiteSpace($hubVersion)) {
+        return $hubVersion
+    }
+
+    $pathVersion = Get-VersionTokenFromPath -PathValue $UnityExePath
+    if (-not [string]::IsNullOrWhiteSpace($pathVersion)) {
+        return $pathVersion
+    }
+
+    try {
+        $fileVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($UnityExePath).ProductVersion
+        $fileToken = Get-VersionTokenFromPath -PathValue $fileVersion
+        if (-not [string]::IsNullOrWhiteSpace($fileToken)) {
+            return $fileToken
+        }
+    }
+    catch {
+    }
+
+    return ''
+}
+
+function Assert-UnityEditorVersion {
+    param(
+        [string]$UnityExePath,
+        [string]$ExpectedVersion,
+        [object[]]$HubEditors,
+        [bool]$AllowMismatch
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) {
+        return
+    }
+
+    $actualVersion = Get-UnityEditorVersion -UnityExePath $UnityExePath -HubEditors $HubEditors
+    if ([string]::IsNullOrWhiteSpace($actualVersion)) {
+        if ($AllowMismatch) {
+            Write-Warning "Unity CLI: unable to verify editor version for '$UnityExePath'. Continuing because -AllowVersionMismatch is set."
+            return
+        }
+
+        throw "Unity CLI: unable to verify editor version for '$UnityExePath'. Expected project version '$ExpectedVersion'. Use a Unity Hub-managed editor path/version, or pass -AllowVersionMismatch."
+    }
+
+    if (-not [string]::Equals($actualVersion, $ExpectedVersion, [System.StringComparison]::OrdinalIgnoreCase)) {
+        if ($AllowMismatch) {
+            Write-Warning "Unity CLI: using Unity '$actualVersion' while project expects '$ExpectedVersion'. Continuing because -AllowVersionMismatch is set."
+            return
+        }
+
+        throw "Unity CLI: Unity version mismatch. Expected '$ExpectedVersion', resolved '$actualVersion' at '$UnityExePath'. Install/use the pinned editor version or pass -AllowVersionMismatch."
     }
 }
 
@@ -225,8 +360,186 @@ function Resolve-UnityEditorPath {
     throw "Unity Editor executable not found. Project version: '$projectVersion'. Unity Hub detected versions: $detectedVersions. Set UNITY_EDITOR_PATH to Unity.exe or pass -UnityPath."
 }
 
+function Get-GitPathStatus {
+    param(
+        [string]$Root,
+        [string]$RelativePath
+    )
+
+    try {
+        $status = & git -C $Root status --porcelain -- $RelativePath 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return $null
+        }
+
+        return (($status -join "`n").Trim())
+    }
+    catch {
+        return $null
+    }
+}
+
+function New-GeneratedFileCleanupPlan {
+    param(
+        [string]$Root,
+        [bool]$Enabled
+    )
+
+    $plan = [ordered]@{
+        trackedBackups = New-Object System.Collections.Generic.List[object]
+        deleteIfCreated = New-Object System.Collections.Generic.List[string]
+    }
+
+    if (-not $Enabled) {
+        return [pscustomobject]$plan
+    }
+
+    $trackedFiles = @(
+        'Packages/packages-lock.json',
+        'ProjectSettings/ProjectSettings.asset'
+    )
+
+    foreach ($relativePath in $trackedFiles) {
+        $absolutePath = Join-Path $Root $relativePath
+        if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
+            continue
+        }
+
+        $status = Get-GitPathStatus -Root $Root -RelativePath $relativePath
+        if ($status -ne $null -and -not [string]::IsNullOrWhiteSpace($status)) {
+            continue
+        }
+
+        $backupPath = Join-Path ([System.IO.Path]::GetTempPath()) ("unitycli_backup_{0}_{1}.tmp" -f ([System.IO.Path]::GetFileName($relativePath)), [Guid]::NewGuid().ToString('N'))
+        Copy-Item -LiteralPath $absolutePath -Destination $backupPath -Force
+        $plan.trackedBackups.Add([pscustomobject]@{
+                RelativePath = $relativePath
+                AbsolutePath = $absolutePath
+                BackupPath   = $backupPath
+            })
+    }
+
+    $deleteIfMissingBeforeRun = @(
+        'ProjectSettings/SceneTemplateSettings.json'
+    )
+
+    foreach ($relativePath in $deleteIfMissingBeforeRun) {
+        $absolutePath = Join-Path $Root $relativePath
+        if (-not (Test-Path -LiteralPath $absolutePath)) {
+            $plan.deleteIfCreated.Add($absolutePath)
+        }
+    }
+
+    return [pscustomobject]$plan
+}
+
+function Invoke-GeneratedFileCleanup {
+    param([object]$Plan)
+
+    if ($null -eq $Plan) {
+        return
+    }
+
+    if ($Plan.trackedBackups -ne $null) {
+        foreach ($entry in $Plan.trackedBackups) {
+            $backupPath = [string]$entry.BackupPath
+            $absolutePath = [string]$entry.AbsolutePath
+            $relativePath = [string]$entry.RelativePath
+
+            try {
+                if ((Test-Path -LiteralPath $backupPath -PathType Leaf) -and (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
+                    $backupHash = (Get-FileHash -LiteralPath $backupPath -Algorithm SHA256).Hash
+                    $currentHash = (Get-FileHash -LiteralPath $absolutePath -Algorithm SHA256).Hash
+                    if (-not [string]::Equals($backupHash, $currentHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+                        Copy-Item -LiteralPath $backupPath -Destination $absolutePath -Force
+                        Write-Host "Unity CLI: restored generated file '$relativePath' to pre-run state."
+                    }
+                }
+                elseif ((Test-Path -LiteralPath $backupPath -PathType Leaf) -and -not (Test-Path -LiteralPath $absolutePath)) {
+                    Copy-Item -LiteralPath $backupPath -Destination $absolutePath -Force
+                    Write-Host "Unity CLI: restored missing file '$relativePath' to pre-run state."
+                }
+            }
+            catch {
+                Write-Warning "Unity CLI: failed to restore generated file '$relativePath' ($($_.Exception.Message))."
+            }
+            finally {
+                if (Test-Path -LiteralPath $backupPath -PathType Leaf) {
+                    Remove-Item -LiteralPath $backupPath -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+
+    if ($Plan.deleteIfCreated -ne $null) {
+        foreach ($absolutePath in $Plan.deleteIfCreated) {
+            if (Test-Path -LiteralPath $absolutePath) {
+                try {
+                    Remove-Item -LiteralPath $absolutePath -Force
+                    Write-Host "Unity CLI: removed generated file '$absolutePath'."
+                }
+                catch {
+                    Write-Warning "Unity CLI: failed to remove generated file '$absolutePath' ($($_.Exception.Message))."
+                }
+            }
+        }
+    }
+}
+
+function Test-ArgumentPresent {
+    param(
+        [System.Collections.Generic.List[string]]$Arguments,
+        [string[]]$ArgumentNames
+    )
+
+    if ($null -eq $Arguments -or $null -eq $ArgumentNames) {
+        return $false
+    }
+
+    foreach ($name in $ArgumentNames) {
+        if ([string]::IsNullOrWhiteSpace($name)) {
+            continue
+        }
+
+        for ($index = 0; $index -lt $Arguments.Count; $index++) {
+            $value = $Arguments[$index]
+            if ([string]::IsNullOrWhiteSpace($value)) {
+                continue
+            }
+
+            if ([string]::Equals($value, $name, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $true
+            }
+
+            if ($value.StartsWith("$name=", [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $true
+            }
+        }
+    }
+
+    return $false
+}
+
+function Get-DefaultTestResultsPath {
+    param(
+        [string]$Root,
+        [string]$TaskName
+    )
+
+    $outputDir = Join-Path $Root 'Artifacts\TestResults'
+    if (-not (Test-Path -LiteralPath $outputDir -PathType Container)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    $fileName = if ($TaskName -eq 'test-play') { 'playmode-results.xml' } else { 'editmode-results.xml' }
+    return (Join-Path $outputDir $fileName)
+}
+
 $root = Get-ProjectRoot
+$projectVersion = Get-ProjectVersion -Root $root
+$hubEditors = Get-UnityHubEditors
 $unityExe = Resolve-UnityEditorPath -Root $root
+Assert-UnityEditorVersion -UnityExePath $unityExe -ExpectedVersion $projectVersion -HubEditors $hubEditors -AllowMismatch $AllowVersionMismatch.IsPresent
 
 $args = New-Object System.Collections.Generic.List[string]
 $args.Add('-batchmode')
@@ -280,14 +593,39 @@ if ($ExtraArgs -ne $null) {
     }
 }
 
+if ($isTestTask -and -not (Test-ArgumentPresent -Arguments $args -ArgumentNames @('-testResults', '/testResults'))) {
+    $defaultTestResults = Get-DefaultTestResultsPath -Root $root -TaskName $Task
+    $args.Add('-testResults')
+    $args.Add($defaultTestResults)
+}
+
 Write-Host "Unity CLI: $unityExe"
 Write-Host "Project: $root"
 Write-Host "Task: $Task"
+if (-not [string]::IsNullOrWhiteSpace($projectVersion)) {
+    Write-Host "EditorVersion: $projectVersion"
+}
 
-& $unityExe @args
+$cleanupEnabled = -not $KeepGeneratedProjectFiles.IsPresent
+$cleanupPlan = New-GeneratedFileCleanupPlan -Root $root -Enabled $cleanupEnabled
+if ($cleanupEnabled) {
+    Write-Host 'GeneratedFileCleanup: enabled'
+}
+else {
+    Write-Host 'GeneratedFileCleanup: disabled'
+}
+
+try {
+    & $unityExe @args
+}
+finally {
+    if ($cleanupEnabled) {
+        Invoke-GeneratedFileCleanup -Plan $cleanupPlan
+    }
+}
+
 $exitCode = $LASTEXITCODE
 if ($null -eq $exitCode) {
     $exitCode = 0
 }
-
 exit $exitCode

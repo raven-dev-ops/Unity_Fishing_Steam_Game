@@ -1,7 +1,8 @@
 param(
     [string]$UnityPath = "",
     [string]$ProjectPath = "",
-    [switch]$PrintOnly
+    [switch]$PrintOnly,
+    [switch]$AllowVersionMismatch
 )
 
 $ErrorActionPreference = "Stop"
@@ -80,6 +81,139 @@ function Get-UnityHubEditors {
     }
     catch {
         return @()
+    }
+}
+
+function Get-UnityHubEditorVersionForExe {
+    param(
+        [string]$UnityExePath,
+        [object[]]$HubEditors
+    )
+
+    if ([string]::IsNullOrWhiteSpace($UnityExePath) -or $HubEditors -eq $null) {
+        return ""
+    }
+
+    $normalizedTarget = ""
+    try {
+        $normalizedTarget = (Resolve-Path -LiteralPath $UnityExePath).Path
+    }
+    catch {
+        return ""
+    }
+
+    foreach ($entry in $HubEditors) {
+        if ($null -eq $entry) {
+            continue
+        }
+
+        $version = [string]$entry.version
+        if ([string]::IsNullOrWhiteSpace($version)) {
+            continue
+        }
+
+        $locations = @()
+        if ($entry.location -is [System.Array]) {
+            $locations = @($entry.location)
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace([string]$entry.location)) {
+            $locations = @([string]$entry.location)
+        }
+
+        foreach ($location in $locations) {
+            $candidateExe = Resolve-UnityExeFromHint -PathHint ([string]$location)
+            if ([string]::IsNullOrWhiteSpace($candidateExe)) {
+                continue
+            }
+
+            try {
+                $normalizedCandidate = (Resolve-Path -LiteralPath $candidateExe).Path
+            }
+            catch {
+                continue
+            }
+
+            if ([string]::Equals($normalizedCandidate, $normalizedTarget, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $version
+            }
+        }
+    }
+
+    return ""
+}
+
+function Get-VersionTokenFromPath {
+    param([string]$PathValue)
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return ""
+    }
+
+    if ($PathValue -match "(?<version>\d+\.\d+\.\d+f\d+)") {
+        return $matches["version"]
+    }
+
+    return ""
+}
+
+function Get-UnityEditorVersion {
+    param(
+        [string]$UnityExePath,
+        [object[]]$HubEditors
+    )
+
+    $hubVersion = Get-UnityHubEditorVersionForExe -UnityExePath $UnityExePath -HubEditors $HubEditors
+    if (-not [string]::IsNullOrWhiteSpace($hubVersion)) {
+        return $hubVersion
+    }
+
+    $pathVersion = Get-VersionTokenFromPath -PathValue $UnityExePath
+    if (-not [string]::IsNullOrWhiteSpace($pathVersion)) {
+        return $pathVersion
+    }
+
+    try {
+        $fileVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($UnityExePath).ProductVersion
+        $fileToken = Get-VersionTokenFromPath -PathValue $fileVersion
+        if (-not [string]::IsNullOrWhiteSpace($fileToken)) {
+            return $fileToken
+        }
+    }
+    catch {
+    }
+
+    return ""
+}
+
+function Assert-UnityEditorVersion {
+    param(
+        [string]$UnityExePath,
+        [string]$ExpectedVersion,
+        [object[]]$HubEditors,
+        [bool]$AllowMismatch
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) {
+        return
+    }
+
+    $actualVersion = Get-UnityEditorVersion -UnityExePath $UnityExePath -HubEditors $HubEditors
+    if ([string]::IsNullOrWhiteSpace($actualVersion)) {
+        if ($AllowMismatch) {
+            Write-Warning "Unity launcher: unable to verify editor version for '$UnityExePath'. Continuing because -AllowVersionMismatch is set."
+            return
+        }
+
+        throw "Unity launcher: unable to verify editor version for '$UnityExePath'. Expected project version '$ExpectedVersion'. Use a Unity Hub-managed editor path/version, or pass -AllowVersionMismatch."
+    }
+
+    if (-not [string]::Equals($actualVersion, $ExpectedVersion, [System.StringComparison]::OrdinalIgnoreCase)) {
+        if ($AllowMismatch) {
+            Write-Warning "Unity launcher: using Unity '$actualVersion' while project expects '$ExpectedVersion'. Continuing because -AllowVersionMismatch is set."
+            return
+        }
+
+        throw "Unity launcher: Unity version mismatch. Expected '$ExpectedVersion', resolved '$actualVersion' at '$UnityExePath'. Install/use the pinned editor version or pass -AllowVersionMismatch."
     }
 }
 
@@ -221,7 +355,10 @@ function Resolve-UnityEditorPath {
 }
 
 $root = Get-ProjectRoot
+$projectVersion = Get-ProjectVersion -Root $root
+$hubEditors = Get-UnityHubEditors
 $unityExe = Resolve-UnityEditorPath -Root $root
+Assert-UnityEditorVersion -UnityExePath $unityExe -ExpectedVersion $projectVersion -HubEditors $hubEditors -AllowMismatch $AllowVersionMismatch.IsPresent
 
 if ($PrintOnly) {
     Write-Host $unityExe
@@ -231,5 +368,8 @@ if ($PrintOnly) {
 Write-Host "Opening Unity project..."
 Write-Host "Unity:   $unityExe"
 Write-Host "Project: $root"
+if (-not [string]::IsNullOrWhiteSpace($projectVersion)) {
+    Write-Host "EditorVersion: $projectVersion"
+}
 
 Start-Process -FilePath $unityExe -ArgumentList @("-projectPath", $root) | Out-Null

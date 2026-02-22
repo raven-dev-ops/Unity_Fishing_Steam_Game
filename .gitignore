@@ -39,3 +39,5 @@ Thumbs.db
 
 # Generated CI/local artifact outputs
 [Aa]rtifacts/
+TestResults-*.xml
+*.log
