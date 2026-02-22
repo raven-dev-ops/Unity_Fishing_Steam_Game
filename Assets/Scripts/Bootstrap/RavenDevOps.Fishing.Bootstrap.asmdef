@@ -6,6 +6,8 @@
     "RavenDevOps.Fishing.Core",
     "RavenDevOps.Fishing.Data",
     "RavenDevOps.Fishing.Economy",
+    "RavenDevOps.Fishing.Fishing",
+    "RavenDevOps.Fishing.Harbor",
     "RavenDevOps.Fishing.Input",
     "RavenDevOps.Fishing.Save",
     "RavenDevOps.Fishing.Steam",

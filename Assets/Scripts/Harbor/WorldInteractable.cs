@@ -23,6 +23,13 @@ namespace RavenDevOps.Fishing.Harbor
 
         public event Action<WorldInteractable> Interacted;
 
+        public void Configure(InteractableType interactableType, Transform auraAnchor, GameObject highlightVisual)
+        {
+            _interactableType = interactableType;
+            _auraAnchor = auraAnchor;
+            _highlightVisual = highlightVisual;
+        }
+
         public void SetHighlighted(bool highlighted)
         {
             if (_highlightVisual != null)

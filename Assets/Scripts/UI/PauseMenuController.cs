@@ -11,6 +11,12 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
 
+        public void Configure(GameObject pauseRoot, GameObject settingsPanel)
+        {
+            _pauseRoot = pauseRoot;
+            _settingsPanel = settingsPanel;
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);

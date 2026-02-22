@@ -49,5 +49,40 @@ namespace RavenDevOps.Fishing.Core
             TryGetScenePathForState(state, out var scenePath);
             return scenePath;
         }
+
+        public static bool TryGetStateForScenePath(string scenePath, out GameFlowState state)
+        {
+            if (string.IsNullOrWhiteSpace(scenePath))
+            {
+                state = GameFlowState.None;
+                return false;
+            }
+
+            switch (scenePath)
+            {
+                case Cinematic:
+                    state = GameFlowState.Cinematic;
+                    return true;
+                case MainMenu:
+                    state = GameFlowState.MainMenu;
+                    return true;
+                case Harbor:
+                    state = GameFlowState.Harbor;
+                    return true;
+                case Fishing:
+                    state = GameFlowState.Fishing;
+                    return true;
+                default:
+                    state = GameFlowState.None;
+                    return false;
+            }
+        }
+
+        public static GameFlowState GetStateForScenePath(string scenePath)
+        {
+            return TryGetStateForScenePath(scenePath, out var state)
+                ? state
+                : GameFlowState.None;
+        }
     }
 }

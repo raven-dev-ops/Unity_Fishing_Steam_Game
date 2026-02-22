@@ -23,7 +23,8 @@ namespace RavenDevOps.Fishing.EditorTools
         private static readonly string[] SpriteSearchRoots =
         {
             "Assets/Art/Sheets/Icons",
-            "Assets/Art/Source/Icons"
+            "Assets/Art/Source/Icons",
+            "Assets/Art/Source/Scenes"
         };
 
         private static Dictionary<string, Sprite> _spritesByName;
@@ -170,8 +171,18 @@ namespace RavenDevOps.Fishing.EditorTools
 
         private static void AddBackdrop(string sceneName, Transform root, ref int sorting)
         {
-            var bg = ResolveSprite("photo_yyyymmdd_hhmmss_mmm_v01", "photo_yyyymmdd_hhmmss_mmm", "icons_misc_sheet_v01_0");
+            var bg = ResolveBackdropSprite(sceneName);
             var badge = ResolveSprite("icon_test_v01", "icon_test", "icons_ui_sheet_v01_0");
+            var fallbackBackdrop = ResolveSprite("icon_test_v01", "icon_test", "icons_ui_sheet_v01_0", "ship_lv1", "ship_lvl1_basic_v01");
+            if (bg == null)
+            {
+                bg = fallbackBackdrop;
+            }
+
+            if (badge == null)
+            {
+                badge = fallbackBackdrop;
+            }
 
             var farScale = new Vector2(7.4f, 6.6f);
             var veilScale = new Vector2(6.2f, 4.4f);
@@ -477,6 +488,25 @@ namespace RavenDevOps.Fishing.EditorTools
             if (NameContains(name, "Badge"))
             {
                 AddSway(spriteObject, new Vector2(0.03f, 0.04f), 0.12f, 2f, 0.10f, 0.01f, 0.06f, phase);
+            }
+        }
+
+        private static Sprite ResolveBackdropSprite(string sceneName)
+        {
+            switch (sceneName)
+            {
+                case "00_Boot":
+                    return ResolveSprite("00_boot_v01_0", "00_boot_v01", "00_boot", "photo_yyyymmdd_hhmmss_mmm_v01", "icons_misc_sheet_v01_0");
+                case "01_Cinematic":
+                    return ResolveSprite("01_cinematic_v01_0", "01_cinematic_v01", "01_cinematic", "photo_yyyymmdd_hhmmss_mmm_v01", "icons_misc_sheet_v01_0");
+                case "02_MainMenu":
+                    return ResolveSprite("02_mainmenu_v01_0", "02_mainmenu_v01", "02_mainmenu", "photo_yyyymmdd_hhmmss_mmm_v01", "icons_misc_sheet_v01_0");
+                case "03_Harbor":
+                    return ResolveSprite("03_harbor_v01_0", "03_harbor_v01", "03_harbor", "photo_yyyymmdd_hhmmss_mmm_v01", "icons_misc_sheet_v01_0");
+                case "04_Fishing":
+                    return ResolveSprite("04_fishing_v01_0", "04_fishing_v01", "04_fishing", "photo_yyyymmdd_hhmmss_mmm_v01", "icons_misc_sheet_v01_0");
+                default:
+                    return ResolveSprite("photo_yyyymmdd_hhmmss_mmm_v01", "photo_yyyymmdd_hhmmss_mmm", "icons_misc_sheet_v01_0");
             }
         }
 

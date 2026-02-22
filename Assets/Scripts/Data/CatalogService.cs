@@ -33,6 +33,7 @@ namespace RavenDevOps.Fishing.Data
         {
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _addressablesPilotLoader, this, warnIfMissing: false);
+            _addressablesPilotLoader ??= GetComponent<AddressablesPilotCatalogLoader>();
             RequestPhaseOneFishLoad();
             RequestPhaseTwoAudioLoad();
             RequestPhaseTwoEnvironmentLoad();

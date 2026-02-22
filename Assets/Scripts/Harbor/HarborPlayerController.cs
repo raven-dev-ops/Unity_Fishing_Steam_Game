@@ -9,6 +9,8 @@ namespace RavenDevOps.Fishing.Harbor
     {
         [SerializeField] private float _moveSpeed = 4f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-8f, 8f);
+        [SerializeField] private bool _use2DPlane = true;
+        [SerializeField] private Vector2 _yBounds = new Vector2(-3.5f, 3.5f);
         [SerializeField] private Vector2 _zBounds = new Vector2(-4f, 4f);
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private InputActionMapController _inputMapController;
@@ -30,7 +32,9 @@ namespace RavenDevOps.Fishing.Harbor
             }
 
             var moveInput = _moveAction.ReadValue<Vector2>();
-            var move = new Vector3(moveInput.x, 0f, moveInput.y);
+            var move = _use2DPlane
+                ? new Vector3(moveInput.x, moveInput.y, 0f)
+                : new Vector3(moveInput.x, 0f, moveInput.y);
 
             var sensitivity = _settingsService != null ? _settingsService.InputSensitivity : 1f;
             move = move.normalized * (_moveSpeed * sensitivity * Time.deltaTime);
@@ -38,7 +42,14 @@ namespace RavenDevOps.Fishing.Harbor
 
             var p = transform.position;
             p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
-            p.z = Mathf.Clamp(p.z, Mathf.Min(_zBounds.x, _zBounds.y), Mathf.Max(_zBounds.x, _zBounds.y));
+            if (_use2DPlane)
+            {
+                p.y = Mathf.Clamp(p.y, Mathf.Min(_yBounds.x, _yBounds.y), Mathf.Max(_yBounds.x, _yBounds.y));
+            }
+            else
+            {
+                p.z = Mathf.Clamp(p.z, Mathf.Min(_zBounds.x, _zBounds.y), Mathf.Max(_zBounds.x, _zBounds.y));
+            }
             transform.position = p;
         }
 

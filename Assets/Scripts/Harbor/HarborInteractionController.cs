@@ -18,6 +18,18 @@ namespace RavenDevOps.Fishing.Harbor
         private WorldInteractable _active;
         private InputAction _interactAction;
 
+        public void Configure(
+            Transform player,
+            Transform worldAura,
+            List<WorldInteractable> interactables,
+            MermaidTutorialController tutorial = null)
+        {
+            _player = player;
+            _worldAura = worldAura;
+            _tutorial = tutorial;
+            _interactables = interactables ?? new List<WorldInteractable>();
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);

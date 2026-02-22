@@ -19,6 +19,11 @@ namespace RavenDevOps.Fishing.Economy
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
         }
 
+        public void ConfigureItems(List<ShopItem> items)
+        {
+            _items = items ?? new List<ShopItem>();
+        }
+
         public bool BuyOrEquip(string hookId)
         {
             if (_saveManager == null || string.IsNullOrWhiteSpace(hookId))

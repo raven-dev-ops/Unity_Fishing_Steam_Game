@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
@@ -53,10 +54,25 @@ namespace RavenDevOps.Fishing.Core
 
         private void Start()
         {
-            if (_gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.None)
+            if (_gameFlowManager == null || _gameFlowManager.CurrentState != GameFlowState.None)
             {
-                _gameFlowManager.SetState(GameFlowState.MainMenu);
+                return;
             }
+
+            var activeScenePath = SceneManager.GetActiveScene().path;
+            if (ScenePathConstants.TryGetStateForScenePath(activeScenePath, out var sceneBackedState))
+            {
+                _gameFlowManager.SetState(sceneBackedState);
+                return;
+            }
+
+            if (string.Equals(activeScenePath, ScenePathConstants.Boot, StringComparison.Ordinal))
+            {
+                SetInputContext(InputContext.UI);
+                return;
+            }
+
+            _gameFlowManager.SetState(GameFlowState.MainMenu);
         }
 
         private void OnDestroy()
@@ -200,6 +216,11 @@ namespace RavenDevOps.Fishing.Core
         public void RequestOpenMainMenu()
         {
             _gameFlowManager?.SetState(GameFlowState.MainMenu);
+        }
+
+        public void RequestOpenCinematic()
+        {
+            _gameFlowManager?.SetState(GameFlowState.Cinematic);
         }
 
         public void RequestOpenFishing()

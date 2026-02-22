@@ -31,6 +31,11 @@ namespace RavenDevOps.Fishing.Fishing
         private InputAction _moveHookAction;
         private float _smoothedAxis;
 
+        public void ConfigureShipTransform(Transform shipTransform)
+        {
+            _shipTransform = shipTransform;
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Register(this);

@@ -36,6 +36,8 @@ sysinfo.txt
 Thumbs.db
 
 # Package manager generated
+ProjectSettings/PackageManagerSettings.asset
+ProjectSettings/SceneTemplateSettings.json
 
 # Generated CI/local artifact outputs
 [Aa]rtifacts/

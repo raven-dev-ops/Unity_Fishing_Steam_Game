@@ -70,6 +70,23 @@ namespace RavenDevOps.Fishing.Fishing
 
         public event System.Action<bool, FishingFailReason, string> CatchResolved;
 
+        public void Configure(
+            FishingActionStateMachine stateMachine,
+            FishSpawner spawner,
+            HookMovementController hook,
+            MonoBehaviour hudOverlayBehaviour)
+        {
+            _stateMachine = stateMachine;
+            _spawner = spawner;
+            _hook = hook;
+            _hudOverlayBehaviour = hudOverlayBehaviour;
+            _hudOverlay = hudOverlayBehaviour as IFishingHudOverlay;
+            if (_hudOverlay == null)
+            {
+                _hudOverlay = FindFishingHudOverlay();
+            }
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);

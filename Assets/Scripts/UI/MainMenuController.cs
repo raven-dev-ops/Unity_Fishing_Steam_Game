@@ -21,6 +21,22 @@ namespace RavenDevOps.Fishing.UI
         private InputAction _submitAction;
         private InputAction _cancelAction;
 
+        public void Configure(
+            GameObject startButton,
+            GameObject profileButton,
+            GameObject settingsButton,
+            GameObject exitButton,
+            GameObject profilePanel,
+            GameObject settingsPanel)
+        {
+            _startButton = startButton;
+            _profileButton = profileButton;
+            _settingsButton = settingsButton;
+            _exitButton = exitButton;
+            _profilePanel = profilePanel;
+            _settingsPanel = settingsPanel;
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
