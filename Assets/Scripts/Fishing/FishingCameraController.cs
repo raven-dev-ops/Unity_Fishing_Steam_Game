@@ -18,7 +18,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _minOrthoSize = 5.6f;
         [SerializeField] private float _maxOrthoSize = 11f;
         [SerializeField] private float _maxTrackedDepth = 18f;
-        [SerializeField] private float _shipViewportY = 0.84f;
+        [SerializeField] private float _shipViewportY = 0.5f;
         [SerializeField] private float _hookViewportMinY = 0.12f;
         [SerializeField] private float _hookFollowBlend = 0.22f;
         [SerializeField] private float _hookFollowStartDepth = 15f;
@@ -85,6 +85,8 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _ship = ship;
             _hook = hook;
+            // Depth is measured from ship Y; keep ship centered so the wave boundary is mid-screen.
+            _shipViewportY = 0.5f;
         }
 
         private float ResolveTargetOrthoSize()
@@ -105,7 +107,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private float ResolveTargetCameraY(float orthoSize, out float hookAlignedY)
         {
-            var shipViewportY = Mathf.Clamp(_shipViewportY, 0.55f, 0.95f);
+            var shipViewportY = Mathf.Clamp(_shipViewportY, 0.5f, 0.95f);
             var hookViewportMinY = Mathf.Clamp(_hookViewportMinY, 0.01f, shipViewportY - 0.1f);
             var deepFollowHookViewportY = Mathf.Clamp(_deepFollowHookViewportY, hookViewportMinY, shipViewportY - 0.08f);
             var depthFromShip = Mathf.Max(0f, _ship.position.y - _hook.position.y);
