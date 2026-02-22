@@ -16,6 +16,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _distanceUnitsPerTier = 14f;
         [SerializeField] private bool _disableSteeringWhileHookCast = true;
         [SerializeField] private FishingActionStateMachine _fishingActionStateMachine;
+        [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
+        [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
+        [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -25,6 +28,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _axisSmoothing = 10f;
 
         public int DistanceTierCap { get; private set; } = 1;
+        public int CargoCapacity { get; private set; } = 12;
         public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
         public float DistanceTraveledUnits => _distanceTraveledUnits;
         private InputAction _moveShipAction;
@@ -49,16 +53,23 @@ namespace RavenDevOps.Fishing.Fishing
         public void RefreshShipStats()
         {
             DistanceTierCap = 1;
-            if (_saveManager == null || _catalogService == null)
+            CargoCapacity = Mathf.Max(1, _fallbackCargoCapacityTier1);
+            if (_saveManager == null || _saveManager.Current == null)
             {
                 return;
             }
 
             var equippedId = _saveManager.Current.equippedShipId;
-            if (_catalogService.TryGetShip(equippedId, out var shipDefinition))
+            if (_catalogService != null && _catalogService.TryGetShip(equippedId, out var shipDefinition))
             {
                 DistanceTierCap = Mathf.Max(1, shipDefinition.maxDistanceTier);
+                CargoCapacity = shipDefinition.cargoCapacity > 0
+                    ? shipDefinition.cargoCapacity
+                    : ResolveFallbackCargoCapacity(equippedId);
+                return;
             }
+
+            CargoCapacity = ResolveFallbackCargoCapacity(equippedId);
         }
 
         public void SetSpeedMultiplier(float multiplier)
@@ -249,6 +260,25 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _fishingActionStateMachine = FindAnyObjectByType<FishingActionStateMachine>(FindObjectsInactive.Include);
+        }
+
+        private int ResolveFallbackCargoCapacity(string shipId)
+        {
+            var id = string.IsNullOrWhiteSpace(shipId)
+                ? string.Empty
+                : shipId.Trim().ToLowerInvariant();
+
+            if (id.Contains("lv3"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier3);
+            }
+
+            if (id.Contains("lv2"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier2);
+            }
+
+            return Mathf.Max(1, _fallbackCargoCapacityTier1);
         }
     }
 }

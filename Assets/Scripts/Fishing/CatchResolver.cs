@@ -12,6 +12,10 @@ namespace RavenDevOps.Fishing.Fishing
 {
     public sealed class CatchResolver : MonoBehaviour
     {
+        private const int FallbackCargoCapacityTier1 = 12;
+        private const int FallbackCargoCapacityTier2 = 20;
+        private const int FallbackCargoCapacityTier3 = 32;
+
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private FishSpawner _spawner;
         [SerializeField] private HookMovementController _hook;
@@ -216,6 +220,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             RefreshDistanceTier();
+            if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
+            {
+                _hudOverlay?.SetFishingStatus($"Cargo full ({cargoFishCount}/{cargoCapacity}). Return to harbor and sell fish.");
+                _stateMachine?.ResetToCast();
+                return;
+            }
+
             _hudOverlay?.SetFishingStatus("Casting... hold Action to lower, release to wait for a bite.");
         }
 
@@ -269,6 +280,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickInWater()
         {
+            if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
+            {
+                _hudOverlay?.SetFishingStatus($"Cargo full ({cargoFishCount}/{cargoCapacity}). Return to harbor and sell fish.");
+                _stateMachine?.ResetToCast();
+                return;
+            }
+
             if (IsActionHeldForCastDepth())
             {
                 if (_targetFish != null)
@@ -387,7 +405,15 @@ namespace RavenDevOps.Fishing.Fishing
                 _saveManager?.RecordCatch(_hookedFish.id, _currentDistanceTier, weightKg, valueCopecs);
                 _audioManager?.PlaySfx(_catchSfx);
                 _hudOverlay?.SetFishingFailure(string.Empty);
-                _hudOverlay?.SetFishingStatus($"Caught {_hookedFish.id} ({weightKg:0.0}kg, {valueCopecs} copecs).");
+                if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
+                {
+                    _hudOverlay?.SetFishingStatus(
+                        $"Caught {_hookedFish.id} ({weightKg:0.0}kg, {valueCopecs} copecs). Cargo full ({cargoFishCount}/{cargoCapacity}) - return to harbor to sell.");
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus($"Caught {_hookedFish.id} ({weightKg:0.0}kg, {valueCopecs} copecs).");
+                }
             }
             else
             {
@@ -624,6 +650,12 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
+            if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
+            {
+                _hudOverlay?.SetFishingStatus($"Cargo full ({cargoFishCount}/{cargoCapacity}). Return to harbor and sell fish.");
+                return false;
+            }
+
             RefreshDistanceTier();
             var depth = Mathf.Max(0f, _hook.CurrentDepth);
             _targetFish = _spawner.RollFish(_currentDistanceTier, depth);
@@ -693,6 +725,39 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return _ambientFishController.IsBoundFishApproachComplete();
+        }
+
+        private bool IsCargoFull(out int fishCount, out int cargoCapacity)
+        {
+            fishCount = _saveManager != null ? _saveManager.GetFishInventoryCount() : 0;
+            cargoCapacity = ResolveCurrentCargoCapacity();
+            return fishCount >= cargoCapacity;
+        }
+
+        private int ResolveCurrentCargoCapacity()
+        {
+            if (_shipMovement != null)
+            {
+                return Mathf.Max(1, _shipMovement.CargoCapacity);
+            }
+
+            var shipId = _saveManager != null && _saveManager.Current != null
+                ? _saveManager.Current.equippedShipId
+                : string.Empty;
+            var normalizedId = string.IsNullOrWhiteSpace(shipId)
+                ? string.Empty
+                : shipId.Trim().ToLowerInvariant();
+            if (normalizedId.Contains("lv3"))
+            {
+                return FallbackCargoCapacityTier3;
+            }
+
+            if (normalizedId.Contains("lv2"))
+            {
+                return FallbackCargoCapacityTier2;
+            }
+
+            return FallbackCargoCapacityTier1;
         }
 
         private bool ResolveIsReeling()

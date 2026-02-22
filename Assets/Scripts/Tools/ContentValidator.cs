@@ -190,6 +190,11 @@ namespace RavenDevOps.Fishing.Tools
                 {
                     messages.Add($"ERROR: Ship '{ship.id}' has negative maxDistanceTier.");
                 }
+
+                if (ship.cargoCapacity <= 0)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has non-positive cargoCapacity.");
+                }
             }
         }
 

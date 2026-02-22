@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,12 +22,16 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private HarborInteractionController _interactionController;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private CatalogService _catalogService;
         [SerializeField] private Text _statusText;
         [SerializeField] private Text _selectionText;
         [SerializeField] private Text _economyText;
         [SerializeField] private Text _equipmentText;
         [SerializeField] private Text _cargoText;
         [SerializeField] private Text _activityLogText;
+        [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
+        [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
+        [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
 
         private readonly Queue<string> _recentActivity = new Queue<string>();
 
@@ -60,6 +65,7 @@ namespace RavenDevOps.Fishing.Core
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             _interactionController ??= GetComponent<HarborInteractionController>();
         }
 
@@ -304,9 +310,13 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var totalTrips = save.stats != null ? Mathf.Max(0, save.stats.totalTrips) : 0;
+            var cargoCapacity = ResolveCargoCapacity(save.equippedShipId);
+            var cargoStatus = fishCount >= cargoCapacity
+                ? " (FULL)"
+                : string.Empty;
             SetText(_economyText, $"Copecs: {Mathf.Max(0, save.copecs)}");
             SetText(_equipmentText, $"Equipped Ship: {ToDisplayLabel(save.equippedShipId)} | Hook: {ToDisplayLabel(save.equippedHookId)}");
-            SetText(_cargoText, $"Cargo: {fishCount} fish | Trips: {totalTrips} | Level: {_saveManager.CurrentLevel}");
+            SetText(_cargoText, $"Cargo: {fishCount}/{cargoCapacity} fish{cargoStatus} | Trips: {totalTrips} | Level: {_saveManager.CurrentLevel}");
         }
 
         private void RefreshSelectionHint(WorldInteractable interactable)
@@ -409,6 +419,35 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return string.Join(" ", tokens);
+        }
+
+        private int ResolveCargoCapacity(string shipId)
+        {
+            if (_catalogService != null
+                && !string.IsNullOrWhiteSpace(shipId)
+                && _catalogService.TryGetShip(shipId, out var shipDefinition)
+                && shipDefinition != null)
+            {
+                if (shipDefinition.cargoCapacity > 0)
+                {
+                    return shipDefinition.cargoCapacity;
+                }
+            }
+
+            var normalizedId = string.IsNullOrWhiteSpace(shipId)
+                ? string.Empty
+                : shipId.Trim().ToLowerInvariant();
+            if (normalizedId.Contains("lv3"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier3);
+            }
+
+            if (normalizedId.Contains("lv2"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier2);
+            }
+
+            return Mathf.Max(1, _fallbackCargoCapacityTier1);
         }
     }
 }

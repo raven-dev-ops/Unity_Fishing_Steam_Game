@@ -124,6 +124,29 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(messages, Has.Some.Contains("invalid catch weight range"));
         }
 
+        [Test]
+        public void Validate_ReturnsErrors_ForInvalidShipCargoCapacity()
+        {
+            var config = Create<GameConfigSO>();
+            var ship = Create<ShipDefinitionSO>();
+
+            ship.id = "ship_invalid_cargo";
+            ship.icon = BuildSprite();
+            ship.price = 100;
+            ship.maxDistanceTier = 2;
+            ship.moveSpeed = 5f;
+            ship.cargoCapacity = 0;
+
+            config.fishDefinitions = new FishDefinitionSO[0];
+            config.shipDefinitions = new[] { ship };
+            config.hookDefinitions = new HookDefinitionSO[0];
+
+            var messages = ContentValidator.Validate(config);
+
+            Assert.That(messages, Has.Some.Contains("non-positive cargoCapacity"));
+            Assert.That(ContentValidator.CountErrors(messages), Is.GreaterThan(0));
+        }
+
         private T Create<T>() where T : ScriptableObject
         {
             var instance = ScriptableObject.CreateInstance<T>();

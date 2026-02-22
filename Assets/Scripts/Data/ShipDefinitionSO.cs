@@ -10,5 +10,6 @@ namespace RavenDevOps.Fishing.Data
         public int price = 100;
         public int maxDistanceTier = 1;
         public float moveSpeed = 6f;
+        public int cargoCapacity = 12;
     }
 }

@@ -311,6 +311,11 @@ namespace RavenDevOps.Fishing.Save
             Save();
         }
 
+        public int GetFishInventoryCount()
+        {
+            return CountFishInventory(_current != null ? _current.fishInventory : null);
+        }
+
         public void EnsureStarterOwnership()
         {
             _current.ownedShips ??= new List<string>();
@@ -870,6 +875,28 @@ namespace RavenDevOps.Fishing.Save
 
             var removeCount = log.Count - MaxCatchLogEntries;
             log.RemoveRange(0, removeCount);
+        }
+
+        private static int CountFishInventory(List<FishInventoryEntry> fishInventory)
+        {
+            if (fishInventory == null || fishInventory.Count == 0)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var i = 0; i < fishInventory.Count; i++)
+            {
+                var entry = fishInventory[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                count += Mathf.Max(0, entry.count);
+            }
+
+            return count;
         }
 
         private void InvokeCatchRecorded(CatchLogEntry entry)
