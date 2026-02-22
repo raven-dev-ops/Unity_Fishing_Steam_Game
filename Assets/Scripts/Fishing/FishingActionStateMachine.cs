@@ -24,7 +24,7 @@ namespace RavenDevOps.Fishing.Fishing
         private void Update()
         {
             RefreshActionsIfNeeded();
-            if (_actionInput != null && _actionInput.WasPressedThisFrame())
+            if (WasActionPressedThisFrame())
             {
                 AdvanceByAction();
             }
@@ -89,6 +89,23 @@ namespace RavenDevOps.Fishing.Fishing
             _actionInput = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/Action")
                 : null;
+        }
+
+        private bool WasActionPressedThisFrame()
+        {
+            if (_actionInput != null && _actionInput.WasPressedThisFrame())
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            var gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
         }
     }
 }

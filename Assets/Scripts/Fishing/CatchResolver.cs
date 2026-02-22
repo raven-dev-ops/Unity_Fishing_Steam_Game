@@ -556,19 +556,19 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool ResolveIsReeling()
         {
-            if (_reelAction == null)
-            {
-                return false;
-            }
+            var fallbackPressedThisFrame = IsFallbackActionPressedThisFrame();
+            var fallbackIsPressed = IsFallbackActionHeld();
+            var mappedPressedThisFrame = _reelAction != null && _reelAction.WasPressedThisFrame();
+            var mappedIsPressed = _reelAction != null && _reelAction.IsPressed();
 
             var toggleMode = _settingsService != null && _settingsService.ReelInputToggle;
             if (!toggleMode)
             {
                 _toggleReelActive = false;
-                return _reelAction.IsPressed();
+                return mappedIsPressed || fallbackIsPressed;
             }
 
-            if (_reelAction.WasPressedThisFrame())
+            if (mappedPressedThisFrame || fallbackPressedThisFrame)
             {
                 _toggleReelActive = !_toggleReelActive;
             }
@@ -582,6 +582,30 @@ namespace RavenDevOps.Fishing.Fishing
             return toggleMode
                 ? "Press Action to toggle reel."
                 : "Hold Action to reel.";
+        }
+
+        private static bool IsFallbackActionPressedThisFrame()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            var gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
+        }
+
+        private static bool IsFallbackActionHeld()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.isPressed)
+            {
+                return true;
+            }
+
+            var gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonSouth.isPressed;
         }
     }
 }

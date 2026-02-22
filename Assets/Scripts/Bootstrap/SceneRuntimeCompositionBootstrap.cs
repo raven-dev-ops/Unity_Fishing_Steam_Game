@@ -266,16 +266,18 @@ namespace RavenDevOps.Fishing.Core
             var telemetryText = CreateTopLeftText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAnchor.UpperLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
             var tensionText = CreateTopLeftText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAnchor.UpperLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
             var conditionText = CreateTopLeftText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast and drop hook.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
+            var statusText = CreateTopLeftText(infoPanel.transform, "FishingStatusText", "Press Space to cast, press Space again to reel in.", 18, TextAnchor.UpperLeft, new Vector2(18f, 112f), new Vector2(844f, 38f));
             var failureText = CreateTopLeftText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAnchor.UpperLeft, new Vector2(18f, 150f), new Vector2(844f, 38f));
             CreateTopLeftText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Left/Right move ship, Space casts and auto-drops hook, Up/Down adjusts depth, Esc pause, H return to harbor from pause.",
+                "Fishing: Left/Right move ship, Space cast/reel, Up/Down depth adjust while in water, Esc pause, H return harbor from pause.",
                 16,
                 TextAnchor.UpperLeft,
                 new Vector2(18f, 192f),
                 new Vector2(844f, 52f));
+            var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
+            menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
@@ -299,7 +301,7 @@ namespace RavenDevOps.Fishing.Core
                 renderer.sprite = GetSolidSprite();
                 renderer.color = new Color(0.95f, 0.99f, 1f, 0.95f);
                 renderer.sortingOrder = 20;
-                shipObject.transform.localScale = new Vector3(1.5f, 0.9f, 1f);
+                shipObject.transform.localScale = new Vector3(1.15f, 0.72f, 1f);
                 shipObject.transform.position = new Vector3(0f, 2.4f, 0f);
             }
 
@@ -315,6 +317,27 @@ namespace RavenDevOps.Fishing.Core
                 hookObject.transform.localScale = new Vector3(0.55f, 0.55f, 1f);
                 hookObject.transform.position = new Vector3(0f, -1f, 0f);
             }
+
+            var legacyLineObject = FindSceneObject(scene, "FishingLine");
+            if (legacyLineObject != null)
+            {
+                legacyLineObject.SetActive(false);
+            }
+
+            var dynamicLineObject = FindSceneObject(scene, "FishingDynamicLine");
+            if (dynamicLineObject == null)
+            {
+                dynamicLineObject = new GameObject("FishingDynamicLine");
+                SceneManager.MoveGameObjectToScene(dynamicLineObject, scene);
+                var lineRenderer = dynamicLineObject.AddComponent<SpriteRenderer>();
+                lineRenderer.sprite = GetSolidSprite();
+                lineRenderer.color = new Color(0.92f, 0.98f, 1f, 0.92f);
+                var shipRenderer = shipObject.GetComponent<SpriteRenderer>();
+                lineRenderer.sortingOrder = shipRenderer != null ? shipRenderer.sortingOrder - 1 : 19;
+            }
+
+            var lineBridge = GetOrAddComponent<FishingLineBridge2D>(dynamicLineObject);
+            lineBridge.Configure(shipObject.transform, hookObject.transform, 0.06f, -0.36f);
 
             var shipMovement = GetOrAddComponent<ShipMovementController>(shipObject);
             shipMovement.RefreshShipStats();
@@ -554,6 +577,26 @@ namespace RavenDevOps.Fishing.Core
             var labelText = CreateText(go.transform, "Label", label, 22, TextAnchor.MiddleCenter, Vector2.zero, size - new Vector2(12f, 8f));
             labelText.color = Color.white;
             labelText.raycastTarget = false;
+
+            return button;
+        }
+
+        private static Button CreateTopLeftButton(
+            Transform parent,
+            string name,
+            string label,
+            Vector2 marginFromTopLeft,
+            Vector2 size)
+        {
+            var button = CreateButton(parent, name, label, Vector2.zero, size);
+            var rect = button.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+            }
 
             return button;
         }

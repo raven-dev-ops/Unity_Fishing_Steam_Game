@@ -14,10 +14,12 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _dockOffsetY = 0.65f;
         [SerializeField] private float _dockSnapLerp = 16f;
         [SerializeField] private float _autoDropSpeed = 4.2f;
+        [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private float _manualOverrideThreshold = 0.22f;
 
         private InputAction _moveHookAction;
         private bool _autoDropActive;
+        private bool _autoReelActive;
 
         public void Configure(
             FishingActionStateMachine stateMachine,
@@ -72,7 +74,15 @@ namespace RavenDevOps.Fishing.Fishing
             switch (_stateMachine.State)
             {
                 case FishingActionState.Cast:
-                    SnapHookToDock();
+                    if (_autoReelActive)
+                    {
+                        TickAutoReelIn();
+                    }
+                    else
+                    {
+                        SnapHookToDock();
+                    }
+
                     break;
                 case FishingActionState.InWater:
                     TickAutoDrop();
@@ -90,6 +100,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.Cast)
             {
                 _autoDropActive = false;
+                _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
                 _hookController.SetMovementEnabled(false);
                 return;
             }
@@ -97,11 +108,13 @@ namespace RavenDevOps.Fishing.Fishing
             if (next == FishingActionState.InWater)
             {
                 _autoDropActive = true;
+                _autoReelActive = false;
                 _hookController.SetMovementEnabled(true);
                 return;
             }
 
             _autoDropActive = false;
+            _autoReelActive = false;
             _hookController.SetMovementEnabled(true);
         }
 
@@ -116,15 +129,18 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 case FishingActionState.Cast:
                     _autoDropActive = false;
+                    _autoReelActive = false;
                     _hookController.SetMovementEnabled(false);
                     SnapHookToDock();
                     break;
                 case FishingActionState.InWater:
                     _autoDropActive = true;
+                    _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
                     break;
                 default:
                     _autoDropActive = false;
+                    _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
                     break;
             }
@@ -175,6 +191,27 @@ namespace RavenDevOps.Fishing.Fishing
             if (Mathf.Abs(position.y - minY) <= 0.01f)
             {
                 _autoDropActive = false;
+            }
+        }
+
+        private void TickAutoReelIn()
+        {
+            var hookTransform = _hookController.transform;
+            if (hookTransform == null || _ship == null)
+            {
+                return;
+            }
+
+            var minY = -Mathf.Abs(_hookController.MaxDepth);
+            var targetY = Mathf.Clamp(_ship.position.y - Mathf.Abs(_dockOffsetY), minY, _ship.position.y);
+
+            var position = hookTransform.position;
+            position.y = Mathf.MoveTowards(position.y, targetY, Mathf.Max(0.1f, _autoReelSpeed) * Time.deltaTime);
+            hookTransform.position = position;
+
+            if (Mathf.Abs(position.y - targetY) <= 0.01f)
+            {
+                _autoReelActive = false;
             }
         }
 

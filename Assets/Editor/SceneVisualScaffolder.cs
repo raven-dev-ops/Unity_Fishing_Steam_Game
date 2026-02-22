@@ -190,6 +190,8 @@ namespace RavenDevOps.Fishing.EditorTools
             var veilTint = new Color(0.75f, 0.88f, 1f, 0.35f);
             var badgeTint = new Color(1f, 0.95f, 0.75f, 0.95f);
             var badgePosition = new Vector3(0f, 3.3f, 0f);
+            var includeTopBadge = true;
+            var includeWaterSurfaceBand = false;
 
             switch (sceneName)
             {
@@ -219,8 +221,8 @@ namespace RavenDevOps.Fishing.EditorTools
                     veilScale = new Vector2(7.3f, 4.9f);
                     farTint = new Color(0.52f, 0.82f, 0.96f, 0.90f);
                     veilTint = new Color(0.62f, 0.89f, 1f, 0.40f);
-                    badgeTint = new Color(1f, 0.97f, 0.82f, 0.85f);
-                    badgePosition = new Vector3(0f, 3.1f, 0f);
+                    includeTopBadge = false;
+                    includeWaterSurfaceBand = false;
                     break;
             }
 
@@ -248,18 +250,21 @@ namespace RavenDevOps.Fishing.EditorTools
             AttachBackdropFit(farBackdrop, 1.04f, true);
             AttachBackdropFit(veilBackdrop, 1.02f, true);
 
-            CreateSprite(
-                "TopBadge",
-                badge,
-                badgePosition,
-                new Vector2(1.2f, 1.2f),
-                sorting++,
-                badgeTint,
-                root,
-                0f,
-                false);
+            if (includeTopBadge)
+            {
+                CreateSprite(
+                    "TopBadge",
+                    badge,
+                    badgePosition,
+                    new Vector2(1.2f, 1.2f),
+                    sorting++,
+                    badgeTint,
+                    root,
+                    0f,
+                    false);
+            }
 
-            if (string.Equals(sceneName, "04_Fishing", StringComparison.Ordinal))
+            if (includeWaterSurfaceBand)
             {
                 CreateSprite(
                     "WaterSurfaceBand",
@@ -327,15 +332,14 @@ namespace RavenDevOps.Fishing.EditorTools
 
         private static void BuildFishingScene(Transform root, ref int sorting)
         {
-            CreateSprite("FishingShip", ResolveSprite("ship_lv2", "ship_lv1", "ship_coastal_runner"), new Vector3(0f, 2.55f, 0f), new Vector2(1.25f, 1.25f), sorting++, Color.white, root, 0f, false);
-            CreateSprite("FishingLine", ResolveSprite("icon_test", "icons_ui_sheet_v01_0"), new Vector3(0f, 0.95f, 0f), new Vector2(0.06f, 3.0f), sorting++, new Color(0.94f, 0.98f, 1f, 0.92f), root, 0f, false);
-            CreateSprite("FishingHook", ResolveSprite("hook_lv3", "hook_lv2", "hook_lv1"), new Vector3(0f, -1.3f, 0f), new Vector2(0.82f, 0.82f), sorting++, new Color(0.9f, 0.97f, 1f, 0.98f), root, 0f, false);
+            CreateSprite("FishingShip", ResolveSprite("ship_lv2", "ship_lv1", "ship_coastal_runner"), new Vector3(0f, 2.45f, 0f), new Vector2(0.98f, 0.98f), sorting++, Color.white, root, 0f, false);
+            CreateSprite("FishingHook", ResolveSprite("hook_lv3", "hook_lv2", "hook_lv1"), new Vector3(0f, -1.1f, 0f), new Vector2(0.64f, 0.64f), sorting++, new Color(0.9f, 0.97f, 1f, 0.98f), root, 0f, false);
 
-            CreateSprite("FishingFishLeftA", ResolveSprite("fish_cod", "fish_a"), new Vector3(-4.4f, -2.65f, 0f), new Vector2(0.92f, 0.92f), sorting++, Color.white, root, 8f, false);
-            CreateSprite("FishingFishLeftB", ResolveSprite("fish_coastal_snapper", "fish_b"), new Vector3(-2.5f, -2.25f, 0f), new Vector2(0.94f, 0.94f), sorting++, Color.white, root, -8f, true);
-            CreateSprite("FishingFishMid", ResolveSprite("fish_heavy", "fish_pack"), new Vector3(0.4f, -2.8f, 0f), new Vector2(1.02f, 1.02f), sorting++, Color.white, root, 3f, false);
-            CreateSprite("FishingFishRightA", ResolveSprite("fish_light", "fish_valid"), new Vector3(2.8f, -2.35f, 0f), new Vector2(0.91f, 0.91f), sorting++, Color.white, root, -12f, true);
-            CreateSprite("FishingFishRightB", ResolveSprite("fish_surface", "fish_icon_coastal"), new Vector3(4.8f, -2.1f, 0f), new Vector2(0.9f, 0.9f), sorting++, Color.white, root, 12f, false);
+            CreateSprite("FishingFishLeftA", ResolveSprite("fish_cod", "fish_a"), new Vector3(-4.2f, -2.65f, 0f), new Vector2(0.76f, 0.76f), sorting++, Color.white, root, 8f, false);
+            CreateSprite("FishingFishLeftB", ResolveSprite("fish_coastal_snapper", "fish_b"), new Vector3(-2.4f, -2.25f, 0f), new Vector2(0.78f, 0.78f), sorting++, Color.white, root, -8f, true);
+            CreateSprite("FishingFishMid", ResolveSprite("fish_heavy", "fish_pack"), new Vector3(0.4f, -2.8f, 0f), new Vector2(0.82f, 0.82f), sorting++, Color.white, root, 3f, false);
+            CreateSprite("FishingFishRightA", ResolveSprite("fish_light", "fish_valid"), new Vector3(2.7f, -2.35f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, -12f, true);
+            CreateSprite("FishingFishRightB", ResolveSprite("fish_surface", "fish_icon_coastal"), new Vector3(4.6f, -2.1f, 0f), new Vector2(0.74f, 0.74f), sorting++, Color.white, root, 12f, false);
         }
 
         private static void ApplySceneOrchestration(string sceneName, GameObject sceneRoot)
