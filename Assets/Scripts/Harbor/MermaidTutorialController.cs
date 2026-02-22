@@ -18,6 +18,11 @@ namespace RavenDevOps.Fishing.Harbor
 
         public bool IsBlockingInteractions => _isBlockingInteractions;
 
+        public void Configure(DialogueBubbleController dialogue)
+        {
+            _dialogue = dialogue;
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);

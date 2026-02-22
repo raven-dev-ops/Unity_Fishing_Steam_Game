@@ -24,6 +24,20 @@ namespace RavenDevOps.Fishing.Performance
         private float _elapsedSeconds;
         private long _gcWindowStartBytes;
 
+        public void Configure(Text fpsLabel, int sampleFrames = 300, bool emitWarningsOnBudgetFailure = true, string hardwareTier = "minimum")
+        {
+            _fpsLabel = fpsLabel;
+            _sampleFrames = Mathf.Max(1, sampleFrames);
+            _emitWarningsOnBudgetFailure = emitWarningsOnBudgetFailure;
+            if (!string.IsNullOrWhiteSpace(hardwareTier))
+            {
+                _hardwareTier = hardwareTier.Trim();
+            }
+
+            EnsureSampleBuffers();
+            ResetWindow();
+        }
+
         private void OnEnable()
         {
             EnsureSampleBuffers();

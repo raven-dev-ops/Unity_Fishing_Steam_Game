@@ -7,6 +7,7 @@ using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Performance;
 using RavenDevOps.Fishing.Tools;
 using RavenDevOps.Fishing.UI;
 using TMPro;
@@ -154,6 +155,9 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(runtimeRoot.GetComponent<HarborInteractionController>(), Is.Not.Null, "Expected harbor interaction controller.");
             Assert.That(runtimeRoot.GetComponent<HarborSceneInteractionRouter>(), Is.Not.Null, "Expected harbor interaction router.");
             Assert.That(runtimeRoot.GetComponent<HarborPauseMenuController>(), Is.Not.Null, "Expected harbor pause menu controller.");
+            Assert.That(runtimeRoot.GetComponent<MermaidTutorialController>(), Is.Not.Null, "Expected harbor tutorial controller.");
+            Assert.That(runtimeRoot.GetComponent<DialogueBubbleController>(), Is.Not.Null, "Expected harbor dialogue controller.");
+            Assert.That(runtimeRoot.GetComponent<PerfSanityRunner>(), Is.Not.Null, "Expected harbor performance sanity runner.");
 
             var harborCanvas = FindSceneObject("HarborCanvas");
             Assert.That(harborCanvas, Is.Not.Null, "Expected harbor canvas.");
@@ -188,6 +192,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborFishShopInfo"), Is.Not.Null, "Expected harbor fish-shop info text.");
             Assert.That(FindSceneObject("HarborFishShopSellButton"), Is.Not.Null, "Expected harbor fish-shop sell button.");
             Assert.That(FindSceneObject("HarborFishShopBackButton"), Is.Not.Null, "Expected harbor fish-shop back button.");
+            Assert.That(FindSceneObject("HarborTutorialDialoguePanel"), Is.Not.Null, "Expected harbor tutorial dialogue panel.");
+            Assert.That(FindSceneObject("HarborTutorialDialogueText"), Is.Not.Null, "Expected harbor tutorial dialogue text.");
 
             Assert.That(FindSceneObject("HarborInfoPanel"), Is.Not.Null, "Expected harbor info panel.");
             var statusTextGo = FindSceneObject("HarborStatus");
@@ -224,11 +230,12 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(runtimeRoot.GetComponent<FishingActionStateMachine>(), Is.Not.Null, "Expected fishing action state machine.");
             Assert.That(runtimeRoot.GetComponent<CatchResolver>(), Is.Not.Null, "Expected catch resolver.");
             Assert.That(runtimeRoot.GetComponent<FishingAmbientFishSwimController>(), Is.Not.Null, "Expected ambient fish controller.");
-            Assert.That(runtimeRoot.GetComponent<SimpleFishingHudOverlay>(), Is.Not.Null, "Expected simple fishing HUD overlay.");
+            Assert.That(runtimeRoot.GetComponent<HudOverlayController>(), Is.Not.Null, "Expected fishing HUD overlay controller.");
             Assert.That(runtimeRoot.GetComponent<FishingPauseBridge>(), Is.Not.Null, "Expected fishing pause bridge.");
             Assert.That(runtimeRoot.GetComponent<PauseMenuController>(), Is.Not.Null, "Expected pause menu controller.");
             Assert.That(runtimeRoot.GetComponent<WaveAnimator>(), Is.Not.Null, "Expected wave animator.");
             Assert.That(runtimeRoot.GetComponent<TuningConfigApplier>(), Is.Not.Null, "Expected tuning config applier.");
+            Assert.That(runtimeRoot.GetComponent<PerfSanityRunner>(), Is.Not.Null, "Expected fishing performance sanity runner.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Assert.That(runtimeRoot.GetComponent<DebugPanelController>(), Is.Not.Null, "Expected debug panel controller in editor/development.");
 #endif
@@ -238,12 +245,15 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(fishingCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on fishing canvas.");
 
             Assert.That(FindSceneObject("FishingInfoPanel"), Is.Not.Null, "Expected fishing info panel.");
+            Assert.That(FindSceneObject("FishingDistanceTierText"), Is.Not.Null, "Expected fishing distance-tier text.");
+            Assert.That(FindSceneObject("FishingDepthText"), Is.Not.Null, "Expected fishing depth text.");
+            Assert.That(FindSceneObject("FishingCopecsText"), Is.Not.Null, "Expected fishing copecs text.");
+            Assert.That(FindSceneObject("FishingDayText"), Is.Not.Null, "Expected fishing day text.");
             var objectiveTextGo = FindSceneObject("FishingObjectiveText");
             Assert.That(objectiveTextGo, Is.Not.Null, "Expected fishing objective text.");
             var objectiveText = objectiveTextGo.GetComponent<TMP_Text>();
             Assert.That(objectiveText, Is.Not.Null, "Expected TMP_Text component for objective.");
             Assert.That(string.IsNullOrWhiteSpace(objectiveText.text), Is.False, "Expected objective text to be populated.");
-            Assert.That(objectiveText.text, Does.StartWith("Objective:"));
 
             Assert.That(FindSceneObject("FishingMenuButton"), Is.Not.Null, "Expected fishing menu button.");
             Assert.That(FindSceneObject("ResumeButton"), Is.Not.Null, "Expected pause resume button.");

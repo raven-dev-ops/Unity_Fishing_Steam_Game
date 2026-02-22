@@ -40,23 +40,38 @@ namespace RavenDevOps.Fishing.UI
 
         public bool IsRunning => _isRunning;
 
+        public void Configure(
+            GameObject root,
+            TMP_Text lineText,
+            List<DialogueLine> lines = null,
+            CanvasGroup subtitleBackgroundCanvasGroup = null)
+        {
+            _root = root;
+            _lineText = lineText;
+            if (lines != null && lines.Count > 0)
+            {
+                _lines = new List<DialogueLine>(lines);
+            }
+
+            _subtitleBackgroundCanvasGroup = subtitleBackgroundCanvasGroup;
+            EnsureDefaultLines();
+            CacheBaseTextStyle();
+            ApplySubtitleAccessibility();
+            RefreshRootVisibility();
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            EnsureDefaultLines();
             if (_root != null)
             {
                 _root.SetActive(false);
             }
 
-            if (_lineText != null)
-            {
-                _baseFontSize = _lineText.fontSize;
-                _baseTextColor = _lineText.color;
-                _baseOutlineWidth = _lineText.outlineWidth;
-                _baseOutlineColor = _lineText.outlineColor;
-            }
+            CacheBaseTextStyle();
 
             ApplySubtitleAccessibility();
         }
@@ -170,6 +185,43 @@ namespace RavenDevOps.Fishing.UI
             }
 
             _root.SetActive(_isRunning && AreSubtitlesEnabled());
+        }
+
+        private void EnsureDefaultLines()
+        {
+            if (_lines != null && _lines.Count > 0)
+            {
+                return;
+            }
+
+            _lines = new List<DialogueLine>
+            {
+                new DialogueLine
+                {
+                    text = "Welcome to harbor command. Choose Hook Shop, Boat Shop, Fish Market, or Sail Out."
+                },
+                new DialogueLine
+                {
+                    text = "Sell your catch at market, upgrade gear in order, then sail for deeper waters."
+                },
+                new DialogueLine
+                {
+                    text = "Press interact to continue. Press pause/cancel to skip this briefing anytime."
+                }
+            };
+        }
+
+        private void CacheBaseTextStyle()
+        {
+            if (_lineText == null)
+            {
+                return;
+            }
+
+            _baseFontSize = _lineText.fontSize;
+            _baseTextColor = _lineText.color;
+            _baseOutlineWidth = _lineText.outlineWidth;
+            _baseOutlineColor = _lineText.outlineColor;
         }
 
         private void ApplySubtitleAccessibility()

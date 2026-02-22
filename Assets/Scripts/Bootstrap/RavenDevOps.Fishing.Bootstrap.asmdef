@@ -9,6 +9,7 @@
     "RavenDevOps.Fishing.Fishing",
     "RavenDevOps.Fishing.Harbor",
     "RavenDevOps.Fishing.Input",
+    "RavenDevOps.Fishing.Performance",
     "RavenDevOps.Fishing.Save",
     "RavenDevOps.Fishing.Steam",
     "RavenDevOps.Fishing.Systems",

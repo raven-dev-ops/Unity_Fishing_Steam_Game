@@ -60,6 +60,17 @@ namespace RavenDevOps.Fishing.UI
 
         private void OnEnable()
         {
+            SubscribeEvents();
+            Refresh();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeEvents();
+        }
+
+        private void SubscribeEvents()
+        {
             if (_saveDataView != null)
             {
                 _saveDataView.SaveDataChanged += OnSaveDataChanged;
@@ -79,11 +90,9 @@ namespace RavenDevOps.Fishing.UI
             {
                 _objectivesService.ObjectiveLabelChanged += OnObjectiveLabelChanged;
             }
-
-            Refresh();
         }
 
-        private void OnDisable()
+        private void UnsubscribeEvents()
         {
             if (_saveDataView != null)
             {
@@ -106,8 +115,48 @@ namespace RavenDevOps.Fishing.UI
             }
         }
 
+        public void Configure(
+            TMP_Text copecsText,
+            TMP_Text dayText,
+            TMP_Text distanceTierText,
+            TMP_Text depthText,
+            TMP_Text tensionStateText,
+            TMP_Text conditionsText,
+            TMP_Text objectiveStatusText,
+            TMP_Text fishingStatusText,
+            TMP_Text fishingFailureText,
+            ObjectivesService objectivesService = null)
+        {
+            _copecsText = copecsText;
+            _dayText = dayText;
+            _distanceTierText = distanceTierText;
+            _depthText = depthText;
+            _tensionStateText = tensionStateText;
+            _conditionsText = conditionsText;
+            _objectiveStatusText = objectiveStatusText;
+            _fishingStatusText = fishingStatusText;
+            _fishingFailureText = fishingFailureText;
+            if (objectivesService != null)
+            {
+                _objectivesService = objectivesService;
+            }
+
+            if (isActiveAndEnabled)
+            {
+                UnsubscribeEvents();
+                SubscribeEvents();
+            }
+
+            Refresh();
+        }
+
         public void ConfigureDependencies(ISaveDataView saveDataView, GameFlowManager gameFlowManager = null, UserSettingsService settingsService = null)
         {
+            if (isActiveAndEnabled)
+            {
+                UnsubscribeEvents();
+            }
+
             _saveDataView = saveDataView;
             _saveManager = saveDataView as SaveManager;
             if (gameFlowManager != null)
@@ -119,6 +168,13 @@ namespace RavenDevOps.Fishing.UI
             {
                 _settingsService = settingsService;
             }
+
+            if (isActiveAndEnabled)
+            {
+                SubscribeEvents();
+            }
+
+            Refresh();
         }
 
         public void SetFishingTelemetry(int distanceTier, float depth)

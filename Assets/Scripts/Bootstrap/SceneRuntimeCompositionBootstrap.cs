@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Performance;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Tools;
 using RavenDevOps.Fishing.UI;
@@ -88,6 +89,7 @@ namespace RavenDevOps.Fishing.Core
 
             var controller = GetOrAddComponent<BootSceneFlowController>(root);
             controller.Configure(status);
+            EnsurePerfSanityRunner(root, canvas.transform, "BootPerfLabel");
         }
 
         private static void ComposeCinematic(Scene scene)
@@ -110,6 +112,7 @@ namespace RavenDevOps.Fishing.Core
 
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
             controller.Configure(status);
+            EnsurePerfSanityRunner(root, canvas.transform, "CinematicPerfLabel");
         }
 
         private static void ComposeMainMenu(Scene scene)
@@ -359,6 +362,8 @@ namespace RavenDevOps.Fishing.Core
             {
                 EventSystem.current.SetSelectedGameObject(startButton.gameObject);
             }
+
+            EnsurePerfSanityRunner(root, canvas.transform, "MainMenuPerfLabel");
         }
 
         private static void ComposeHarbor(Scene scene)
@@ -494,6 +499,26 @@ namespace RavenDevOps.Fishing.Core
             var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -128f), new Vector2(240f, 46f));
             fishShopPanel.SetActive(false);
 
+            var tutorialDialoguePanel = CreatePanel(
+                canvas.transform,
+                "HarborTutorialDialoguePanel",
+                new Vector2(0f, -336f),
+                new Vector2(1210f, 166f),
+                new Color(0.08f, 0.12f, 0.18f, 0.88f));
+            var tutorialDialogueBackground = tutorialDialoguePanel.AddComponent<CanvasGroup>();
+            tutorialDialogueBackground.alpha = 0.72f;
+            tutorialDialogueBackground.blocksRaycasts = false;
+            tutorialDialogueBackground.interactable = false;
+            var tutorialDialogueText = CreateTopLeftTmpText(
+                tutorialDialoguePanel.transform,
+                "HarborTutorialDialogueText",
+                string.Empty,
+                20,
+                TextAlignmentOptions.TopLeft,
+                new Vector2(22f, 18f),
+                new Vector2(1168f, 132f));
+            tutorialDialoguePanel.SetActive(false);
+
             var actionSelectionAura = CreateSelectionAura(hudRoot.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
             AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
 
@@ -542,8 +567,17 @@ namespace RavenDevOps.Fishing.Core
             };
             interactables.RemoveAll(x => x == null);
 
+            var dialogueController = GetOrAddComponent<DialogueBubbleController>(root);
+            dialogueController.Configure(
+                tutorialDialoguePanel,
+                tutorialDialogueText,
+                CreateHarborTutorialDialogueLines(),
+                tutorialDialogueBackground);
+            var tutorialController = GetOrAddComponent<MermaidTutorialController>(root);
+            tutorialController.Configure(dialogueController);
+
             var interactionController = GetOrAddComponent<HarborInteractionController>(root);
-            interactionController.Configure(player.transform, aura.transform, interactables, null);
+            interactionController.Configure(player.transform, aura.transform, interactables, tutorialController);
 
             var hookShop = GetOrAddComponent<HookShopController>(root);
             hookShop.ConfigureItems(new List<ShopItem>
@@ -620,6 +654,8 @@ namespace RavenDevOps.Fishing.Core
             {
                 EventSystem.current.SetSelectedGameObject(hookButton.gameObject);
             }
+
+            EnsurePerfSanityRunner(root, canvas.transform, "HarborPerfLabel");
         }
 
         private static void ComposeFishing(Scene scene)
@@ -633,20 +669,23 @@ namespace RavenDevOps.Fishing.Core
             EnsureEventSystem(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
             var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 292f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
-            var telemetryText = CreateTopLeftTmpText(infoPanel.transform, "FishingTelemetryText", "Distance Tier: 1 | Depth: 0.0", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(844f, 32f));
-            var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(844f, 32f));
-            var conditionText = CreateTopLeftTmpText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 34f));
-            var objectiveText = CreateTopLeftTmpText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(844f, 34f));
-            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Down Arrow or S to cast. Use Up Arrow or W to reel.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 36f));
-            var failureText = CreateTopLeftTmpText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 176f), new Vector2(844f, 36f));
+            var distanceTierText = CreateTopLeftTmpText(infoPanel.transform, "FishingDistanceTierText", "Distance Tier: 1", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(428f, 32f));
+            var depthText = CreateTopLeftTmpText(infoPanel.transform, "FishingDepthText", "Depth: 0.0", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 46f), new Vector2(428f, 32f));
+            var copecsText = CreateTopLeftTmpText(infoPanel.transform, "FishingCopecsText", "Copecs: 0", 16, TextAlignmentOptions.TopLeft, new Vector2(454f, 14f), new Vector2(190f, 28f));
+            var dayText = CreateTopLeftTmpText(infoPanel.transform, "FishingDayText", "Day 1", 16, TextAlignmentOptions.TopLeft, new Vector2(454f, 42f), new Vector2(190f, 28f));
+            var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 32f));
+            var conditionText = CreateTopLeftTmpText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(844f, 32f));
+            var objectiveText = CreateTopLeftTmpText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 32f));
+            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Down Arrow or S to cast. Use Up Arrow or W to reel.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 174f), new Vector2(844f, 32f));
+            var failureText = CreateTopLeftTmpText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 206f), new Vector2(844f, 32f));
             CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
                 "Fishing: Left/Right move ship while uncast. Down/S casts and lowers. Up/W reels and can auto-reel on double tap. Esc pause, H return harbor.",
                 16,
                 TextAlignmentOptions.TopLeft,
-                new Vector2(18f, 212f),
-                new Vector2(844f, 56f));
+                new Vector2(18f, 238f),
+                new Vector2(844f, 46f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
             menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
 
@@ -776,8 +815,22 @@ namespace RavenDevOps.Fishing.Core
             var hookDropController = GetOrAddComponent<FishingHookCastDropController>(root);
             hookDropController.Configure(stateMachine, hookMovement, shipObject.transform);
 
-            var hud = GetOrAddComponent<SimpleFishingHudOverlay>(root);
-            hud.Configure(telemetryText, tensionText, statusText, failureText, conditionText, objectiveText);
+            var hud = GetOrAddComponent<HudOverlayController>(root);
+            hud.Configure(
+                copecsText,
+                dayText,
+                distanceTierText,
+                depthText,
+                tensionText,
+                conditionText,
+                objectiveText,
+                statusText,
+                failureText,
+                RuntimeServiceRegistry.Get<ObjectivesService>());
+            hud.ConfigureDependencies(
+                RuntimeServiceRegistry.Get<SaveManager>(),
+                RuntimeServiceRegistry.Get<GameFlowManager>(),
+                RuntimeServiceRegistry.Get<UserSettingsService>());
 
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
@@ -817,6 +870,7 @@ namespace RavenDevOps.Fishing.Core
             settingsButton.onClick.AddListener(pauseMenu.OnSettingsPressed);
             exitButton.onClick.AddListener(pauseMenu.OnExitGamePressed);
             AttachSelectionAura(canvas.gameObject, pauseSelectionAura, new Vector2(16f, 8f), 24f);
+            EnsurePerfSanityRunner(root, canvas.transform, "FishingPerfLabel");
         }
 
         private static GameObject GetOrCreateRuntimeRoot(Scene scene)
@@ -1462,6 +1516,59 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return null;
+        }
+
+        private static void EnsurePerfSanityRunner(GameObject root, Transform uiParent, string labelName)
+        {
+            if (root == null || uiParent == null || string.IsNullOrWhiteSpace(labelName))
+            {
+                return;
+            }
+
+            Text label = null;
+            var existing = FindChildRecursive(uiParent, labelName);
+            if (existing != null)
+            {
+                label = existing.GetComponent<Text>();
+            }
+
+            if (label == null)
+            {
+                label = CreateTopLeftText(
+                    uiParent,
+                    labelName,
+                    string.Empty,
+                    13,
+                    TextAnchor.UpperLeft,
+                    new Vector2(16f, 14f),
+                    new Vector2(360f, 24f));
+                if (label != null)
+                {
+                    label.raycastTarget = false;
+                }
+            }
+
+            var perfRunner = GetOrAddComponent<PerfSanityRunner>(root);
+            perfRunner.Configure(label, sampleFrames: 240, emitWarningsOnBudgetFailure: true, hardwareTier: "minimum");
+        }
+
+        private static List<DialogueLine> CreateHarborTutorialDialogueLines()
+        {
+            return new List<DialogueLine>
+            {
+                new DialogueLine
+                {
+                    text = "Welcome to harbor command. Use shops to upgrade, then sail out for deeper catches."
+                },
+                new DialogueLine
+                {
+                    text = "Hook and ship upgrades unlock depth and cargo capacity. Buy tiers in order."
+                },
+                new DialogueLine
+                {
+                    text = "Sell fish at market to refill copecs. Press interact to continue or pause/cancel to skip."
+                }
+            };
         }
 
         private static T GetOrAddComponent<T>(GameObject go) where T : Component
