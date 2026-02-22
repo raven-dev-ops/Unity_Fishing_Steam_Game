@@ -614,10 +614,7 @@ namespace RavenDevOps.Fishing.Core
             hookMovement.RefreshHookStats();
 
             var dockedHookPosition = hookObject.transform.position;
-            dockedHookPosition.y = Mathf.Clamp(
-                shipObject.transform.position.y - 0.65f,
-                -Mathf.Abs(hookMovement.MaxDepth),
-                shipObject.transform.position.y);
+            dockedHookPosition.y = hookMovement.GetDockedY(0.65f);
             hookObject.transform.position = dockedHookPosition;
 
             var stateMachine = GetOrAddComponent<FishingActionStateMachine>(root);

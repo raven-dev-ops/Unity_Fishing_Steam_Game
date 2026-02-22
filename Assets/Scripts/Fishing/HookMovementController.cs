@@ -12,6 +12,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Transform _shipTransform;
         [SerializeField] private float _verticalSpeed = 4f;
         [SerializeField] private Vector2 _depthBounds = new Vector2(-8f, -1f);
+        [SerializeField] private float _distanceTierDepthStep = 0.5f;
+        [SerializeField] private int _distanceTier = 1;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -24,13 +26,26 @@ namespace RavenDevOps.Fishing.Fishing
         public float MaxDepth
         {
             get => Mathf.Abs(_depthBounds.x);
-            set => _depthBounds.x = -Mathf.Abs(value);
+            set
+            {
+                _baseMaxDepth = Mathf.Max(0.5f, Mathf.Abs(value));
+                ApplyDepthBoundsFromTier();
+            }
         }
 
-        public float CurrentDepth => Mathf.Abs(transform.position.y);
+        public float CurrentDepth
+        {
+            get
+            {
+                var surfaceY = ResolveSurfaceY();
+                return Mathf.Max(0f, surfaceY - transform.position.y);
+            }
+        }
         public Transform ShipTransform => _shipTransform;
         private InputAction _moveHookAction;
         private float _smoothedAxis;
+        private float _baseMaxDepth;
+        private float _minDepthBelowSurface;
 
         public void ConfigureShipTransform(Transform shipTransform)
         {
@@ -44,6 +59,9 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            _minDepthBelowSurface = Mathf.Min(Mathf.Abs(_depthBounds.x), Mathf.Abs(_depthBounds.y));
+            _baseMaxDepth = Mathf.Max(Mathf.Abs(_depthBounds.x), Mathf.Abs(_depthBounds.y));
+            _distanceTier = Mathf.Max(1, _distanceTier);
             RefreshHookStats();
         }
 
@@ -54,16 +72,22 @@ namespace RavenDevOps.Fishing.Fishing
 
         public void RefreshHookStats()
         {
+            var resolvedMaxDepth = Mathf.Max(0.5f, _baseMaxDepth);
             if (_saveManager == null || _catalogService == null)
             {
+                _baseMaxDepth = resolvedMaxDepth;
+                ApplyDepthBoundsFromTier();
                 return;
             }
 
             var equippedId = _saveManager.Current.equippedHookId;
             if (_catalogService.TryGetHook(equippedId, out var hookDefinition))
             {
-                MaxDepth = hookDefinition.maxDepth;
+                resolvedMaxDepth = Mathf.Max(0.5f, hookDefinition.maxDepth);
             }
+
+            _baseMaxDepth = resolvedMaxDepth;
+            ApplyDepthBoundsFromTier();
         }
 
         public void SetSpeedMultiplier(float multiplier)
@@ -78,6 +102,34 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _smoothedAxis = 0f;
             }
+        }
+
+        public void SetDistanceTier(int distanceTier)
+        {
+            var clampedTier = Mathf.Max(1, distanceTier);
+            if (_distanceTier == clampedTier)
+            {
+                return;
+            }
+
+            _distanceTier = clampedTier;
+            ApplyDepthBoundsFromTier();
+        }
+
+        public void GetWorldDepthBounds(out float minY, out float maxY)
+        {
+            var surfaceY = ResolveSurfaceY();
+            var maxDepth = Mathf.Max(_minDepthBelowSurface + 0.1f, Mathf.Abs(_depthBounds.x));
+            var minDepth = Mathf.Clamp(Mathf.Abs(_depthBounds.y), 0f, maxDepth - 0.01f);
+            minY = surfaceY - maxDepth;
+            maxY = surfaceY - minDepth;
+        }
+
+        public float GetDockedY(float dockOffsetY)
+        {
+            GetWorldDepthBounds(out var minY, out var maxY);
+            var target = ResolveSurfaceY() - Mathf.Abs(dockOffsetY);
+            return Mathf.Clamp(target, minY, maxY);
         }
 
         private void LateUpdate()
@@ -114,7 +166,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             var p = transform.position;
             p.y += _smoothedAxis * _verticalSpeed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
-            p.y = Mathf.Clamp(p.y, Mathf.Min(_depthBounds.x, _depthBounds.y), Mathf.Max(_depthBounds.x, _depthBounds.y));
+            GetWorldDepthBounds(out var minY, out var maxY);
+            p.y = Mathf.Clamp(p.y, minY, maxY);
             transform.position = p;
         }
 
@@ -168,6 +221,38 @@ namespace RavenDevOps.Fishing.Fishing
 #endif
 
             return Mathf.Clamp(axis, -1f, 1f);
+        }
+
+        private float ResolveSurfaceY()
+        {
+            if (_shipTransform != null)
+            {
+                return _shipTransform.position.y;
+            }
+
+            return transform.position.y + Mathf.Max(0.1f, _minDepthBelowSurface);
+        }
+
+        private void ApplyDepthBoundsFromTier()
+        {
+            _minDepthBelowSurface = Mathf.Max(0.1f, _minDepthBelowSurface);
+            var tierScale = 1f + (Mathf.Max(1, _distanceTier) - 1f) * Mathf.Max(0f, _distanceTierDepthStep);
+            var maxDepth = Mathf.Max(_minDepthBelowSurface + 0.1f, _baseMaxDepth * tierScale);
+            _depthBounds = new Vector2(-maxDepth, -_minDepthBelowSurface);
+            ClampTransformToDepthBounds();
+        }
+
+        private void ClampTransformToDepthBounds()
+        {
+            if (transform == null)
+            {
+                return;
+            }
+
+            GetWorldDepthBounds(out var minY, out var maxY);
+            var p = transform.position;
+            p.y = Mathf.Clamp(p.y, minY, maxY);
+            transform.position = p;
         }
     }
 }

@@ -16,8 +16,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _autoDropSpeed = 4.2f;
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private float _manualOverrideThreshold = 0.22f;
+        [SerializeField] private bool _requireCastHoldForAutoDrop = true;
 
         private InputAction _moveHookAction;
+        private InputAction _actionInput;
         private bool _autoDropActive;
         private bool _autoReelActive;
         private bool _stateMachineSubscribed;
@@ -107,7 +109,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (next == FishingActionState.InWater)
             {
-                _autoDropActive = true;
+                _autoDropActive = !_requireCastHoldForAutoDrop || IsActionHeld();
                 _autoReelActive = false;
                 _hookController.SetMovementEnabled(true);
                 return;
@@ -134,7 +136,7 @@ namespace RavenDevOps.Fishing.Fishing
                     SnapHookToDock();
                     break;
                 case FishingActionState.InWater:
-                    _autoDropActive = true;
+                    _autoDropActive = !_requireCastHoldForAutoDrop || IsActionHeld();
                     _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
                     break;
@@ -154,8 +156,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var minY = -Mathf.Abs(_hookController.MaxDepth);
-            var targetY = Mathf.Clamp(_ship.position.y - Mathf.Abs(_dockOffsetY), minY, _ship.position.y);
+            var targetY = _hookController.GetDockedY(_dockOffsetY);
             var blend = 1f - Mathf.Exp(-Mathf.Max(1f, _dockSnapLerp) * Time.deltaTime);
 
             var position = hookTransform.position;
@@ -171,6 +172,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             RefreshMoveHookAction();
+            RefreshActionInput();
+            if (_requireCastHoldForAutoDrop && !IsActionHeld())
+            {
+                _autoDropActive = false;
+                return;
+            }
+
             if (_moveHookAction != null && Mathf.Abs(_moveHookAction.ReadValue<float>()) > Mathf.Clamp01(_manualOverrideThreshold))
             {
                 _autoDropActive = false;
@@ -183,7 +191,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var minY = -Mathf.Abs(_hookController.MaxDepth);
+            _hookController.GetWorldDepthBounds(out var minY, out _);
             var position = hookTransform.position;
             position.y = Mathf.MoveTowards(position.y, minY, Mathf.Max(0.1f, _autoDropSpeed) * Time.deltaTime);
             hookTransform.position = position;
@@ -202,8 +210,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var minY = -Mathf.Abs(_hookController.MaxDepth);
-            var targetY = Mathf.Clamp(_ship.position.y - Mathf.Abs(_dockOffsetY), minY, _ship.position.y);
+            var targetY = _hookController.GetDockedY(_dockOffsetY);
 
             var position = hookTransform.position;
             position.y = Mathf.MoveTowards(position.y, targetY, Mathf.Max(0.1f, _autoReelSpeed) * Time.deltaTime);
@@ -225,6 +232,42 @@ namespace RavenDevOps.Fishing.Fishing
             _moveHookAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveHook")
                 : null;
+        }
+
+        private void RefreshActionInput()
+        {
+            if (_actionInput != null)
+            {
+                return;
+            }
+
+            _actionInput = _inputMapController != null
+                ? _inputMapController.FindAction("Fishing/Action")
+                : null;
+        }
+
+        private bool IsActionHeld()
+        {
+            if (_actionInput != null && _actionInput.IsPressed())
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.isPressed)
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKey(KeyCode.Space))
+            {
+                return true;
+            }
+#endif
+
+            var gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonSouth.isPressed;
         }
 
         private void SubscribeToStateMachine()

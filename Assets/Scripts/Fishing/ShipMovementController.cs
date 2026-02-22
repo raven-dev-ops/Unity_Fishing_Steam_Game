@@ -20,6 +20,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _axisSmoothing = 10f;
 
         public int DistanceTierCap { get; private set; } = 1;
+        public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
         private InputAction _moveShipAction;
         private float _smoothedAxis;
 
@@ -56,6 +57,26 @@ namespace RavenDevOps.Fishing.Fishing
         public void SetSpeedMultiplier(float multiplier)
         {
             _speedMultiplier = Mathf.Max(0.1f, multiplier);
+        }
+
+        public int ResolveDistanceTier(float xPosition)
+        {
+            var tierCap = Mathf.Max(1, DistanceTierCap);
+            if (tierCap <= 1)
+            {
+                return 1;
+            }
+
+            var minX = Mathf.Min(_xBounds.x, _xBounds.y);
+            var maxX = Mathf.Max(_xBounds.x, _xBounds.y);
+            if (Mathf.Approximately(minX, maxX))
+            {
+                return 1;
+            }
+
+            var normalized = Mathf.Clamp01(Mathf.InverseLerp(minX, maxX, xPosition));
+            var tierIndex = Mathf.FloorToInt(normalized * tierCap);
+            return Mathf.Clamp(tierIndex + 1, 1, tierCap);
         }
 
         private void Update()

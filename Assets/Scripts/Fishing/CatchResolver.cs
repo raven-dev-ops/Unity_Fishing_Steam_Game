@@ -69,6 +69,7 @@ namespace RavenDevOps.Fishing.Fishing
         private InputAction _reelAction;
         private bool _toggleReelActive;
         private bool _stateMachineSubscribed;
+        private ShipMovementController _shipMovement;
 
         public event System.Action<bool, FishingFailReason, string> CatchResolved;
 
@@ -138,6 +139,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
+            RefreshDistanceTier();
             UpdateHudTelemetry();
             EnsureCameraController();
             EnsureTutorialController();
@@ -209,6 +211,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            RefreshDistanceTier();
             _targetFish = _spawner.RollFish(_currentDistanceTier, _hook.CurrentDepth);
             var pityActivated = false;
             if (_targetFish == null && _spawner != null && _assistService.TryActivateNoBitePity())
@@ -461,6 +464,35 @@ namespace RavenDevOps.Fishing.Fishing
             _reelAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/Action")
                 : null;
+        }
+
+        private void RefreshDistanceTier()
+        {
+            if (_hook == null)
+            {
+                _currentDistanceTier = 1;
+                return;
+            }
+
+            if (_shipMovement == null)
+            {
+                var shipTransform = _hook.ShipTransform;
+                if (shipTransform != null)
+                {
+                    _shipMovement = shipTransform.GetComponent<ShipMovementController>();
+                }
+
+                if (_shipMovement == null)
+                {
+                    RuntimeServiceRegistry.TryGet(out _shipMovement);
+                }
+            }
+
+            var resolvedTier = _shipMovement != null
+                ? _shipMovement.CurrentDistanceTier
+                : 1;
+            _currentDistanceTier = Mathf.Max(1, resolvedTier);
+            _hook.SetDistanceTier(_currentDistanceTier);
         }
 
         private void EnsureCameraController()

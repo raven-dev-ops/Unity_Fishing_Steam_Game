@@ -8,6 +8,7 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
+        [SerializeField] private HookMovementController _hookController;
         [SerializeField] private Vector2 _shipXBounds = new Vector2(-9f, 9f);
         [SerializeField] private Vector2 _hookYBounds = new Vector2(-8f, -1f);
         [SerializeField] private Material _fallbackSkybox;
@@ -67,6 +68,12 @@ namespace RavenDevOps.Fishing.Fishing
             if (_hook == null && RuntimeServiceRegistry.TryGet<HookMovementController>(out var hookController))
             {
                 _hook = hookController.transform;
+                _hookController = hookController;
+            }
+
+            if (_hookController == null && _hook != null)
+            {
+                _hookController = _hook.GetComponent<HookMovementController>();
             }
         }
 
@@ -76,6 +83,10 @@ namespace RavenDevOps.Fishing.Fishing
             var maxX = Mathf.Max(_shipXBounds.x, _shipXBounds.y);
             var minHookY = Mathf.Min(_hookYBounds.x, _hookYBounds.y);
             var maxHookY = Mathf.Max(_hookYBounds.x, _hookYBounds.y);
+            if (_hookController != null)
+            {
+                _hookController.GetWorldDepthBounds(out minHookY, out maxHookY);
+            }
 
             if (_ship != null)
             {

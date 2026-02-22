@@ -26,6 +26,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private string _fishNameToken = "FishingFish";
         [SerializeField] private Vector2 _xBounds = new Vector2(-9.8f, 9.8f);
         [SerializeField] private Vector2 _yBounds = new Vector2(-3.2f, -1.55f);
+        [SerializeField] private bool _dynamicWaterBand = true;
+        [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
+        [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
+        [SerializeField] private float _minBandHeight = 3.4f;
+        [SerializeField] private float _maxBandHeight = 12f;
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
@@ -36,6 +41,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _searchInactive = true;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionSpeedScale = 0.55f;
+        [SerializeField] private Transform _ship;
+        [SerializeField] private Transform _hook;
 
         private readonly List<SwimTrack> _tracks = new List<SwimTrack>(16);
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
@@ -62,6 +69,8 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 return;
             }
+
+            UpdateDynamicWaterBand();
 
             if (_boundTrack != null && (_boundTrack.transform == null || _boundTrack.renderer == null))
             {
@@ -392,6 +401,51 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+        }
+
+        private void UpdateDynamicWaterBand()
+        {
+            if (!_dynamicWaterBand)
+            {
+                return;
+            }
+
+            EnsureAnchors();
+            if (_ship == null)
+            {
+                return;
+            }
+
+            var top = _ship.position.y - Mathf.Abs(_bandTopOffsetBelowShip);
+            var minBand = Mathf.Max(1f, _minBandHeight);
+            var maxBand = Mathf.Max(minBand, _maxBandHeight);
+            var bottom = top - minBand;
+
+            if (_hook != null)
+            {
+                bottom = Mathf.Min(bottom, _hook.position.y - Mathf.Abs(_bandBottomOffsetBelowHook));
+            }
+
+            if (top - bottom > maxBand)
+            {
+                bottom = top - maxBand;
+            }
+
+            _yBounds = new Vector2(bottom, top);
+        }
+
+        private void EnsureAnchors()
+        {
+            if (_ship != null && _hook != null)
+            {
+                return;
+            }
+
+            if (RuntimeServiceRegistry.TryGet<HookMovementController>(out var hookController))
+            {
+                _hook ??= hookController.transform;
+                _ship ??= hookController.ShipTransform;
+            }
         }
     }
 }
