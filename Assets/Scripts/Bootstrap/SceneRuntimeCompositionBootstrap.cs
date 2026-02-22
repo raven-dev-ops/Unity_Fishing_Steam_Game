@@ -119,6 +119,13 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            HideSceneObjects(
+                scene,
+                "TopBadge",
+                "MenuHookL1",
+                "MenuHookL2",
+                "MenuFishR1",
+                "MenuFishR2");
             var canvas = CreateCanvas(root.transform, "MainMenuCanvas", 260);
             CreatePanel(canvas.transform, "MainMenuPanel", new Vector2(0f, 0f), new Vector2(620f, 520f), new Color(0.05f, 0.11f, 0.18f, 0.74f));
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
@@ -236,9 +243,9 @@ namespace RavenDevOps.Fishing.Core
             settingsPanel.SetActive(false);
 
             var exitPanel = CreatePanel(canvas.transform, "ExitPanel", new Vector2(0f, -244f), new Vector2(560f, 176f), new Color(0.11f, 0.08f, 0.08f, 0.90f));
-            CreateText(exitPanel.transform, "ExitPanelText", "Exit game now?\nYour progress is saved automatically.", 20, TextAnchor.MiddleCenter, new Vector2(0f, 40f), new Vector2(520f, 84f));
-            var exitConfirmButton = CreateButton(exitPanel.transform, "ExitConfirmButton", "Exit Game", new Vector2(-112f, -44f), new Vector2(200f, 50f));
-            var exitCancelButton = CreateButton(exitPanel.transform, "ExitCancelButton", "Back", new Vector2(112f, -44f), new Vector2(200f, 50f));
+            CreateText(exitPanel.transform, "ExitPanelText", "Close the game?", 20, TextAnchor.MiddleCenter, new Vector2(0f, 40f), new Vector2(520f, 84f));
+            var exitConfirmButton = CreateButton(exitPanel.transform, "ExitConfirmButton", "Exit", new Vector2(-112f, -44f), new Vector2(200f, 50f));
+            var exitCancelButton = CreateButton(exitPanel.transform, "ExitCancelButton", "Cancel", new Vector2(112f, -44f), new Vector2(200f, 50f));
             exitPanel.SetActive(false);
 
             var controller = GetOrAddComponent<MainMenuController>(root);
@@ -347,6 +354,15 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            HideSceneObjects(
+                scene,
+                "TopBadge",
+                "HarborMarketHook1",
+                "HarborMarketHook2",
+                "HarborMarketFish1",
+                "HarborMarketFish2",
+                "HarborMarketFish3",
+                "HarborShipSide");
             var canvas = CreateCanvas(root.transform, "HarborCanvas", 240);
             var hudRoot = new GameObject("HarborHudRoot");
             hudRoot.transform.SetParent(canvas.transform, worldPositionStays: false);
@@ -358,7 +374,7 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(430f, 430f),
                 new Color(0.05f, 0.10f, 0.18f, 0.82f));
             CreateText(actionPanel.transform, "HarborActionTitle", "Harbor Operations", 30, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(376f, 64f));
-            CreateText(actionPanel.transform, "HarborActionHint", "Select an action from this menu, or move near world markers and press Enter.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
+            CreateText(actionPanel.transform, "HarborActionHint", "Select an action from this menu. Shops and travel are managed from these buttons.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
             var hookButton = CreateButton(actionPanel.transform, "HarborHookShopButton", "Hook Shop", new Vector2(0f, 64f), new Vector2(320f, 52f));
             var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 2f), new Vector2(320f, 52f));
             var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -60f), new Vector2(320f, 52f));
@@ -380,7 +396,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftText(
                 infoPanel.transform,
                 "HarborControls",
-                "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause, use the center menu and shop submenus.",
+                "Harbor: Navigate menu with arrows/WASD, Enter to confirm, Esc to pause. Use center menu and submenus.",
                 16,
                 TextAnchor.UpperLeft,
                 new Vector2(18f, 272f),
@@ -486,9 +502,6 @@ namespace RavenDevOps.Fishing.Core
             aura.transform.localScale = new Vector3(1.95f, 1.24f, 1f);
             aura.SetActive(false);
 
-            var hookObject = FindSceneObject(scene, "HarborMarketHook1");
-            var boatObject = FindSceneObject(scene, "HarborShipSide");
-            var fishObject = FindSceneObject(scene, "HarborMarketFish1");
             var sailObject = FindSceneObject(scene, "DockPlank_0");
             if (sailObject == null)
             {
@@ -497,9 +510,6 @@ namespace RavenDevOps.Fishing.Core
 
             var interactables = new List<WorldInteractable>
             {
-                ConfigureInteractable(hookObject, InteractableType.HookShop, "HookShop_Highlight"),
-                ConfigureInteractable(boatObject, InteractableType.BoatShop, "BoatShop_Highlight"),
-                ConfigureInteractable(fishObject, InteractableType.FishShop, "FishShop_Highlight"),
                 ConfigureInteractable(sailObject, InteractableType.Sail, "Sail_Highlight")
             };
             interactables.RemoveAll(x => x == null);
@@ -1321,6 +1331,29 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return null;
+        }
+
+        private static void HideSceneObjects(Scene scene, params string[] objectNames)
+        {
+            if (!scene.IsValid() || objectNames == null || objectNames.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < objectNames.Length; i++)
+            {
+                var objectName = objectNames[i];
+                if (string.IsNullOrWhiteSpace(objectName))
+                {
+                    continue;
+                }
+
+                var target = FindSceneObject(scene, objectName);
+                if (target != null && target.activeSelf)
+                {
+                    target.SetActive(false);
+                }
+            }
         }
 
         private static Transform FindChildRecursive(Transform root, string targetName)

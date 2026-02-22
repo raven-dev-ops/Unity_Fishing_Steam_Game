@@ -117,7 +117,7 @@ namespace RavenDevOps.Fishing.Core
             BindInteractables();
             BindRuntimeEvents();
             CloseShopMenus(selectMainAction: false);
-            SetStatus("Harbor ready. Move with arrows/WASD and press Enter to interact.");
+            SetStatus("Harbor ready. Use the center menu to access shops and sail.");
             PushActivity("Harbor systems online.");
             RefreshSaveSnapshot();
             RefreshShopMenuDetails();
@@ -737,7 +737,7 @@ namespace RavenDevOps.Fishing.Core
 
             if (interactable == null)
             {
-                _selectionText.text = "Nearby target: none. Move near market stalls or the dock.";
+                _selectionText.text = "Nearby target: none. Use center menu actions for harbor operations.";
                 return;
             }
 
@@ -746,7 +746,7 @@ namespace RavenDevOps.Fishing.Core
                 InteractableType.HookShop => "Nearby target: Hook Shop. Press Enter to upgrade or equip hooks.",
                 InteractableType.BoatShop => "Nearby target: Boat Shop. Press Enter to purchase or equip ships.",
                 InteractableType.FishShop => "Nearby target: Fish Market. Press Enter to sell all fish cargo.",
-                InteractableType.Sail => "Nearby target: Dock. Press Enter to sail to fishing waters.",
+                InteractableType.Sail => "Nearby target: Dock. Press Enter to sail or use Sail Out in the menu.",
                 _ => "Nearby target: Interaction available. Press Enter."
             };
 
