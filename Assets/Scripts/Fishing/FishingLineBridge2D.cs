@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
 {
+    [DefaultExecutionOrder(900)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(LineRenderer))]
     public sealed class FishingLineBridge2D : MonoBehaviour
@@ -83,9 +84,22 @@ namespace RavenDevOps.Fishing.Fishing
             for (var i = 0; i < segments; i++)
             {
                 var t = segments <= 1 ? 0f : i / (segments - 1f);
+                if (i == 0)
+                {
+                    _renderer.SetPosition(i, start);
+                    continue;
+                }
+
+                if (i == segments - 1)
+                {
+                    _renderer.SetPosition(i, end);
+                    continue;
+                }
+
                 var point = Vector3.Lerp(start, end, t);
-                point.y -= Mathf.Sin(t * Mathf.PI) * sag;
-                point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave);
+                var centerWeight = Mathf.Sin(t * Mathf.PI);
+                point.y -= centerWeight * sag;
+                point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave * centerWeight);
                 _renderer.SetPosition(i, point);
             }
         }

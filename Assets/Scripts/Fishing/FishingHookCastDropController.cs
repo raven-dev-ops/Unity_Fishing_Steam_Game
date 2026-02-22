@@ -20,13 +20,20 @@ namespace RavenDevOps.Fishing.Fishing
         private InputAction _moveHookAction;
         private bool _autoDropActive;
         private bool _autoReelActive;
+        private bool _stateMachineSubscribed;
 
         public void Configure(
             FishingActionStateMachine stateMachine,
             HookMovementController hookController,
             Transform ship)
         {
+            if (_stateMachine != stateMachine)
+            {
+                UnsubscribeFromStateMachine();
+            }
+
             _stateMachine = stateMachine;
+            SubscribeToStateMachine();
             _hookController = hookController;
             _ship = ship;
             ApplyStateImmediate();
@@ -48,20 +55,13 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnEnable()
         {
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged += OnStateChanged;
-            }
-
+            SubscribeToStateMachine();
             ApplyStateImmediate();
         }
 
         private void OnDisable()
         {
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged -= OnStateChanged;
-            }
+            UnsubscribeFromStateMachine();
         }
 
         private void Update()
@@ -225,6 +225,29 @@ namespace RavenDevOps.Fishing.Fishing
             _moveHookAction = _inputMapController != null
                 ? _inputMapController.FindAction("Fishing/MoveHook")
                 : null;
+        }
+
+        private void SubscribeToStateMachine()
+        {
+            if (_stateMachineSubscribed || _stateMachine == null || !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            _stateMachine.StateChanged += OnStateChanged;
+            _stateMachineSubscribed = true;
+        }
+
+        private void UnsubscribeFromStateMachine()
+        {
+            if (!_stateMachineSubscribed || _stateMachine == null)
+            {
+                _stateMachineSubscribed = false;
+                return;
+            }
+
+            _stateMachine.StateChanged -= OnStateChanged;
+            _stateMachineSubscribed = false;
         }
     }
 }

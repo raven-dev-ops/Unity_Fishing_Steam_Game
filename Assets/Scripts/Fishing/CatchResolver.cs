@@ -68,6 +68,7 @@ namespace RavenDevOps.Fishing.Fishing
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _reelAction;
         private bool _toggleReelActive;
+        private bool _stateMachineSubscribed;
 
         public event System.Action<bool, FishingFailReason, string> CatchResolved;
 
@@ -77,7 +78,13 @@ namespace RavenDevOps.Fishing.Fishing
             HookMovementController hook,
             MonoBehaviour hudOverlayBehaviour)
         {
+            if (_stateMachine != stateMachine)
+            {
+                UnsubscribeFromStateMachine();
+            }
+
             _stateMachine = stateMachine;
+            SubscribeToStateMachine();
             _spawner = spawner;
             _hook = hook;
             _hudOverlayBehaviour = hudOverlayBehaviour;
@@ -121,18 +128,12 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnEnable()
         {
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged += OnStateChanged;
-            }
+            SubscribeToStateMachine();
         }
 
         private void OnDisable()
         {
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged -= OnStateChanged;
-            }
+            UnsubscribeFromStateMachine();
         }
 
         private void Update()
@@ -630,6 +631,29 @@ namespace RavenDevOps.Fishing.Fishing
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.isPressed;
+        }
+
+        private void SubscribeToStateMachine()
+        {
+            if (_stateMachineSubscribed || _stateMachine == null || !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            _stateMachine.StateChanged += OnStateChanged;
+            _stateMachineSubscribed = true;
+        }
+
+        private void UnsubscribeFromStateMachine()
+        {
+            if (!_stateMachineSubscribed || _stateMachine == null)
+            {
+                _stateMachineSubscribed = false;
+                return;
+            }
+
+            _stateMachine.StateChanged -= OnStateChanged;
+            _stateMachineSubscribed = false;
         }
     }
 }
