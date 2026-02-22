@@ -76,8 +76,10 @@ namespace RavenDevOps.Fishing.Core
             CreatePanel(canvas.transform, "BootPanel", new Vector2(0f, 0f), new Vector2(860f, 360f), new Color(0.05f, 0.08f, 0.14f, 0.72f));
             CreateText(canvas.transform, "BootTitle", "Raven DevOps Fishing", 42, TextAnchor.MiddleCenter, new Vector2(0f, 82f), new Vector2(780f, 92f));
             var status = CreateText(canvas.transform, "BootStatus", "Boot: Press Enter to continue.", 24, TextAnchor.MiddleCenter, new Vector2(0f, -18f), new Vector2(760f, 72f));
+            var selectionAura = CreateSelectionAura(canvas.transform, "BootSelectionAura", new Vector2(248f, 64f));
             var continueButton = CreateButton(canvas.transform, "ContinueButton", "Continue", new Vector2(0f, -114f), new Vector2(220f, 56f));
             continueButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.Cinematic));
+            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(16f, 8f), 24f);
 
             var controller = GetOrAddComponent<BootSceneFlowController>(root);
             controller.Configure(status);
@@ -96,8 +98,10 @@ namespace RavenDevOps.Fishing.Core
             CreatePanel(canvas.transform, "CinematicPanel", new Vector2(0f, -180f), new Vector2(940f, 230f), new Color(0.04f, 0.07f, 0.16f, 0.68f));
             CreateText(canvas.transform, "CinematicTitle", "Opening Voyage", 34, TextAnchor.MiddleCenter, new Vector2(0f, -142f), new Vector2(840f, 68f));
             var status = CreateText(canvas.transform, "CinematicStatus", "Cinematic: Enter/Esc to skip.", 22, TextAnchor.MiddleCenter, new Vector2(0f, -196f), new Vector2(840f, 56f));
+            var selectionAura = CreateSelectionAura(canvas.transform, "CinematicSelectionAura", new Vector2(176f, 56f));
             var skipButton = CreateButton(canvas.transform, "SkipCinematicButton", "Skip", new Vector2(360f, -196f), new Vector2(150f, 48f));
             skipButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.MainMenu));
+            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(14f, 6f), 24f);
 
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
             controller.Configure(status);
@@ -115,6 +119,7 @@ namespace RavenDevOps.Fishing.Core
             var canvas = CreateCanvas(root.transform, "MainMenuCanvas", 260);
             CreatePanel(canvas.transform, "MainMenuPanel", new Vector2(0f, 0f), new Vector2(620f, 520f), new Color(0.05f, 0.11f, 0.18f, 0.74f));
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
+            var selectionAura = CreateSelectionAura(canvas.transform, "MainMenuSelectionAura", new Vector2(336f, 72f));
 
             var startButton = CreateButton(canvas.transform, "StartButton", "Start Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
             var profileButton = CreateButton(canvas.transform, "ProfileButton", "Profile", new Vector2(0f, 20f), new Vector2(300f, 56f));
@@ -129,6 +134,12 @@ namespace RavenDevOps.Fishing.Core
             CreateText(settingsPanel.transform, "SettingsPanelText", "Settings panel is active.\nUse Esc to return.", 20, TextAnchor.MiddleCenter, Vector2.zero, new Vector2(520f, 94f));
             settingsPanel.SetActive(false);
 
+            var exitPanel = CreatePanel(canvas.transform, "ExitPanel", new Vector2(0f, -244f), new Vector2(560f, 176f), new Color(0.11f, 0.08f, 0.08f, 0.90f));
+            CreateText(exitPanel.transform, "ExitPanelText", "Exit game now?\nYour progress is saved automatically.", 20, TextAnchor.MiddleCenter, new Vector2(0f, 40f), new Vector2(520f, 84f));
+            var exitConfirmButton = CreateButton(exitPanel.transform, "ExitConfirmButton", "Exit Game", new Vector2(-112f, -44f), new Vector2(200f, 50f));
+            var exitCancelButton = CreateButton(exitPanel.transform, "ExitCancelButton", "Back", new Vector2(112f, -44f), new Vector2(200f, 50f));
+            exitPanel.SetActive(false);
+
             var controller = GetOrAddComponent<MainMenuController>(root);
             controller.Configure(
                 startButton.gameObject,
@@ -136,12 +147,18 @@ namespace RavenDevOps.Fishing.Core
                 settingsButton.gameObject,
                 exitButton.gameObject,
                 profilePanel,
-                settingsPanel);
+                settingsPanel,
+                exitPanel,
+                exitConfirmButton.gameObject,
+                exitCancelButton.gameObject);
 
             startButton.onClick.AddListener(controller.StartGame);
             profileButton.onClick.AddListener(controller.OpenProfile);
             settingsButton.onClick.AddListener(controller.OpenSettings);
-            exitButton.onClick.AddListener(controller.ExitGame);
+            exitButton.onClick.AddListener(controller.OpenExitPanel);
+            exitConfirmButton.onClick.AddListener(controller.ConfirmExit);
+            exitCancelButton.onClick.AddListener(controller.CancelExit);
+            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(20f, 10f), 26f);
 
             if (EventSystem.current != null)
             {
@@ -188,9 +205,9 @@ namespace RavenDevOps.Fishing.Core
             SceneManager.MoveGameObjectToScene(aura, scene);
             var auraRenderer = aura.AddComponent<SpriteRenderer>();
             auraRenderer.sprite = GetSolidSprite();
-            auraRenderer.color = new Color(1f, 0.93f, 0.55f, 0.34f);
+            auraRenderer.color = new Color(1f, 0.87f, 0.22f, 0.46f);
             auraRenderer.sortingOrder = 60;
-            aura.transform.localScale = new Vector3(1.7f, 1.0f, 1f);
+            aura.transform.localScale = new Vector3(1.95f, 1.24f, 1f);
             aura.SetActive(false);
 
             var hookObject = FindSceneObject(scene, "HarborMarketHook1");
@@ -265,6 +282,7 @@ namespace RavenDevOps.Fishing.Core
             var pauseSettingsPanel = CreatePanel(pauseRoot.transform, "PauseSettingsPanel", new Vector2(0f, -102f), new Vector2(360f, 82f), new Color(0.1f, 0.14f, 0.2f, 0.88f));
             CreateText(pauseSettingsPanel.transform, "PauseSettingsText", "Settings preview. Press Esc to resume.", 16, TextAnchor.MiddleCenter, Vector2.zero, new Vector2(320f, 64f));
             pauseSettingsPanel.SetActive(false);
+            var pauseSelectionAura = CreateSelectionAura(pauseRoot.transform, "PauseSelectionAura", new Vector2(284f, 56f));
 
             var resumeButton = CreateButton(pauseRoot.transform, "ResumeButton", "Resume", new Vector2(0f, 40f), new Vector2(250f, 48f));
             var harborButton = CreateButton(pauseRoot.transform, "HarborButton", "Return Harbor", new Vector2(0f, -16f), new Vector2(250f, 48f));
@@ -323,6 +341,7 @@ namespace RavenDevOps.Fishing.Core
             harborButton.onClick.AddListener(pauseMenu.OnTownHarborPressed);
             settingsButton.onClick.AddListener(pauseMenu.OnSettingsPressed);
             exitButton.onClick.AddListener(pauseMenu.OnExitGamePressed);
+            AttachSelectionAura(canvas.gameObject, pauseSelectionAura, new Vector2(16f, 8f), 24f);
         }
 
         private static GameObject GetOrCreateRuntimeRoot(Scene scene)
@@ -392,6 +411,41 @@ namespace RavenDevOps.Fishing.Core
             var image = panel.AddComponent<Image>();
             image.color = color;
             return panel;
+        }
+
+        private static RectTransform CreateSelectionAura(Transform parent, string name, Vector2 size)
+        {
+            var aura = new GameObject(name);
+            aura.transform.SetParent(parent, worldPositionStays: false);
+
+            var rect = aura.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+
+            var image = aura.AddComponent<Image>();
+            image.color = new Color(1f, 0.84f, 0.26f, 0.14f);
+            image.raycastTarget = false;
+
+            var outline = aura.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.90f, 0.45f, 0.90f);
+            outline.effectDistance = new Vector2(3f, 3f);
+            outline.useGraphicAlpha = true;
+
+            aura.SetActive(false);
+            return rect;
+        }
+
+        private static void AttachSelectionAura(GameObject host, RectTransform auraTransform, Vector2 padding, float followSpeed)
+        {
+            if (host == null || auraTransform == null)
+            {
+                return;
+            }
+
+            var follower = GetOrAddComponent<SelectionAuraFollower>(host);
+            follower.Configure(auraTransform, padding, followSpeed);
         }
 
         private static Text CreateText(
@@ -487,6 +541,7 @@ namespace RavenDevOps.Fishing.Core
 
             var labelText = CreateText(go.transform, "Label", label, 22, TextAnchor.MiddleCenter, Vector2.zero, size - new Vector2(12f, 8f));
             labelText.color = Color.white;
+            labelText.raycastTarget = false;
 
             return button;
         }
@@ -549,10 +604,10 @@ namespace RavenDevOps.Fishing.Core
                 var highlightGo = new GameObject(highlightName);
                 highlightGo.transform.SetParent(target.transform, worldPositionStays: false);
                 highlightGo.transform.localPosition = Vector3.zero;
-                highlightGo.transform.localScale = new Vector3(1.25f, 1.25f, 1f);
+                highlightGo.transform.localScale = new Vector3(1.40f, 1.40f, 1f);
                 var renderer = highlightGo.AddComponent<SpriteRenderer>();
                 renderer.sprite = ResolveHighlightSprite(target);
-                renderer.color = new Color(1f, 0.92f, 0.48f, 0.5f);
+                renderer.color = new Color(1f, 0.88f, 0.26f, 0.70f);
                 var targetRenderer = target.GetComponent<SpriteRenderer>();
                 renderer.sortingOrder = targetRenderer != null ? targetRenderer.sortingOrder + 1 : 90;
                 highlight = highlightGo.transform;

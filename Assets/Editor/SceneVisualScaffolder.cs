@@ -224,7 +224,7 @@ namespace RavenDevOps.Fishing.EditorTools
                     break;
             }
 
-            CreateSprite(
+            var farBackdrop = CreateSprite(
                 "BackdropFar",
                 bg,
                 new Vector3(0f, 0f, 0f),
@@ -235,7 +235,7 @@ namespace RavenDevOps.Fishing.EditorTools
                 0f,
                 false);
 
-            CreateSprite(
+            var veilBackdrop = CreateSprite(
                 "BackdropVeil",
                 bg,
                 new Vector3(0f, -0.15f, 0f),
@@ -245,6 +245,8 @@ namespace RavenDevOps.Fishing.EditorTools
                 root,
                 0f,
                 false);
+            AttachBackdropFit(farBackdrop, 1.04f);
+            AttachBackdropFit(veilBackdrop, 1.02f);
 
             CreateSprite(
                 "TopBadge",
@@ -554,6 +556,22 @@ namespace RavenDevOps.Fishing.EditorTools
             }
         }
 
+        private static void AttachBackdropFit(GameObject spriteObject, float scaleMultiplier)
+        {
+            if (spriteObject == null)
+            {
+                return;
+            }
+
+            var fit = spriteObject.GetComponent<SceneBackdropFit2D>();
+            if (fit == null)
+            {
+                fit = spriteObject.AddComponent<SceneBackdropFit2D>();
+            }
+
+            fit.Configure(scaleMultiplier, true);
+        }
+
         private static Sprite ResolveBackdropSprite(string sceneName)
         {
             switch (sceneName)
@@ -693,7 +711,7 @@ namespace RavenDevOps.Fishing.EditorTools
             return null;
         }
 
-        private static void CreateSprite(
+        private static GameObject CreateSprite(
             string objectName,
             Sprite sprite,
             Vector3 position,
@@ -706,7 +724,7 @@ namespace RavenDevOps.Fishing.EditorTools
         {
             if (sprite == null)
             {
-                return;
+                return null;
             }
 
             var go = new GameObject(objectName);
@@ -724,6 +742,7 @@ namespace RavenDevOps.Fishing.EditorTools
             renderer.sortingOrder = sortingOrder;
             renderer.color = color;
             renderer.flipX = flipX;
+            return go;
         }
     }
 }

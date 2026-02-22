@@ -15,6 +15,9 @@ namespace RavenDevOps.Fishing.UI
 
         [SerializeField] private GameObject _profilePanel;
         [SerializeField] private GameObject _settingsPanel;
+        [SerializeField] private GameObject _exitPanel;
+        [SerializeField] private GameObject _exitConfirmButton;
+        [SerializeField] private GameObject _exitCancelButton;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private InputActionMapController _inputMapController;
 
@@ -27,7 +30,10 @@ namespace RavenDevOps.Fishing.UI
             GameObject settingsButton,
             GameObject exitButton,
             GameObject profilePanel,
-            GameObject settingsPanel)
+            GameObject settingsPanel,
+            GameObject exitPanel = null,
+            GameObject exitConfirmButton = null,
+            GameObject exitCancelButton = null)
         {
             _startButton = startButton;
             _profileButton = profileButton;
@@ -35,6 +41,9 @@ namespace RavenDevOps.Fishing.UI
             _exitButton = exitButton;
             _profilePanel = profilePanel;
             _settingsPanel = settingsPanel;
+            _exitPanel = exitPanel;
+            _exitConfirmButton = exitConfirmButton;
+            _exitCancelButton = exitCancelButton;
         }
 
         private void Awake()
@@ -46,8 +55,7 @@ namespace RavenDevOps.Fishing.UI
         private void OnEnable()
         {
             SetSelected(_startButton);
-            SetPanel(_profilePanel, false);
-            SetPanel(_settingsPanel, false);
+            HideSubmenus();
         }
 
         private void Update()
@@ -61,8 +69,7 @@ namespace RavenDevOps.Fishing.UI
 
             if (_cancelAction != null && _cancelAction.WasPressedThisFrame())
             {
-                SetPanel(_profilePanel, false);
-                SetPanel(_settingsPanel, false);
+                HideSubmenus();
                 SetSelected(_startButton);
             }
         }
@@ -90,7 +97,19 @@ namespace RavenDevOps.Fishing.UI
 
             if (selected == _exitButton)
             {
-                ExitGame();
+                OpenExitPanel();
+                return;
+            }
+
+            if (selected == _exitConfirmButton)
+            {
+                ConfirmExit();
+                return;
+            }
+
+            if (selected == _exitCancelButton)
+            {
+                CancelExit();
             }
         }
 
@@ -101,19 +120,50 @@ namespace RavenDevOps.Fishing.UI
 
         public void OpenProfile()
         {
-            SetPanel(_profilePanel, true);
-            SetPanel(_settingsPanel, false);
+            ShowSingleSubmenu(_profilePanel);
         }
 
         public void OpenSettings()
         {
-            SetPanel(_settingsPanel, true);
-            SetPanel(_profilePanel, false);
+            ShowSingleSubmenu(_settingsPanel);
+        }
+
+        public void OpenExitPanel()
+        {
+            ShowSingleSubmenu(_exitPanel);
+            if (_exitCancelButton != null)
+            {
+                SetSelected(_exitCancelButton);
+            }
         }
 
         public void ExitGame()
         {
+            ConfirmExit();
+        }
+
+        public void ConfirmExit()
+        {
             _orchestrator?.RequestExitGame();
+        }
+
+        public void CancelExit()
+        {
+            HideSubmenus();
+            SetSelected(_exitButton);
+        }
+
+        private void HideSubmenus()
+        {
+            SetPanel(_profilePanel, false);
+            SetPanel(_settingsPanel, false);
+            SetPanel(_exitPanel, false);
+        }
+
+        private void ShowSingleSubmenu(GameObject panel)
+        {
+            HideSubmenus();
+            SetPanel(panel, true);
         }
 
         private static void SetPanel(GameObject panel, bool active)
@@ -121,6 +171,10 @@ namespace RavenDevOps.Fishing.UI
             if (panel != null)
             {
                 panel.SetActive(active);
+                if (active)
+                {
+                    panel.transform.SetAsLastSibling();
+                }
             }
         }
 
