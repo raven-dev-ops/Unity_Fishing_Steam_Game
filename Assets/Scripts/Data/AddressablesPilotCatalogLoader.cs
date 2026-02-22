@@ -12,6 +12,26 @@ namespace RavenDevOps.Fishing.Data
 {
     public sealed class AddressablesPilotCatalogLoader : MonoBehaviour
     {
+        private static readonly string[] RequiredPhaseTwoAudioKeys =
+        {
+            "menu_music_loop",
+            "harbor_music_loop",
+            "fishing_music_loop",
+            "sfx_ui_navigate",
+            "sfx_ui_select",
+            "sfx_ui_cancel",
+            "sfx_cast",
+            "sfx_hooked",
+            "sfx_catch",
+            "sfx_sell",
+            "sfx_purchase",
+            "sfx_depart",
+            "sfx_return"
+        };
+
+        private const string RequiredPhaseTwoSkyboxKey = "fishing_skybox";
+        private const int GeneratedAudioSampleRate = 22050;
+
         [SerializeField] private bool _useAddressablesWhenAvailable = true;
         [SerializeField] private string _fishDefinitionsLabel = "pilot/fish-definitions";
         [SerializeField] private string _fishResourcesFallbackPath = "Pilot/FishDefinitions";
@@ -35,6 +55,8 @@ namespace RavenDevOps.Fishing.Data
         private bool _phaseTwoEnvironmentLoadUsedFallback;
         private string _phaseTwoAudioLoadError = string.Empty;
         private string _phaseTwoEnvironmentLoadError = string.Empty;
+        private readonly List<AudioClip> _generatedPhaseTwoAudioClips = new List<AudioClip>();
+        private readonly List<Material> _generatedPhaseTwoEnvironmentMaterials = new List<Material>();
 
         public bool IsAddressablesRuntimeAvailable
         {
@@ -110,6 +132,11 @@ namespace RavenDevOps.Fishing.Data
         public bool TryGetPhaseTwoEnvironmentMaterial(string key, out Material material)
         {
             return _phaseTwoEnvironmentByKey.TryGetValue(NormalizeLookupKey(key), out material) && material != null;
+        }
+
+        private void OnDestroy()
+        {
+            DisposeGeneratedFallbackAssets();
         }
 
         private IEnumerator LoadFishDefinitionsRoutine(Action<List<FishDefinitionSO>> onCompleted)
@@ -235,6 +262,12 @@ namespace RavenDevOps.Fishing.Data
                             results.Add(fallback[i]);
                         }
                     }
+
+                    var generatedFallback = EnsurePhaseTwoAudioFallbackCoverage(results);
+                    if (generatedFallback && string.IsNullOrWhiteSpace(loadError))
+                    {
+                        loadError = "fallback_generated";
+                    }
                 }
             }
 
@@ -311,6 +344,12 @@ namespace RavenDevOps.Fishing.Data
                         {
                             results.Add(fallback[i]);
                         }
+                    }
+
+                    var generatedFallback = EnsurePhaseTwoEnvironmentFallbackCoverage(results);
+                    if (generatedFallback && string.IsNullOrWhiteSpace(loadError))
+                    {
+                        loadError = "fallback_generated";
                     }
                 }
             }
@@ -450,6 +489,204 @@ namespace RavenDevOps.Fishing.Data
             }
 
             return snapshot;
+        }
+
+        private bool EnsurePhaseTwoAudioFallbackCoverage(List<AudioClip> clips)
+        {
+            if (clips == null)
+            {
+                return false;
+            }
+
+            var generatedAny = false;
+            var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < clips.Count; i++)
+            {
+                var clip = clips[i];
+                if (clip != null && !string.IsNullOrWhiteSpace(clip.name))
+                {
+                    present.Add(NormalizeLookupKey(clip.name));
+                }
+            }
+
+            for (var i = 0; i < RequiredPhaseTwoAudioKeys.Length; i++)
+            {
+                var key = RequiredPhaseTwoAudioKeys[i];
+                if (present.Contains(NormalizeLookupKey(key)))
+                {
+                    continue;
+                }
+
+                var generatedClip = CreateGeneratedPhaseTwoAudioClip(key, i);
+                if (generatedClip == null)
+                {
+                    continue;
+                }
+
+                clips.Add(generatedClip);
+                present.Add(NormalizeLookupKey(key));
+                _generatedPhaseTwoAudioClips.Add(generatedClip);
+                generatedAny = true;
+            }
+
+            return generatedAny;
+        }
+
+        private bool EnsurePhaseTwoEnvironmentFallbackCoverage(List<Material> materials)
+        {
+            if (materials == null)
+            {
+                return false;
+            }
+
+            var requiredKey = NormalizeLookupKey(RequiredPhaseTwoSkyboxKey);
+            for (var i = 0; i < materials.Count; i++)
+            {
+                var material = materials[i];
+                if (material == null || string.IsNullOrWhiteSpace(material.name))
+                {
+                    continue;
+                }
+
+                if (NormalizeLookupKey(material.name) == requiredKey)
+                {
+                    return false;
+                }
+            }
+
+            var generatedMaterial = CreateGeneratedPhaseTwoSkyboxMaterial(RequiredPhaseTwoSkyboxKey);
+            if (generatedMaterial == null)
+            {
+                return false;
+            }
+
+            materials.Add(generatedMaterial);
+            _generatedPhaseTwoEnvironmentMaterials.Add(generatedMaterial);
+            return true;
+        }
+
+        private static AudioClip CreateGeneratedPhaseTwoAudioClip(string key, int index)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            var normalized = NormalizeLookupKey(key);
+            var durationSeconds = normalized.Contains("music_loop", StringComparison.OrdinalIgnoreCase) ? 1.8f : 0.18f;
+            var sampleCount = Mathf.Max(256, Mathf.RoundToInt(durationSeconds * GeneratedAudioSampleRate));
+            var frequency = ResolveGeneratedToneFrequency(index);
+            var amplitude = normalized.Contains("music_loop", StringComparison.OrdinalIgnoreCase) ? 0.04f : 0.06f;
+            var samples = new float[sampleCount];
+            for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+            {
+                var phase = sampleIndex / (float)GeneratedAudioSampleRate;
+                samples[sampleIndex] = Mathf.Sin(2f * Mathf.PI * frequency * phase) * amplitude;
+            }
+
+            var clip = AudioClip.Create(key, sampleCount, 1, GeneratedAudioSampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private static float ResolveGeneratedToneFrequency(int index)
+        {
+            var tones = new[]
+            {
+                261.63f,
+                293.66f,
+                329.63f,
+                349.23f,
+                392.0f,
+                440.0f,
+                493.88f
+            };
+
+            return tones[Mathf.Abs(index) % tones.Length];
+        }
+
+        private static Material CreateGeneratedPhaseTwoSkyboxMaterial(string materialName)
+        {
+            Shader shader = null;
+            var shaderCandidates = new[]
+            {
+                "Skybox/Procedural",
+                "Skybox/Panoramic",
+                "Universal Render Pipeline/Unlit",
+                "Unlit/Color",
+                "Sprites/Default"
+            };
+
+            for (var i = 0; i < shaderCandidates.Length; i++)
+            {
+                shader = Shader.Find(shaderCandidates[i]);
+                if (shader != null)
+                {
+                    break;
+                }
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            var material = new Material(shader)
+            {
+                name = materialName
+            };
+
+            if (material.HasProperty("_SkyTint"))
+            {
+                material.SetColor("_SkyTint", new Color(0.27f, 0.58f, 0.92f, 1f));
+            }
+
+            if (material.HasProperty("_GroundColor"))
+            {
+                material.SetColor("_GroundColor", new Color(0.18f, 0.22f, 0.25f, 1f));
+            }
+
+            if (material.HasProperty("_Tint"))
+            {
+                material.SetColor("_Tint", new Color(0.42f, 0.69f, 0.95f, 1f));
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", new Color(0.42f, 0.69f, 0.95f, 1f));
+            }
+
+            if (material.HasProperty("_Exposure"))
+            {
+                material.SetFloat("_Exposure", 1.1f);
+            }
+
+            return material;
+        }
+
+        private void DisposeGeneratedFallbackAssets()
+        {
+            for (var i = 0; i < _generatedPhaseTwoAudioClips.Count; i++)
+            {
+                var clip = _generatedPhaseTwoAudioClips[i];
+                if (clip != null)
+                {
+                    Destroy(clip);
+                }
+            }
+
+            _generatedPhaseTwoAudioClips.Clear();
+
+            for (var i = 0; i < _generatedPhaseTwoEnvironmentMaterials.Count; i++)
+            {
+                var material = _generatedPhaseTwoEnvironmentMaterials[i];
+                if (material != null)
+                {
+                    Destroy(material);
+                }
+            }
+
+            _generatedPhaseTwoEnvironmentMaterials.Clear();
         }
 
         private static string NormalizeLookupKey(string key)

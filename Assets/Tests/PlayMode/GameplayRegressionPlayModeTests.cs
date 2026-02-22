@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
@@ -242,6 +243,37 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(SteamBootstrap.LastFallbackReason, Does.Contain("STEAMWORKS_NET"));
             Assert.That(cloudSync.LastConflictDecision, Is.EqualTo(string.Empty));
 #endif
+        }
+
+        [UnityTest]
+        public IEnumerator PhaseTwoFallbackContent_LoadsRequiredAudioAndEnvironmentKeys()
+        {
+            var root = new GameObject("CatalogService_PhaseTwoFallback");
+            _createdRoots.Add(root);
+            root.AddComponent<AddressablesPilotCatalogLoader>();
+            var catalogService = root.AddComponent<CatalogService>();
+
+            var timeoutAt = Time.realtimeSinceStartup + 5f;
+            while ((!catalogService.PhaseTwoAudioLoadCompleted || !catalogService.PhaseTwoEnvironmentLoadCompleted) &&
+                   Time.realtimeSinceStartup < timeoutAt)
+            {
+                yield return null;
+            }
+
+            Assert.That(catalogService.PhaseTwoAudioLoadCompleted, Is.True, "Expected phase-two audio load to complete.");
+            Assert.That(catalogService.PhaseTwoEnvironmentLoadCompleted, Is.True, "Expected phase-two environment load to complete.");
+            Assert.That(
+                catalogService.TryGetPhaseTwoAudioClip("menu_music_loop", out var menuMusic) && menuMusic != null,
+                Is.True,
+                "Expected fallback menu music key to resolve.");
+            Assert.That(
+                catalogService.TryGetPhaseTwoAudioClip("sfx_cast", out var castSfx) && castSfx != null,
+                Is.True,
+                "Expected fallback cast SFX key to resolve.");
+            Assert.That(
+                catalogService.TryGetPhaseTwoEnvironmentMaterial("fishing_skybox", out var skybox) && skybox != null,
+                Is.True,
+                "Expected fallback fishing skybox key to resolve.");
         }
 
         private T CreateComponent<T>(string rootName) where T : Component
