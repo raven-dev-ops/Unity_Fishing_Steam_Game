@@ -406,7 +406,7 @@ namespace RavenDevOps.Fishing.Core
             var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 2f), new Vector2(320f, 52f));
             var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -60f), new Vector2(320f, 52f));
             var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -122f), new Vector2(320f, 52f));
-            var pauseButton = CreateButton(actionPanel.transform, "HarborPauseButton", "Pause", new Vector2(0f, -184f), new Vector2(320f, 50f));
+            var exitButton = CreateButton(actionPanel.transform, "HarborExitButton", "Exit", new Vector2(0f, -184f), new Vector2(320f, 50f));
 
             var infoPanel = CreateTopRightPanel(
                 hudRoot.transform,
@@ -640,13 +640,13 @@ namespace RavenDevOps.Fishing.Core
             boatBackButton.onClick.AddListener(router.OnShopBackRequested);
             fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
             fishBackButton.onClick.AddListener(router.OnShopBackRequested);
-            pauseButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
 
             var pauseController = GetOrAddComponent<HarborPauseMenuController>(root);
             pauseController.Configure(
                 pauseRoot,
                 hudRoot,
                 pauseResumeButton.gameObject);
+            exitButton.onClick.AddListener(pauseController.OnExitGamePressed);
             pauseResumeButton.onClick.AddListener(pauseController.OnResumePressed);
             pauseMainMenuButton.onClick.AddListener(pauseController.OnMainMenuPressed);
             pauseExitButton.onClick.AddListener(pauseController.OnExitGamePressed);

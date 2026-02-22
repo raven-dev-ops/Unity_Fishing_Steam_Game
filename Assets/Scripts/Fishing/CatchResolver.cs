@@ -29,6 +29,8 @@ namespace RavenDevOps.Fishing.Fishing
 
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _minimumFishSpawnDepth = 20f;
+        [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
+        [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
         [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
@@ -69,6 +71,10 @@ namespace RavenDevOps.Fishing.Fishing
         private FishDefinition _targetFish;
         private FishDefinition _hookedFish;
         private float _biteTimerSeconds;
+        private float _hookStationaryElapsedSeconds;
+        private float _hookStationaryDelaySeconds;
+        private Vector3 _lastHookPosition;
+        private bool _hasRecordedHookPositionForStationaryCheck;
         private float _inWaterElapsedSeconds;
         private float _hookedElapsedSeconds;
         private bool _catchSucceeded;
@@ -226,6 +232,7 @@ namespace RavenDevOps.Fishing.Fishing
             _reelEscapeTimeRemaining = 0f;
             _biteSelectionResolvedForCurrentDrop = false;
             _biteApproachStarted = false;
+            ResetHookStationaryAttractionTimer(reseedDelay: true);
             _ambientFishController?.ResolveBoundFish(caught: false);
 
             _hudOverlay?.SetFishingFailure(string.Empty);
@@ -332,6 +339,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _biteSelectionResolvedForCurrentDrop = false;
                 _biteApproachStarted = false;
                 _inWaterElapsedSeconds = 0f;
+                ResetHookStationaryAttractionTimer(reseedDelay: true);
                 _hudOverlay?.SetFishingStatus("Adjusting cast depth. Use Down/S to lower deeper.");
                 return;
             }
@@ -350,8 +358,14 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            UpdateHookStationaryAttractionTimer();
             _inWaterElapsedSeconds += Time.deltaTime;
             if (_inWaterElapsedSeconds < _biteTimerSeconds)
+            {
+                return;
+            }
+
+            if (!HasSatisfiedHookStationaryAttractionDelay())
             {
                 return;
             }
@@ -761,6 +775,7 @@ namespace RavenDevOps.Fishing.Fishing
             _biteTimerSeconds = _assistService.ApplyPityDelayScale(_biteTimerSeconds, pityActivated);
             _inWaterElapsedSeconds = 0f;
             _biteApproachStarted = false;
+            ResetHookStationaryAttractionTimer(reseedDelay: true);
             if (pityActivated)
             {
                 _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: activity increased. Waiting for a bite...");
@@ -799,6 +814,65 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return _ambientFishController.IsBoundFishApproachComplete();
+        }
+
+        private void UpdateHookStationaryAttractionTimer()
+        {
+            if (_hook == null)
+            {
+                _hookStationaryElapsedSeconds = 0f;
+                _hasRecordedHookPositionForStationaryCheck = false;
+                return;
+            }
+
+            var currentPosition = _hook.transform.position;
+            if (!_hasRecordedHookPositionForStationaryCheck)
+            {
+                _lastHookPosition = currentPosition;
+                _hasRecordedHookPositionForStationaryCheck = true;
+                return;
+            }
+
+            var movementThreshold = Mathf.Max(0.0001f, _hookStationaryMovementThreshold);
+            var movedDistance = Vector3.Distance(currentPosition, _lastHookPosition);
+            if (movedDistance > movementThreshold)
+            {
+                ResetHookStationaryAttractionTimer(reseedDelay: true);
+                _lastHookPosition = currentPosition;
+                _hasRecordedHookPositionForStationaryCheck = true;
+                return;
+            }
+
+            _hookStationaryElapsedSeconds += Time.deltaTime;
+            _lastHookPosition = currentPosition;
+        }
+
+        private bool HasSatisfiedHookStationaryAttractionDelay()
+        {
+            return _hookStationaryElapsedSeconds >= Mathf.Max(0f, _hookStationaryDelaySeconds);
+        }
+
+        private void ResetHookStationaryAttractionTimer(bool reseedDelay)
+        {
+            if (reseedDelay || _hookStationaryDelaySeconds <= 0f)
+            {
+                _hookStationaryDelaySeconds = ResolveHookStationaryAttractionDelaySeconds();
+            }
+
+            _hookStationaryElapsedSeconds = 0f;
+            _hasRecordedHookPositionForStationaryCheck = false;
+        }
+
+        private float ResolveHookStationaryAttractionDelaySeconds()
+        {
+            var minDelaySeconds = Mathf.Max(
+                0f,
+                Mathf.Min(_hookStationaryAttractionDelayRangeSeconds.x, _hookStationaryAttractionDelayRangeSeconds.y));
+            var maxDelaySeconds = Mathf.Max(
+                minDelaySeconds,
+                Mathf.Max(_hookStationaryAttractionDelayRangeSeconds.x, _hookStationaryAttractionDelayRangeSeconds.y));
+            _randomSource ??= new UnityFishingRandomSource();
+            return _randomSource.Range(minDelaySeconds, maxDelaySeconds);
         }
 
         private bool IsCargoFull(out int fishCount, out int cargoCapacity)

@@ -150,6 +150,87 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Object.Destroy(hookGo);
         }
 
+        [UnityTest]
+        public IEnumerator BiteAttraction_RequiresHookToRemainStationary()
+        {
+            var root = new GameObject("FishingControlFlow_StationaryAttraction");
+            var stateMachine = root.AddComponent<FishingActionStateMachine>();
+            var resolver = root.AddComponent<CatchResolver>();
+
+            var ship = new GameObject("FishingControlFlow_StationaryAttraction_Ship").transform;
+            ship.position = Vector3.zero;
+
+            var hookGo = new GameObject("FishingControlFlow_StationaryAttraction_Hook");
+            hookGo.transform.position = new Vector3(0f, -30f, 0f);
+            var hookController = hookGo.AddComponent<HookMovementController>();
+            hookController.ConfigureShipTransform(ship);
+
+            resolver.Configure(stateMachine, null, hookController, null);
+
+            stateMachine.AdvanceByAction();
+            yield return null;
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Expected in-water state after cast.");
+
+            var testFish = new FishDefinition
+            {
+                id = "fish_stationary_delay_test",
+                minDistanceTier = 1,
+                maxDistanceTier = 1,
+                minDepth = 20f,
+                maxDepth = 60f,
+                rarityWeight = 1,
+                baseValue = 10,
+                minBiteDelaySeconds = 0.1f,
+                maxBiteDelaySeconds = 0.1f,
+                fightStamina = 2f,
+                pullIntensity = 1f,
+                escapeSeconds = 1f,
+                minCatchWeightKg = 0.5f,
+                maxCatchWeightKg = 1f
+            };
+
+            SetPrivateField(resolver, "_targetFish", testFish);
+            SetPrivateField(resolver, "_biteSelectionResolvedForCurrentDrop", true);
+            SetPrivateField(resolver, "_biteTimerSeconds", 0f);
+            SetPrivateField(resolver, "_hookStationaryAttractionDelayRangeSeconds", new Vector2(0.25f, 0.25f));
+            SetPrivateField(resolver, "_hookStationaryDelaySeconds", 0.25f);
+            SetPrivateField(resolver, "_hookStationaryElapsedSeconds", 0f);
+            SetPrivateField(resolver, "_hasRecordedHookPositionForStationaryCheck", false);
+
+            var initialWaitEndsAt = Time.realtimeSinceStartup + 0.12f;
+            while (Time.realtimeSinceStartup < initialWaitEndsAt)
+            {
+                yield return null;
+            }
+
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Fish should not hook before stationary delay has elapsed.");
+
+            var movedPosition = hookGo.transform.position;
+            movedPosition.y -= 1f;
+            hookGo.transform.position = movedPosition;
+            yield return null;
+
+            var postMoveWaitEndsAt = Time.realtimeSinceStartup + 0.18f;
+            while (Time.realtimeSinceStartup < postMoveWaitEndsAt)
+            {
+                yield return null;
+            }
+
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Hook movement should reset the attraction delay.");
+
+            var timeoutAt = Time.realtimeSinceStartup + 1.2f;
+            while (stateMachine.State != FishingActionState.Hooked && Time.realtimeSinceStartup < timeoutAt)
+            {
+                yield return null;
+            }
+
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.Hooked), "Fish should hook after the hook remains still for the configured delay.");
+
+            Object.Destroy(root);
+            Object.Destroy(ship.gameObject);
+            Object.Destroy(hookGo);
+        }
+
         private static void SetPrivateField(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

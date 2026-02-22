@@ -169,7 +169,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborBoatShopButton"), Is.Not.Null, "Expected harbor boat shop button.");
             Assert.That(FindSceneObject("HarborFishShopButton"), Is.Not.Null, "Expected harbor fish shop button.");
             Assert.That(FindSceneObject("HarborSailButton"), Is.Not.Null, "Expected harbor sail button.");
-            Assert.That(FindSceneObject("HarborPauseButton"), Is.Not.Null, "Expected harbor pause button.");
+            Assert.That(FindSceneObject("HarborExitButton"), Is.Not.Null, "Expected harbor exit button.");
             Assert.That(FindSceneObject("HarborHookShopPanel"), Is.Not.Null, "Expected harbor hook-shop submenu panel.");
             Assert.That(FindSceneObject("HarborHookShopInfo"), Is.Not.Null, "Expected harbor hook-shop info text.");
             Assert.That(FindSceneObject("HarborHookLv1Button"), Is.Not.Null, "Expected harbor hook lv1 button.");
