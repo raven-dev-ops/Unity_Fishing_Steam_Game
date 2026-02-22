@@ -20,7 +20,6 @@ Persisted keys:
 - Subtitle background opacity
 - Readability boost
 - Steam Rich Presence enabled
-- Mod safe mode enabled (`settings.modSafeModeEnabled`)
 - Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
 
 ## Runtime Integration
@@ -41,11 +40,6 @@ Persisted keys:
   - `Assets/Scripts/Fishing/FishingCameraController.cs` (reduced motion)
 - Steam Rich Presence consumer:
   - `Assets/Scripts/Steam/SteamRichPresenceService.cs`
-- Mod safe mode consumers:
-  - `Assets/Scripts/Data/ModRuntimeCatalogService.cs`
-  - `Assets/Scripts/UI/SettingsMenuController.cs`
-  - `Assets/Scripts/UI/ProfileMenuController.cs`
-  - `Assets/Scripts/UI/ModDiagnosticsPanelController.cs`
 
 ## Display Controls
 - Fullscreen toggle switches between `FullScreenWindow` and `Windowed`.
@@ -62,4 +56,3 @@ Persisted keys:
 4. Toggle subtitles/high-contrast/UI scale and verify immediate + persisted behavior.
 5. Toggle reel mode/reduced motion/readability controls and verify immediate + persisted behavior.
 6. Toggle Steam Rich Presence and verify Steam service respects setting.
-7. Toggle mod safe mode and relaunch to confirm mod runtime starts in safe mode with clear status text.

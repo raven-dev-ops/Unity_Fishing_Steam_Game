@@ -13,7 +13,7 @@
 
 - `RavenDevOps.Fishing.Data`
   - Folder: `Assets/Scripts/Data/`
-  - Scope: content catalogs, addressables pilot loader, mod catalog runtime surface.
+  - Scope: content catalogs and addressables pilot loader.
   - Depends on: `Core`.
 
 - `RavenDevOps.Fishing.Fishing`

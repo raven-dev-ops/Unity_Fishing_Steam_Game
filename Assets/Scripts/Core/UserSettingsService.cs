@@ -5,8 +5,6 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class UserSettingsService : MonoBehaviour
     {
-        public const string ModsSafeModePlayerPrefsKey = "settings.modSafeModeEnabled";
-
         private const string KeyMasterVolume = "settings.masterVolume";
         private const string KeyMusicVolume = "settings.musicVolume";
         private const string KeySfxVolume = "settings.sfxVolume";
@@ -25,7 +23,6 @@ namespace RavenDevOps.Fishing.Core
         private const string KeySubtitleBackgroundOpacity = "settings.subtitleBackgroundOpacity";
         private const string KeyReadabilityBoost = "settings.readabilityBoost";
         private const string KeySteamRichPresenceEnabled = "settings.steamRichPresenceEnabled";
-        private const string KeyModsSafeMode = ModsSafeModePlayerPrefsKey;
 
         private static UserSettingsService _instance;
 
@@ -47,7 +44,6 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private float _subtitleBackgroundOpacity = 0.72f;
         [SerializeField] private bool _readabilityBoost;
         [SerializeField] private bool _steamRichPresenceEnabled = true;
-        [SerializeField] private bool _modSafeModeEnabled;
 
         public static UserSettingsService Instance => _instance;
 
@@ -69,7 +65,6 @@ namespace RavenDevOps.Fishing.Core
         public float SubtitleBackgroundOpacity => _subtitleBackgroundOpacity;
         public bool ReadabilityBoost => _readabilityBoost;
         public bool SteamRichPresenceEnabled => _steamRichPresenceEnabled;
-        public bool ModSafeModeEnabled => _modSafeModeEnabled;
 
         public event Action SettingsChanged;
 
@@ -218,13 +213,6 @@ namespace RavenDevOps.Fishing.Core
             NotifySettingsChanged();
         }
 
-        public void SetModSafeModeEnabled(bool enabled)
-        {
-            _modSafeModeEnabled = enabled;
-            SaveToPrefs();
-            NotifySettingsChanged();
-        }
-
         public Resolution[] GetSupportedResolutions()
         {
             var resolutions = Screen.resolutions;
@@ -275,7 +263,6 @@ namespace RavenDevOps.Fishing.Core
             _subtitleBackgroundOpacity = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySubtitleBackgroundOpacity, 0.72f));
             _readabilityBoost = PlayerPrefs.GetInt(KeyReadabilityBoost, 0) == 1;
             _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
-            _modSafeModeEnabled = PlayerPrefs.GetInt(KeyModsSafeMode, 0) == 1;
 
             var current = Screen.currentResolution;
             _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, current.width);
@@ -303,7 +290,6 @@ namespace RavenDevOps.Fishing.Core
             PlayerPrefs.SetFloat(KeySubtitleBackgroundOpacity, _subtitleBackgroundOpacity);
             PlayerPrefs.SetInt(KeyReadabilityBoost, _readabilityBoost ? 1 : 0);
             PlayerPrefs.SetInt(KeySteamRichPresenceEnabled, _steamRichPresenceEnabled ? 1 : 0);
-            PlayerPrefs.SetInt(KeyModsSafeMode, _modSafeModeEnabled ? 1 : 0);
             PlayerPrefs.Save();
         }
 

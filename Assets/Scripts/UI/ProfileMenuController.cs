@@ -5,7 +5,6 @@ using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Save;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.UI
 {
@@ -20,15 +19,12 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _nextUnlockText;
         [SerializeField] private TMP_Text _objectiveText;
         [SerializeField] private TMP_Text _catchLogText;
-        [SerializeField] private TMP_Text _modSafeModeStatusText;
-        [SerializeField] private Toggle _modSafeModeToggle;
         [SerializeField] private int _maxCatchLogEntries = 8;
 
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private ObjectivesService _objectivesService;
         [SerializeField] private MetaLoopRuntimeService _metaLoopService;
         [SerializeField] private UserSettingsService _settingsService;
-        [SerializeField] private ModRuntimeCatalogService _modCatalogService;
 
         private void Awake()
         {
@@ -36,7 +32,6 @@ namespace RavenDevOps.Fishing.UI
             RuntimeServiceRegistry.Resolve(ref _objectivesService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _modCatalogService, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -50,12 +45,6 @@ namespace RavenDevOps.Fishing.UI
             {
                 _settingsService.SettingsChanged -= OnSettingsChanged;
                 _settingsService.SettingsChanged += OnSettingsChanged;
-            }
-
-            if (_modCatalogService != null)
-            {
-                _modCatalogService.CatalogReloaded -= OnCatalogReloaded;
-                _modCatalogService.CatalogReloaded += OnCatalogReloaded;
             }
 
             if (_metaLoopService != null)
@@ -77,11 +66,6 @@ namespace RavenDevOps.Fishing.UI
             if (_settingsService != null)
             {
                 _settingsService.SettingsChanged -= OnSettingsChanged;
-            }
-
-            if (_modCatalogService != null)
-            {
-                _modCatalogService.CatalogReloaded -= OnCatalogReloaded;
             }
 
             if (_metaLoopService != null)
@@ -136,7 +120,6 @@ namespace RavenDevOps.Fishing.UI
             }
 
             RefreshCatchLogText(save);
-            RefreshModSafeModeStatus();
         }
 
         public void ResetProfile()
@@ -147,12 +130,6 @@ namespace RavenDevOps.Fishing.UI
         public void ResetObjectivesForQa()
         {
             _objectivesService?.ResetObjectiveProgressForQA();
-        }
-
-        public void OnModSafeModeChanged(bool enabled)
-        {
-            _settingsService?.SetModSafeModeEnabled(enabled);
-            RefreshModSafeModeStatus();
         }
 
         private void SetFallbackText()
@@ -166,7 +143,6 @@ namespace RavenDevOps.Fishing.UI
             if (_nextUnlockText != null) _nextUnlockText.text = "Next Unlock: -";
             if (_objectiveText != null) _objectiveText.text = "Objective: -";
             if (_catchLogText != null) _catchLogText.text = "Catch Log: -";
-            RefreshModSafeModeStatus();
         }
 
         private void OnSaveDataChanged(SaveDataV1 data)
@@ -223,39 +199,12 @@ namespace RavenDevOps.Fishing.UI
 
         private void OnSettingsChanged()
         {
-            RefreshModSafeModeStatus();
-        }
-
-        private void OnCatalogReloaded()
-        {
-            RefreshModSafeModeStatus();
+            Refresh();
         }
 
         private void OnMetaLoopUpdated()
         {
             Refresh();
-        }
-
-        private void RefreshModSafeModeStatus()
-        {
-            var safeModePreferenceEnabled = _settingsService != null
-                ? _settingsService.ModSafeModeEnabled
-                : PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
-
-            if (_modSafeModeToggle != null)
-            {
-                _modSafeModeToggle.SetIsOnWithoutNotify(safeModePreferenceEnabled);
-            }
-
-            if (_modSafeModeStatusText != null)
-            {
-                var safeModeActive = _modCatalogService != null && _modCatalogService.SafeModeActive;
-                var safeModeReason = _modCatalogService != null ? _modCatalogService.SafeModeReason : string.Empty;
-                _modSafeModeStatusText.text = ModDiagnosticsTextFormatter.BuildSafeModeStatus(
-                    safeModePreferenceEnabled,
-                    safeModeActive,
-                    safeModeReason);
-            }
         }
 
         private static string FormatTime(string timestampUtc)

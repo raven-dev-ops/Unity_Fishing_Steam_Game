@@ -55,7 +55,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - `Assets/Scripts/Systems/`: flow orchestration and objective systems
 - `Assets/Scripts/Fishing/`: fishing loop runtime systems and domain logic
 - `Assets/Scripts/Economy/`: sell economy and meta-loop systems
-- `Assets/Scripts/Data/`: catalog/content data services and mod merge models
+- `Assets/Scripts/Data/`: catalog/content data services
 - `Assets/Scripts/Save/`: profile/save persistence and migration pipeline
 - `Assets/Scripts/Input/`: input routing, action maps, and rebinding services
 - `Assets/Scripts/UI/`: HUD/menu/settings/presentation controllers
@@ -103,11 +103,6 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - Fishing tutorial flow: `docs/FISHING_TUTORIAL.md`
 - Meta-loop systems: `docs/META_LOOP_SYSTEM.md`
 - Input baseline: `docs/INPUT_MAP.md`
-- Mod support strategy: `docs/MOD_SUPPORT_STRATEGY.md`
-- Mod manifest schema: `docs/MOD_MANIFEST_SCHEMA.md`
-- Mod runtime merge: `docs/MOD_RUNTIME_MERGE.md`
-- Mod packaging guide: `docs/MOD_PACKAGING_GUIDE.md`
-- Mod templates: `mods/templates/`
 - Nightly full regression runbook: `docs/NIGHTLY_FULL_REGRESSION.md`
 - Objectives system: `docs/OBJECTIVES_SYSTEM.md`
 - Memory and Addressables quality gates: `docs/MEMORY_AND_ADDRESSABLES_GATES.md`
@@ -121,7 +116,6 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - Steam Cloud sync: `docs/STEAM_CLOUD_SYNC.md`
 - Steam baseline: `docs/STEAMWORKS_BASELINE.md`
 - Steam release compliance checklist: `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`
-- Steam Workshop feasibility: `docs/STEAM_WORKSHOP_FEASIBILITY.md`
 - Steam rich presence: `docs/STEAM_RICH_PRESENCE.md`
 - SteamPipe upload rehearsal: `docs/STEAMPIPE_UPLOAD_TEST.md`
 - Release ops dry run and hotfix drill: `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md`

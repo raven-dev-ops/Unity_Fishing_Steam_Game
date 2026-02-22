@@ -37,7 +37,6 @@ namespace RavenDevOps.Fishing.Core
             var fallbackCameraService = servicesGo.AddComponent<FallbackCameraService>();
             var saveManager = servicesGo.AddComponent<SaveManager>();
             var addressablesPilotLoader = servicesGo.AddComponent<AddressablesPilotCatalogLoader>();
-            var modCatalogService = servicesGo.AddComponent<ModRuntimeCatalogService>();
             var metaLoopService = servicesGo.AddComponent<MetaLoopRuntimeService>();
             var objectivesService = servicesGo.AddComponent<ObjectivesService>();
             var uiAccessibilityService = servicesGo.AddComponent<GlobalUiAccessibilityService>();
@@ -64,7 +63,6 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Register(fallbackCameraService);
             RuntimeServiceRegistry.Register(saveManager);
             RuntimeServiceRegistry.Register(addressablesPilotLoader);
-            RuntimeServiceRegistry.Register(modCatalogService);
             RuntimeServiceRegistry.Register(metaLoopService);
             RuntimeServiceRegistry.Register(objectivesService);
             RuntimeServiceRegistry.Register(uiAccessibilityService);

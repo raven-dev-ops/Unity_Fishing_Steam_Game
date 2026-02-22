@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using RavenDevOps.Fishing.Core;
-using RavenDevOps.Fishing.Tools;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Data
@@ -12,9 +9,6 @@ namespace RavenDevOps.Fishing.Data
     {
         [SerializeField] private GameConfigSO _gameConfig;
         [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
-        [SerializeField] private ModRuntimeCatalogService _modCatalogService;
-        private static MethodInfo _imageConversionLoadImageMethod;
-        private static bool _imageConversionLookupCompleted;
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, ShipDefinitionSO> _shipById = new Dictionary<string, ShipDefinitionSO>();
@@ -22,7 +16,6 @@ namespace RavenDevOps.Fishing.Data
         private readonly Dictionary<string, FishDefinitionSO> _phaseOneFishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, AudioClip> _phaseTwoAudioById = new Dictionary<string, AudioClip>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Material> _phaseTwoEnvironmentById = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
-        private readonly List<UnityEngine.Object> _generatedRuntimeObjects = new List<UnityEngine.Object>();
         private bool _phaseOneFishLoadRequested;
         private bool _phaseOneFishLoadCompleted;
         private bool _phaseTwoAudioLoadRequested;
@@ -40,8 +33,6 @@ namespace RavenDevOps.Fishing.Data
         {
             RuntimeServiceRegistry.Register(this);
             RuntimeServiceRegistry.Resolve(ref _addressablesPilotLoader, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _modCatalogService, this, warnIfMissing: false);
-            SubscribeToModCatalog();
             RequestPhaseOneFishLoad();
             RequestPhaseTwoAudioLoad();
             RequestPhaseTwoEnvironmentLoad();
@@ -50,29 +41,13 @@ namespace RavenDevOps.Fishing.Data
 
         private void OnDestroy()
         {
-            UnsubscribeFromModCatalog();
-            CleanupGeneratedRuntimeObjects();
             _phaseTwoAudioById.Clear();
             _phaseTwoEnvironmentById.Clear();
             RuntimeServiceRegistry.Unregister(this);
         }
 
-        public void SetModCatalogService(ModRuntimeCatalogService modCatalogService)
-        {
-            if (_modCatalogService == modCatalogService)
-            {
-                return;
-            }
-
-            UnsubscribeFromModCatalog();
-            _modCatalogService = modCatalogService;
-            SubscribeToModCatalog();
-            Rebuild();
-        }
-
         public void Rebuild()
         {
-            CleanupGeneratedRuntimeObjects();
             _fishById.Clear();
             _shipById.Clear();
             _hookById.Clear();
@@ -87,7 +62,6 @@ namespace RavenDevOps.Fishing.Data
             BuildShipCatalog();
             BuildHookCatalog();
             ApplyPhaseOneFishCatalog();
-            ApplyModCatalogOverrides();
         }
 
         public bool TryGetFish(string id, out FishDefinitionSO fish)
@@ -306,251 +280,6 @@ namespace RavenDevOps.Fishing.Data
                 }
 
                 _hookById.Add(hook.id, hook);
-            }
-        }
-
-        private void ApplyModCatalogOverrides()
-        {
-            if (_modCatalogService == null || !_modCatalogService.ModsEnabled)
-            {
-                return;
-            }
-
-            var loadResult = _modCatalogService.LastLoadResult;
-            if (loadResult == null)
-            {
-                return;
-            }
-
-            foreach (var pair in loadResult.fishById)
-            {
-                var existing = _fishById.TryGetValue(pair.Key, out var existingFish) ? existingFish : null;
-                var runtimeFish = BuildRuntimeFishDefinition(pair.Value, existing);
-                if (runtimeFish == null)
-                {
-                    continue;
-                }
-
-                _fishById[pair.Key] = runtimeFish;
-            }
-
-            foreach (var pair in loadResult.shipById)
-            {
-                var existing = _shipById.TryGetValue(pair.Key, out var existingShip) ? existingShip : null;
-                var runtimeShip = BuildRuntimeShipDefinition(pair.Value, existing);
-                if (runtimeShip == null)
-                {
-                    continue;
-                }
-
-                _shipById[pair.Key] = runtimeShip;
-            }
-
-            foreach (var pair in loadResult.hookById)
-            {
-                var existing = _hookById.TryGetValue(pair.Key, out var existingHook) ? existingHook : null;
-                var runtimeHook = BuildRuntimeHookDefinition(pair.Value, existing);
-                if (runtimeHook == null)
-                {
-                    continue;
-                }
-
-                _hookById[pair.Key] = runtimeHook;
-            }
-
-            if (loadResult.acceptedMods.Count > 0)
-            {
-                Debug.Log(
-                    $"CatalogService: applied mod overrides from {loadResult.acceptedMods.Count} pack(s): fish={loadResult.fishById.Count}, ships={loadResult.shipById.Count}, hooks={loadResult.hookById.Count}.");
-            }
-        }
-
-        private FishDefinitionSO BuildRuntimeFishDefinition(ModFishDefinitionData source, FishDefinitionSO fallback)
-        {
-            if (source == null || string.IsNullOrWhiteSpace(source.id))
-            {
-                return null;
-            }
-
-            var fish = CreateRuntimeAsset<FishDefinitionSO>();
-            fish.id = source.id;
-            fish.minDistanceTier = source.minDistanceTier;
-            fish.maxDistanceTier = source.maxDistanceTier;
-            fish.minDepth = source.minDepth;
-            fish.maxDepth = source.maxDepth;
-            fish.rarityWeight = source.rarityWeight;
-            fish.baseValue = source.baseValue;
-            fish.minBiteDelaySeconds = source.minBiteDelaySeconds;
-            fish.maxBiteDelaySeconds = source.maxBiteDelaySeconds;
-            fish.fightStamina = source.fightStamina;
-            fish.pullIntensity = source.pullIntensity;
-            fish.escapeSeconds = source.escapeSeconds;
-            fish.minCatchWeightKg = source.minCatchWeightKg;
-            fish.maxCatchWeightKg = source.maxCatchWeightKg;
-            fish.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
-            return fish;
-        }
-
-        private ShipDefinitionSO BuildRuntimeShipDefinition(ModShipDefinitionData source, ShipDefinitionSO fallback)
-        {
-            if (source == null || string.IsNullOrWhiteSpace(source.id))
-            {
-                return null;
-            }
-
-            var ship = CreateRuntimeAsset<ShipDefinitionSO>();
-            ship.id = source.id;
-            ship.price = source.price;
-            ship.maxDistanceTier = source.maxDistanceTier;
-            ship.moveSpeed = source.moveSpeed;
-            ship.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
-            return ship;
-        }
-
-        private HookDefinitionSO BuildRuntimeHookDefinition(ModHookDefinitionData source, HookDefinitionSO fallback)
-        {
-            if (source == null || string.IsNullOrWhiteSpace(source.id))
-            {
-                return null;
-            }
-
-            var hook = CreateRuntimeAsset<HookDefinitionSO>();
-            hook.id = source.id;
-            hook.price = source.price;
-            hook.maxDepth = source.maxDepth;
-            hook.icon = ResolveIcon(source.resolvedIconPath, fallback != null ? fallback.icon : null);
-            return hook;
-        }
-
-        private T CreateRuntimeAsset<T>() where T : ScriptableObject
-        {
-            var asset = ScriptableObject.CreateInstance<T>();
-            _generatedRuntimeObjects.Add(asset);
-            return asset;
-        }
-
-        private Sprite ResolveIcon(string resolvedPath, Sprite fallback)
-        {
-            if (string.IsNullOrWhiteSpace(resolvedPath))
-            {
-                return fallback;
-            }
-
-            if (!File.Exists(resolvedPath))
-            {
-                return fallback;
-            }
-
-            try
-            {
-                var bytes = File.ReadAllBytes(resolvedPath);
-                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                if (!TryDecodeTexture(texture, bytes))
-                {
-                    DestroyRuntimeObject(texture);
-                    return fallback;
-                }
-
-                var sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                _generatedRuntimeObjects.Add(texture);
-                _generatedRuntimeObjects.Add(sprite);
-                return sprite;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"CatalogService: failed to load icon at '{resolvedPath}' ({ex.Message}).");
-                return fallback;
-            }
-        }
-
-        private static bool TryDecodeTexture(Texture2D texture, byte[] bytes)
-        {
-            if (texture == null || bytes == null || bytes.Length == 0)
-            {
-                return false;
-            }
-
-            if (!_imageConversionLookupCompleted)
-            {
-                _imageConversionLookupCompleted = true;
-                var imageConversionType = Type.GetType("UnityEngine.ImageConversion, UnityEngine.ImageConversionModule", throwOnError: false);
-                if (imageConversionType != null)
-                {
-                    _imageConversionLoadImageMethod = imageConversionType.GetMethod(
-                        "LoadImage",
-                        BindingFlags.Public | BindingFlags.Static,
-                        binder: null,
-                        types: new[] { typeof(Texture2D), typeof(byte[]), typeof(bool) },
-                        modifiers: null);
-                }
-            }
-
-            if (_imageConversionLoadImageMethod == null)
-            {
-                return false;
-            }
-
-            try
-            {
-                var decodeResult = _imageConversionLoadImageMethod.Invoke(null, new object[] { texture, bytes, false });
-                return decodeResult is bool loaded && loaded;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private void SubscribeToModCatalog()
-        {
-            if (_modCatalogService == null)
-            {
-                return;
-            }
-
-            _modCatalogService.CatalogReloaded -= HandleModCatalogReloaded;
-            _modCatalogService.CatalogReloaded += HandleModCatalogReloaded;
-        }
-
-        private void UnsubscribeFromModCatalog()
-        {
-            if (_modCatalogService == null)
-            {
-                return;
-            }
-
-            _modCatalogService.CatalogReloaded -= HandleModCatalogReloaded;
-        }
-
-        private void HandleModCatalogReloaded()
-        {
-            Rebuild();
-        }
-
-        private void CleanupGeneratedRuntimeObjects()
-        {
-            for (var i = 0; i < _generatedRuntimeObjects.Count; i++)
-            {
-                DestroyRuntimeObject(_generatedRuntimeObjects[i]);
-            }
-
-            _generatedRuntimeObjects.Clear();
-        }
-
-        private static void DestroyRuntimeObject(UnityEngine.Object obj)
-        {
-            if (obj == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(obj);
-            }
-            else
-            {
-                DestroyImmediate(obj);
             }
         }
 

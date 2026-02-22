@@ -25,7 +25,6 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private Toggle _reducedMotionToggle;
         [SerializeField] private Toggle _readabilityBoostToggle;
         [SerializeField] private Toggle _steamRichPresenceToggle;
-        [SerializeField] private Toggle _modSafeModeToggle;
 
         [SerializeField] private TMP_Text _displayModeText;
         [SerializeField] private TMP_Text _resolutionText;
@@ -33,7 +32,6 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private TMP_Text _uiScaleText;
         [SerializeField] private TMP_Text _subtitleScaleText;
         [SerializeField] private TMP_Text _subtitleBackgroundOpacityText;
-        [SerializeField] private TMP_Text _modSafeModeStatusText;
         [SerializeField] private TMP_Text _fishingActionBindingText;
         [SerializeField] private TMP_Text _harborInteractBindingText;
         [SerializeField] private TMP_Text _menuCancelBindingText;
@@ -42,7 +40,6 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private InputRebindingService _inputRebindingService;
-        [SerializeField] private ModRuntimeCatalogService _modCatalogService;
 
         private Resolution[] _resolutions = Array.Empty<Resolution>();
         private int _resolutionIndex;
@@ -52,7 +49,6 @@ namespace RavenDevOps.Fishing.UI
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _modCatalogService, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -63,12 +59,6 @@ namespace RavenDevOps.Fishing.UI
                 _settingsService.SettingsChanged += HandleSettingsChanged;
             }
 
-            if (_modCatalogService != null)
-            {
-                _modCatalogService.CatalogReloaded -= HandleCatalogReloaded;
-                _modCatalogService.CatalogReloaded += HandleCatalogReloaded;
-            }
-
             SyncFromSettings();
         }
 
@@ -77,11 +67,6 @@ namespace RavenDevOps.Fishing.UI
             if (_settingsService != null)
             {
                 _settingsService.SettingsChanged -= HandleSettingsChanged;
-            }
-
-            if (_modCatalogService != null)
-            {
-                _modCatalogService.CatalogReloaded -= HandleCatalogReloaded;
             }
         }
 
@@ -170,12 +155,6 @@ namespace RavenDevOps.Fishing.UI
             _settingsService?.SetSteamRichPresenceEnabled(enabled);
         }
 
-        public void OnModSafeModeChanged(bool enabled)
-        {
-            _settingsService?.SetModSafeModeEnabled(enabled);
-            RefreshModSafeModeStatus(enabled);
-        }
-
         public void OnNextResolutionPressed()
         {
             if (_resolutions == null || _resolutions.Length == 0)
@@ -207,8 +186,6 @@ namespace RavenDevOps.Fishing.UI
                 RefreshUiScaleText(1f);
                 RefreshSubtitleScaleText(1f);
                 RefreshSubtitleBackgroundOpacityText(0.72f);
-                var safeModePreferenceEnabled = PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
-                RefreshModSafeModeStatus(safeModePreferenceEnabled);
                 RefreshBindingTexts();
                 return;
             }
@@ -260,18 +237,12 @@ namespace RavenDevOps.Fishing.UI
                 _steamRichPresenceToggle.isOn = _settingsService.SteamRichPresenceEnabled;
             }
 
-            if (_modSafeModeToggle != null)
-            {
-                _modSafeModeToggle.SetIsOnWithoutNotify(_settingsService.ModSafeModeEnabled);
-            }
-
             RefreshDisplayModeText(_settingsService.Fullscreen);
             RefreshResolutionText();
             RefreshInputSensitivityText(_settingsService.InputSensitivity);
             RefreshUiScaleText(_settingsService.UiScale);
             RefreshSubtitleScaleText(_settingsService.SubtitleScale);
             RefreshSubtitleBackgroundOpacityText(_settingsService.SubtitleBackgroundOpacity);
-            RefreshModSafeModeStatus(_settingsService.ModSafeModeEnabled);
             RefreshBindingTexts();
         }
 
@@ -452,21 +423,6 @@ namespace RavenDevOps.Fishing.UI
             return Mathf.Max(1, Mathf.RoundToInt((float)ratio.numerator / ratio.denominator));
         }
 
-        private void RefreshModSafeModeStatus(bool safeModePreferenceEnabled)
-        {
-            if (_modSafeModeStatusText == null)
-            {
-                return;
-            }
-
-            var safeModeActive = _modCatalogService != null && _modCatalogService.SafeModeActive;
-            var safeModeReason = _modCatalogService != null ? _modCatalogService.SafeModeReason : string.Empty;
-            _modSafeModeStatusText.text = ModDiagnosticsTextFormatter.BuildSafeModeStatus(
-                safeModePreferenceEnabled,
-                safeModeActive,
-                safeModeReason);
-        }
-
         private void HandleSettingsChanged()
         {
             if (!isActiveAndEnabled)
@@ -475,19 +431,6 @@ namespace RavenDevOps.Fishing.UI
             }
 
             SyncFromSettings();
-        }
-
-        private void HandleCatalogReloaded()
-        {
-            if (!isActiveAndEnabled)
-            {
-                return;
-            }
-
-            var safeModePreferenceEnabled = _settingsService != null
-                ? _settingsService.ModSafeModeEnabled
-                : PlayerPrefs.GetInt(UserSettingsService.ModsSafeModePlayerPrefsKey, 0) == 1;
-            RefreshModSafeModeStatus(safeModePreferenceEnabled);
         }
     }
 }

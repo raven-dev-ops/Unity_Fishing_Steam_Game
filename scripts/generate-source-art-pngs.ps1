@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
 
 function Get-TextSourceFiles {
-    $roots = @("Assets", "docs", "mods", "scripts")
+    $roots = @("Assets", "docs", "scripts")
     $files = New-Object System.Collections.Generic.List[System.IO.FileInfo]
 
     foreach ($root in $roots) {

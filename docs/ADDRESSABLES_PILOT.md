@@ -71,13 +71,13 @@ Recommended profile split:
 - Adopt Addressables **post-1.0 in phases**:
 1. Fish catalog and icon bundles.
 2. Audio packs and environment bundles (implemented runtime path + fallback).
-3. Mod/UGC-compatible content packaging once validation pipeline exists.
+3. Additional catalog/audio/environment packs for post-launch content drops.
 
 ## Migration Path
 1. Install Addressables package and configure profiles/groups.
 2. Label pilot fish assets and load through `AddressablesPilotCatalogLoader`.
 3. Label phase-two audio/environment assets and verify key mapping in `CatalogService`.
-4. Verify catalog overlay path through `CatalogService` (base -> pilot overlay -> mod overrides).
+4. Verify catalog overlay path through `CatalogService` (base -> pilot overlay).
 5. Validate runtime fallback behavior by disabling Addressables and confirming Resources-based loads.
 6. Compare startup time/memory against baseline using profiler captures.
 7. Promote pilot path into production catalog service once stability criteria are met.
