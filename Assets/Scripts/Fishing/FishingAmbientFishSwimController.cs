@@ -450,6 +450,11 @@ namespace RavenDevOps.Fishing.Fishing
                 out _);
         }
 
+        public string GetBoundFishId()
+        {
+            return _boundTrack != null ? NormalizeFishId(_boundTrack.fishId) : string.Empty;
+        }
+
         public bool TryBindCollidingFishToHook(Transform hookTransform, float hookRadius, out string fishId)
         {
             fishId = string.Empty;
@@ -506,18 +511,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (_boundTrack != null && _boundTrack != collidedTrack)
             {
-                _boundTrack.hooked = false;
-                _boundTrack.approaching = false;
-                _boundTrack.settled = false;
-                _boundTrack.reserved = false;
-                if (_boundTrack.renderer != null)
-                {
-                    _boundTrack.renderer.color = _boundTrack.baseColor;
-                    if (!_boundTrack.active)
-                    {
-                        _boundTrack.renderer.enabled = false;
-                    }
-                }
+                // Release the previously reserved fish back into active swimming to avoid abrupt visual despawn.
+                ResolveBoundFish(caught: false);
             }
 
             _boundTrack = collidedTrack;

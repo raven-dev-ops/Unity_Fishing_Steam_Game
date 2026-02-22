@@ -18,9 +18,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _waveAmplitude = 0.04f;
         [SerializeField] private float _waveFrequency = 2.4f;
         [SerializeField] private float _waveSpeed = 2.1f;
+        [SerializeField] private float _shipDragSlackHorizontal = 0.34f;
+        [SerializeField] private float _shipDragSlackSag = 0.18f;
+        [SerializeField] private float _shipDragSlackMaxVelocity = 12f;
+        [SerializeField] private float _shipVelocitySmoothing = 9f;
 
         private LineRenderer _renderer;
         private SpriteRenderer _hookRenderer;
+        private bool _hasRecordedShipX;
+        private float _lastShipX;
+        private float _smoothedShipVelocityX;
 
         public void Configure(Transform ship, Transform hook, float lineThickness = 0.05f, float shipOffsetY = -0.36f)
         {
@@ -28,6 +35,8 @@ namespace RavenDevOps.Fishing.Fishing
             _hook = hook;
             _lineThickness = Mathf.Max(0.01f, lineThickness);
             _shipOffsetY = shipOffsetY;
+            _hasRecordedShipX = false;
+            _smoothedShipVelocityX = 0f;
         }
 
         private void Awake()
@@ -40,6 +49,10 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _lineThickness = Mathf.Max(0.01f, _lineThickness);
             _segmentCount = Mathf.Clamp(_segmentCount, 2, 32);
+            _shipDragSlackHorizontal = Mathf.Max(0f, _shipDragSlackHorizontal);
+            _shipDragSlackSag = Mathf.Max(0f, _shipDragSlackSag);
+            _shipDragSlackMaxVelocity = Mathf.Max(0.1f, _shipDragSlackMaxVelocity);
+            _shipVelocitySmoothing = Mathf.Max(0.1f, _shipVelocitySmoothing);
             if (!Application.isPlaying)
             {
                 CacheRenderer();
@@ -85,9 +98,13 @@ namespace RavenDevOps.Fishing.Fishing
 
             var direction = length > 0.0001f ? delta / length : Vector3.down;
             var normal = new Vector3(-direction.y, direction.x, 0f);
+            var shipVelocityX = ResolveSmoothedShipVelocityX();
+            var velocityRatio = Mathf.Clamp01(Mathf.Abs(shipVelocityX) / Mathf.Max(0.1f, _shipDragSlackMaxVelocity));
             var sag = Mathf.Sin(Mathf.Clamp01(length / 4.5f) * Mathf.PI * 0.5f) * _sagAmount;
+            sag += _shipDragSlackSag * velocityRatio * Mathf.Clamp01(length / 3.5f);
             var wave = _waveAmplitude * Mathf.Clamp01(length / 6f);
             var wavePhase = Time.time * _waveSpeed;
+            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * Mathf.Clamp01(length / 3.5f);
 
             for (var i = 0; i < segments; i++)
             {
@@ -106,10 +123,39 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var point = Vector3.Lerp(start, end, t);
                 var centerWeight = Mathf.Sin(t * Mathf.PI);
+                var dragWeight = centerWeight * centerWeight;
                 point.y -= centerWeight * sag;
+                point.x += dragOffsetX * dragWeight;
                 point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave * centerWeight);
                 _renderer.SetPosition(i, point);
             }
+        }
+
+        private float ResolveSmoothedShipVelocityX()
+        {
+            if (_ship == null)
+            {
+                _hasRecordedShipX = false;
+                _smoothedShipVelocityX = 0f;
+                return 0f;
+            }
+
+            var shipX = _ship.position.x;
+            if (!_hasRecordedShipX)
+            {
+                _hasRecordedShipX = true;
+                _lastShipX = shipX;
+                _smoothedShipVelocityX = 0f;
+                return 0f;
+            }
+
+            var deltaTime = Mathf.Max(0.0001f, Time.deltaTime);
+            var rawVelocityX = (shipX - _lastShipX) / deltaTime;
+            _lastShipX = shipX;
+
+            var blend = 1f - Mathf.Exp(-Mathf.Max(0.1f, _shipVelocitySmoothing) * deltaTime);
+            _smoothedShipVelocityX = Mathf.Lerp(_smoothedShipVelocityX, rawVelocityX, blend);
+            return _smoothedShipVelocityX;
         }
 
         private void CacheRenderer()

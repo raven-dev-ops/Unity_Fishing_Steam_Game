@@ -93,6 +93,8 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _biteSelectionResolvedForCurrentDrop;
         private bool _biteApproachStarted;
         private bool _targetFishBoundToAmbient;
+        private string _pendingCollisionFishId = string.Empty;
+        private bool _hasPendingCollisionHookCandidate;
         private bool _haulCatchInProgress;
         private bool _catchSecuredAtThresholdDepth;
         private float _reelEscapeTimeRemaining;
@@ -253,6 +255,8 @@ namespace RavenDevOps.Fishing.Fishing
             _biteSelectionResolvedForCurrentDrop = false;
             _biteApproachStarted = false;
             _targetFishBoundToAmbient = false;
+            _pendingCollisionFishId = string.Empty;
+            _hasPendingCollisionHookCandidate = false;
             ResetHookStationaryAttractionTimer(reseedDelay: true);
             _ambientFishController?.ResolveBoundFish(caught: false);
 
@@ -280,10 +284,18 @@ namespace RavenDevOps.Fishing.Fishing
         {
             if (_targetFish == null)
             {
-                return;
+                EnsureTargetFishForCollisionHook(_pendingCollisionFishId, _hasPendingCollisionHookCandidate);
+                if (_targetFish == null)
+                {
+                    _pendingFailReason = FishingFailReason.MissedHook;
+                    _stateMachine?.SetResolve();
+                    return;
+                }
             }
 
             _hookedFish = _targetFish;
+            _pendingCollisionFishId = _hookedFish != null ? _hookedFish.id : string.Empty;
+            _hasPendingCollisionHookCandidate = false;
             _hookedElapsedSeconds = 0f;
             _lastHookedUpPressTime = -10f;
             _levelOneReelPulseTimeRemaining = 0f;
@@ -376,6 +388,12 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (_targetFish == null)
             {
+                // Allow direct collision hooks even when fish definitions are unavailable.
+                if (TryHookTargetFishOnCollision())
+                {
+                    _stateMachine?.SetHooked();
+                }
+
                 return;
             }
 
@@ -586,6 +604,8 @@ namespace RavenDevOps.Fishing.Fishing
             _encounterModel.End();
             _targetFish = null;
             _hookedFish = null;
+            _pendingCollisionFishId = string.Empty;
+            _hasPendingCollisionHookCandidate = false;
             _haulCatchInProgress = false;
             _catchSecuredAtThresholdDepth = false;
             _catchSucceeded = false;
@@ -928,38 +948,96 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
+            string collidedFishId = string.Empty;
             var collisionRadius = Mathf.Max(0.02f, _hookCollisionRadius);
             if (_targetFishBoundToAmbient
                 && _ambientFishController.IsBoundFishCollidingWithHook(_hook.transform, collisionRadius))
             {
+                collidedFishId = _ambientFishController.GetBoundFishId();
+                _hasPendingCollisionHookCandidate = true;
+                EnsureTargetFishForCollisionHook(collidedFishId, allowFallbackDefinition: true);
                 return true;
             }
 
-            return TryPromoteCollidingAmbientFishToTarget(collisionRadius);
+            if (!TryPromoteCollidingAmbientFishToTarget(collisionRadius, out collidedFishId))
+            {
+                return false;
+            }
+
+            _hasPendingCollisionHookCandidate = true;
+            EnsureTargetFishForCollisionHook(collidedFishId, allowFallbackDefinition: true);
+            return true;
         }
 
-        private bool TryPromoteCollidingAmbientFishToTarget(float collisionRadius)
+        private bool TryPromoteCollidingAmbientFishToTarget(float collisionRadius, out string fishId)
         {
+            fishId = string.Empty;
             if (_ambientFishController == null || _hook == null)
             {
                 return false;
             }
 
-            if (!_ambientFishController.TryBindCollidingFishToHook(_hook.transform, collisionRadius, out var fishId))
+            if (!_ambientFishController.TryBindCollidingFishToHook(_hook.transform, collisionRadius, out fishId))
             {
                 return false;
             }
 
             _targetFishBoundToAmbient = true;
+            _pendingCollisionFishId = !string.IsNullOrWhiteSpace(fishId)
+                ? fishId
+                : _pendingCollisionFishId;
+            return true;
+        }
+
+        private void EnsureTargetFishForCollisionHook(string fishId, bool allowFallbackDefinition)
+        {
+            if (_targetFish != null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(fishId))
+            {
+                _pendingCollisionFishId = fishId;
+            }
+
             if (_spawner != null
-                && !string.IsNullOrWhiteSpace(fishId)
-                && _spawner.TryGetFishDefinitionById(fishId, out var resolvedFish)
+                && !string.IsNullOrWhiteSpace(_pendingCollisionFishId)
+                && _spawner.TryGetFishDefinitionById(_pendingCollisionFishId, out var resolvedFish)
                 && resolvedFish != null)
             {
                 _targetFish = resolvedFish;
+                return;
             }
 
-            return true;
+            if (allowFallbackDefinition)
+            {
+                _targetFish = BuildFallbackCollisionFishDefinition(_pendingCollisionFishId);
+            }
+        }
+
+        private static FishDefinition BuildFallbackCollisionFishDefinition(string fishId)
+        {
+            var resolvedId = string.IsNullOrWhiteSpace(fishId)
+                ? "fish_collision_fallback"
+                : fishId.Trim().ToLowerInvariant();
+            return new FishDefinition
+            {
+                id = resolvedId,
+                minDistanceTier = 1,
+                maxDistanceTier = 5,
+                minDepth = 0f,
+                maxDepth = 200f,
+                rarityWeight = 1,
+                baseValue = 8,
+                minBiteDelaySeconds = 0.1f,
+                maxBiteDelaySeconds = 0.2f,
+                fightStamina = 3f,
+                pullIntensity = 1f,
+                escapeSeconds = 5f,
+                minCatchWeightKg = 0.4f,
+                maxCatchWeightKg = 1.6f
+            };
         }
 
         private bool IsBaitAttractionEnabled()
