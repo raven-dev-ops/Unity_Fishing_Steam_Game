@@ -7,6 +7,13 @@ namespace RavenDevOps.Fishing.Fishing
 {
     public sealed class FishSpawner : MonoBehaviour
     {
+        private enum RuntimeDefinitionSource
+        {
+            None = 0,
+            Fallback = 1,
+            Catalog = 2
+        }
+
         [SerializeField] private List<FishDefinition> _fishDefinitions = new List<FishDefinition>();
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private FishingConditionController _conditionController;
@@ -16,6 +23,10 @@ namespace RavenDevOps.Fishing.Fishing
         private readonly List<FishDefinition> _candidateBuffer = new List<FishDefinition>(64);
         private readonly List<int> _candidateWeightBuffer = new List<int>(64);
         private bool _cacheDirty = true;
+        private RuntimeDefinitionSource _lastDefinitionSource = RuntimeDefinitionSource.None;
+        private int _lastCatalogSignature;
+
+        public event System.Action<float> SpawnRateChanged;
 
         private void Awake()
         {
@@ -35,6 +46,7 @@ namespace RavenDevOps.Fishing.Fishing
         public void SetSpawnRate(float spawnRatePerMinute)
         {
             _spawnRatePerMinute = Mathf.Max(0f, spawnRatePerMinute);
+            SpawnRateChanged?.Invoke(_spawnRatePerMinute);
         }
 
         public void SetCatalogService(CatalogService catalogService)
@@ -107,27 +119,47 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void EnsureRuntimeDefinitions()
         {
+            var hasCatalog = _catalogService != null && _catalogService.FishById != null && _catalogService.FishById.Count > 0;
             if (!_cacheDirty && _runtimeDefinitions.Count > 0)
             {
-                if (_catalogService == null)
+                if (hasCatalog)
                 {
+                    var catalogSignature = ComputeCatalogSignature();
+                    if (_lastDefinitionSource == RuntimeDefinitionSource.Catalog
+                        && _lastCatalogSignature == catalogSignature
+                        && _runtimeDefinitions.Count == _catalogService.FishById.Count)
+                    {
+                        return;
+                    }
+
+                    RebuildRuntimeDefinitions(RuntimeDefinitionSource.Catalog, catalogSignature);
                     return;
                 }
 
-                if (_catalogService.FishById.Count == _runtimeDefinitions.Count)
+                if (_lastDefinitionSource == RuntimeDefinitionSource.Fallback)
                 {
                     return;
                 }
             }
 
-            RebuildRuntimeDefinitions();
+            if (hasCatalog)
+            {
+                RebuildRuntimeDefinitions(RuntimeDefinitionSource.Catalog, ComputeCatalogSignature());
+                return;
+            }
+
+            RebuildRuntimeDefinitions(RuntimeDefinitionSource.Fallback, 0);
         }
 
-        private void RebuildRuntimeDefinitions()
+        private void RebuildRuntimeDefinitions(
+            RuntimeDefinitionSource preferredSource = RuntimeDefinitionSource.None,
+            int catalogSignature = 0)
         {
             _runtimeDefinitions.Clear();
 
-            if (_catalogService != null && _catalogService.FishById.Count > 0)
+            var useCatalog = (_catalogService != null && _catalogService.FishById != null && _catalogService.FishById.Count > 0)
+                && preferredSource != RuntimeDefinitionSource.Fallback;
+            if (useCatalog)
             {
                 foreach (var pair in _catalogService.FishById)
                 {
@@ -155,6 +187,11 @@ namespace RavenDevOps.Fishing.Fishing
                         maxCatchWeightKg = so.maxCatchWeightKg
                     });
                 }
+
+                _lastDefinitionSource = RuntimeDefinitionSource.Catalog;
+                _lastCatalogSignature = catalogSignature != 0
+                    ? catalogSignature
+                    : ComputeCatalogSignature();
             }
             else
             {
@@ -162,9 +199,85 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     _runtimeDefinitions.AddRange(_fishDefinitions);
                 }
+
+                _lastDefinitionSource = RuntimeDefinitionSource.Fallback;
+                _lastCatalogSignature = 0;
             }
 
             _cacheDirty = false;
+        }
+
+        private int ComputeCatalogSignature()
+        {
+            if (_catalogService == null || _catalogService.FishById == null || _catalogService.FishById.Count == 0)
+            {
+                return 0;
+            }
+
+            var keys = new List<string>(_catalogService.FishById.Keys);
+            keys.Sort(System.StringComparer.Ordinal);
+
+            unchecked
+            {
+                var hash = (int)2166136261;
+                for (var i = 0; i < keys.Count; i++)
+                {
+                    var id = keys[i] ?? string.Empty;
+                    hash = CombineHash(hash, id);
+                    if (!_catalogService.FishById.TryGetValue(id, out var fish) || fish == null)
+                    {
+                        continue;
+                    }
+
+                    hash = CombineHash(hash, fish.minDistanceTier);
+                    hash = CombineHash(hash, fish.maxDistanceTier);
+                    hash = CombineHash(hash, fish.minDepth);
+                    hash = CombineHash(hash, fish.maxDepth);
+                    hash = CombineHash(hash, fish.rarityWeight);
+                    hash = CombineHash(hash, fish.baseValue);
+                    hash = CombineHash(hash, fish.minBiteDelaySeconds);
+                    hash = CombineHash(hash, fish.maxBiteDelaySeconds);
+                    hash = CombineHash(hash, fish.fightStamina);
+                    hash = CombineHash(hash, fish.pullIntensity);
+                    hash = CombineHash(hash, fish.escapeSeconds);
+                    hash = CombineHash(hash, fish.minCatchWeightKg);
+                    hash = CombineHash(hash, fish.maxCatchWeightKg);
+                }
+
+                return hash;
+            }
+        }
+
+        private static int CombineHash(int current, int value)
+        {
+            unchecked
+            {
+                return (current * 16777619) ^ value;
+            }
+        }
+
+        private static int CombineHash(int current, float value)
+        {
+            return CombineHash(current, value.GetHashCode());
+        }
+
+        private static int CombineHash(int current, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return CombineHash(current, 0);
+            }
+
+            unchecked
+            {
+                var hash = current;
+                for (var i = 0; i < value.Length; i++)
+                {
+                    hash = (hash * 16777619) ^ value[i];
+                }
+
+                return hash;
+            }
         }
 
         private int BuildCandidates(int distanceTier, float depth)

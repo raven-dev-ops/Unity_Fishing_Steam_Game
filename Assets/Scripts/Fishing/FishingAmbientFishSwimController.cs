@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Data;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Fishing
@@ -13,6 +14,7 @@ namespace RavenDevOps.Fishing.Fishing
             public SpriteRenderer renderer;
             public Vector3 baseScale;
             public Color baseColor;
+            public string fishId;
             public float direction;
             public float speed;
             public float baseY;
@@ -49,6 +51,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _maxConcurrentFish = 3;
         [SerializeField] private bool _searchInactive = true;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private bool _linkSpawnCadenceToFishSpawner = true;
+        [SerializeField] private FishSpawner _fishSpawner;
+        [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private float _baselineSpawnRatePerMinute = 6f;
+        [SerializeField] private float _spawnRateJitterRatio = 0.35f;
         [SerializeField] private float _reducedMotionSpeedScale = 0.55f;
         [SerializeField] private float _biteApproachSpeed = 1.45f;
         [SerializeField] private float _biteApproachStopDistance = 0.14f;
@@ -64,25 +71,55 @@ namespace RavenDevOps.Fishing.Fishing
 
         private readonly List<SwimTrack> _tracks = new List<SwimTrack>(16);
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
+        private readonly Dictionary<string, List<Sprite>> _spritesByFishId = new Dictionary<string, List<Sprite>>(StringComparer.OrdinalIgnoreCase);
         private bool _initialized;
         private SwimTrack _boundTrack;
         private Transform _boundHookTransform;
+        private bool _spawnIntervalDefaultsCaptured;
+        private Vector2 _defaultSpawnIntervalRange;
+        private bool _subscribedToFishSpawner;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            CaptureDefaultSpawnIntervalRange();
+            RebuildCatalogSpriteLookup();
         }
 
         private void OnEnable()
         {
+            SubscribeToFishSpawner();
             if (!_initialized)
             {
                 InitializeTracks();
             }
+
+            ApplySpawnRateFromFishSpawner();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromFishSpawner();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromFishSpawner();
         }
 
         private void Update()
         {
+            if (_linkSpawnCadenceToFishSpawner && !_subscribedToFishSpawner)
+            {
+                SubscribeToFishSpawner();
+                if (_fishSpawner != null)
+                {
+                    ApplySpawnRateFromFishSpawner();
+                }
+            }
+
             if (!_initialized || _tracks.Count == 0)
             {
                 return;
@@ -179,6 +216,7 @@ namespace RavenDevOps.Fishing.Fishing
                 if (renderer.sprite != null)
                 {
                     _spriteLibrary.Add(renderer.sprite);
+                    RegisterFishSpriteFromName(renderer.sprite);
                 }
 
                 var sway = go.GetComponent<SpriteSwayMotion2D>();
@@ -193,13 +231,14 @@ namespace RavenDevOps.Fishing.Fishing
                     renderer = renderer,
                     baseScale = go.transform.localScale,
                     baseColor = renderer.color,
+                    fishId = ResolveFishIdForSprite(renderer.sprite),
                     active = false,
                     reserved = false,
                     hooked = false,
                     approaching = false,
                     approachTimeoutAt = 0f,
                     hookedOffsetSign = 1f,
-                    spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y),
+                    spawnDelay = RandomSpawnDelay(),
                     phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
                     offscreenSeconds = 0f
                 };
@@ -230,7 +269,8 @@ namespace RavenDevOps.Fishing.Fishing
                 return true;
             }
 
-            var track = FindBindingCandidateTrack();
+            var normalizedFishId = NormalizeFishId(fishId);
+            var track = FindBindingCandidateTrack(normalizedFishId);
             if (track == null || track.transform == null || track.renderer == null)
             {
                 return false;
@@ -238,7 +278,16 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (!track.active)
             {
-                SpawnTrack(track);
+                SpawnTrack(track, normalizedFishId);
+            }
+            else if (!string.IsNullOrEmpty(normalizedFishId))
+            {
+                var fishSprite = ResolveSpriteForFishId(normalizedFishId);
+                if (fishSprite != null)
+                {
+                    track.renderer.sprite = fishSprite;
+                    track.fishId = normalizedFishId;
+                }
             }
 
             track.reserved = true;
@@ -352,12 +401,14 @@ namespace RavenDevOps.Fishing.Fishing
                 Mathf.Min(_yBounds.x, _yBounds.y),
                 Mathf.Max(_yBounds.x, _yBounds.y));
             track.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+            track.spawnDelay = RandomSpawnDelay();
             track.renderer.flipX = track.direction < 0f;
         }
 
-        private SwimTrack FindBindingCandidateTrack()
+        private SwimTrack FindBindingCandidateTrack(string preferredFishId)
         {
+            preferredFishId = NormalizeFishId(preferredFishId);
+            SwimTrack matchingInactiveCandidate = null;
             SwimTrack inactiveCandidate = null;
             for (var i = 0; i < _tracks.Count; i++)
             {
@@ -367,15 +418,37 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
+                var matchesPreferredId = !string.IsNullOrEmpty(preferredFishId)
+                    && string.Equals(track.fishId, preferredFishId, StringComparison.OrdinalIgnoreCase);
                 if (track.active && track.renderer.enabled)
                 {
+                    if (!string.IsNullOrEmpty(preferredFishId))
+                    {
+                        if (matchesPreferredId)
+                        {
+                            return track;
+                        }
+
+                        continue;
+                    }
+
                     return track;
+                }
+
+                if (matchesPreferredId && matchingInactiveCandidate == null)
+                {
+                    matchingInactiveCandidate = track;
                 }
 
                 if (inactiveCandidate == null)
                 {
                     inactiveCandidate = track;
                 }
+            }
+
+            if (matchingInactiveCandidate != null)
+            {
+                return matchingInactiveCandidate;
             }
 
             return inactiveCandidate;
@@ -483,7 +556,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.renderer.flipX = side < 0f;
         }
 
-        private void SpawnTrack(SwimTrack track)
+        private void SpawnTrack(SwimTrack track, string preferredFishId = null)
         {
             if (track.transform == null || track.renderer == null)
             {
@@ -506,7 +579,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.speed = UnityEngine.Random.Range(Mathf.Min(_speedRange.x, _speedRange.y), Mathf.Max(_speedRange.x, _speedRange.y));
             track.baseY = ResolveSpawnY(bottom, top);
             track.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+            track.spawnDelay = RandomSpawnDelay();
             track.approachTimeoutAt = 0f;
             track.approaching = false;
             track.hooked = false;
@@ -519,9 +592,22 @@ namespace RavenDevOps.Fishing.Fishing
                 Mathf.Max(_scaleMultiplierRange.x, _scaleMultiplierRange.y));
             track.transform.localScale = track.baseScale * scaleMultiplier;
 
-            if (_spriteLibrary.Count > 0)
+            var resolvedFishId = NormalizeFishId(preferredFishId);
+            var preferredSprite = ResolveSpriteForFishId(resolvedFishId);
+            if (preferredSprite != null)
             {
-                track.renderer.sprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
+                track.renderer.sprite = preferredSprite;
+                track.fishId = resolvedFishId;
+            }
+            else if (_spriteLibrary.Count > 0)
+            {
+                var randomSprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
+                track.renderer.sprite = randomSprite;
+                track.fishId = ResolveFishIdForSprite(randomSprite);
+            }
+            else
+            {
+                track.fishId = string.Empty;
             }
 
             track.renderer.color = track.baseColor;
@@ -552,8 +638,315 @@ namespace RavenDevOps.Fishing.Fishing
                 track.renderer.enabled = false;
             }
 
-            track.spawnDelay = UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+            track.spawnDelay = RandomSpawnDelay();
             track.offscreenSeconds = 0f;
+        }
+
+        public void ApplySpawnRatePerMinute(float spawnRatePerMinute)
+        {
+            CaptureDefaultSpawnIntervalRange();
+            if (spawnRatePerMinute <= 0.01f)
+            {
+                _spawnIntervalRange = new Vector2(999f, 999f);
+                ResetInactiveTrackSpawnDelays();
+                return;
+            }
+
+            var baselineSpawnRate = Mathf.Max(0.1f, _baselineSpawnRatePerMinute);
+            var defaultAverageIntervalSeconds = (_defaultSpawnIntervalRange.x + _defaultSpawnIntervalRange.y) * 0.5f;
+            defaultAverageIntervalSeconds = Mathf.Max(0.08f, defaultAverageIntervalSeconds);
+            var scale = baselineSpawnRate / Mathf.Max(0.1f, spawnRatePerMinute);
+            var averageIntervalSeconds = Mathf.Clamp(defaultAverageIntervalSeconds * scale, 0.08f, 30f);
+            var jitterRatio = Mathf.Clamp(_spawnRateJitterRatio, 0f, 0.9f);
+            var minIntervalSeconds = Mathf.Max(0.08f, averageIntervalSeconds * (1f - jitterRatio));
+            var maxIntervalSeconds = Mathf.Max(minIntervalSeconds + 0.01f, averageIntervalSeconds * (1f + jitterRatio));
+            _spawnIntervalRange = new Vector2(minIntervalSeconds, maxIntervalSeconds);
+            ResetInactiveTrackSpawnDelays();
+        }
+
+        private void HandleSpawnerSpawnRateChanged(float spawnRatePerMinute)
+        {
+            if (!_linkSpawnCadenceToFishSpawner)
+            {
+                return;
+            }
+
+            ApplySpawnRatePerMinute(spawnRatePerMinute);
+        }
+
+        private void ApplySpawnRateFromFishSpawner()
+        {
+            CaptureDefaultSpawnIntervalRange();
+            if (!_linkSpawnCadenceToFishSpawner)
+            {
+                _spawnIntervalRange = _defaultSpawnIntervalRange;
+                return;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            if (_fishSpawner == null)
+            {
+                _spawnIntervalRange = _defaultSpawnIntervalRange;
+                return;
+            }
+
+            ApplySpawnRatePerMinute(_fishSpawner.SpawnRatePerMinute);
+        }
+
+        private void SubscribeToFishSpawner()
+        {
+            if (!_linkSpawnCadenceToFishSpawner || _subscribedToFishSpawner)
+            {
+                return;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _fishSpawner, this, warnIfMissing: false);
+            if (_fishSpawner == null)
+            {
+                return;
+            }
+
+            _fishSpawner.SpawnRateChanged -= HandleSpawnerSpawnRateChanged;
+            _fishSpawner.SpawnRateChanged += HandleSpawnerSpawnRateChanged;
+            _subscribedToFishSpawner = true;
+        }
+
+        private void UnsubscribeFromFishSpawner()
+        {
+            if (!_subscribedToFishSpawner || _fishSpawner == null)
+            {
+                _subscribedToFishSpawner = false;
+                return;
+            }
+
+            _fishSpawner.SpawnRateChanged -= HandleSpawnerSpawnRateChanged;
+            _subscribedToFishSpawner = false;
+        }
+
+        private void CaptureDefaultSpawnIntervalRange()
+        {
+            if (_spawnIntervalDefaultsCaptured)
+            {
+                return;
+            }
+
+            _spawnIntervalRange = NormalizeRange(_spawnIntervalRange);
+            _defaultSpawnIntervalRange = _spawnIntervalRange;
+            _spawnIntervalDefaultsCaptured = true;
+        }
+
+        private static Vector2 NormalizeRange(Vector2 value)
+        {
+            var min = Mathf.Max(0.01f, Mathf.Min(value.x, value.y));
+            var max = Mathf.Max(min + 0.01f, Mathf.Max(value.x, value.y));
+            return new Vector2(min, max);
+        }
+
+        private float RandomSpawnDelay()
+        {
+            _spawnIntervalRange = NormalizeRange(_spawnIntervalRange);
+            return UnityEngine.Random.Range(_spawnIntervalRange.x, _spawnIntervalRange.y);
+        }
+
+        private void ResetInactiveTrackSpawnDelays()
+        {
+            if (_tracks.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var track = _tracks[i];
+                if (track == null || track.active || track.reserved || track.hooked || track.approaching)
+                {
+                    continue;
+                }
+
+                track.spawnDelay = RandomSpawnDelay();
+            }
+        }
+
+        private void RebuildCatalogSpriteLookup()
+        {
+            _spritesByFishId.Clear();
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            if (_catalogService == null || _catalogService.FishById == null || _catalogService.FishById.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _catalogService.FishById)
+            {
+                var fishId = NormalizeFishId(pair.Key);
+                if (string.IsNullOrEmpty(fishId) && pair.Value != null)
+                {
+                    fishId = NormalizeFishId(pair.Value.id);
+                }
+
+                if (string.IsNullOrEmpty(fishId) || pair.Value == null)
+                {
+                    continue;
+                }
+
+                RegisterFishSprite(fishId, pair.Value.icon);
+            }
+        }
+
+        private void RegisterFishSpriteFromName(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            if (_catalogService == null || _catalogService.FishById == null || _catalogService.FishById.Count == 0)
+            {
+                return;
+            }
+
+            var tokenizedName = Tokenize(sprite.name);
+            foreach (var pair in _catalogService.FishById)
+            {
+                var fishId = NormalizeFishId(pair.Key);
+                if (string.IsNullOrEmpty(fishId) && pair.Value != null)
+                {
+                    fishId = NormalizeFishId(pair.Value.id);
+                }
+
+                if (string.IsNullOrEmpty(fishId))
+                {
+                    continue;
+                }
+
+                if (!TokenMatchesFishId(tokenizedName, fishId))
+                {
+                    continue;
+                }
+
+                RegisterFishSprite(fishId, sprite);
+                break;
+            }
+        }
+
+        private void RegisterFishSprite(string fishId, Sprite sprite)
+        {
+            fishId = NormalizeFishId(fishId);
+            if (string.IsNullOrEmpty(fishId) || sprite == null)
+            {
+                return;
+            }
+
+            if (!_spritesByFishId.TryGetValue(fishId, out var sprites))
+            {
+                sprites = new List<Sprite>(4);
+                _spritesByFishId[fishId] = sprites;
+            }
+
+            if (!sprites.Contains(sprite))
+            {
+                sprites.Add(sprite);
+            }
+        }
+
+        private Sprite ResolveSpriteForFishId(string fishId)
+        {
+            fishId = NormalizeFishId(fishId);
+            if (string.IsNullOrEmpty(fishId))
+            {
+                return null;
+            }
+
+            if (!_spritesByFishId.TryGetValue(fishId, out var sprites) || sprites == null || sprites.Count == 0)
+            {
+                return null;
+            }
+
+            return sprites[UnityEngine.Random.Range(0, sprites.Count)];
+        }
+
+        private string ResolveFishIdForSprite(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return string.Empty;
+            }
+
+            var tokenizedName = Tokenize(sprite.name);
+            RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            if (_catalogService == null || _catalogService.FishById == null || _catalogService.FishById.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            foreach (var pair in _catalogService.FishById)
+            {
+                var fishId = NormalizeFishId(pair.Key);
+                if (string.IsNullOrEmpty(fishId) && pair.Value != null)
+                {
+                    fishId = NormalizeFishId(pair.Value.id);
+                }
+
+                if (string.IsNullOrEmpty(fishId))
+                {
+                    continue;
+                }
+
+                if (TokenMatchesFishId(tokenizedName, fishId))
+                {
+                    RegisterFishSprite(fishId, sprite);
+                    return fishId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string NormalizeFishId(string fishId)
+        {
+            return string.IsNullOrWhiteSpace(fishId)
+                ? string.Empty
+                : fishId.Trim().ToLowerInvariant();
+        }
+
+        private static string Tokenize(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var chars = value.Trim().ToLowerInvariant().ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                if ((chars[i] >= 'a' && chars[i] <= 'z') || (chars[i] >= '0' && chars[i] <= '9'))
+                {
+                    continue;
+                }
+
+                chars[i] = '_';
+            }
+
+            return new string(chars);
+        }
+
+        private static bool TokenMatchesFishId(string tokenizedName, string fishId)
+        {
+            if (string.IsNullOrEmpty(tokenizedName) || string.IsNullOrEmpty(fishId))
+            {
+                return false;
+            }
+
+            if (tokenizedName.Contains(fishId))
+            {
+                return true;
+            }
+
+            var shortId = fishId.StartsWith("fish_", StringComparison.Ordinal)
+                ? fishId.Substring(5)
+                : fishId;
+            return !string.IsNullOrEmpty(shortId) && tokenizedName.Contains(shortId);
         }
 
         private void UpdateDynamicWaterBand()

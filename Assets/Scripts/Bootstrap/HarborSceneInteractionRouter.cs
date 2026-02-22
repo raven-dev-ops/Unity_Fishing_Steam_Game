@@ -22,8 +22,8 @@ namespace RavenDevOps.Fishing.Core
         }
 
         private const int MaxActivityLines = 4;
-        private static readonly string[] HookMenuOrder = { "hook_lv1", "hook_lv2", "hook_lv3" };
-        private static readonly string[] ShipMenuOrder = { "ship_lv1", "ship_lv2", "ship_lv3" };
+        private static readonly string[] FallbackHookMenuOrder = { "hook_lv1", "hook_lv2", "hook_lv3" };
+        private static readonly string[] FallbackShipMenuOrder = { "ship_lv1", "ship_lv2", "ship_lv3" };
 
         [SerializeField] private List<WorldInteractable> _interactables = new List<WorldInteractable>();
         [SerializeField] private HookShopController _hookShop;
@@ -382,7 +382,8 @@ namespace RavenDevOps.Fishing.Core
             var wasOwned = save.ownedHooks != null && save.ownedHooks.Contains(hookId);
             var wasEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
             var price = Mathf.Max(0, _hookShop.GetPrice(hookId));
-            var hasRequiredTier = HasRequiredPreviousTier(save.ownedHooks, hookId, HookMenuOrder, out var requiredTierId);
+            var hookOrder = ResolveHookMenuOrder();
+            var hasRequiredTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
 
             if (!_saveManager.IsContentUnlocked(hookId))
             {
@@ -466,7 +467,8 @@ namespace RavenDevOps.Fishing.Core
             var wasOwned = save.ownedShips != null && save.ownedShips.Contains(shipId);
             var wasEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
             var price = Mathf.Max(0, _boatShop.GetPrice(shipId));
-            var hasRequiredTier = HasRequiredPreviousTier(save.ownedShips, shipId, ShipMenuOrder, out var requiredTierId);
+            var shipOrder = ResolveShipMenuOrder();
+            var hasRequiredTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out var requiredTierId);
 
             if (!_saveManager.IsContentUnlocked(shipId))
             {
@@ -594,23 +596,24 @@ namespace RavenDevOps.Fishing.Core
             {
                 SetText(_hookShopInfoText, "Hook inventory unavailable.");
                 RefreshHookShopButtons(null);
-                RefreshShopIcons(_hookShopIcons, _hookShopButtons, HookMenuOrder, save: null, isHookCatalog: true);
+                RefreshShopIcons(_hookShopIcons, _hookShopButtons, ResolveHookMenuOrder(), save: null, isHookCatalog: true);
                 return;
             }
 
+            var hookOrder = ResolveHookMenuOrder();
             var save = _saveManager.Current;
             var output =
                 $"Balance: {Mathf.Max(0, save.copecs)} copecs\n" +
                 "Select a hook to upgrade/equip:";
-            for (var i = 0; i < HookMenuOrder.Length; i++)
+            for (var i = 0; i < hookOrder.Length; i++)
             {
-                var hookId = HookMenuOrder[i];
+                var hookId = hookOrder[i];
                 var isOwned = save.ownedHooks != null && save.ownedHooks.Contains(hookId);
                 var isEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
                 var isUnlocked = _saveManager.IsContentUnlocked(hookId);
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
                 var price = _hookShop.GetPrice(hookId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, HookMenuOrder, out var requiredTierId);
+                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
                 output += "\n" + BuildShopItemLine(
                     hookId,
                     isOwned,
@@ -625,7 +628,7 @@ namespace RavenDevOps.Fishing.Core
 
             SetText(_hookShopInfoText, output);
             RefreshHookShopButtons(save);
-            RefreshShopIcons(_hookShopIcons, _hookShopButtons, HookMenuOrder, save, isHookCatalog: true);
+            RefreshShopIcons(_hookShopIcons, _hookShopButtons, hookOrder, save, isHookCatalog: true);
         }
 
         private void RefreshBoatShopDetails()
@@ -634,23 +637,24 @@ namespace RavenDevOps.Fishing.Core
             {
                 SetText(_boatShopInfoText, "Boat inventory unavailable.");
                 RefreshBoatShopButtons(null);
-                RefreshShopIcons(_boatShopIcons, _boatShopButtons, ShipMenuOrder, save: null, isHookCatalog: false);
+                RefreshShopIcons(_boatShopIcons, _boatShopButtons, ResolveShipMenuOrder(), save: null, isHookCatalog: false);
                 return;
             }
 
+            var shipOrder = ResolveShipMenuOrder();
             var save = _saveManager.Current;
             var output =
                 $"Balance: {Mathf.Max(0, save.copecs)} copecs\n" +
                 "Select a ship to upgrade/equip:";
-            for (var i = 0; i < ShipMenuOrder.Length; i++)
+            for (var i = 0; i < shipOrder.Length; i++)
             {
-                var shipId = ShipMenuOrder[i];
+                var shipId = shipOrder[i];
                 var isOwned = save.ownedShips != null && save.ownedShips.Contains(shipId);
                 var isEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
                 var isUnlocked = _saveManager.IsContentUnlocked(shipId);
                 var unlockLevel = _saveManager.GetUnlockLevel(shipId);
                 var price = _boatShop.GetPrice(shipId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, ShipMenuOrder, out var requiredTierId);
+                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out var requiredTierId);
                 output += "\n" + BuildShopItemLine(
                     shipId,
                     isOwned,
@@ -665,7 +669,7 @@ namespace RavenDevOps.Fishing.Core
 
             SetText(_boatShopInfoText, output);
             RefreshBoatShopButtons(save);
-            RefreshShopIcons(_boatShopIcons, _boatShopButtons, ShipMenuOrder, save, isHookCatalog: false);
+            RefreshShopIcons(_boatShopIcons, _boatShopButtons, shipOrder, save, isHookCatalog: false);
         }
 
         private void RefreshFishShopDetails()
@@ -746,9 +750,10 @@ namespace RavenDevOps.Fishing.Core
 
         private void RefreshHookShopButtons(SaveDataV1 save)
         {
-            for (var i = 0; i < HookMenuOrder.Length; i++)
+            var hookOrder = ResolveHookMenuOrder();
+            for (var i = 0; i < hookOrder.Length; i++)
             {
-                var hookId = HookMenuOrder[i];
+                var hookId = hookOrder[i];
                 var button = i >= 0 && i < _hookShopButtons.Count ? _hookShopButtons[i] : null;
                 if (button == null)
                 {
@@ -765,7 +770,7 @@ namespace RavenDevOps.Fishing.Core
                 var isEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
                 var isUnlocked = _saveManager.IsContentUnlocked(hookId);
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, HookMenuOrder, out _);
+                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out _);
                 var price = _hookShop.GetPrice(hookId);
                 var canUpgrade = price >= 0 && save.copecs >= Mathf.Max(0, price);
                 var interactable = isOwned || (isUnlocked && hasRequiredPreviousTier && canUpgrade && price >= 0);
@@ -782,9 +787,10 @@ namespace RavenDevOps.Fishing.Core
 
         private void RefreshBoatShopButtons(SaveDataV1 save)
         {
-            for (var i = 0; i < ShipMenuOrder.Length; i++)
+            var shipOrder = ResolveShipMenuOrder();
+            for (var i = 0; i < shipOrder.Length; i++)
             {
-                var shipId = ShipMenuOrder[i];
+                var shipId = shipOrder[i];
                 var button = i >= 0 && i < _boatShopButtons.Count ? _boatShopButtons[i] : null;
                 if (button == null)
                 {
@@ -801,7 +807,7 @@ namespace RavenDevOps.Fishing.Core
                 var isEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
                 var isUnlocked = _saveManager.IsContentUnlocked(shipId);
                 var unlockLevel = _saveManager.GetUnlockLevel(shipId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, ShipMenuOrder, out _);
+                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out _);
                 var price = _boatShop.GetPrice(shipId);
                 var canUpgrade = price >= 0 && save.copecs >= Mathf.Max(0, price);
                 var interactable = isOwned || (isUnlocked && hasRequiredPreviousTier && canUpgrade && price >= 0);
@@ -882,7 +888,7 @@ namespace RavenDevOps.Fishing.Core
                 return new Color(0.56f, 0.56f, 0.56f, 0.85f);
             }
 
-            var orderedIds = isHookCatalog ? HookMenuOrder : ShipMenuOrder;
+            var orderedIds = isHookCatalog ? ResolveHookMenuOrder() : ResolveShipMenuOrder();
             var ownedIds = isHookCatalog ? save.ownedHooks : save.ownedShips;
             if (!HasRequiredPreviousTier(ownedIds, normalizedItemId, orderedIds, out _))
             {
@@ -927,6 +933,34 @@ namespace RavenDevOps.Fishing.Core
             return _catalogService.TryGetShip(itemId, out var shipDefinition) && shipDefinition != null
                 ? shipDefinition.icon
                 : null;
+        }
+
+        private string[] ResolveHookMenuOrder()
+        {
+            if (_hookShop != null)
+            {
+                var orderedIds = _hookShop.GetOrderedItemIds();
+                if (orderedIds != null && orderedIds.Length > 0)
+                {
+                    return orderedIds;
+                }
+            }
+
+            return FallbackHookMenuOrder;
+        }
+
+        private string[] ResolveShipMenuOrder()
+        {
+            if (_boatShop != null)
+            {
+                var orderedIds = _boatShop.GetOrderedItemIds();
+                if (orderedIds != null && orderedIds.Length > 0)
+                {
+                    return orderedIds;
+                }
+            }
+
+            return FallbackShipMenuOrder;
         }
 
         private static string BuildShopButtonLabel(

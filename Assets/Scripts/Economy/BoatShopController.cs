@@ -85,6 +85,112 @@ namespace RavenDevOps.Fishing.Economy
             return ResolvePrice(boatId);
         }
 
+        public string[] GetOrderedItemIds()
+        {
+            var orderedIds = new List<string>();
+            if (_items != null && _items.Count > 0)
+            {
+                var runtimeItems = new List<ShopItem>();
+                for (var i = 0; i < _items.Count; i++)
+                {
+                    var item = _items[i];
+                    if (item == null || string.IsNullOrWhiteSpace(item.id))
+                    {
+                        continue;
+                    }
+
+                    runtimeItems.Add(item);
+                }
+
+                runtimeItems.Sort((a, b) =>
+                {
+                    if (a == b)
+                    {
+                        return 0;
+                    }
+
+                    if (a == null)
+                    {
+                        return 1;
+                    }
+
+                    if (b == null)
+                    {
+                        return -1;
+                    }
+
+                    var tierCompare = a.valueTier.CompareTo(b.valueTier);
+                    if (tierCompare != 0)
+                    {
+                        return tierCompare;
+                    }
+
+                    return string.Compare(a.id, b.id, StringComparison.Ordinal);
+                });
+
+                for (var i = 0; i < runtimeItems.Count; i++)
+                {
+                    var id = runtimeItems[i].id;
+                    if (!orderedIds.Contains(id))
+                    {
+                        orderedIds.Add(id);
+                    }
+                }
+            }
+
+            if (orderedIds.Count == 0 && _catalogService != null && _catalogService.ShipById != null && _catalogService.ShipById.Count > 0)
+            {
+                var catalogItems = new List<ShipDefinitionSO>(_catalogService.ShipById.Values);
+                catalogItems.Sort((a, b) =>
+                {
+                    if (a == b)
+                    {
+                        return 0;
+                    }
+
+                    if (a == null)
+                    {
+                        return 1;
+                    }
+
+                    if (b == null)
+                    {
+                        return -1;
+                    }
+
+                    var tierCompare = a.maxDistanceTier.CompareTo(b.maxDistanceTier);
+                    if (tierCompare != 0)
+                    {
+                        return tierCompare;
+                    }
+
+                    var capacityCompare = a.cargoCapacity.CompareTo(b.cargoCapacity);
+                    if (capacityCompare != 0)
+                    {
+                        return capacityCompare;
+                    }
+
+                    return string.Compare(a.id, b.id, StringComparison.Ordinal);
+                });
+
+                for (var i = 0; i < catalogItems.Count; i++)
+                {
+                    var ship = catalogItems[i];
+                    if (ship == null || string.IsNullOrWhiteSpace(ship.id))
+                    {
+                        continue;
+                    }
+
+                    if (!orderedIds.Contains(ship.id))
+                    {
+                        orderedIds.Add(ship.id);
+                    }
+                }
+            }
+
+            return orderedIds.ToArray();
+        }
+
         private int ResolvePrice(string boatId)
         {
             var item = _items.FirstOrDefault(x => x.id == boatId);

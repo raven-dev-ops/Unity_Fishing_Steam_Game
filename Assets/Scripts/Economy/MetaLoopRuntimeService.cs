@@ -360,6 +360,7 @@ namespace RavenDevOps.Fishing.Economy
             var ids = new List<string>();
             if (_catalogService != null && _catalogService.FishById != null && _catalogService.FishById.Count > 0)
             {
+                var sortedFish = new List<FishDefinitionSO>(_catalogService.FishById.Count);
                 foreach (var pair in _catalogService.FishById)
                 {
                     if (pair.Value == null || string.IsNullOrWhiteSpace(pair.Value.id))
@@ -367,10 +368,58 @@ namespace RavenDevOps.Fishing.Economy
                         continue;
                     }
 
-                    ids.Add(pair.Value.id);
-                    if (ids.Count >= 3)
+                    sortedFish.Add(pair.Value);
+                }
+
+                sortedFish.Sort((a, b) =>
+                {
+                    if (a == b)
                     {
-                        break;
+                        return 0;
+                    }
+
+                    if (a == null)
+                    {
+                        return 1;
+                    }
+
+                    if (b == null)
+                    {
+                        return -1;
+                    }
+
+                    var tierCompare = a.minDistanceTier.CompareTo(b.minDistanceTier);
+                    if (tierCompare != 0)
+                    {
+                        return tierCompare;
+                    }
+
+                    var depthCompare = a.minDepth.CompareTo(b.minDepth);
+                    if (depthCompare != 0)
+                    {
+                        return depthCompare;
+                    }
+
+                    var valueCompare = a.baseValue.CompareTo(b.baseValue);
+                    if (valueCompare != 0)
+                    {
+                        return valueCompare;
+                    }
+
+                    return string.Compare(a.id, b.id, StringComparison.Ordinal);
+                });
+
+                for (var i = 0; i < sortedFish.Count && ids.Count < 3; i++)
+                {
+                    var fish = sortedFish[i];
+                    if (fish == null || string.IsNullOrWhiteSpace(fish.id))
+                    {
+                        continue;
+                    }
+
+                    if (!ids.Contains(fish.id))
+                    {
+                        ids.Add(fish.id);
                     }
                 }
             }
