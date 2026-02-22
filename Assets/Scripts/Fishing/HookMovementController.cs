@@ -22,6 +22,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _inputDeadzone = 0.12f;
         [SerializeField] private float _axisSmoothing = 10f;
         [SerializeField] private bool _movementEnabled = true;
+        [SerializeField] private SpriteSwayMotion2D _swayMotion;
 
         public float MaxDepth
         {
@@ -59,10 +60,24 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            _swayMotion ??= GetComponent<SpriteSwayMotion2D>();
+            if (_swayMotion != null)
+            {
+                _swayMotion.enabled = false;
+            }
+
             _minDepthBelowSurface = Mathf.Min(Mathf.Abs(_depthBounds.x), Mathf.Abs(_depthBounds.y));
             _baseMaxDepth = Mathf.Max(Mathf.Abs(_depthBounds.x), Mathf.Abs(_depthBounds.y));
             _distanceTier = Mathf.Max(1, _distanceTier);
             RefreshHookStats();
+        }
+
+        private void OnEnable()
+        {
+            if (_swayMotion != null)
+            {
+                _swayMotion.enabled = false;
+            }
         }
 
         private void OnDestroy()

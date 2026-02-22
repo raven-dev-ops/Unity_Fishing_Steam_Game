@@ -612,6 +612,11 @@ namespace RavenDevOps.Fishing.Core
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
             hookMovement.RefreshHookStats();
+            var hookSway = hookObject.GetComponent<SpriteSwayMotion2D>();
+            if (hookSway != null)
+            {
+                hookSway.enabled = false;
+            }
 
             var dockedHookPosition = hookObject.transform.position;
             dockedHookPosition.y = hookMovement.GetDockedY(0.65f);
