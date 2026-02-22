@@ -682,7 +682,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Left/Right move ship while uncast. Down/S casts and lowers. Up/W reels and can auto-reel on double tap. Esc pause, H return harbor.",
+                "Fishing: Left/Right move ship while uncast. Down/S casts and lowers. Hook Lv1 tap Up/W to reel, Lv2 hold Up/W (faster), Lv3 double-tap Up/W on bite for auto reel. Esc pause, H return harbor.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(18f, 238f),

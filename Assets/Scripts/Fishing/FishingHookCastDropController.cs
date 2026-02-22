@@ -1,5 +1,6 @@
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
+using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,6 +13,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Transform _ship;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private UserSettingsService _settingsService;
+        [SerializeField] private SaveManager _saveManager;
         [SerializeField] private float _dockOffsetY = 0.65f;
         [SerializeField] private float _dockSnapLerp = 16f;
         [SerializeField] private float _initialAutoCastDepth = 25f;
@@ -23,6 +25,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private bool _matchAutoReelSpeedToDropSpeed = true;
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
+        [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
+        [SerializeField] private float _levelTwoReelSpeedMultiplier = 2f;
 
         private InputAction _moveHookAction;
         private bool _autoDropActive;
@@ -34,6 +38,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _lastUpPressTime = -10f;
         private bool _axisDownHeldLastFrame;
         private bool _axisUpHeldLastFrame;
+        private float _levelOneReelPulseTimeRemaining;
         private SpriteRenderer _hookRenderer;
 
         public void Configure(
@@ -58,6 +63,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             if (_hookController == null)
             {
                 RuntimeServiceRegistry.TryGet(out _hookController);
@@ -136,6 +142,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoReelActive = previous == FishingActionState.InWater || previous == FishingActionState.Reel;
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
+                _levelOneReelPulseTimeRemaining = 0f;
                 _axisDownHeldLastFrame = false;
                 _axisUpHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
@@ -149,6 +156,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoReelActive = false;
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
+                _levelOneReelPulseTimeRemaining = 0f;
                 _lastDownPressTime = -10f;
                 _lastUpPressTime = -10f;
                 _axisDownHeldLastFrame = false;
@@ -164,6 +172,9 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoReelActive = true;
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
+                _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
+                    ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
+                    : 0f;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -173,6 +184,7 @@ namespace RavenDevOps.Fishing.Fishing
             _autoReelActive = false;
             _autoLowerActive = false;
             _autoRaiseActive = false;
+            _levelOneReelPulseTimeRemaining = 0f;
             _hookController.SetMovementEnabled(true);
             SetHookVisible(true);
         }
@@ -191,6 +203,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoReelActive = false;
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
+                    _levelOneReelPulseTimeRemaining = 0f;
                     _axisDownHeldLastFrame = false;
                     _axisUpHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
@@ -202,6 +215,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoReelActive = false;
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
+                    _levelOneReelPulseTimeRemaining = 0f;
                     _lastDownPressTime = -10f;
                     _lastUpPressTime = -10f;
                     _axisDownHeldLastFrame = false;
@@ -214,6 +228,9 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoReelActive = true;
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
+                    _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
+                        ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
+                        : 0f;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
@@ -222,6 +239,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoReelActive = false;
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
+                    _levelOneReelPulseTimeRemaining = 0f;
                     _hookController.SetMovementEnabled(true);
                     SetHookVisible(true);
                     break;
@@ -286,7 +304,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var targetY = _hookController.GetDockedY(_dockOffsetY);
-            var reelSpeed = ResolveAutoReelSpeed();
+            var reelSpeed = ResolveAutoReelSpeed() * ResolveHookReelSpeedMultiplier();
 
             var position = hookTransform.position;
             position.y = Mathf.MoveTowards(position.y, targetY, reelSpeed * Time.deltaTime);
@@ -337,7 +355,10 @@ namespace RavenDevOps.Fishing.Fishing
                     var now = Time.unscaledTime;
                     if (now - _lastUpPressTime <= Mathf.Max(0.1f, _upDoubleTapWindowSeconds))
                     {
-                        StartAutoRaise();
+                        if (CanUseInWaterAutoRaiseDoubleTap())
+                        {
+                            StartAutoRaise();
+                        }
                     }
 
                     _lastUpPressTime = now;
@@ -616,6 +637,47 @@ namespace RavenDevOps.Fishing.Fishing
             return Mathf.Max(0.1f, _autoReelSpeed);
         }
 
+        private HookReelInputMode ResolveHookReelInputMode()
+        {
+            var equippedHookId = _saveManager != null && _saveManager.Current != null
+                ? _saveManager.Current.equippedHookId
+                : string.Empty;
+            return HookReelInputProfile.Resolve(equippedHookId);
+        }
+
+        private float ResolveHookReelSpeedMultiplier()
+        {
+            if (ResolveHookReelInputMode() == HookReelInputMode.Level2Hold)
+            {
+                return Mathf.Max(1f, _levelTwoReelSpeedMultiplier);
+            }
+
+            return 1f;
+        }
+
+        private bool CanUseInWaterAutoRaiseDoubleTap()
+        {
+            return ResolveHookReelInputMode() != HookReelInputMode.Level3Auto;
+        }
+
+        private bool IsLevelOneReelPulseActive()
+        {
+            if (IsUpPressedThisFrame())
+            {
+                _levelOneReelPulseTimeRemaining = Mathf.Max(
+                    _levelOneReelPulseTimeRemaining,
+                    Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds));
+            }
+
+            if (_levelOneReelPulseTimeRemaining <= 0f)
+            {
+                return false;
+            }
+
+            _levelOneReelPulseTimeRemaining = Mathf.Max(0f, _levelOneReelPulseTimeRemaining - Time.deltaTime);
+            return true;
+        }
+
         private float ResolveWorldYForDepth(float depth)
         {
             if (_hookController == null || _ship == null)
@@ -635,12 +697,22 @@ namespace RavenDevOps.Fishing.Fishing
                 return true;
             }
 
-            if (_settingsService != null && _settingsService.ReelInputToggle)
+            switch (ResolveHookReelInputMode())
             {
-                return true;
-            }
+                case HookReelInputMode.Level1Tap:
+                    return IsLevelOneReelPulseActive();
+                case HookReelInputMode.Level2Hold:
+                    return IsUpInputHeld();
+                case HookReelInputMode.Level3Auto:
+                    return true;
+                default:
+                    if (_settingsService != null && _settingsService.ReelInputToggle)
+                    {
+                        return true;
+                    }
 
-            return IsUpInputHeld();
+                    return IsUpInputHeld();
+            }
         }
 
         private void SubscribeToStateMachine()

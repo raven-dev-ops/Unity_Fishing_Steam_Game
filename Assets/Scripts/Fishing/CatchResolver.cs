@@ -31,6 +31,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _minimumFishSpawnDepth = 20f;
         [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
+        [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
+        [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
         [SerializeField] private bool _enableReelStruggleEscape = true;
         [SerializeField] private float _reelEscapeDrainWhileReeling = 0.45f;
         [SerializeField] private float _reelEscapeDrainWhileIdle = 1f;
@@ -81,6 +83,11 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _biteApproachStarted;
         private bool _haulCatchInProgress;
         private float _reelEscapeTimeRemaining;
+        private float _lastHookedUpPressTime = -10f;
+        private float _levelOneReelPulseTimeRemaining;
+        private bool _upAxisHeldLastFrameForPress;
+        private int _cachedUpPressFrame = -1;
+        private bool _cachedUpPressResult;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _moveHookAction;
@@ -250,6 +257,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookedFish = _targetFish;
             _hookedElapsedSeconds = 0f;
+            _lastHookedUpPressTime = -10f;
+            _levelOneReelPulseTimeRemaining = 0f;
+            _upAxisHeldLastFrameForPress = false;
             _biteApproachStarted = false;
             _ambientFishController?.SetBoundFishHooked(_hook != null ? _hook.transform : null);
             _activeHookReactionWindowSeconds = _assistService.ResolveHookWindow(_hookReactionWindowSeconds, out var adaptiveWindowActivated);
@@ -259,11 +269,11 @@ namespace RavenDevOps.Fishing.Fishing
                 StructuredLogService.LogInfo(
                     "fishing-assist",
                     $"assist=adaptive_hook_window status=activated base_window={_hookReactionWindowSeconds:0.00} resolved_window={_activeHookReactionWindowSeconds:0.00}");
-                _hudOverlay?.SetFishingStatus("Fish hooked! Assist active: extra hook window. Start reeling with Up/W.");
+                _hudOverlay?.SetFishingStatus($"Fish hooked! Assist active: extra hook window. {ResolveHookedPrompt()}");
             }
             else
             {
-                _hudOverlay?.SetFishingStatus("Fish hooked! Reel up with Up/W.");
+                _hudOverlay?.SetFishingStatus($"Fish hooked! {ResolveHookedPrompt()}");
             }
 
             _hudOverlay?.SetFishingFailure(string.Empty);
@@ -286,13 +296,16 @@ namespace RavenDevOps.Fishing.Fishing
             _haulCatchInProgress = true;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
+            if (ResolveHookReelInputMode() == HookReelInputMode.Level1Tap)
+            {
+                _levelOneReelPulseTimeRemaining = Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds);
+            }
+
             _reelEscapeTimeRemaining = _enableReelStruggleEscape
                 ? ResolveReelEscapeWindowSeconds(_hookedFish)
                 : float.PositiveInfinity;
             _encounterModel.Begin(_hookedFish, Mathf.Clamp01(_reelTensionBase));
-            var reelInstruction = IsReelToggleModeEnabled()
-                ? "Fish secured. Auto reeling to boat..."
-                : "Fish secured. Hold Up/W to reel before it escapes.";
+            var reelInstruction = ResolveReelInstruction();
             _hudOverlay?.SetFishingStatus(reelInstruction);
             _hudOverlay?.SetFishingFailure(string.Empty);
             _hudOverlay?.SetFishingTension(0.12f, FishingTensionState.Safe);
@@ -363,7 +376,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickHookedWindow()
         {
-            if (IsUpInputHeldForReelStart())
+            if (ShouldStartReelFromHookedInput())
             {
                 _stateMachine?.AdvanceByAction();
                 return;
@@ -425,7 +438,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (!isReeling && !IsReelToggleModeEnabled())
             {
                 _hudOverlay?.SetFishingStatus(
-                    $"Fish struggling... hold Up/W to reel. Escape in {escapeSuffix}.");
+                    $"Fish struggling... {ResolveReelFailPrompt()} Escape in {escapeSuffix}.");
             }
             else
             {
@@ -842,17 +855,29 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool IsReelEffortActive()
         {
-            if (IsReelToggleModeEnabled())
+            switch (ResolveHookReelInputMode())
             {
-                return true;
-            }
+                case HookReelInputMode.Level1Tap:
+                    return IsLevelOneReelPulseActive();
+                case HookReelInputMode.Level2Hold:
+                    return IsUpInputHeldForReelStart();
+                case HookReelInputMode.Level3Auto:
+                    return true;
+                default:
+                    if (IsReelToggleModeEnabled())
+                    {
+                        return true;
+                    }
 
-            return IsUpInputHeldForReelStart();
+                    return IsUpInputHeldForReelStart();
+            }
         }
 
         private bool IsReelToggleModeEnabled()
         {
-            return _settingsService != null && _settingsService.ReelInputToggle;
+            return ResolveHookReelInputMode() == HookReelInputMode.Legacy
+                && _settingsService != null
+                && _settingsService.ReelInputToggle;
         }
 
         private int ResolveCurrentCargoCapacity()
@@ -879,6 +904,107 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return FallbackCargoCapacityTier1;
+        }
+
+        private HookReelInputMode ResolveHookReelInputMode()
+        {
+            var equippedHookId = _saveManager != null && _saveManager.Current != null
+                ? _saveManager.Current.equippedHookId
+                : string.Empty;
+            return HookReelInputProfile.Resolve(equippedHookId);
+        }
+
+        private bool ShouldStartReelFromHookedInput()
+        {
+            switch (ResolveHookReelInputMode())
+            {
+                case HookReelInputMode.Level1Tap:
+                    return IsUpPressedThisFrame();
+                case HookReelInputMode.Level2Hold:
+                    return IsUpInputHeldForReelStart();
+                case HookReelInputMode.Level3Auto:
+                    return IsHookedAutoReelDoubleTapTriggered();
+                default:
+                    return IsUpInputHeldForReelStart();
+            }
+        }
+
+        private bool IsHookedAutoReelDoubleTapTriggered()
+        {
+            if (!IsUpPressedThisFrame())
+            {
+                return false;
+            }
+
+            var now = Time.unscaledTime;
+            var isDoubleTap = now - _lastHookedUpPressTime <= Mathf.Max(0.1f, _hookedDoubleTapWindowSeconds);
+            _lastHookedUpPressTime = now;
+            return isDoubleTap;
+        }
+
+        private bool IsLevelOneReelPulseActive()
+        {
+            if (IsUpPressedThisFrame())
+            {
+                _levelOneReelPulseTimeRemaining = Mathf.Max(
+                    _levelOneReelPulseTimeRemaining,
+                    Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds));
+            }
+
+            if (_levelOneReelPulseTimeRemaining <= 0f)
+            {
+                return false;
+            }
+
+            _levelOneReelPulseTimeRemaining = Mathf.Max(0f, _levelOneReelPulseTimeRemaining - Time.deltaTime);
+            return true;
+        }
+
+        private string ResolveHookedPrompt()
+        {
+            switch (ResolveHookReelInputMode())
+            {
+                case HookReelInputMode.Level1Tap:
+                    return "Tap Up/W repeatedly to reel in.";
+                case HookReelInputMode.Level2Hold:
+                    return "Hold Up/W to reel in at double speed.";
+                case HookReelInputMode.Level3Auto:
+                    return "Double-tap Up/W to start auto reel.";
+                default:
+                    return "Reel up with Up/W.";
+            }
+        }
+
+        private string ResolveReelInstruction()
+        {
+            switch (ResolveHookReelInputMode())
+            {
+                case HookReelInputMode.Level1Tap:
+                    return "Fish secured. Tap Up/W repeatedly to reel before it escapes.";
+                case HookReelInputMode.Level2Hold:
+                    return "Fish secured. Hold Up/W to reel at double speed.";
+                case HookReelInputMode.Level3Auto:
+                    return "Fish secured. Auto reel engaged.";
+                default:
+                    return IsReelToggleModeEnabled()
+                        ? "Fish secured. Auto reeling to boat..."
+                        : "Fish secured. Hold Up/W to reel before it escapes.";
+            }
+        }
+
+        private string ResolveReelFailPrompt()
+        {
+            switch (ResolveHookReelInputMode())
+            {
+                case HookReelInputMode.Level1Tap:
+                    return "tap Up/W to reel.";
+                case HookReelInputMode.Level2Hold:
+                    return "hold Up/W to reel.";
+                case HookReelInputMode.Level3Auto:
+                    return "auto reel should be active.";
+                default:
+                    return "hold Up/W to reel.";
+            }
         }
 
         private bool IsActionHeldForCastDepth()
@@ -927,6 +1053,37 @@ namespace RavenDevOps.Fishing.Fishing
 #endif
 
             return false;
+        }
+
+        private bool IsUpPressedThisFrame()
+        {
+            var frame = Time.frameCount;
+            if (_cachedUpPressFrame == frame)
+            {
+                return _cachedUpPressResult;
+            }
+
+            RefreshInputActions();
+            var keyboardPressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                keyboardPressed = keyboard.upArrowKey.wasPressedThisFrame || keyboard.wKey.wasPressedThisFrame;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            keyboardPressed = keyboardPressed
+                || UnityEngine.Input.GetKeyDown(KeyCode.UpArrow)
+                || UnityEngine.Input.GetKeyDown(KeyCode.W);
+#endif
+
+            var axisUp = _moveHookAction != null && _moveHookAction.ReadValue<float>() > 0.25f;
+            var axisPressed = axisUp && !_upAxisHeldLastFrameForPress;
+            _upAxisHeldLastFrameForPress = axisUp;
+
+            _cachedUpPressFrame = frame;
+            _cachedUpPressResult = keyboardPressed || axisPressed;
+            return _cachedUpPressResult;
         }
 
         private void SubscribeToStateMachine()
