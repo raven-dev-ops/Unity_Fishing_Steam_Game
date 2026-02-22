@@ -18,6 +18,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _manualOverrideThreshold = 0.22f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
         [SerializeField] private float _castHoldReleaseGraceSeconds = 0.12f;
+        [SerializeField] private float _minimumInitialDropDistance = 0.85f;
 
         private InputAction _moveHookAction;
         private InputAction _actionInput;
@@ -25,6 +26,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _autoReelActive;
         private bool _stateMachineSubscribed;
         private float _inWaterElapsed;
+        private float _castStartY;
         private SpriteRenderer _hookRenderer;
 
         public void Configure(
@@ -79,6 +81,8 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            TryEnsureCastTransition();
+
             switch (_stateMachine.State)
             {
                 case FishingActionState.Cast:
@@ -122,6 +126,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _autoDropActive = true;
                 _inWaterElapsed = 0f;
+                _castStartY = _hookController.transform.position.y;
                 _autoReelActive = false;
                 _hookController.SetMovementEnabled(true);
                 SetHookVisible(true);
@@ -155,6 +160,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingActionState.InWater:
                     _autoDropActive = true;
                     _inWaterElapsed = 0f;
+                    _castStartY = _hookController.transform.position.y;
                     _autoReelActive = false;
                     _hookController.SetMovementEnabled(true);
                     SetHookVisible(true);
@@ -195,8 +201,10 @@ namespace RavenDevOps.Fishing.Fishing
             _inWaterElapsed += Time.deltaTime;
             RefreshMoveHookAction();
             RefreshActionInput();
+            var droppedDistance = Mathf.Max(0f, _castStartY - _hookController.transform.position.y);
             if (_requireCastHoldForAutoDrop
                 && _inWaterElapsed > Mathf.Max(0f, _castHoldReleaseGraceSeconds)
+                && droppedDistance >= Mathf.Max(0f, _minimumInitialDropDistance)
                 && !IsActionHeld())
             {
                 _autoDropActive = false;
@@ -313,6 +321,44 @@ namespace RavenDevOps.Fishing.Fishing
 
             var gamepad = Gamepad.current;
             return gamepad != null && gamepad.buttonSouth.isPressed;
+        }
+
+        private void TryEnsureCastTransition()
+        {
+            if (_stateMachine == null
+                || _stateMachine.State != FishingActionState.Cast
+                || _autoReelActive
+                || !WasActionPressedThisFrame())
+            {
+                return;
+            }
+
+            _stateMachine.AdvanceByAction();
+        }
+
+        private bool WasActionPressedThisFrame()
+        {
+            RefreshActionInput();
+            if (_actionInput != null && _actionInput.WasPressedThisFrame())
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            if (UnityEngine.Input.GetKeyDown(KeyCode.Space))
+            {
+                return true;
+            }
+#endif
+
+            var gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
         }
 
         private void SubscribeToStateMachine()
