@@ -67,6 +67,11 @@ namespace RavenDevOps.Fishing.Economy
             return true;
         }
 
+        public int GetPrice(string hookId)
+        {
+            return ResolvePrice(hookId);
+        }
+
         private int ResolvePrice(string hookId)
         {
             var item = _items.FirstOrDefault(x => x.id == hookId);

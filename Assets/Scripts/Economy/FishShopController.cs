@@ -32,5 +32,17 @@ namespace RavenDevOps.Fishing.Economy
             _saveManager.Save();
             return summary.totalEarned;
         }
+
+        public SellSummary PreviewSellAll()
+        {
+            if (_saveManager == null)
+            {
+                return new SellSummary();
+            }
+
+            return _sellSummaryCalculator != null
+                ? _sellSummaryCalculator.Calculate(_saveManager.Current.fishInventory)
+                : new SellSummary();
+        }
     }
 }

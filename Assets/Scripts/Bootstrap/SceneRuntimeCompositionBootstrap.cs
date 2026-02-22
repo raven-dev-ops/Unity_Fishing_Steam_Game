@@ -351,21 +351,19 @@ namespace RavenDevOps.Fishing.Core
             var hudRoot = new GameObject("HarborHudRoot");
             hudRoot.transform.SetParent(canvas.transform, worldPositionStays: false);
 
-            var actionPanel = CreateTopLeftPanel(
+            var actionPanel = CreatePanel(
                 hudRoot.transform,
                 "HarborActionPanel",
-                new Vector2(20f, 20f),
+                new Vector2(0f, -8f),
                 new Vector2(430f, 430f),
-                new Color(0.05f, 0.10f, 0.18f, 0.80f));
+                new Color(0.05f, 0.10f, 0.18f, 0.82f));
             CreateText(actionPanel.transform, "HarborActionTitle", "Harbor Operations", 30, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(376f, 64f));
-            CreateText(actionPanel.transform, "HarborActionHint", "Select an action, or move near world markers and press Enter.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
+            CreateText(actionPanel.transform, "HarborActionHint", "Select an action from this menu, or move near world markers and press Enter.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
             var hookButton = CreateButton(actionPanel.transform, "HarborHookShopButton", "Hook Shop", new Vector2(0f, 64f), new Vector2(320f, 52f));
             var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 2f), new Vector2(320f, 52f));
             var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -60f), new Vector2(320f, 52f));
             var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -122f), new Vector2(320f, 52f));
             var pauseButton = CreateButton(actionPanel.transform, "HarborPauseButton", "Pause", new Vector2(0f, -184f), new Vector2(320f, 50f));
-            var actionSelectionAura = CreateSelectionAura(actionPanel.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
-            AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
 
             var infoPanel = CreateTopRightPanel(
                 hudRoot.transform,
@@ -382,11 +380,78 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftText(
                 infoPanel.transform,
                 "HarborControls",
-                "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause, click actions on the left panel.",
+                "Harbor: Move with arrows/WASD, Enter to interact, Esc to pause, use the center menu and shop submenus.",
                 16,
                 TextAnchor.UpperLeft,
                 new Vector2(18f, 272f),
                 new Vector2(724f, 30f));
+
+            var hookShopPanel = CreatePanel(
+                hudRoot.transform,
+                "HarborHookShopPanel",
+                new Vector2(0f, -8f),
+                new Vector2(520f, 486f),
+                new Color(0.06f, 0.12f, 0.20f, 0.88f));
+            CreateText(hookShopPanel.transform, "HarborHookShopTitle", "Hook Shop", 30, TextAnchor.MiddleCenter, new Vector2(0f, 202f), new Vector2(468f, 56f));
+            CreateText(hookShopPanel.transform, "HarborHookShopHint", "Select a hook to buy/equip. Purchased hooks remain owned.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(468f, 38f));
+            var hookShopInfo = CreateTopLeftText(
+                hookShopPanel.transform,
+                "HarborHookShopInfo",
+                "Loading hook inventory...",
+                16,
+                TextAnchor.UpperLeft,
+                new Vector2(28f, 106f),
+                new Vector2(464f, 148f));
+            var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
+            var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
+            var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
+            var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
+            hookShopPanel.SetActive(false);
+
+            var boatShopPanel = CreatePanel(
+                hudRoot.transform,
+                "HarborBoatShopPanel",
+                new Vector2(0f, -8f),
+                new Vector2(520f, 486f),
+                new Color(0.06f, 0.12f, 0.20f, 0.88f));
+            CreateText(boatShopPanel.transform, "HarborBoatShopTitle", "Boat Shop", 30, TextAnchor.MiddleCenter, new Vector2(0f, 202f), new Vector2(468f, 56f));
+            CreateText(boatShopPanel.transform, "HarborBoatShopHint", "Select a ship to buy/equip. Better ships increase cargo capacity.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(468f, 38f));
+            var boatShopInfo = CreateTopLeftText(
+                boatShopPanel.transform,
+                "HarborBoatShopInfo",
+                "Loading ship inventory...",
+                16,
+                TextAnchor.UpperLeft,
+                new Vector2(28f, 106f),
+                new Vector2(464f, 148f));
+            var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
+            var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
+            var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
+            var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
+            boatShopPanel.SetActive(false);
+
+            var fishShopPanel = CreatePanel(
+                hudRoot.transform,
+                "HarborFishShopPanel",
+                new Vector2(0f, -8f),
+                new Vector2(500f, 420f),
+                new Color(0.06f, 0.12f, 0.20f, 0.88f));
+            CreateText(fishShopPanel.transform, "HarborFishShopTitle", "Fish Market", 30, TextAnchor.MiddleCenter, new Vector2(0f, 156f), new Vector2(448f, 56f));
+            CreateText(fishShopPanel.transform, "HarborFishShopHint", "Review current cargo and sell your catch.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 118f), new Vector2(448f, 34f));
+            var fishShopInfo = CreateTopLeftText(
+                fishShopPanel.transform,
+                "HarborFishShopInfo",
+                "Loading fish market summary...",
+                17,
+                TextAnchor.UpperLeft,
+                new Vector2(26f, 98f),
+                new Vector2(448f, 126f));
+            var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell Cargo", new Vector2(0f, -62f), new Vector2(318f, 52f));
+            var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -128f), new Vector2(240f, 46f));
+            fishShopPanel.SetActive(false);
+
+            var actionSelectionAura = CreateSelectionAura(hudRoot.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
+            AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
 
             var pauseRoot = CreatePanel(canvas.transform, "HarborPausePanel", Vector2.zero, new Vector2(440f, 292f), new Color(0.04f, 0.09f, 0.15f, 0.86f));
             CreateText(pauseRoot.transform, "HarborPauseTitle", "Harbor Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 96f), new Vector2(320f, 62f));
@@ -460,12 +525,44 @@ namespace RavenDevOps.Fishing.Core
 
             var fishShop = GetOrAddComponent<FishShopController>(root);
             var router = GetOrAddComponent<HarborSceneInteractionRouter>(root);
-            router.Configure(interactables, hookShop, boatShop, fishShop, status, selection, economy, equipment, cargo, activityLog, interactionController);
+            router.Configure(
+                interactables,
+                hookShop,
+                boatShop,
+                fishShop,
+                status,
+                selection,
+                economy,
+                equipment,
+                cargo,
+                activityLog,
+                interactionController,
+                actionPanel,
+                hookShopPanel,
+                boatShopPanel,
+                fishShopPanel,
+                hookShopInfo,
+                boatShopInfo,
+                fishShopInfo,
+                hookButton.gameObject,
+                hookLv1Button.gameObject,
+                boatLv1Button.gameObject,
+                fishSellButton.gameObject);
 
             hookButton.onClick.AddListener(router.OnHookShopRequested);
             boatButton.onClick.AddListener(router.OnBoatShopRequested);
             fishButton.onClick.AddListener(router.OnFishShopRequested);
             sailButton.onClick.AddListener(router.OnSailRequested);
+            hookLv1Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv1"));
+            hookLv2Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv2"));
+            hookLv3Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv3"));
+            hookBackButton.onClick.AddListener(router.OnShopBackRequested);
+            boatLv1Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv1"));
+            boatLv2Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv2"));
+            boatLv3Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv3"));
+            boatBackButton.onClick.AddListener(router.OnShopBackRequested);
+            fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
+            fishBackButton.onClick.AddListener(router.OnShopBackRequested);
             pauseButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
 
             var pauseController = GetOrAddComponent<HarborPauseMenuController>(root);
@@ -479,7 +576,7 @@ namespace RavenDevOps.Fishing.Core
 
             if (EventSystem.current != null)
             {
-                EventSystem.current.SetSelectedGameObject(sailButton.gameObject);
+                EventSystem.current.SetSelectedGameObject(hookButton.gameObject);
             }
         }
 

@@ -150,6 +150,22 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborFishShopButton"), Is.Not.Null, "Expected harbor fish shop button.");
             Assert.That(FindSceneObject("HarborSailButton"), Is.Not.Null, "Expected harbor sail button.");
             Assert.That(FindSceneObject("HarborPauseButton"), Is.Not.Null, "Expected harbor pause button.");
+            Assert.That(FindSceneObject("HarborHookShopPanel"), Is.Not.Null, "Expected harbor hook-shop submenu panel.");
+            Assert.That(FindSceneObject("HarborHookShopInfo"), Is.Not.Null, "Expected harbor hook-shop info text.");
+            Assert.That(FindSceneObject("HarborHookLv1Button"), Is.Not.Null, "Expected harbor hook lv1 button.");
+            Assert.That(FindSceneObject("HarborHookLv2Button"), Is.Not.Null, "Expected harbor hook lv2 button.");
+            Assert.That(FindSceneObject("HarborHookLv3Button"), Is.Not.Null, "Expected harbor hook lv3 button.");
+            Assert.That(FindSceneObject("HarborHookShopBackButton"), Is.Not.Null, "Expected harbor hook-shop back button.");
+            Assert.That(FindSceneObject("HarborBoatShopPanel"), Is.Not.Null, "Expected harbor boat-shop submenu panel.");
+            Assert.That(FindSceneObject("HarborBoatShopInfo"), Is.Not.Null, "Expected harbor boat-shop info text.");
+            Assert.That(FindSceneObject("HarborBoatLv1Button"), Is.Not.Null, "Expected harbor boat lv1 button.");
+            Assert.That(FindSceneObject("HarborBoatLv2Button"), Is.Not.Null, "Expected harbor boat lv2 button.");
+            Assert.That(FindSceneObject("HarborBoatLv3Button"), Is.Not.Null, "Expected harbor boat lv3 button.");
+            Assert.That(FindSceneObject("HarborBoatShopBackButton"), Is.Not.Null, "Expected harbor boat-shop back button.");
+            Assert.That(FindSceneObject("HarborFishShopPanel"), Is.Not.Null, "Expected harbor fish-shop submenu panel.");
+            Assert.That(FindSceneObject("HarborFishShopInfo"), Is.Not.Null, "Expected harbor fish-shop info text.");
+            Assert.That(FindSceneObject("HarborFishShopSellButton"), Is.Not.Null, "Expected harbor fish-shop sell button.");
+            Assert.That(FindSceneObject("HarborFishShopBackButton"), Is.Not.Null, "Expected harbor fish-shop back button.");
 
             Assert.That(FindSceneObject("HarborInfoPanel"), Is.Not.Null, "Expected harbor info panel.");
             var statusTextGo = FindSceneObject("HarborStatus");
