@@ -27,13 +27,12 @@ namespace RavenDevOps.Fishing.Core
         private sealed class RuntimeStage
         {
             public StageDefinition definition;
-            public SpriteRenderer[] renderers;
-            public Color[] baseColors;
         }
 
         [SerializeField] private StageDefinition[] _stages = Array.Empty<StageDefinition>();
         [SerializeField, Min(0f)] private float _initialDelaySeconds = 0.05f;
         [SerializeField] private bool _playOnEnable = true;
+        [SerializeField] private bool _useUnscaledTime = true;
 
         private RuntimeStage[] _runtimeStages = Array.Empty<RuntimeStage>();
         private Coroutine _sequenceRoutine;
@@ -43,12 +42,6 @@ namespace RavenDevOps.Fishing.Core
             _stages = stages ?? Array.Empty<StageDefinition>();
             _initialDelaySeconds = Mathf.Max(0f, initialDelaySeconds);
             CacheRuntimeStages();
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-            {
-                ApplyHiddenState();
-            }
-#endif
         }
 
         public void Play()
@@ -78,7 +71,7 @@ namespace RavenDevOps.Fishing.Core
             CacheRuntimeStages();
             for (var i = 0; i < _runtimeStages.Length; i++)
             {
-                SetStageAlpha(_runtimeStages[i], 1f);
+                SetStageVisible(_runtimeStages[i], true);
             }
         }
 
@@ -122,21 +115,9 @@ namespace RavenDevOps.Fishing.Core
                     stageRoot.gameObject.SetActive(true);
                 }
 
-                var renderers = stageRoot != null
-                    ? stageRoot.GetComponentsInChildren<SpriteRenderer>(true)
-                    : Array.Empty<SpriteRenderer>();
-                var baseColors = new Color[renderers.Length];
-                for (var rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
-                {
-                    var renderer = renderers[rendererIndex];
-                    baseColors[rendererIndex] = renderer != null ? renderer.color : Color.white;
-                }
-
                 stages[stageIndex] = new RuntimeStage
                 {
-                    definition = definition,
-                    renderers = renderers,
-                    baseColors = baseColors
+                    definition = definition
                 };
             }
 
@@ -147,7 +128,7 @@ namespace RavenDevOps.Fishing.Core
         {
             for (var i = 0; i < _runtimeStages.Length; i++)
             {
-                SetStageAlpha(_runtimeStages[i], 0f);
+                SetStageVisible(_runtimeStages[i], false);
             }
         }
 
@@ -157,7 +138,14 @@ namespace RavenDevOps.Fishing.Core
 
             if (_initialDelaySeconds > 0f)
             {
-                yield return new WaitForSeconds(_initialDelaySeconds);
+                if (_useUnscaledTime)
+                {
+                    yield return new WaitForSecondsRealtime(_initialDelaySeconds);
+                }
+                else
+                {
+                    yield return new WaitForSeconds(_initialDelaySeconds);
+                }
             }
 
             for (var stageIndex = 0; stageIndex < _runtimeStages.Length; stageIndex++)
@@ -170,44 +158,43 @@ namespace RavenDevOps.Fishing.Core
 
                 if (stage.definition.revealDelaySeconds > 0f)
                 {
-                    yield return new WaitForSeconds(stage.definition.revealDelaySeconds);
+                    if (_useUnscaledTime)
+                    {
+                        yield return new WaitForSecondsRealtime(stage.definition.revealDelaySeconds);
+                    }
+                    else
+                    {
+                        yield return new WaitForSeconds(stage.definition.revealDelaySeconds);
+                    }
                 }
 
-                var duration = Mathf.Max(0.01f, stage.definition.revealDurationSeconds);
-                var elapsed = 0f;
-                while (elapsed < duration)
+                SetStageVisible(stage, true);
+
+                var holdDuration = Mathf.Max(0f, stage.definition.revealDurationSeconds);
+                if (holdDuration > 0f)
                 {
-                    elapsed += Time.deltaTime;
-                    SetStageAlpha(stage, Mathf.Clamp01(elapsed / duration));
-                    yield return null;
+                    if (_useUnscaledTime)
+                    {
+                        yield return new WaitForSecondsRealtime(holdDuration);
+                    }
+                    else
+                    {
+                        yield return new WaitForSeconds(holdDuration);
+                    }
                 }
-
-                SetStageAlpha(stage, 1f);
             }
 
             _sequenceRoutine = null;
         }
 
-        private static void SetStageAlpha(RuntimeStage stage, float alpha)
+        private static void SetStageVisible(RuntimeStage stage, bool visible)
         {
-            if (stage == null || stage.renderers == null || stage.baseColors == null)
+            if (stage == null || stage.definition.root == null)
             {
                 return;
             }
 
-            var clampedAlpha = Mathf.Clamp01(alpha);
-            var rendererCount = Mathf.Min(stage.renderers.Length, stage.baseColors.Length);
-            for (var i = 0; i < rendererCount; i++)
-            {
-                var renderer = stage.renderers[i];
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                var baseColor = stage.baseColors[i];
-                renderer.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * clampedAlpha);
-            }
+            stage.definition.root.gameObject.SetActive(visible);
         }
     }
 }
