@@ -242,8 +242,19 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             ResolveFishingStateMachine();
-            return _fishingActionStateMachine != null
-                && _fishingActionStateMachine.State != FishingActionState.Cast;
+            if (_fishingActionStateMachine == null)
+            {
+                return false;
+            }
+
+            switch (_fishingActionStateMachine.State)
+            {
+                case FishingActionState.Hooked:
+                case FishingActionState.Reel:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void ResolveFishingStateMachine()
