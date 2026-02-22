@@ -42,6 +42,7 @@ namespace RavenDevOps.Fishing.Data
         [SerializeField] private string _phaseTwoEnvironmentLabel = "pilot/environment-bundles";
         [SerializeField] private string _phaseTwoAudioFallbackPath = "Pilot/Audio";
         [SerializeField] private string _phaseTwoEnvironmentFallbackPath = "Pilot/Environment/Materials";
+        [SerializeField] private bool _verboseLogs;
 
         private readonly Dictionary<string, AudioClip> _phaseTwoAudioByKey = new Dictionary<string, AudioClip>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Material> _phaseTwoEnvironmentByKey = new Dictionary<string, Material>(StringComparer.OrdinalIgnoreCase);
@@ -193,7 +194,7 @@ namespace RavenDevOps.Fishing.Data
                 }
             }
 
-            Debug.Log(
+            LogInfo(
                 $"AddressablesPilotCatalogLoader: fish definitions loaded count={results.Count}, source={(usedFallback ? "resources_fallback" : "addressables")}, label='{_fishDefinitionsLabel}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             onCompleted?.Invoke(results);
             yield break;
@@ -276,7 +277,7 @@ namespace RavenDevOps.Fishing.Data
             _phaseTwoAudioLoadUsedFallback = usedFallback;
             _phaseTwoAudioLoadError = loadError ?? string.Empty;
 
-            Debug.Log(
+            LogInfo(
                 $"AddressablesPilotCatalogLoader: phase-two audio loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, label='{_phaseTwoAudioLabel}', error='{_phaseTwoAudioLoadError}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             DispatchPhaseTwoAudioCallbacks();
             yield break;
@@ -359,7 +360,7 @@ namespace RavenDevOps.Fishing.Data
             _phaseTwoEnvironmentLoadUsedFallback = usedFallback;
             _phaseTwoEnvironmentLoadError = loadError ?? string.Empty;
 
-            Debug.Log(
+            LogInfo(
                 $"AddressablesPilotCatalogLoader: phase-two environment loaded count={results.Count}, source={(usedFallback ? "fallback" : "addressables")}, label='{_phaseTwoEnvironmentLabel}', error='{_phaseTwoEnvironmentLoadError}', addressablesCompiledIn={IsAddressablesCompiledIn}.");
             DispatchPhaseTwoEnvironmentCallbacks();
             yield break;
@@ -694,6 +695,14 @@ namespace RavenDevOps.Fishing.Data
             return string.IsNullOrWhiteSpace(key)
                 ? string.Empty
                 : key.Trim().ToLowerInvariant();
+        }
+
+        private void LogInfo(string message)
+        {
+            if (_verboseLogs || Application.isBatchMode)
+            {
+                Debug.Log(message);
+            }
         }
     }
 }

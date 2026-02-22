@@ -59,16 +59,16 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             stateMachine.AdvanceByAction();
             yield return null;
-            Assert.That(shipMovement.SteeringLockedForFishingState, Is.True, "InWater should lock steering while hook is cast.");
+            Assert.That(shipMovement.SteeringLockedForFishingState, Is.False, "InWater should keep steering available while hook is down.");
 
             stateMachine.SetHooked();
             yield return null;
-            Assert.That(shipMovement.SteeringLockedForFishingState, Is.True, "Hooked should lock steering.");
+            Assert.That(shipMovement.SteeringLockedForFishingState, Is.False, "Hooked should keep steering available.");
 
             yield return null;
             stateMachine.AdvanceByAction();
             yield return null;
-            Assert.That(shipMovement.SteeringLockedForFishingState, Is.True, "Reel should keep steering locked.");
+            Assert.That(shipMovement.SteeringLockedForFishingState, Is.False, "Reel should keep steering available.");
 
             stateMachine.ResetToCast();
             yield return null;
@@ -229,6 +229,91 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Object.Destroy(root);
             Object.Destroy(ship.gameObject);
             Object.Destroy(hookGo);
+        }
+
+        [UnityTest]
+        public IEnumerator InWater_HooksOnlyAfterHookFishCollision()
+        {
+            var root = new GameObject("FishingControlFlow_CollisionHook");
+            var stateMachine = root.AddComponent<FishingActionStateMachine>();
+            var resolver = root.AddComponent<CatchResolver>();
+
+            var ship = new GameObject("FishingControlFlow_CollisionHook_Ship").transform;
+            ship.position = Vector3.zero;
+
+            var hookGo = new GameObject("FishingControlFlow_CollisionHook_Hook");
+            hookGo.transform.position = new Vector3(0f, -30f, 0f);
+            var hookController = hookGo.AddComponent<HookMovementController>();
+            hookController.ConfigureShipTransform(ship);
+
+            var fishGo = new GameObject("FishingFishCollisionAnchor");
+            fishGo.transform.position = new Vector3(3f, -30f, 0f);
+            fishGo.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
+            fishGo.AddComponent<SpriteRenderer>();
+            var ambient = root.AddComponent<FishingAmbientFishSwimController>();
+
+            resolver.Configure(stateMachine, null, hookController, null);
+            stateMachine.AdvanceByAction();
+            yield return null;
+
+            var testFish = new FishDefinition
+            {
+                id = "fish_collision_test",
+                minDistanceTier = 1,
+                maxDistanceTier = 1,
+                minDepth = 20f,
+                maxDepth = 60f,
+                rarityWeight = 1,
+                baseValue = 10,
+                minBiteDelaySeconds = 0.1f,
+                maxBiteDelaySeconds = 0.1f,
+                fightStamina = 2f,
+                pullIntensity = 1f,
+                escapeSeconds = 1f,
+                minCatchWeightKg = 0.5f,
+                maxCatchWeightKg = 1f
+            };
+
+            SetPrivateField(resolver, "_targetFish", testFish);
+            SetPrivateField(resolver, "_biteSelectionResolvedForCurrentDrop", true);
+
+            var bindDeadline = Time.realtimeSinceStartup + 1f;
+            Transform boundFish = null;
+            while (Time.realtimeSinceStartup < bindDeadline)
+            {
+                if (ambient.TryBindFish(testFish.id, out boundFish) && boundFish != null)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            Assert.That(boundFish, Is.Not.Null, "Expected ambient controller to bind a fish track.");
+            SetPrivateField(resolver, "_targetFishBoundToAmbient", true);
+            boundFish.position = new Vector3(3f, hookGo.transform.position.y, boundFish.position.z);
+
+            var noCollisionWindowEndsAt = Time.realtimeSinceStartup + 0.2f;
+            while (Time.realtimeSinceStartup < noCollisionWindowEndsAt)
+            {
+                yield return null;
+            }
+
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Fish should not hook before collision.");
+
+            var collisionTimeoutAt = Time.realtimeSinceStartup + 1.2f;
+            while (stateMachine.State != FishingActionState.Hooked && Time.realtimeSinceStartup < collisionTimeoutAt)
+            {
+                boundFish.position = hookGo.transform.position;
+                yield return null;
+            }
+
+            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.Hooked), "Fish should hook when hook overlaps fish.");
+
+            Object.Destroy(root);
+            Object.Destroy(ship.gameObject);
+            Object.Destroy(hookGo);
+            Object.Destroy(fishGo);
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)

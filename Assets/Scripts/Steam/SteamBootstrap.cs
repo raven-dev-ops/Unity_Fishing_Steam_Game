@@ -18,7 +18,7 @@ namespace RavenDevOps.Fishing.Steam
         [SerializeField] private bool _dontDestroyOnLoad = true;
         [SerializeField] private bool _enforceSteamRelaunch = false;
         [SerializeField] private bool _allowRelaunchInDevelopmentBuild = false;
-        [SerializeField] private bool _verboseLogs = true;
+        [SerializeField] private bool _verboseLogs;
 
         public static bool IsSteamInitialized => _steamInitialized;
         public static string LastFallbackReason => _lastFallbackReason;
@@ -211,10 +211,20 @@ namespace RavenDevOps.Fishing.Steam
             {
                 if (IsExpectedNonSteamFallback(_lastFallbackReason))
                 {
-                    Debug.Log($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
+                    if (Application.isBatchMode)
+                    {
+                        Debug.Log($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
+                    }
+
                     return;
                 }
 
+                Debug.LogWarning($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
+                return;
+            }
+
+            if (!IsExpectedNonSteamFallback(_lastFallbackReason))
+            {
                 Debug.LogWarning($"SteamBootstrap: fallback mode active. {_lastFallbackReason}");
             }
         }

@@ -195,7 +195,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case TutorialStep.Cast:
                     return "Tutorial: Press Down Arrow or S to cast to depth 25.";
                 case TutorialStep.Hook:
-                    return "Tutorial: Wait for a bite, then press Up Arrow or W to start reeling.";
+                    return "Tutorial: Steer left/right and collide the hook with a fish, then press Up Arrow or W to reel.";
                 case TutorialStep.Reel:
                     return "Tutorial: Double-tap Up Arrow or W to auto-reel toward depth 20.";
                 default:
@@ -208,7 +208,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (failReason)
             {
                 case FishingFailReason.MissedHook:
-                    return "Press Up Arrow or W quickly when the fish bites.";
+                    return "Steer into a fish to hook it, then start reeling immediately.";
                 case FishingFailReason.LineSnap:
                     return "Keep steady reeling and avoid abrupt depth changes.";
                 case FishingFailReason.FishEscaped:

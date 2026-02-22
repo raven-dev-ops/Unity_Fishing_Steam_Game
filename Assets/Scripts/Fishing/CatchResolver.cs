@@ -31,6 +31,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _minimumFishSpawnDepth = 20f;
         [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
+        [SerializeField] private float _hookCollisionRadius = 0.22f;
         [SerializeField] private float _haulCompletionDepthThreshold = 0.85f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
@@ -87,6 +88,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _conditionConfigured;
         private bool _biteSelectionResolvedForCurrentDrop;
         private bool _biteApproachStarted;
+        private bool _targetFishBoundToAmbient;
         private bool _haulCatchInProgress;
         private float _reelEscapeTimeRemaining;
         private float _lastHookedUpPressTime = -10f;
@@ -232,6 +234,7 @@ namespace RavenDevOps.Fishing.Fishing
             _reelEscapeTimeRemaining = 0f;
             _biteSelectionResolvedForCurrentDrop = false;
             _biteApproachStarted = false;
+            _targetFishBoundToAmbient = false;
             ResetHookStationaryAttractionTimer(reseedDelay: true);
             _ambientFishController?.ResolveBoundFish(caught: false);
 
@@ -252,7 +255,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hudOverlay?.SetFishingStatus("Casting to depth 25. Use Down/S to lower deeper and Up/W to reel up.");
+            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to line up fish, then collide hook to hook.");
         }
 
         private void BeginHookedPhase()
@@ -338,6 +341,7 @@ namespace RavenDevOps.Fishing.Fishing
 
                 _biteSelectionResolvedForCurrentDrop = false;
                 _biteApproachStarted = false;
+                _targetFishBoundToAmbient = false;
                 _inWaterElapsedSeconds = 0f;
                 ResetHookStationaryAttractionTimer(reseedDelay: true);
                 _hudOverlay?.SetFishingStatus("Adjusting cast depth. Use Down/S to lower deeper.");
@@ -358,34 +362,64 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            UpdateHookStationaryAttractionTimer();
-            _inWaterElapsedSeconds += Time.deltaTime;
-            if (_inWaterElapsedSeconds < _biteTimerSeconds)
+            var baitAttractionEnabled = IsBaitAttractionEnabled() && _targetFishBoundToAmbient;
+            if (baitAttractionEnabled)
             {
-                return;
-            }
-
-            if (!HasSatisfiedHookStationaryAttractionDelay())
-            {
-                return;
-            }
-
-            if (!_biteApproachStarted)
-            {
-                _biteApproachStarted = true;
-                if (TryBeginBiteApproach())
+                UpdateHookStationaryAttractionTimer();
+                _inWaterElapsedSeconds += Time.deltaTime;
+                if (_inWaterElapsedSeconds >= _biteTimerSeconds && HasSatisfiedHookStationaryAttractionDelay())
                 {
-                    _hudOverlay?.SetFishingStatus("A fish is circling the hook...");
+                    if (!_biteApproachStarted)
+                    {
+                        _biteApproachStarted = true;
+                        if (TryBeginBiteApproach())
+                        {
+                            _hudOverlay?.SetFishingStatus("Bait attracts a fish toward the hook...");
+                        }
+                    }
+                }
+            }
+            else if (!_targetFishBoundToAmbient)
+            {
+                // Fallback path for tests or scenes without ambient fish visuals.
+                UpdateHookStationaryAttractionTimer();
+                _inWaterElapsedSeconds += Time.deltaTime;
+                if (_inWaterElapsedSeconds < _biteTimerSeconds)
+                {
+                    return;
+                }
+
+                if (!HasSatisfiedHookStationaryAttractionDelay())
+                {
+                    return;
+                }
+
+                if (!_biteApproachStarted)
+                {
+                    _biteApproachStarted = true;
+                    if (TryBeginBiteApproach())
+                    {
+                        _hudOverlay?.SetFishingStatus("A fish is circling the hook...");
+                        return;
+                    }
+                }
+
+                if (!IsBiteApproachComplete())
+                {
                     return;
                 }
             }
 
-            if (!IsBiteApproachComplete())
+            if (TryHookTargetFishOnCollision())
             {
+                _stateMachine?.SetHooked();
                 return;
             }
 
-            _stateMachine?.SetHooked();
+            if (!_targetFishBoundToAmbient)
+            {
+                _stateMachine?.SetHooked();
+            }
         }
 
         private void TickHookedWindow()
@@ -515,6 +549,7 @@ namespace RavenDevOps.Fishing.Fishing
             _lastTensionState = FishingTensionState.None;
             _reelEscapeTimeRemaining = 0f;
             _biteApproachStarted = false;
+            _targetFishBoundToAmbient = false;
             _stateMachine?.ResetToCast();
         }
 
@@ -776,24 +811,50 @@ namespace RavenDevOps.Fishing.Fishing
             _inWaterElapsedSeconds = 0f;
             _biteApproachStarted = false;
             ResetHookStationaryAttractionTimer(reseedDelay: true);
+            var baitAttractionEnabled = IsBaitAttractionEnabled() && _targetFishBoundToAmbient;
             if (pityActivated)
             {
-                _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: activity increased. Waiting for a bite...");
+                if (baitAttractionEnabled)
+                {
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: bait attracts fish faster.");
+                }
+                else if (_targetFishBoundToAmbient)
+                {
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: steer to collide hook with fish.");
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at depth {depth:0}: waiting for a bite...");
+                }
+
                 return true;
             }
 
-            _hudOverlay?.SetFishingStatus($"Waiting for a bite at depth {depth:0}...");
+            if (baitAttractionEnabled)
+            {
+                _hudOverlay?.SetFishingStatus($"Bait ready at depth {depth:0}. Keep hook steady to attract fish.");
+            }
+            else if (_targetFishBoundToAmbient)
+            {
+                _hudOverlay?.SetFishingStatus($"Fish spotted at depth {depth:0}. Steer left/right so the hook collides to hook it.");
+            }
+            else
+            {
+                _hudOverlay?.SetFishingStatus($"Waiting for a bite at depth {depth:0}...");
+            }
+
             return true;
         }
 
         private void BindAmbientFishToTarget()
         {
+            _targetFishBoundToAmbient = false;
             if (_ambientFishController == null || _targetFish == null)
             {
                 return;
             }
 
-            _ambientFishController.TryBindFish(_targetFish.id, out _);
+            _targetFishBoundToAmbient = _ambientFishController.TryBindFish(_targetFish.id, out _);
         }
 
         private bool TryBeginBiteApproach()
@@ -814,6 +875,23 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return _ambientFishController.IsBoundFishApproachComplete();
+        }
+
+        private bool TryHookTargetFishOnCollision()
+        {
+            if (!_targetFishBoundToAmbient || _ambientFishController == null || _hook == null)
+            {
+                return false;
+            }
+
+            return _ambientFishController.IsBoundFishCollidingWithHook(
+                _hook.transform,
+                Mathf.Max(0.02f, _hookCollisionRadius));
+        }
+
+        private bool IsBaitAttractionEnabled()
+        {
+            return ResolveHookReelInputMode() == HookReelInputMode.Level3Auto;
         }
 
         private void UpdateHookStationaryAttractionTimer()

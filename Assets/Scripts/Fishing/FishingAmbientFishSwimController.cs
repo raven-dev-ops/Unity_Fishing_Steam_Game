@@ -417,6 +417,25 @@ namespace RavenDevOps.Fishing.Fishing
             track.renderer.flipX = track.direction < 0f;
         }
 
+        public bool IsBoundFishCollidingWithHook(Transform hookTransform, float hookRadius = 0.22f)
+        {
+            if (hookTransform == null
+                || _boundTrack == null
+                || _boundTrack.transform == null
+                || _boundTrack.renderer == null
+                || !_boundTrack.renderer.enabled
+                || _boundTrack.hooked)
+            {
+                return false;
+            }
+
+            var hookPosition = hookTransform.position;
+            var fishPosition = _boundTrack.transform.position;
+            var combinedRadius = Mathf.Max(0.02f, hookRadius) + ResolveTrackCollisionRadius(_boundTrack);
+            var delta = new Vector2(hookPosition.x - fishPosition.x, hookPosition.y - fishPosition.y);
+            return delta.sqrMagnitude <= combinedRadius * combinedRadius;
+        }
+
         private SwimTrack FindBindingCandidateTrack(string preferredFishId)
         {
             preferredFishId = NormalizeFishId(preferredFishId);
@@ -1155,6 +1174,18 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Sign(delta);
+        }
+
+        private static float ResolveTrackCollisionRadius(SwimTrack track)
+        {
+            if (track == null || track.transform == null)
+            {
+                return 0.2f;
+            }
+
+            var lossyScale = track.transform.lossyScale;
+            var averageScale = (Mathf.Abs(lossyScale.x) + Mathf.Abs(lossyScale.y)) * 0.5f;
+            return Mathf.Clamp(averageScale * 0.3f, 0.12f, 0.55f);
         }
     }
 }

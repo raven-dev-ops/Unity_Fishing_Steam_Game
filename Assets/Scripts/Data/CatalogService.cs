@@ -10,6 +10,7 @@ namespace RavenDevOps.Fishing.Data
         [SerializeField] private GameConfigSO _gameConfig;
         [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
         [SerializeField] private string _defaultConfigResourcePath = "Config/SO_GameConfig";
+        [SerializeField] private bool _verboseLogs;
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();
         private readonly Dictionary<string, ShipDefinitionSO> _shipById = new Dictionary<string, ShipDefinitionSO>();
@@ -107,7 +108,7 @@ namespace RavenDevOps.Fishing.Data
             _gameConfig = Resources.Load<GameConfigSO>(_defaultConfigResourcePath);
             if (_gameConfig != null)
             {
-                Debug.Log($"CatalogService: loaded default GameConfigSO from Resources/{_defaultConfigResourcePath}.");
+                LogInfo($"CatalogService: loaded default GameConfigSO from Resources/{_defaultConfigResourcePath}.");
             }
         }
 
@@ -187,7 +188,7 @@ namespace RavenDevOps.Fishing.Data
             }
 
             _phaseOneFishLoadCompleted = true;
-            Debug.Log(
+            LogInfo(
                 $"CatalogService: phase-one fish load completed with {_phaseOneFishById.Count} fish definition(s). AddressablesRuntime={(_addressablesPilotLoader != null && _addressablesPilotLoader.IsAddressablesRuntimeAvailable)}.");
             Rebuild();
         }
@@ -214,7 +215,7 @@ namespace RavenDevOps.Fishing.Data
                 : "addressables";
             var error = _addressablesPilotLoader != null ? _addressablesPilotLoader.PhaseTwoAudioLoadError : string.Empty;
             _phaseTwoAudioLoadCompleted = true;
-            Debug.Log($"CatalogService: phase-two audio load completed count={_phaseTwoAudioById.Count}, source={source}, error='{error}'.");
+            LogInfo($"CatalogService: phase-two audio load completed count={_phaseTwoAudioById.Count}, source={source}, error='{error}'.");
         }
 
         private void HandlePhaseTwoEnvironmentLoaded(List<Material> materials)
@@ -239,7 +240,7 @@ namespace RavenDevOps.Fishing.Data
                 : "addressables";
             var error = _addressablesPilotLoader != null ? _addressablesPilotLoader.PhaseTwoEnvironmentLoadError : string.Empty;
             _phaseTwoEnvironmentLoadCompleted = true;
-            Debug.Log($"CatalogService: phase-two environment load completed count={_phaseTwoEnvironmentById.Count}, source={source}, error='{error}'.");
+            LogInfo($"CatalogService: phase-two environment load completed count={_phaseTwoEnvironmentById.Count}, source={source}, error='{error}'.");
         }
 
         private void ApplyPhaseOneFishCatalog()
@@ -310,6 +311,14 @@ namespace RavenDevOps.Fishing.Data
             return string.IsNullOrWhiteSpace(key)
                 ? string.Empty
                 : key.Trim().ToLowerInvariant();
+        }
+
+        private void LogInfo(string message)
+        {
+            if (_verboseLogs || Application.isBatchMode)
+            {
+                Debug.Log(message);
+            }
         }
     }
 }

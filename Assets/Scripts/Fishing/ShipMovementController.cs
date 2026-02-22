@@ -15,6 +15,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _useTravelDistanceForTier = true;
         [SerializeField] private float _distanceUnitsPerTier = 14f;
         [SerializeField] private bool _disableSteeringWhileHookCast = true;
+        [SerializeField] private bool _allowSteeringWhileHookDown = true;
         [SerializeField] private FishingActionStateMachine _fishingActionStateMachine;
         [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
         [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
@@ -258,7 +259,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingActionState.InWater:
                 case FishingActionState.Hooked:
                 case FishingActionState.Reel:
-                    return true;
+                    return !_allowSteeringWhileHookDown;
                 default:
                     return false;
             }
