@@ -83,6 +83,8 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(settings.ReadabilityBoost, Is.False);
             Assert.That(settings.ReducedMotion, Is.False);
             Assert.That(settings.ReelInputToggle, Is.False);
+            Assert.That(settings.ResolutionWidth, Is.EqualTo(1920));
+            Assert.That(settings.ResolutionHeight, Is.EqualTo(1080));
 
             Object.DestroyImmediate(go);
         }

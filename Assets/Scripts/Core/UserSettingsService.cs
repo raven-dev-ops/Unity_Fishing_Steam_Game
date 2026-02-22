@@ -5,6 +5,10 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class UserSettingsService : MonoBehaviour
     {
+        private const int DefaultResolutionWidth = 1920;
+        private const int DefaultResolutionHeight = 1080;
+        private const int DefaultResolutionRefreshHz = 60;
+
         private const string KeyMasterVolume = "settings.masterVolume";
         private const string KeyMusicVolume = "settings.musicVolume";
         private const string KeySfxVolume = "settings.sfxVolume";
@@ -236,10 +240,13 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_resolutionWidth <= 0 || _resolutionHeight <= 0)
             {
-                var current = Screen.currentResolution;
-                _resolutionWidth = current.width;
-                _resolutionHeight = current.height;
-                _resolutionRefresh = ResolveRefreshRateHz(current);
+                _resolutionWidth = DefaultResolutionWidth;
+                _resolutionHeight = DefaultResolutionHeight;
+            }
+
+            if (_resolutionRefresh <= 0)
+            {
+                _resolutionRefresh = DefaultResolutionRefreshHz;
             }
 
             var mode = _fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
@@ -264,10 +271,9 @@ namespace RavenDevOps.Fishing.Core
             _readabilityBoost = PlayerPrefs.GetInt(KeyReadabilityBoost, 0) == 1;
             _steamRichPresenceEnabled = PlayerPrefs.GetInt(KeySteamRichPresenceEnabled, 1) == 1;
 
-            var current = Screen.currentResolution;
-            _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, current.width);
-            _resolutionHeight = PlayerPrefs.GetInt(KeyResolutionHeight, current.height);
-            _resolutionRefresh = PlayerPrefs.GetInt(KeyResolutionRefresh, ResolveRefreshRateHz(current));
+            _resolutionWidth = PlayerPrefs.GetInt(KeyResolutionWidth, DefaultResolutionWidth);
+            _resolutionHeight = PlayerPrefs.GetInt(KeyResolutionHeight, DefaultResolutionHeight);
+            _resolutionRefresh = PlayerPrefs.GetInt(KeyResolutionRefresh, DefaultResolutionRefreshHz);
         }
 
         private void SaveToPrefs()
