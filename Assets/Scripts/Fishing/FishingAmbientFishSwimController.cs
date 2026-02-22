@@ -443,21 +443,120 @@ namespace RavenDevOps.Fishing.Fishing
 
         public bool IsBoundFishCollidingWithHook(Transform hookTransform, float hookRadius = 0.22f)
         {
+            return IsTrackCollidingWithHook(
+                _boundTrack,
+                hookTransform,
+                Mathf.Max(0.02f, hookRadius),
+                out _);
+        }
+
+        public bool TryBindCollidingFishToHook(Transform hookTransform, float hookRadius, out string fishId)
+        {
+            fishId = string.Empty;
+            if (hookTransform == null)
+            {
+                return false;
+            }
+
+            var collisionRadius = Mathf.Max(0.02f, hookRadius);
+            SwimTrack collidedTrack = null;
+            var bestDistanceSqr = float.MaxValue;
+
+            if (IsTrackCollidingWithHook(_boundTrack, hookTransform, collisionRadius, out var boundDistanceSqr))
+            {
+                collidedTrack = _boundTrack;
+                bestDistanceSqr = boundDistanceSqr;
+            }
+
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var track = _tracks[i];
+                if (track == null
+                    || track.transform == null
+                    || track.renderer == null
+                    || track.hooked
+                    || !track.renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!track.active && !track.approaching && !track.reserved)
+                {
+                    continue;
+                }
+
+                if (!IsTrackCollidingWithHook(track, hookTransform, collisionRadius, out var distanceSqr))
+                {
+                    continue;
+                }
+
+                if (distanceSqr >= bestDistanceSqr)
+                {
+                    continue;
+                }
+
+                collidedTrack = track;
+                bestDistanceSqr = distanceSqr;
+            }
+
+            if (collidedTrack == null)
+            {
+                return false;
+            }
+
+            if (_boundTrack != null && _boundTrack != collidedTrack)
+            {
+                _boundTrack.hooked = false;
+                _boundTrack.approaching = false;
+                _boundTrack.settled = false;
+                _boundTrack.reserved = false;
+                if (_boundTrack.renderer != null)
+                {
+                    _boundTrack.renderer.color = _boundTrack.baseColor;
+                    if (!_boundTrack.active)
+                    {
+                        _boundTrack.renderer.enabled = false;
+                    }
+                }
+            }
+
+            _boundTrack = collidedTrack;
+            _boundHookTransform = hookTransform;
+            collidedTrack.reserved = true;
+            collidedTrack.hooked = false;
+            collidedTrack.active = false;
+            collidedTrack.approaching = false;
+            collidedTrack.settled = false;
+            collidedTrack.renderer.enabled = true;
+            collidedTrack.renderer.color = Color.Lerp(collidedTrack.baseColor, Color.white, 0.34f);
+            collidedTrack.hookedOffsetSign = ResolveHookSideSign(collidedTrack.transform.position.x, hookTransform.position.x);
+            fishId = NormalizeFishId(collidedTrack.fishId);
+            return true;
+        }
+
+        private bool IsTrackCollidingWithHook(
+            SwimTrack track,
+            Transform hookTransform,
+            float hookRadius,
+            out float distanceSqr)
+        {
+            distanceSqr = float.PositiveInfinity;
             if (hookTransform == null
-                || _boundTrack == null
-                || _boundTrack.transform == null
-                || _boundTrack.renderer == null
-                || !_boundTrack.renderer.enabled
-                || _boundTrack.hooked)
+                || track == null
+                || track.transform == null
+                || track.renderer == null
+                || !track.renderer.enabled
+                || track.hooked)
             {
                 return false;
             }
 
             var hookPosition = hookTransform.position;
-            var fishPosition = _boundTrack.transform.position;
-            var combinedRadius = Mathf.Max(0.02f, hookRadius) + ResolveTrackCollisionRadius(_boundTrack);
+            var fishPosition = track.transform.position;
+            var combinedRadius = Mathf.Max(0.02f, hookRadius) + ResolveTrackCollisionRadius(track);
             var delta = new Vector2(hookPosition.x - fishPosition.x, hookPosition.y - fishPosition.y);
-            return delta.sqrMagnitude <= combinedRadius * combinedRadius;
+            distanceSqr = delta.sqrMagnitude;
+            return distanceSqr <= combinedRadius * combinedRadius;
         }
 
         private SwimTrack FindBindingCandidateTrack(string preferredFishId)

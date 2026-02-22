@@ -117,6 +117,35 @@ namespace RavenDevOps.Fishing.Fishing
             return ApplyConditionModifiers(ResolveByWeightedRoll(roll));
         }
 
+        public bool TryGetFishDefinitionById(string fishId, out FishDefinition fish)
+        {
+            fish = null;
+            if (string.IsNullOrWhiteSpace(fishId))
+            {
+                return false;
+            }
+
+            EnsureRuntimeDefinitions();
+            for (var i = 0; i < _runtimeDefinitions.Count; i++)
+            {
+                var candidate = _runtimeDefinitions[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                if (!string.Equals(candidate.id, fishId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                fish = ApplyConditionModifiers(candidate);
+                return fish != null;
+            }
+
+            return false;
+        }
+
         private void EnsureRuntimeDefinitions()
         {
             var hasCatalog = _catalogService != null && _catalogService.FishById != null && _catalogService.FishById.Count > 0;

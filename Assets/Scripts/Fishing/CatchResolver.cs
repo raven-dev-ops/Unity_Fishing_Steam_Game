@@ -33,6 +33,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
         [SerializeField] private float _hookCollisionRadius = 0.22f;
         [SerializeField] private float _haulCompletionDepthThreshold = 20f;
+        [SerializeField] private float _boatArrivalDepthThreshold = 1.1f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
         [SerializeField] private float _hookedDoubleTapWindowSeconds = 0.35f;
         [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
@@ -93,6 +94,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _biteApproachStarted;
         private bool _targetFishBoundToAmbient;
         private bool _haulCatchInProgress;
+        private bool _catchSecuredAtThresholdDepth;
         private float _reelEscapeTimeRemaining;
         private float _lastHookedUpPressTime = -10f;
         private float _levelOneReelPulseTimeRemaining;
@@ -227,6 +229,7 @@ namespace RavenDevOps.Fishing.Fishing
             _targetFish = null;
             _hookedFish = null;
             _haulCatchInProgress = false;
+            _catchSecuredAtThresholdDepth = false;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _inWaterElapsedSeconds = 0f;
@@ -258,7 +261,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, then reel to depth 20 to secure the catch.");
+            _hudOverlay?.SetFishingStatus("Casting to depth 25. Steer left/right to hook fish on collision, reel to depth 20 to secure, then bring it to the boat.");
         }
 
         private void BeginHookedPhase()
@@ -307,6 +310,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _haulCatchInProgress = true;
+            _catchSecuredAtThresholdDepth = false;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             if (ResolveHookReelInputMode() == HookReelInputMode.Level1Tap)
@@ -454,53 +458,75 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var isReeling = IsReelEffortActive();
-            UpdateReelEscapeTimer(isReeling);
-            var hasActiveEscapeRisk = _enableReelStruggleEscape && !float.IsInfinity(_reelEscapeTimeRemaining);
-            if (hasActiveEscapeRisk && _reelEscapeTimeRemaining <= 0f)
-            {
-                _pendingFailReason = FishingFailReason.FishEscaped;
-                _catchSucceeded = false;
-                _stateMachine?.SetResolve();
-                return;
-            }
 
-            var remainingDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
-            var catchDepthThreshold = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
-            var remainingDepthUntilSecured = Mathf.Max(0f, remainingDepth - catchDepthThreshold);
-            var tension = ResolveReelTension(isReeling);
-            var tensionState = FishEncounterModel.ResolveTensionState(tension);
-            if (_lastTensionState != tensionState)
+            if (!_catchSecuredAtThresholdDepth)
             {
-                if (tensionState == FishingTensionState.Warning)
+                UpdateReelEscapeTimer(isReeling);
+                var hasActiveEscapeRisk = _enableReelStruggleEscape && !float.IsInfinity(_reelEscapeTimeRemaining);
+                if (hasActiveEscapeRisk && _reelEscapeTimeRemaining <= 0f)
                 {
-                    _audioManager?.PlaySfx(_tensionWarningSfx);
-                }
-                else if (tensionState == FishingTensionState.Critical)
-                {
-                    _audioManager?.PlaySfx(_tensionCriticalSfx);
+                    _pendingFailReason = FishingFailReason.FishEscaped;
+                    _catchSucceeded = false;
+                    _stateMachine?.SetResolve();
+                    return;
                 }
 
-                _lastTensionState = tensionState;
-            }
+                var remainingDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
+                var catchDepthThreshold = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
+                var remainingDepthUntilSecured = Mathf.Max(0f, remainingDepth - catchDepthThreshold);
+                var tension = ResolveReelTension(isReeling);
+                var tensionState = FishEncounterModel.ResolveTensionState(tension);
+                if (_lastTensionState != tensionState)
+                {
+                    if (tensionState == FishingTensionState.Warning)
+                    {
+                        _audioManager?.PlaySfx(_tensionWarningSfx);
+                    }
+                    else if (tensionState == FishingTensionState.Critical)
+                    {
+                        _audioManager?.PlaySfx(_tensionCriticalSfx);
+                    }
 
-            _hudOverlay?.SetFishingTension(tension, tensionState);
-            var escapeStatus = hasActiveEscapeRisk
-                ? $"Escape in {Mathf.Max(0f, _reelEscapeTimeRemaining):0.0}s."
-                : "Escape risk low.";
-            if (!isReeling && !IsReelToggleModeEnabled())
-            {
-                _hudOverlay?.SetFishingStatus(
-                    $"Fish struggling... {ResolveReelFailPrompt()} {escapeStatus}");
+                    _lastTensionState = tensionState;
+                }
+
+                _hudOverlay?.SetFishingTension(tension, tensionState);
+                var escapeStatus = hasActiveEscapeRisk
+                    ? $"Escape in {Mathf.Max(0f, _reelEscapeTimeRemaining):0.0}s."
+                    : "Escape risk low.";
+                if (!isReeling && !IsReelToggleModeEnabled())
+                {
+                    _hudOverlay?.SetFishingStatus(
+                        $"Fish struggling... {ResolveReelFailPrompt()} {escapeStatus}");
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus(
+                        $"Reeling catch... {remainingDepthUntilSecured:0.0} depth until secured | {escapeStatus}");
+                }
+
+                if (IsHookAtCatchSecureDepth())
+                {
+                    _catchSecuredAtThresholdDepth = true;
+                    _reelEscapeTimeRemaining = float.PositiveInfinity;
+                    _ambientFishController?.SetBoundFishSettled(_hook != null ? _hook.transform : null);
+                    _lastTensionState = FishingTensionState.Safe;
+                    _hudOverlay?.SetFishingTension(0.08f, FishingTensionState.Safe);
+                    _hudOverlay?.SetFishingStatus(
+                        $"Catch secured at depth {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}. Keep reeling to bring it aboard.");
+                }
             }
             else
             {
+                var currentDepth = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
+                _lastTensionState = FishingTensionState.Safe;
+                _hudOverlay?.SetFishingTension(0.06f, FishingTensionState.Safe);
                 _hudOverlay?.SetFishingStatus(
-                    $"Reeling catch... {remainingDepthUntilSecured:0.0} depth until secured | {escapeStatus}");
+                    $"Catch secured at depth {Mathf.Max(0.1f, _haulCompletionDepthThreshold):0}. Reeling to boat... current depth {currentDepth:0.0}");
             }
 
-            if (IsHookAtBoat())
+            if (_catchSecuredAtThresholdDepth && IsHookAtBoat())
             {
-                _ambientFishController?.SetBoundFishSettled(_hook != null ? _hook.transform : null);
                 _haulCatchInProgress = false;
                 _catchSucceeded = true;
                 _pendingFailReason = FishingFailReason.None;
@@ -549,6 +575,7 @@ namespace RavenDevOps.Fishing.Fishing
             _targetFish = null;
             _hookedFish = null;
             _haulCatchInProgress = false;
+            _catchSecuredAtThresholdDepth = false;
             _catchSucceeded = false;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
@@ -884,14 +911,43 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool TryHookTargetFishOnCollision()
         {
-            if (!_targetFishBoundToAmbient || _ambientFishController == null || _hook == null)
+            if (_ambientFishController == null || _hook == null)
             {
                 return false;
             }
 
-            return _ambientFishController.IsBoundFishCollidingWithHook(
-                _hook.transform,
-                Mathf.Max(0.02f, _hookCollisionRadius));
+            var collisionRadius = Mathf.Max(0.02f, _hookCollisionRadius);
+            if (_targetFishBoundToAmbient
+                && _ambientFishController.IsBoundFishCollidingWithHook(_hook.transform, collisionRadius))
+            {
+                return true;
+            }
+
+            return TryPromoteCollidingAmbientFishToTarget(collisionRadius);
+        }
+
+        private bool TryPromoteCollidingAmbientFishToTarget(float collisionRadius)
+        {
+            if (_ambientFishController == null || _hook == null)
+            {
+                return false;
+            }
+
+            if (!_ambientFishController.TryBindCollidingFishToHook(_hook.transform, collisionRadius, out var fishId))
+            {
+                return false;
+            }
+
+            _targetFishBoundToAmbient = true;
+            if (_spawner != null
+                && !string.IsNullOrWhiteSpace(fishId)
+                && _spawner.TryGetFishDefinitionById(fishId, out var resolvedFish)
+                && resolvedFish != null)
+            {
+                _targetFish = resolvedFish;
+            }
+
+            return true;
         }
 
         private bool IsBaitAttractionEnabled()
@@ -965,6 +1021,17 @@ namespace RavenDevOps.Fishing.Fishing
             return fishCount >= cargoCapacity;
         }
 
+        private bool IsHookAtCatchSecureDepth()
+        {
+            if (_hook == null)
+            {
+                return true;
+            }
+
+            var catchDepth = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
+            return _hook.CurrentDepth <= catchDepth;
+        }
+
         private bool IsHookAtBoat()
         {
             if (_hook == null)
@@ -972,7 +1039,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return true;
             }
 
-            var completionDepth = Mathf.Max(0.05f, _haulCompletionDepthThreshold);
+            var completionDepth = Mathf.Max(0.05f, _boatArrivalDepthThreshold);
             return _hook.CurrentDepth <= completionDepth;
         }
 
@@ -1191,18 +1258,19 @@ namespace RavenDevOps.Fishing.Fishing
 
         private string ResolveReelInstruction()
         {
+            var secureDepth = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
             switch (ResolveHookReelInputMode())
             {
                 case HookReelInputMode.Level1Tap:
-                    return "Fish secured. Tap Up/W repeatedly to reel before it escapes.";
+                    return $"Fish hooked. Tap Up/W repeatedly to reel to depth {secureDepth:0} before it escapes.";
                 case HookReelInputMode.Level2Hold:
-                    return "Fish secured. Hold Up/W to reel at double speed.";
+                    return $"Fish hooked. Hold Up/W to reel to depth {secureDepth:0} at double speed.";
                 case HookReelInputMode.Level3Auto:
-                    return "Fish secured. Auto reel engaged.";
+                    return $"Fish hooked. Auto reel engaged to depth {secureDepth:0}.";
                 default:
                     return IsReelToggleModeEnabled()
-                        ? "Fish secured. Auto reeling to boat..."
-                        : "Fish secured. Hold Up/W to reel before it escapes.";
+                        ? $"Fish hooked. Auto reeling to depth {secureDepth:0}..."
+                        : $"Fish hooked. Hold Up/W to reel to depth {secureDepth:0} before it escapes.";
             }
         }
 
