@@ -44,8 +44,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _spawnAheadWhileDescending = true;
         [SerializeField] private float _descendingAheadCameraLengths = 2.5f;
         [SerializeField] private float _descendingAheadBandHeight = 22f;
+        [SerializeField] private int _descendingAheadMinimumActiveFish = 2;
         [SerializeField] private float _descendingSpawnCadenceMultiplier = 2.5f;
-        [SerializeField] private float _descendingDetectionMinMetersPerSecond = 0.35f;
+        [SerializeField] private float _descendingDetectionMinMetersPerSecond = 0.08f;
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
@@ -190,6 +191,8 @@ namespace RavenDevOps.Fishing.Fishing
                 }
             }
 
+            var activeAheadFishCount = CountActiveFishAheadOfHook();
+            var minimumAheadFishWhileDescending = ResolveMinimumAheadFishWhileDescending(allowAmbientPresence);
             for (var i = 0; i < _tracks.Count; i++)
             {
                 if (!allowAmbientPresence)
@@ -208,10 +211,16 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                if (track.spawnDelay <= 0f)
+                var forceDescendingSpawn = minimumAheadFishWhileDescending > 0
+                    && activeAheadFishCount < minimumAheadFishWhileDescending;
+                if (track.spawnDelay <= 0f || forceDescendingSpawn)
                 {
                     SpawnTrack(track);
                     activeCount++;
+                    if (_hook == null || track.baseY < _hook.position.y - 0.05f)
+                    {
+                        activeAheadFishCount++;
+                    }
                 }
             }
         }
@@ -1320,6 +1329,50 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(1f, _descendingSpawnCadenceMultiplier);
+        }
+
+        private int ResolveMinimumAheadFishWhileDescending(bool allowAmbientPresence)
+        {
+            if (!_spawnAheadWhileDescending
+                || !_isHookDescending
+                || !allowAmbientPresence
+                || _hook == null)
+            {
+                return 0;
+            }
+
+            var maxConcurrent = Mathf.Max(1, _maxConcurrentFish);
+            var minimumAhead = Mathf.Max(1, _descendingAheadMinimumActiveFish);
+            return Mathf.Min(maxConcurrent, minimumAhead);
+        }
+
+        private int CountActiveFishAheadOfHook()
+        {
+            if (_hook == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var track = _tracks[i];
+                if (track == null
+                    || !track.active
+                    || track.transform == null
+                    || track.renderer == null
+                    || !track.renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (track.transform.position.y < _hook.position.y - 0.05f)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private void UpdateHookDescentState()
