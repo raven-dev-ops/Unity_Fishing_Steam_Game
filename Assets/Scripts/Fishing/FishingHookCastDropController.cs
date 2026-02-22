@@ -17,8 +17,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _autoReelSpeed = 7.6f;
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private bool _requireCastHoldForAutoDrop = true;
-        [SerializeField] private float _castHoldReleaseGraceSeconds = 0.12f;
-        [SerializeField] private float _minimumInitialDropDistance = 0.85f;
+        [SerializeField] private float _castHoldReleaseGraceSeconds = 0.2f;
+        [SerializeField] private float _minimumInitialDropDistance = 3f;
 
         private InputAction _moveHookAction;
         private InputAction _actionInput;

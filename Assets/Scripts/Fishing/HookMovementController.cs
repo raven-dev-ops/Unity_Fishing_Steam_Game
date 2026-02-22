@@ -14,6 +14,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _depthBounds = new Vector2(-8f, -1f);
         [SerializeField] private float _distanceTierDepthStep = 0.5f;
         [SerializeField] private int _distanceTier = 1;
+        [SerializeField] private float _minimumOperationalMaxDepth = 6f;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -252,7 +253,10 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _minDepthBelowSurface = Mathf.Max(0.1f, _minDepthBelowSurface);
             var tierScale = 1f + (Mathf.Max(1, _distanceTier) - 1f) * Mathf.Max(0f, _distanceTierDepthStep);
-            var maxDepth = Mathf.Max(_minDepthBelowSurface + 0.1f, _baseMaxDepth * tierScale);
+            var maxDepth = Mathf.Max(
+                _minDepthBelowSurface + 0.1f,
+                Mathf.Max(2f, _minimumOperationalMaxDepth),
+                _baseMaxDepth * tierScale);
             _depthBounds = new Vector2(-maxDepth, -_minDepthBelowSurface);
             ClampTransformToDepthBounds();
         }
