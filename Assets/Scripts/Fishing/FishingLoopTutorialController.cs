@@ -197,7 +197,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case TutorialStep.Hook:
                     return "Tutorial: Steer left/right and collide the hook with a fish, then press Up Arrow or W to reel.";
                 case TutorialStep.Reel:
-                    return "Tutorial: Double-tap Up Arrow or W to auto-reel toward 20m.";
+                    return "Tutorial: Press Up Arrow or W to start auto-reeling toward 20m.";
                 default:
                     return string.Empty;
             }

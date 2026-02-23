@@ -158,35 +158,35 @@ namespace RavenDevOps.Fishing.Audio
 
         public void SetMasterVolume(float linearValue)
         {
-            _masterVolume = Mathf.Clamp(linearValue, 0.0001f, 1f);
+            _masterVolume = Mathf.Clamp01(linearValue);
             _settingsService?.SetMasterVolume(_masterVolume);
             ApplyAllVolumes();
         }
 
         public void SetMusicVolume(float linearValue)
         {
-            _musicVolume = Mathf.Clamp(linearValue, 0.0001f, 1f);
+            _musicVolume = Mathf.Clamp01(linearValue);
             _settingsService?.SetMusicVolume(_musicVolume);
             ApplyAllVolumes();
         }
 
         public void SetSfxVolume(float linearValue)
         {
-            _sfxVolume = Mathf.Clamp(linearValue, 0.0001f, 1f);
+            _sfxVolume = Mathf.Clamp01(linearValue);
             _settingsService?.SetSfxVolume(_sfxVolume);
             ApplyAllVolumes();
         }
 
         public void SetVoVolume(float linearValue)
         {
-            _voVolume = Mathf.Clamp(linearValue, 0.0001f, 1f);
+            _voVolume = Mathf.Clamp01(linearValue);
             _settingsService?.SetVoVolume(_voVolume);
             ApplyAllVolumes();
         }
 
         public void SetMixerVolume(string parameterName, float linearValue)
         {
-            var clamped = Mathf.Clamp(linearValue, 0.0001f, 1f);
+            var clamped = Mathf.Clamp01(linearValue);
             switch (parameterName)
             {
                 case MasterVolumeParam:
@@ -204,7 +204,14 @@ namespace RavenDevOps.Fishing.Audio
                 default:
                     if (_mixer != null && !string.IsNullOrWhiteSpace(parameterName))
                     {
-                        _mixer.SetFloat(parameterName, Mathf.Log10(clamped) * 20f);
+                        if (clamped <= 0f)
+                        {
+                            _mixer.SetFloat(parameterName, -80f);
+                        }
+                        else
+                        {
+                            _mixer.SetFloat(parameterName, Mathf.Log10(clamped) * 20f);
+                        }
                     }
 
                     break;
@@ -213,7 +220,7 @@ namespace RavenDevOps.Fishing.Audio
 
         private void ApplyAllVolumes()
         {
-            var duckedMusic = Mathf.Clamp(_musicVolume * _duckMultiplier, 0.0001f, 1f);
+            var duckedMusic = Mathf.Clamp01(_musicVolume * _duckMultiplier);
             ApplyMixerOrSourceVolume(MasterVolumeParam, _masterVolume, null);
             ApplyMixerOrSourceVolume(MusicVolumeParam, duckedMusic, _musicSource);
             ApplyMixerOrSourceVolume(SfxVolumeParam, _sfxVolume, _sfxSource);
@@ -222,11 +229,19 @@ namespace RavenDevOps.Fishing.Audio
 
         private void ApplyMixerOrSourceVolume(string mixerParam, float linear, AudioSource source)
         {
-            var clamped = Mathf.Clamp(linear, 0.0001f, 1f);
+            var clamped = Mathf.Clamp01(linear);
 
             if (_mixer != null)
             {
-                _mixer.SetFloat(mixerParam, Mathf.Log10(clamped) * 20f);
+                if (clamped <= 0f)
+                {
+                    _mixer.SetFloat(mixerParam, -80f);
+                }
+                else
+                {
+                    _mixer.SetFloat(mixerParam, Mathf.Log10(clamped) * 20f);
+                }
+
                 return;
             }
 

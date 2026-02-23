@@ -191,13 +191,21 @@ namespace RavenDevOps.Fishing.Core
             var settingsAudioPanel = CreateTopLeftPanel(settingsPanel.transform, "SettingsAudioPanel", new Vector2(22f, 104f), new Vector2(710f, 300f), new Color(0.12f, 0.20f, 0.30f, 0.92f));
             CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingsAudioTitle", "Audio", 24, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(300f, 36f));
             CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMasterLabel", "Master Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 62f), new Vector2(190f, 26f));
-            var masterSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMasterSlider", new Vector2(220f, 64f), new Vector2(460f, 28f), 0f, 1f);
+            var masterSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMasterSlider", new Vector2(220f, 64f), new Vector2(360f, 28f), 0f, 1f);
+            var masterMuteToggle = CreateTopLeftToggle(settingsAudioPanel.transform, "SettingMasterMuteToggle", new Vector2(592f, 62f), new Vector2(24f, 24f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMasterMuteLabel", "Mute", 14, TextAlignmentOptions.TopLeft, new Vector2(626f, 62f), new Vector2(64f, 24f));
             CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMusicLabel", "Music Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(190f, 26f));
-            var musicSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMusicSlider", new Vector2(220f, 112f), new Vector2(460f, 28f), 0f, 1f);
+            var musicSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingMusicSlider", new Vector2(220f, 112f), new Vector2(360f, 28f), 0f, 1f);
+            var musicMuteToggle = CreateTopLeftToggle(settingsAudioPanel.transform, "SettingMusicMuteToggle", new Vector2(592f, 110f), new Vector2(24f, 24f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingMusicMuteLabel", "Mute", 14, TextAlignmentOptions.TopLeft, new Vector2(626f, 110f), new Vector2(64f, 24f));
             CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingSfxLabel", "SFX Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 158f), new Vector2(190f, 26f));
-            var sfxSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingSfxSlider", new Vector2(220f, 160f), new Vector2(460f, 28f), 0f, 1f);
+            var sfxSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingSfxSlider", new Vector2(220f, 160f), new Vector2(360f, 28f), 0f, 1f);
+            var sfxMuteToggle = CreateTopLeftToggle(settingsAudioPanel.transform, "SettingSfxMuteToggle", new Vector2(592f, 158f), new Vector2(24f, 24f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingSfxMuteLabel", "Mute", 14, TextAlignmentOptions.TopLeft, new Vector2(626f, 158f), new Vector2(64f, 24f));
             CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingVoLabel", "Voice Volume", 16, TextAlignmentOptions.TopLeft, new Vector2(18f, 206f), new Vector2(190f, 26f));
-            var voSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingVoSlider", new Vector2(220f, 208f), new Vector2(460f, 28f), 0f, 1f);
+            var voSlider = CreateTopLeftSlider(settingsAudioPanel.transform, "SettingVoSlider", new Vector2(220f, 208f), new Vector2(360f, 28f), 0f, 1f);
+            var voMuteToggle = CreateTopLeftToggle(settingsAudioPanel.transform, "SettingVoMuteToggle", new Vector2(592f, 206f), new Vector2(24f, 24f));
+            CreateTopLeftTmpText(settingsAudioPanel.transform, "SettingVoMuteLabel", "Mute", 14, TextAlignmentOptions.TopLeft, new Vector2(626f, 206f), new Vector2(64f, 24f));
 
             var settingsGameplayPanel = CreateTopLeftPanel(settingsPanel.transform, "SettingsGameplayPanel", new Vector2(22f, 422f), new Vector2(710f, 322f), new Color(0.12f, 0.20f, 0.30f, 0.92f));
             CreateTopLeftTmpText(settingsGameplayPanel.transform, "SettingsGameplayTitle", "Gameplay and Accessibility", 24, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(400f, 36f));
@@ -296,6 +304,10 @@ namespace RavenDevOps.Fishing.Core
                 musicSlider,
                 sfxSlider,
                 voSlider,
+                masterMuteToggle,
+                musicMuteToggle,
+                sfxMuteToggle,
+                voMuteToggle,
                 inputSensitivitySlider,
                 uiScaleSlider,
                 subtitleScaleSlider,
@@ -336,6 +348,10 @@ namespace RavenDevOps.Fishing.Core
             musicSlider.onValueChanged.AddListener(settingsController.OnMusicVolumeChanged);
             sfxSlider.onValueChanged.AddListener(settingsController.OnSfxVolumeChanged);
             voSlider.onValueChanged.AddListener(settingsController.OnVoVolumeChanged);
+            masterMuteToggle.onValueChanged.AddListener(settingsController.OnMasterMuteChanged);
+            musicMuteToggle.onValueChanged.AddListener(settingsController.OnMusicMuteChanged);
+            sfxMuteToggle.onValueChanged.AddListener(settingsController.OnSfxMuteChanged);
+            voMuteToggle.onValueChanged.AddListener(settingsController.OnVoMuteChanged);
             inputSensitivitySlider.onValueChanged.AddListener(settingsController.OnInputSensitivityChanged);
             uiScaleSlider.onValueChanged.AddListener(settingsController.OnUiScaleChanged);
             subtitleScaleSlider.onValueChanged.AddListener(settingsController.OnSubtitleScaleChanged);

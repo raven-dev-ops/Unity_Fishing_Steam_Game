@@ -14,6 +14,10 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private Slider _musicSlider;
         [SerializeField] private Slider _sfxSlider;
         [SerializeField] private Slider _voSlider;
+        [SerializeField] private Toggle _masterMuteToggle;
+        [SerializeField] private Toggle _musicMuteToggle;
+        [SerializeField] private Toggle _sfxMuteToggle;
+        [SerializeField] private Toggle _voMuteToggle;
         [SerializeField] private Slider _inputSensitivitySlider;
         [SerializeField] private Slider _uiScaleSlider;
         [SerializeField] private Slider _subtitleScaleSlider;
@@ -49,6 +53,10 @@ namespace RavenDevOps.Fishing.UI
             Slider musicSlider,
             Slider sfxSlider,
             Slider voSlider,
+            Toggle masterMuteToggle,
+            Toggle musicMuteToggle,
+            Toggle sfxMuteToggle,
+            Toggle voMuteToggle,
             Slider inputSensitivitySlider,
             Slider uiScaleSlider,
             Slider subtitleScaleSlider,
@@ -75,6 +83,10 @@ namespace RavenDevOps.Fishing.UI
             _musicSlider = musicSlider;
             _sfxSlider = sfxSlider;
             _voSlider = voSlider;
+            _masterMuteToggle = masterMuteToggle;
+            _musicMuteToggle = musicMuteToggle;
+            _sfxMuteToggle = sfxMuteToggle;
+            _voMuteToggle = voMuteToggle;
             _inputSensitivitySlider = inputSensitivitySlider;
             _uiScaleSlider = uiScaleSlider;
             _subtitleScaleSlider = subtitleScaleSlider;
@@ -146,6 +158,34 @@ namespace RavenDevOps.Fishing.UI
         {
             _audioManager?.SetVoVolume(value);
             _settingsService?.SetVoVolume(value);
+        }
+
+        public void OnMasterMuteChanged(bool enabled)
+        {
+            var resolvedVolume = ResolveMuteAdjustedVolume(enabled, _settingsService != null ? _settingsService.MasterVolume : 1f);
+            SetSliderValue(_masterSlider, resolvedVolume);
+            OnMasterVolumeChanged(resolvedVolume);
+        }
+
+        public void OnMusicMuteChanged(bool enabled)
+        {
+            var resolvedVolume = ResolveMuteAdjustedVolume(enabled, _settingsService != null ? _settingsService.MusicVolume : 1f);
+            SetSliderValue(_musicSlider, resolvedVolume);
+            OnMusicVolumeChanged(resolvedVolume);
+        }
+
+        public void OnSfxMuteChanged(bool enabled)
+        {
+            var resolvedVolume = ResolveMuteAdjustedVolume(enabled, _settingsService != null ? _settingsService.SfxVolume : 1f);
+            SetSliderValue(_sfxSlider, resolvedVolume);
+            OnSfxVolumeChanged(resolvedVolume);
+        }
+
+        public void OnVoMuteChanged(bool enabled)
+        {
+            var resolvedVolume = ResolveMuteAdjustedVolume(enabled, _settingsService != null ? _settingsService.VoVolume : 1f);
+            SetSliderValue(_voSlider, resolvedVolume);
+            OnVoVolumeChanged(resolvedVolume);
         }
 
         public void OnInputSensitivityChanged(float value)
@@ -251,6 +291,10 @@ namespace RavenDevOps.Fishing.UI
             SetSliderValue(_musicSlider, _settingsService.MusicVolume);
             SetSliderValue(_sfxSlider, _settingsService.SfxVolume);
             SetSliderValue(_voSlider, _settingsService.VoVolume);
+            SetToggleValue(_masterMuteToggle, IsMutedVolume(_settingsService.MasterVolume));
+            SetToggleValue(_musicMuteToggle, IsMutedVolume(_settingsService.MusicVolume));
+            SetToggleValue(_sfxMuteToggle, IsMutedVolume(_settingsService.SfxVolume));
+            SetToggleValue(_voMuteToggle, IsMutedVolume(_settingsService.VoVolume));
             SetSliderValue(_inputSensitivitySlider, _settingsService.InputSensitivity);
             SetSliderValue(_uiScaleSlider, _settingsService.UiScale);
             SetSliderValue(_subtitleScaleSlider, _settingsService.SubtitleScale);
@@ -464,6 +508,31 @@ namespace RavenDevOps.Fishing.UI
             }
 
             slider.SetValueWithoutNotify(value);
+        }
+
+        private static void SetToggleValue(Toggle toggle, bool value)
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            toggle.SetIsOnWithoutNotify(value);
+        }
+
+        private static bool IsMutedVolume(float value)
+        {
+            return Mathf.Clamp01(value) <= 0.0001f;
+        }
+
+        private static float ResolveMuteAdjustedVolume(bool muted, float currentVolume)
+        {
+            if (muted)
+            {
+                return 0f;
+            }
+
+            return IsMutedVolume(currentVolume) ? 1f : Mathf.Clamp01(currentVolume);
         }
 
         private static int ResolveRefreshRateHz(Resolution resolution)

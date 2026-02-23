@@ -1472,7 +1472,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case HookReelInputMode.Level2Hold:
                     return IsUpInputHeldForReelStart();
                 case HookReelInputMode.Level3Auto:
-                    return IsHookedAutoReelDoubleTapTriggered();
+                    return IsUpPressedThisFrame();
                 default:
                     return IsUpInputHeldForReelStart();
             }
@@ -1518,7 +1518,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case HookReelInputMode.Level2Hold:
                     return "Hold Up/W to reel in at double speed.";
                 case HookReelInputMode.Level3Auto:
-                    return "Double-tap Up/W to start auto reel.";
+                    return "Press Up/W to start auto reel.";
                 default:
                     return "Reel up with Up/W.";
             }
@@ -1551,7 +1551,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case HookReelInputMode.Level2Hold:
                     return "hold Up/W to reel.";
                 case HookReelInputMode.Level3Auto:
-                    return "auto reel should be active.";
+                    return "press Up/W to start auto reel.";
                 default:
                     return "hold Up/W to reel.";
             }

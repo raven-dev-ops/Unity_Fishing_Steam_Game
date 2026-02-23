@@ -30,10 +30,10 @@ namespace RavenDevOps.Fishing.Core
 
         private static UserSettingsService _instance;
 
-        [SerializeField] private float _masterVolume = 1f;
-        [SerializeField] private float _musicVolume = 1f;
-        [SerializeField] private float _sfxVolume = 1f;
-        [SerializeField] private float _voVolume = 1f;
+        [SerializeField] private float _masterVolume = 0f;
+        [SerializeField] private float _musicVolume = 0f;
+        [SerializeField] private float _sfxVolume = 0f;
+        [SerializeField] private float _voVolume = 0f;
         [SerializeField] private float _inputSensitivity = 1f;
         [SerializeField] private bool _fullscreen = true;
         [SerializeField] private int _resolutionWidth;
@@ -255,10 +255,10 @@ namespace RavenDevOps.Fishing.Core
 
         private void LoadFromPrefs()
         {
-            _masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMasterVolume, 1f));
-            _musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, 1f));
-            _sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, 1f));
-            _voVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyVoVolume, 1f));
+            _masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMasterVolume, 0f));
+            _musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, 0f));
+            _sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, 0f));
+            _voVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyVoVolume, 0f));
             _inputSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(KeyInputSensitivity, 1f), 0.5f, 2f);
             _fullscreen = PlayerPrefs.GetInt(KeyFullscreen, 1) == 1;
             _subtitlesEnabled = PlayerPrefs.GetInt(KeySubtitlesEnabled, 1) == 1;

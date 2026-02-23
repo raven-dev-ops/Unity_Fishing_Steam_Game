@@ -93,7 +93,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator HookLevel3_AutoReel_RequiresDoubleTapAndDisablesInWaterRaiseDoubleTap()
+        public IEnumerator HookLevel3_AutoReel_StartsOnSinglePressAndDisablesInWaterRaiseDoubleTap()
         {
             var saveManager = CreateComponent<SaveManager>("SaveManager_Level3Auto");
             yield return null;
@@ -101,7 +101,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var resolver = CreateComponent<CatchResolver>("CatchResolver_Level3Auto");
             SetPrivateField(resolver, "_saveManager", saveManager);
-            SetPrivateField(resolver, "_hookedDoubleTapWindowSeconds", 0.35f);
 
             var castController = CreateComponent<FishingHookCastDropController>("CastController_Level3Auto");
             SetPrivateField(castController, "_saveManager", saveManager);
@@ -110,16 +109,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             PrimeResolverUpPress(resolver, pressedThisFrame: true);
             Assert.That(
                 InvokePrivate<bool>(resolver, "ShouldStartReelFromHookedInput"),
-                Is.False,
-                "Lv3 first tap should not start auto reel.");
-
-            yield return null;
-            SetPrivateField(resolver, "_lastHookedUpPressTime", Time.unscaledTime - 0.1f);
-            PrimeResolverUpPress(resolver, pressedThisFrame: true);
-            Assert.That(
-                InvokePrivate<bool>(resolver, "ShouldStartReelFromHookedInput"),
                 Is.True,
-                "Lv3 second tap inside window should start auto reel.");
+                "Lv3 first press should start auto reel.");
 
             Assert.That(
                 InvokePrivate<bool>(castController, "CanUseInWaterAutoRaiseDoubleTap"),
