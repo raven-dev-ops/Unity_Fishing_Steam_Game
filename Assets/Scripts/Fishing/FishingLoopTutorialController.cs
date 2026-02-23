@@ -1111,11 +1111,11 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.HookUpgradeInfo:
                     return "Hook upgrades improve drop speed and special effects as hook level increases.";
                 case DemoAutoplayPhase.Level4DarknessInfo:
-                    return $"Level 4 darkness tutorial: drop to {_demoLevel4CastDepthMeters:0,0}m for a full low-visibility pass. Lv4 light radius is {_demoLevel4LightRadiiMeters.x:0.#}m in darkness and {_demoLevel4LightRadiiMeters.y:0.#}m in deep-dark.";
+                    return $"Level 4 darkness tutorial: scene starts at {_demoLevel4CastDepthMeters:0,0}m for a full low-visibility pass. Lv4 light radius is {_demoLevel4LightRadiiMeters.x:0.#}m in darkness and {_demoLevel4LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level4ReelInfo:
                     return $"Level 4 darkness catch: fish is hooked, then reels from {_demoLevel4CastDepthMeters:0,0}m toward the {_demoLevel4ReelTargetDepthMeters:0,0}m line while fading out.";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
-                    return $"Level 5 hook demo: cast into deep-dark (3km-5km). Lv5 light radius is {_demoLevel5LightRadiiMeters.x:0.#}m in darkness and {_demoLevel5LightRadiiMeters.y:0.#}m in deep-dark.";
+                    return $"Level 5 hook demo: scene starts in deep-dark at {_demoLevel5CastDepthMeters:0,0}m. Lv5 light radius is {_demoLevel5LightRadiiMeters.x:0.#}m in darkness and {_demoLevel5LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
                     return $"Level 5 deep-dark catch: hook and reel toward the Lv5 ship line at {_demoLevel5ReelTargetDepthMeters:0,0}m.";
                 case DemoAutoplayPhase.FinishInfo:
