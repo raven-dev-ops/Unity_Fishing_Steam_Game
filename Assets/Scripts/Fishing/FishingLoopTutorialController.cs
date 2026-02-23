@@ -96,7 +96,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
-        [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(28f, 14f);
+        [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
         [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
         [SerializeField] private float _demoDockOffsetY = 0.65f;
