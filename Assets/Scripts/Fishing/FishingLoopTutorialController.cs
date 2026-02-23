@@ -119,7 +119,6 @@ namespace RavenDevOps.Fishing.Fishing
         private string _demoSceneTransitionTitle = string.Empty;
         private string _demoSceneTransitionSubtitle = string.Empty;
         private bool _demoCurrentTransitionStartsBlack;
-        private bool _demoIntroTransitionStartFromBlack;
         private DemoAutoplayPhase _demoQueuedNextPhase = DemoAutoplayPhase.None;
         private float _demoQueuedNextPhaseAt;
         private IFishingHudOverlay _hudOverlay;
@@ -305,10 +304,6 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = true;
             _failureCount = 0;
             _nextPromptRefreshAt = 0f;
-            _demoIntroTransitionStartFromBlack = _saveManager != null
-                && _saveManager.Current != null
-                && _saveManager.Current.tutorialFlags != null
-                && _saveManager.Current.tutorialFlags.fishingLoopTutorialReplayRequested;
             _saveManager?.MarkFishingLoopTutorialStarted();
             UpdateSkipButtonVisibility();
             _stateMachine?.ResetToCast();
@@ -971,8 +966,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionActive = true;
             _demoPendingTransitionPhase = phase;
             _demoPendingTransitionPhasePrepared = false;
-            var startFromBlack = phase == DemoAutoplayPhase.IntroInfo && _demoIntroTransitionStartFromBlack;
-            _demoIntroTransitionStartFromBlack = false;
+            var startFromBlack = phase == DemoAutoplayPhase.IntroInfo;
             _demoCurrentTransitionStartsBlack = startFromBlack;
             _demoSceneTransitionStartedAt = Time.unscaledTime;
             _demoSceneTransitionTitle = title;
