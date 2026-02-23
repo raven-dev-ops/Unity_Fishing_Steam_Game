@@ -152,7 +152,7 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(24f, 62f),
                 new Vector2(820f, 38f));
 
-            var profileStatsPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileStatsPanel", new Vector2(22f, 104f), new Vector2(620f, 500f), new Color(0.09f, 0.16f, 0.25f, 0.92f));
+            var profileStatsPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileStatsPanel", new Vector2(22f, 104f), new Vector2(620f, 440f), new Color(0.09f, 0.16f, 0.25f, 0.92f));
             var profileDayText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileDayText", "Day -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(576f, 32f));
             var profileCopecsText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileCopecsText", "Copecs: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 56f), new Vector2(576f, 32f));
             var profileTotalFishText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileTotalFishText", "Total Fish Caught: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 94f), new Vector2(576f, 32f));
@@ -160,21 +160,21 @@ namespace RavenDevOps.Fishing.Core
             var profileLevelText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileLevelText", "Level: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 170f), new Vector2(576f, 32f));
             var profileXpProgressText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileXpProgressText", "XP: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 208f), new Vector2(576f, 32f));
             var profileNextUnlockText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileNextUnlockText", "Next Unlock: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 246f), new Vector2(576f, 32f));
-            var profileObjectiveText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileObjectiveText", "Objective: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 286f), new Vector2(576f, 192f));
+            var profileObjectiveText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileObjectiveText", "Objective: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 286f), new Vector2(576f, 150f));
 
-            var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 500f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
-            var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 460f));
+            var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 440f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
+            var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 400f));
 
-            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 612f), new Vector2(1274f, 88f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
-            var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 12f), new Vector2(1238f, 24f));
-            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro", new Vector2(18f, 48f), new Vector2(240f, 30f));
-            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro", new Vector2(272f, 48f), new Vector2(240f, 30f));
-            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tut", new Vector2(526f, 48f), new Vector2(240f, 30f));
-            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tut", new Vector2(780f, 48f), new Vector2(240f, 30f));
+            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 552f), new Vector2(1274f, 72f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
+            var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 8f), new Vector2(1238f, 22f));
+            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro", new Vector2(18f, 36f), new Vector2(240f, 30f));
+            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro", new Vector2(272f, 36f), new Vector2(240f, 30f));
+            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tut", new Vector2(526f, 36f), new Vector2(240f, 30f));
+            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tut", new Vector2(780f, 36f), new Vector2(240f, 30f));
 
-            var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -314f), new Vector2(240f, 52f));
-            var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -314f), new Vector2(240f, 52f));
-            var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -314f), new Vector2(240f, 52f));
+            var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -320f), new Vector2(240f, 52f));
+            var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -320f), new Vector2(240f, 52f));
+            var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -320f), new Vector2(240f, 52f));
             profilePanel.SetActive(false);
 
             var settingsPanel = CreatePanel(canvas.transform, "SettingsPanel", new Vector2(0f, -8f), new Vector2(1480f, 840f), new Color(0.10f, 0.16f, 0.23f, 0.94f));
