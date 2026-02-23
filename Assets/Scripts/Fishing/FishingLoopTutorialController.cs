@@ -55,6 +55,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private CatchResolver _catchResolver;
         [SerializeField] private ShipMovementController _shipMovement;
         [SerializeField] private HookMovementController _hookMovement;
+        [SerializeField] private FishingHookCastDropController _hookCastDropController;
         [SerializeField] private FishingDepthDarknessController _depthDarknessController;
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
         [SerializeField] private InputActionMapController _inputMapController;
@@ -97,6 +98,8 @@ namespace RavenDevOps.Fishing.Fishing
         private Transform _demoShipTransform;
         private Transform _demoHookTransform;
         private SpriteRenderer _demoHookRenderer;
+        private bool _hookCastDropWasEnabledBeforeDemo;
+        private bool _hookCastDropDisabledByTutorial;
 
         public void ConfigureSkipButton(Button skipTutorialButton)
         {
@@ -379,6 +382,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             EnsureDependencies();
             EnsureDemoAnchors();
+            SuppressRuntimeHookCastControllerForDemo();
             _demoActive = true;
             _demoFishApproachStarted = false;
             _demoFishBound = false;
@@ -747,6 +751,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
             ResolveDemoFish(caught: false);
+            RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             SetTutorialMessageBoxVisible(false);
             SetDemoHookVisible(false);
@@ -759,6 +764,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
             ResolveDemoFish(caught: false);
+            RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             SetTutorialMessageBoxVisible(false);
             if (resetHookToDock)
@@ -1013,6 +1019,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _shipMovement, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _hookMovement, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _hookCastDropController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _depthDarknessController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _ambientFishController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
@@ -1034,6 +1041,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookMovement ??= GetComponent<HookMovementController>();
             _hookMovement ??= FindAnyObjectByType<HookMovementController>(FindObjectsInactive.Include);
+
+            _hookCastDropController ??= GetComponent<FishingHookCastDropController>();
+            _hookCastDropController ??= FindAnyObjectByType<FishingHookCastDropController>(FindObjectsInactive.Include);
 
             _depthDarknessController ??= GetComponent<FishingDepthDarknessController>();
             _depthDarknessController ??= FindAnyObjectByType<FishingDepthDarknessController>(FindObjectsInactive.Include);
@@ -1146,6 +1156,43 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return null;
+        }
+
+        private void SuppressRuntimeHookCastControllerForDemo()
+        {
+            if (_hookCastDropController == null)
+            {
+                _hookCastDropDisabledByTutorial = false;
+                _hookCastDropWasEnabledBeforeDemo = false;
+                return;
+            }
+
+            _hookCastDropWasEnabledBeforeDemo = _hookCastDropController.enabled;
+            if (_hookCastDropWasEnabledBeforeDemo)
+            {
+                _hookCastDropController.enabled = false;
+                _hookCastDropDisabledByTutorial = true;
+                return;
+            }
+
+            _hookCastDropDisabledByTutorial = false;
+        }
+
+        private void RestoreRuntimeHookCastController()
+        {
+            if (_hookCastDropController == null)
+            {
+                _hookCastDropDisabledByTutorial = false;
+                return;
+            }
+
+            if (_hookCastDropDisabledByTutorial && _hookCastDropWasEnabledBeforeDemo)
+            {
+                _hookCastDropController.enabled = true;
+            }
+
+            _hookCastDropDisabledByTutorial = false;
+            _hookCastDropWasEnabledBeforeDemo = false;
         }
     }
 }
