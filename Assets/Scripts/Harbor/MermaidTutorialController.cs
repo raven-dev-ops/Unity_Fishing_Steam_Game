@@ -4,6 +4,7 @@ using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Harbor
 {
@@ -12,38 +13,74 @@ namespace RavenDevOps.Fishing.Harbor
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private DialogueBubbleController _dialogue;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private Button _skipIntroButton;
 
         [SerializeField] private bool _isBlockingInteractions;
         private InputAction _cancelAction;
 
         public bool IsBlockingInteractions => _isBlockingInteractions;
 
-        public void Configure(DialogueBubbleController dialogue)
+        public void Configure(DialogueBubbleController dialogue, Button skipIntroButton = null)
         {
             _dialogue = dialogue;
+            ConfigureSkipButton(skipIntroButton);
+            EvaluateTutorialState();
+        }
+
+        public void ConfigureSkipButton(Button skipIntroButton)
+        {
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.RemoveListener(CompleteTutorial);
+            }
+
+            _skipIntroButton = skipIntroButton;
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.AddListener(CompleteTutorial);
+            }
+
+            UpdateSkipButtonVisibility();
         }
 
         private void Awake()
         {
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            EnsureDependencies();
         }
 
         private void Start()
         {
-            if (_saveManager == null)
+            EvaluateTutorialState();
+        }
+
+        private void OnEnable()
+        {
+            EnsureDependencies();
+            if (_saveManager != null)
             {
-                return;
+                _saveManager.SaveDataChanged += OnSaveDataChanged;
             }
 
-            if (_saveManager.Current.tutorialFlags.tutorialSeen)
+            if (_skipIntroButton != null)
             {
-                _isBlockingInteractions = false;
-                return;
+                _skipIntroButton.onClick.RemoveListener(CompleteTutorial);
+                _skipIntroButton.onClick.AddListener(CompleteTutorial);
             }
 
-            _isBlockingInteractions = true;
-            _dialogue?.Play();
+            EvaluateTutorialState();
+        }
+
+        private void OnDisable()
+        {
+            if (_saveManager != null)
+            {
+                _saveManager.SaveDataChanged -= OnSaveDataChanged;
+            }
+
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.RemoveListener(CompleteTutorial);
+            }
         }
 
         private void Update()
@@ -72,6 +109,51 @@ namespace RavenDevOps.Fishing.Harbor
 
             _isBlockingInteractions = false;
             _dialogue?.Stop();
+            UpdateSkipButtonVisibility();
+        }
+
+        private void OnSaveDataChanged(SaveDataV1 _)
+        {
+            EvaluateTutorialState();
+        }
+
+        private void EvaluateTutorialState()
+        {
+            EnsureDependencies();
+            if (_saveManager == null || _saveManager.Current == null)
+            {
+                return;
+            }
+
+            var shouldRunTutorial = _saveManager.ShouldRunIntroTutorial();
+            if (!shouldRunTutorial)
+            {
+                _isBlockingInteractions = false;
+                UpdateSkipButtonVisibility();
+                return;
+            }
+
+            BeginTutorialIfNeeded();
+        }
+
+        private void BeginTutorialIfNeeded()
+        {
+            if (_dialogue == null)
+            {
+                _saveManager?.SetTutorialSeen(true);
+                _isBlockingInteractions = false;
+                UpdateSkipButtonVisibility();
+                return;
+            }
+
+            _isBlockingInteractions = true;
+            _saveManager?.MarkIntroTutorialStarted();
+            if (!_dialogue.IsRunning)
+            {
+                _dialogue.Play();
+            }
+
+            UpdateSkipButtonVisibility();
         }
 
         private void RefreshActionsIfNeeded()
@@ -84,6 +166,22 @@ namespace RavenDevOps.Fishing.Harbor
             _cancelAction = _inputMapController != null
                 ? _inputMapController.FindAction("Harbor/Pause")
                 : null;
+        }
+
+        private void EnsureDependencies()
+        {
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+        }
+
+        private void UpdateSkipButtonVisibility()
+        {
+            if (_skipIntroButton == null)
+            {
+                return;
+            }
+
+            _skipIntroButton.gameObject.SetActive(_isBlockingInteractions);
         }
     }
 }

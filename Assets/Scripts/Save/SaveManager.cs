@@ -221,13 +221,48 @@ namespace RavenDevOps.Fishing.Save
         public void SetTutorialSeen(bool tutorialSeen)
         {
             _current.tutorialFlags ??= new TutorialFlags();
-            if (_current.tutorialFlags.tutorialSeen == tutorialSeen)
+            var changed = _current.tutorialFlags.tutorialSeen != tutorialSeen;
+            if (tutorialSeen && _current.tutorialFlags.introTutorialReplayRequested)
+            {
+                changed = true;
+            }
+
+            if (!changed)
             {
                 return;
             }
 
             _current.tutorialFlags.tutorialSeen = tutorialSeen;
+            if (tutorialSeen)
+            {
+                _current.tutorialFlags.introTutorialReplayRequested = false;
+            }
+
             Save();
+        }
+
+        public bool ShouldRunIntroTutorial()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            return !_current.tutorialFlags.tutorialSeen || _current.tutorialFlags.introTutorialReplayRequested;
+        }
+
+        public void RequestIntroTutorialReplay()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            _current.tutorialFlags.tutorialSeen = false;
+            _current.tutorialFlags.introTutorialReplayRequested = true;
+            Save();
+        }
+
+        public void MarkIntroTutorialStarted()
+        {
+            _current.tutorialFlags ??= new TutorialFlags();
+            if (_current.tutorialFlags.introTutorialReplayRequested)
+            {
+                _current.tutorialFlags.introTutorialReplayRequested = false;
+                Save();
+            }
         }
 
         public bool ShouldRunFishingLoopTutorial()

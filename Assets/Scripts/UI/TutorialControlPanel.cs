@@ -52,7 +52,7 @@ namespace RavenDevOps.Fishing.UI
         public void ReplayTutorial()
         {
             EnsureSaveManager();
-            _saveManager?.SetTutorialSeen(false);
+            _saveManager?.RequestIntroTutorialReplay();
             RefreshStatus();
         }
 
@@ -93,11 +93,12 @@ namespace RavenDevOps.Fishing.UI
             save.tutorialFlags ??= new TutorialFlags();
             var flags = save.tutorialFlags;
             var intro = flags.tutorialSeen ? "Seen" : "Pending";
+            var introReplay = flags.introTutorialReplayRequested ? "Yes" : "No";
             var fishing = flags.fishingLoopTutorialCompleted
                 ? (flags.fishingLoopTutorialSkipped ? "Skipped" : "Completed")
                 : "Pending";
             var replay = flags.fishingLoopTutorialReplayRequested ? "Yes" : "No";
-            _statusText.text = $"Tutorial flags: Intro={intro} | Fishing={fishing} | ReplayRequested={replay}";
+            _statusText.text = $"Tutorial flags: Intro={intro} | IntroReplay={introReplay} | Fishing={fishing} | FishingReplay={replay}";
         }
 
         private void EnsureSaveManager()

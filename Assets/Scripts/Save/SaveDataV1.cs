@@ -53,6 +53,7 @@ namespace RavenDevOps.Fishing.Save
     public sealed class TutorialFlags
     {
         public bool tutorialSeen;
+        public bool introTutorialReplayRequested;
         public bool fishingLoopTutorialCompleted;
         public bool fishingLoopTutorialSkipped;
         public bool fishingLoopTutorialReplayRequested;

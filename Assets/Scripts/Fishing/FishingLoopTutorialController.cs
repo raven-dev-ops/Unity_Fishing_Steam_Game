@@ -1,6 +1,7 @@
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Fishing
 {
@@ -19,6 +20,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingActionStateMachine _stateMachine;
         [SerializeField] private CatchResolver _catchResolver;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
+        [SerializeField] private Button _skipTutorialButton;
         [SerializeField] private int _maxRecoveryFailures = 3;
 
         private TutorialStep _step = TutorialStep.None;
@@ -26,11 +28,25 @@ namespace RavenDevOps.Fishing.Fishing
         private int _failureCount;
         private IFishingHudOverlay _hudOverlay;
 
+        public void ConfigureSkipButton(Button skipTutorialButton)
+        {
+            if (_skipTutorialButton != null)
+            {
+                _skipTutorialButton.onClick.RemoveListener(SkipActiveTutorial);
+            }
+
+            _skipTutorialButton = skipTutorialButton;
+            if (_skipTutorialButton != null)
+            {
+                _skipTutorialButton.onClick.AddListener(SkipActiveTutorial);
+            }
+
+            UpdateSkipButtonVisibility();
+        }
+
         private void Awake()
         {
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
+            EnsureDependencies();
             _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
             if (_hudOverlay == null)
             {
@@ -40,6 +56,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnEnable()
         {
+            EnsureDependencies();
             if (_stateMachine != null)
             {
                 _stateMachine.StateChanged += OnFishingStateChanged;
@@ -53,6 +70,12 @@ namespace RavenDevOps.Fishing.Fishing
             if (_saveManager != null)
             {
                 _saveManager.SaveDataChanged += OnSaveDataChanged;
+            }
+
+            if (_skipTutorialButton != null)
+            {
+                _skipTutorialButton.onClick.RemoveListener(SkipActiveTutorial);
+                _skipTutorialButton.onClick.AddListener(SkipActiveTutorial);
             }
 
             EvaluateActivation();
@@ -74,6 +97,11 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _saveManager.SaveDataChanged -= OnSaveDataChanged;
             }
+
+            if (_skipTutorialButton != null)
+            {
+                _skipTutorialButton.onClick.RemoveListener(SkipActiveTutorial);
+            }
         }
 
         public void SkipActiveTutorial()
@@ -85,11 +113,12 @@ namespace RavenDevOps.Fishing.Fishing
 
             CompleteTutorial(
                 skipped: true,
-                completionMessage: "Fishing tutorial skipped. You can replay it from Tutorial Controls.");
+                completionMessage: "Fishing tutorial skipped.");
         }
 
         private void EvaluateActivation()
         {
+            EnsureDependencies();
             if (_saveManager == null)
             {
                 return;
@@ -105,6 +134,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _isActive = false;
                 _step = TutorialStep.None;
                 _failureCount = 0;
+                UpdateSkipButtonVisibility();
             }
         }
 
@@ -114,6 +144,7 @@ namespace RavenDevOps.Fishing.Fishing
             _step = TutorialStep.Cast;
             _failureCount = 0;
             _saveManager?.MarkFishingLoopTutorialStarted();
+            UpdateSkipButtonVisibility();
             PushPrompt();
         }
 
@@ -159,7 +190,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 CompleteTutorial(
                     skipped: false,
-                    completionMessage: "Tutorial auto-completed after repeated failures. Replay anytime from Tutorial Controls.");
+                    completionMessage: "Tutorial auto-completed after repeated failures.");
                 return;
             }
 
@@ -173,6 +204,7 @@ namespace RavenDevOps.Fishing.Fishing
             _step = TutorialStep.Complete;
             _failureCount = 0;
             _saveManager?.CompleteFishingLoopTutorial(skipped);
+            UpdateSkipButtonVisibility();
             if (!string.IsNullOrWhiteSpace(completionMessage))
             {
                 _hudOverlay?.SetFishingStatus(completionMessage);
@@ -221,6 +253,23 @@ namespace RavenDevOps.Fishing.Fishing
         private void OnSaveDataChanged(SaveDataV1 data)
         {
             EvaluateActivation();
+        }
+
+        private void EnsureDependencies()
+        {
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
+        }
+
+        private void UpdateSkipButtonVisibility()
+        {
+            if (_skipTutorialButton == null)
+            {
+                return;
+            }
+
+            _skipTutorialButton.gameObject.SetActive(_isActive);
         }
 
         private static IFishingHudOverlay FindFishingHudOverlay()

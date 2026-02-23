@@ -167,10 +167,8 @@ namespace RavenDevOps.Fishing.Core
 
             var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 552f), new Vector2(1274f, 72f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
             var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 8f), new Vector2(1238f, 22f));
-            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro", new Vector2(18f, 36f), new Vector2(240f, 30f));
-            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro", new Vector2(272f, 36f), new Vector2(240f, 30f));
-            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tut", new Vector2(526f, 36f), new Vector2(240f, 30f));
-            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tut", new Vector2(780f, 36f), new Vector2(240f, 30f));
+            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Event", new Vector2(18f, 36f), new Vector2(300f, 30f));
+            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Event", new Vector2(332f, 36f), new Vector2(320f, 30f));
 
             var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -320f), new Vector2(240f, 52f));
             var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -320f), new Vector2(240f, 52f));
@@ -338,9 +336,7 @@ namespace RavenDevOps.Fishing.Core
             exitCancelButton.onClick.AddListener(controller.CancelExit);
             profileResetButton.onClick.AddListener(profileController.ResetProfile);
             profileResetObjectivesButton.onClick.AddListener(profileController.ResetObjectivesForQa);
-            skipIntroTutorialButton.onClick.AddListener(tutorialControlPanel.SkipTutorial);
             replayIntroTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayTutorial);
-            skipFishingTutorialButton.onClick.AddListener(tutorialControlPanel.SkipFishingTutorial);
             replayFishingTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayFishingTutorial);
             profileBackButton.onClick.AddListener(controller.CloseProfilePanel);
 
@@ -542,6 +538,8 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(22f, 18f),
                 new Vector2(1168f, 132f));
             tutorialDialoguePanel.SetActive(false);
+            var tutorialSkipButton = CreateButton(canvas.transform, "HarborTutorialSkipButton", "Skip Intro", new Vector2(492f, -260f), new Vector2(188f, 36f));
+            tutorialSkipButton.gameObject.SetActive(false);
 
             var actionSelectionAura = CreateSelectionAura(hudRoot.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
             AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
@@ -598,7 +596,7 @@ namespace RavenDevOps.Fishing.Core
                 CreateHarborTutorialDialogueLines(),
                 tutorialDialogueBackground);
             var tutorialController = GetOrAddComponent<MermaidTutorialController>(root);
-            tutorialController.Configure(dialogueController);
+            tutorialController.Configure(dialogueController, tutorialSkipButton);
 
             var interactionController = GetOrAddComponent<HarborInteractionController>(root);
             interactionController.Configure(player.transform, aura.transform, interactables, tutorialController);
@@ -724,6 +722,8 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(844f, 46f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
             menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
+            var fishingTutorialSkipButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipButton", "Skip Tutorial", new Vector2(694f, 12f), new Vector2(160f, 28f));
+            fishingTutorialSkipButton.gameObject.SetActive(false);
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
@@ -871,6 +871,8 @@ namespace RavenDevOps.Fishing.Core
 
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
+            var fishingTutorialController = GetOrAddComponent<FishingLoopTutorialController>(root);
+            fishingTutorialController.ConfigureSkipButton(fishingTutorialSkipButton);
 
             var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
             var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);

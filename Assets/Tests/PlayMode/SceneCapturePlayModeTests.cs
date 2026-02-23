@@ -110,9 +110,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("ProfileCatchLogText"), Is.Not.Null, "Expected profile catch-log text.");
             Assert.That(FindSceneObject("ProfileTutorialPanel"), Is.Not.Null, "Expected profile tutorial panel.");
             Assert.That(FindSceneObject("ProfileTutorialStatusText"), Is.Not.Null, "Expected profile tutorial status text.");
-            Assert.That(FindSceneObject("ProfileSkipIntroTutorialButton"), Is.Not.Null, "Expected skip intro tutorial button.");
             Assert.That(FindSceneObject("ProfileReplayIntroTutorialButton"), Is.Not.Null, "Expected replay intro tutorial button.");
-            Assert.That(FindSceneObject("ProfileSkipFishingTutorialButton"), Is.Not.Null, "Expected skip fishing tutorial button.");
             Assert.That(FindSceneObject("ProfileReplayFishingTutorialButton"), Is.Not.Null, "Expected replay fishing tutorial button.");
             Assert.That(FindSceneObject("ProfileResetButton"), Is.Not.Null, "Expected profile reset button.");
             Assert.That(FindSceneObject("ProfileResetObjectivesButton"), Is.Not.Null, "Expected profile reset-objectives button.");
@@ -194,6 +192,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborFishShopBackButton"), Is.Not.Null, "Expected harbor fish-shop back button.");
             Assert.That(FindSceneObject("HarborTutorialDialoguePanel"), Is.Not.Null, "Expected harbor tutorial dialogue panel.");
             Assert.That(FindSceneObject("HarborTutorialDialogueText"), Is.Not.Null, "Expected harbor tutorial dialogue text.");
+            Assert.That(FindSceneObject("HarborTutorialSkipButton"), Is.Not.Null, "Expected harbor tutorial skip button.");
 
             Assert.That(FindSceneObject("HarborInfoPanel"), Is.Not.Null, "Expected harbor info panel.");
             var statusTextGo = FindSceneObject("HarborStatus");
@@ -255,6 +254,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("FishingDepthText"), Is.Not.Null, "Expected fishing depth text.");
             Assert.That(FindSceneObject("FishingCopecsText"), Is.Not.Null, "Expected fishing copecs text.");
             Assert.That(FindSceneObject("FishingDayText"), Is.Not.Null, "Expected fishing day text.");
+            Assert.That(FindSceneObject("FishingTutorialSkipButton"), Is.Not.Null, "Expected fishing tutorial skip button.");
             var objectiveTextGo = FindSceneObject("FishingObjectiveText");
             Assert.That(objectiveTextGo, Is.Not.Null, "Expected fishing objective text.");
             var objectiveText = objectiveTextGo.GetComponent<TMP_Text>();
