@@ -118,6 +118,8 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoSceneTransitionStartedAt;
         private string _demoSceneTransitionTitle = string.Empty;
         private string _demoSceneTransitionSubtitle = string.Empty;
+        private bool _demoCurrentTransitionStartsBlack;
+        private bool _demoIntroTransitionStartFromBlack;
         private DemoAutoplayPhase _demoQueuedNextPhase = DemoAutoplayPhase.None;
         private float _demoQueuedNextPhaseAt;
         private IFishingHudOverlay _hudOverlay;
@@ -303,6 +305,10 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = true;
             _failureCount = 0;
             _nextPromptRefreshAt = 0f;
+            _demoIntroTransitionStartFromBlack = _saveManager != null
+                && _saveManager.Current != null
+                && _saveManager.Current.tutorialFlags != null
+                && _saveManager.Current.tutorialFlags.fishingLoopTutorialReplayRequested;
             _saveManager?.MarkFishingLoopTutorialStarted();
             UpdateSkipButtonVisibility();
             _stateMachine?.ResetToCast();
@@ -653,6 +659,7 @@ namespace RavenDevOps.Fishing.Fishing
                     SetDemoHookVisible(true);
                     if (MoveHookToY(ResolveDemoDockY()))
                     {
+                        SetDemoHookVisible(false);
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.ShipUpgradeInfo, _demoSceneEndPauseSeconds))
                         {
                             ResolveDemoFish(caught: true);
@@ -909,11 +916,11 @@ namespace RavenDevOps.Fishing.Fishing
             var holdSeconds = Mathf.Max(0f, _demoTransitionHoldSeconds);
             var fadeFromBlackSeconds = Mathf.Max(0.05f, _demoTransitionFadeFromBlackSeconds);
             var elapsed = Time.unscaledTime - _demoSceneTransitionStartedAt;
-            var fadeOutEndsAt = fadeToBlackSeconds;
+            var fadeOutEndsAt = _demoCurrentTransitionStartsBlack ? 0f : fadeToBlackSeconds;
             var holdEndsAt = fadeOutEndsAt + holdSeconds;
             var fadeInEndsAt = holdEndsAt + fadeFromBlackSeconds;
 
-            if (elapsed < fadeOutEndsAt)
+            if (fadeOutEndsAt > 0f && elapsed < fadeOutEndsAt)
             {
                 var fadeOutProgress = Mathf.Clamp01(elapsed / fadeToBlackSeconds);
                 UpdateTransitionOverlayVisual(fadeOutProgress, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
@@ -964,11 +971,14 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionActive = true;
             _demoPendingTransitionPhase = phase;
             _demoPendingTransitionPhasePrepared = false;
+            var startFromBlack = phase == DemoAutoplayPhase.IntroInfo && _demoIntroTransitionStartFromBlack;
+            _demoIntroTransitionStartFromBlack = false;
+            _demoCurrentTransitionStartsBlack = startFromBlack;
             _demoSceneTransitionStartedAt = Time.unscaledTime;
             _demoSceneTransitionTitle = title;
             _demoSceneTransitionSubtitle = BuildDemoSceneSubtitle(phase);
             SetTutorialMessageBoxVisible(false);
-            UpdateTransitionOverlayVisual(0f, title, _demoSceneTransitionSubtitle, forceVisible: true);
+            UpdateTransitionOverlayVisual(startFromBlack ? 1f : 0f, title, _demoSceneTransitionSubtitle, forceVisible: true);
             return true;
         }
 
@@ -1011,6 +1021,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionStartedAt = 0f;
             _demoSceneTransitionTitle = string.Empty;
             _demoSceneTransitionSubtitle = string.Empty;
+            _demoCurrentTransitionStartsBlack = false;
 
             if (!forceHideOverlay)
             {
@@ -1119,7 +1130,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Scene 1: Tutorial Intro";
+                    return "Scene 1: How to Play";
                 case DemoAutoplayPhase.MoveShipInfo:
                     return "Scene 2: Steering";
                 case DemoAutoplayPhase.CastInfo:
