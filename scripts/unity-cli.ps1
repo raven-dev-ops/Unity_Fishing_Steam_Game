@@ -8,6 +8,7 @@ param(
     [string]$ProjectPath = '',
     [string]$LogFile = 'unity_cli.log',
     [string[]]$ExtraArgs,
+    [switch]$EnableGraphics,
     [switch]$AllowVersionMismatch,
     [switch]$KeepGeneratedProjectFiles
 )
@@ -699,7 +700,9 @@ Assert-UnityEditorVersion -UnityExePath $unityExe -ExpectedVersion $projectVersi
 
 $args = New-Object System.Collections.Generic.List[string]
 $args.Add('-batchmode')
-$args.Add('-nographics')
+if (-not $EnableGraphics.IsPresent) {
+    $args.Add('-nographics')
+}
 $isTestTask = $Task -eq 'test-edit' -or $Task -eq 'test-play'
 if (-not $isTestTask) {
     $args.Add('-quit')
