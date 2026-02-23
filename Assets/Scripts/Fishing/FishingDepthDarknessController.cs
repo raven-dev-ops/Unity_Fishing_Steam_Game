@@ -34,6 +34,22 @@ namespace RavenDevOps.Fishing.Fishing
         private GameObject _overlayObject;
         private MeshRenderer _overlayRenderer;
         private Material _overlayMaterial;
+        private bool _tutorialLightPreviewActive;
+        private Vector2 _tutorialLightPreviewRadiiMeters;
+
+        public void SetTutorialLightPreview(Vector2 lightRadiiMeters)
+        {
+            _tutorialLightPreviewActive = true;
+            _tutorialLightPreviewRadiiMeters = new Vector2(
+                Mathf.Max(0f, lightRadiiMeters.x),
+                Mathf.Max(0f, lightRadiiMeters.y));
+        }
+
+        public void ClearTutorialLightPreview()
+        {
+            _tutorialLightPreviewActive = false;
+            _tutorialLightPreviewRadiiMeters = Vector2.zero;
+        }
 
         private void Awake()
         {
@@ -220,6 +236,11 @@ namespace RavenDevOps.Fishing.Fishing
 
         private Vector2 ResolveCurrentHookLightRadii()
         {
+            if (_tutorialLightPreviewActive)
+            {
+                return _tutorialLightPreviewRadiiMeters;
+            }
+
             var hookId = _saveManager != null && _saveManager.Current != null
                 ? _saveManager.Current.equippedHookId
                 : string.Empty;

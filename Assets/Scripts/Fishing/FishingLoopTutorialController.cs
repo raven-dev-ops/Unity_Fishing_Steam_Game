@@ -23,12 +23,30 @@ namespace RavenDevOps.Fishing.Fishing
         private enum DemoAutoplayPhase
         {
             None = 0,
-            SteerRight = 1,
-            SteerLeft = 2,
-            CastDrop = 3,
-            FishHook = 4,
-            ReelUp = 5,
-            Finish = 6
+            IntroInfo = 1,
+            MoveShipInfo = 2,
+            SteerRight = 3,
+            SteerLeft = 4,
+            CastInfo = 5,
+            CastDrop = 6,
+            FishHookInfo = 7,
+            FishHook = 8,
+            ReelInfo = 9,
+            ReelUp = 10,
+            ShipUpgradeInfo = 11,
+            HookUpgradeInfo = 12,
+            Level4DarknessInfo = 13,
+            Level4CastDrop = 14,
+            Level4FishHook = 15,
+            Level4ReelInfo = 16,
+            Level4ReelUp = 17,
+            Level5DeepDarkInfo = 18,
+            Level5CastDrop = 19,
+            Level5FishHook = 20,
+            Level5ReelInfo = 21,
+            Level5ReelUp = 22,
+            FinishInfo = 23,
+            Finish = 24
         }
 
         [SerializeField] private SaveManager _saveManager;
@@ -37,16 +55,27 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private CatchResolver _catchResolver;
         [SerializeField] private ShipMovementController _shipMovement;
         [SerializeField] private HookMovementController _hookMovement;
+        [SerializeField] private FishingDepthDarknessController _depthDarknessController;
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private Button _skipTutorialButton;
+        [SerializeField] private GameObject _tutorialMessageBox;
+        [SerializeField] private Text _tutorialMessageText;
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
+        [SerializeField] private float _demoMessageSeconds = 3f;
+        [SerializeField] private float _demoActionPauseSeconds = 0.65f;
         [SerializeField] private float _demoShipTravelDistance = 2.8f;
         [SerializeField] private float _demoShipMoveSpeed = 4.8f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
-        [SerializeField] private float _demoCastDepthMeters = 25f;
+        [SerializeField] private float _demoCastDepthMeters = 30f;
+        [SerializeField] private float _demoLevel4CastDepthMeters = 1400f;
+        [SerializeField] private float _demoLevel5CastDepthMeters = 3400f;
+        [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
+        [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
+        [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(15f, 5f);
+        [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
         [SerializeField] private float _demoDockOffsetY = 0.65f;
 
         private TutorialStep _step = TutorialStep.None;
@@ -59,6 +88,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoShipStartX;
         private bool _demoFishApproachStarted;
         private bool _demoFishBound;
+        private bool _demoFishHookVisualReady;
         private IFishingHudOverlay _hudOverlay;
         private FishingActionStateMachine _subscribedStateMachine;
         private CatchResolver _subscribedCatchResolver;
@@ -82,6 +112,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             UpdateSkipButtonVisibility();
+        }
+
+        public void ConfigureTutorialMessageBox(GameObject tutorialMessageBox, Text tutorialMessageText)
+        {
+            _tutorialMessageBox = tutorialMessageBox;
+            _tutorialMessageText = tutorialMessageText;
+            SetTutorialMessageBoxVisible(false);
         }
 
         private void Awake()
@@ -345,6 +382,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = true;
             _demoFishApproachStarted = false;
             _demoFishBound = false;
+            _demoFishHookVisualReady = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
@@ -352,7 +390,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            StartDemoPhase(DemoAutoplayPhase.SteerRight);
+            StartDemoPhase(DemoAutoplayPhase.IntroInfo);
         }
 
         private void TickDemoAutoplay()
@@ -371,11 +409,23 @@ namespace RavenDevOps.Fishing.Fishing
 
             switch (_demoPhase)
             {
+                case DemoAutoplayPhase.IntroInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.MoveShipInfo);
+                    break;
+                case DemoAutoplayPhase.MoveShipInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.SteerRight);
+                    break;
                 case DemoAutoplayPhase.SteerRight:
                     SetDemoHookVisible(false);
                     SnapDemoHookToDock();
                     if (MoveShipTowardX(_demoShipStartX + Mathf.Max(0.5f, _demoShipTravelDistance))
-                        || IsDemoPhaseElapsed(1.35f))
+                        || IsDemoPhaseElapsed(2.4f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.SteerLeft);
                     }
@@ -384,44 +434,161 @@ namespace RavenDevOps.Fishing.Fishing
                     SetDemoHookVisible(false);
                     SnapDemoHookToDock();
                     if (MoveShipTowardX(_demoShipStartX - Mathf.Max(0.5f, _demoShipTravelDistance))
-                        || IsDemoPhaseElapsed(1.6f))
+                        || IsDemoPhaseElapsed(2.4f))
                     {
-                        StartDemoPhase(DemoAutoplayPhase.CastDrop);
+                        StartDemoPhase(DemoAutoplayPhase.CastInfo);
                     }
+                    break;
+                case DemoAutoplayPhase.CastInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    TickInfoPhase(DemoAutoplayPhase.CastDrop);
                     break;
                 case DemoAutoplayPhase.CastDrop:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters))
-                        || IsDemoPhaseElapsed(2.5f))
+                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false)
+                        || IsDemoPhaseElapsed(4f))
                     {
-                        StartDemoPhase(DemoAutoplayPhase.FishHook);
+                        StartDemoPhase(DemoAutoplayPhase.FishHookInfo);
                     }
+                    break;
+                case DemoAutoplayPhase.FishHookInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false);
+                    TickInfoPhase(DemoAutoplayPhase.FishHook);
                     break;
                 case DemoAutoplayPhase.FishHook:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters));
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false);
                     TickDemoFishHookVisual();
-                    if (IsDemoPhaseElapsed(3f))
+                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
+                        || IsDemoPhaseElapsed(3.4f))
                     {
-                        StartDemoPhase(DemoAutoplayPhase.ReelUp);
+                        StartDemoPhase(DemoAutoplayPhase.ReelInfo);
                     }
+                    break;
+                case DemoAutoplayPhase.ReelInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false);
+                    TickInfoPhase(DemoAutoplayPhase.ReelUp);
                     break;
                 case DemoAutoplayPhase.ReelUp:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    if (MoveHookToY(ResolveDemoDockY()) || IsDemoPhaseElapsed(2.2f))
+                    if (MoveHookToY(ResolveDemoDockY()) || IsDemoPhaseElapsed(3.2f))
                     {
                         ResolveDemoFish(caught: true);
-                        StartDemoPhase(DemoAutoplayPhase.Finish);
+                        StartDemoPhase(DemoAutoplayPhase.ShipUpgradeInfo);
                     }
+                    break;
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.HookUpgradeInfo);
+                    break;
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.Level4DarknessInfo);
+                    break;
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.Level4CastDrop);
+                    break;
+                case DemoAutoplayPhase.Level4CastDrop:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier)
+                        || IsDemoPhaseElapsed(6.2f))
+                    {
+                        StartDemoPhase(DemoAutoplayPhase.Level4FishHook);
+                    }
+                    break;
+                case DemoAutoplayPhase.Level4FishHook:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    TickDemoFishHookVisual();
+                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
+                        || IsDemoPhaseElapsed(3.8f))
+                    {
+                        StartDemoPhase(DemoAutoplayPhase.Level4ReelInfo);
+                    }
+                    break;
+                case DemoAutoplayPhase.Level4ReelInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    TickInfoPhase(DemoAutoplayPhase.Level4ReelUp);
+                    break;
+                case DemoAutoplayPhase.Level4ReelUp:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    if (MoveHookToY(ResolveDemoDockY(), _demoDeepReelSpeedMultiplier) || IsDemoPhaseElapsed(6.2f))
+                    {
+                        ResolveDemoFish(caught: true);
+                        StartDemoPhase(DemoAutoplayPhase.Level5DeepDarkInfo);
+                    }
+                    break;
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.Level5CastDrop);
+                    break;
+                case DemoAutoplayPhase.Level5CastDrop:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier)
+                        || IsDemoPhaseElapsed(7f))
+                    {
+                        StartDemoPhase(DemoAutoplayPhase.Level5FishHook);
+                    }
+                    break;
+                case DemoAutoplayPhase.Level5FishHook:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    TickDemoFishHookVisual();
+                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.25f))
+                        || IsDemoPhaseElapsed(3.9f))
+                    {
+                        StartDemoPhase(DemoAutoplayPhase.Level5ReelInfo);
+                    }
+                    break;
+                case DemoAutoplayPhase.Level5ReelInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    TickInfoPhase(DemoAutoplayPhase.Level5ReelUp);
+                    break;
+                case DemoAutoplayPhase.Level5ReelUp:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(true);
+                    if (MoveHookToY(ResolveDemoDockY(), _demoDeepReelSpeedMultiplier) || IsDemoPhaseElapsed(7f))
+                    {
+                        ResolveDemoFish(caught: true);
+                        StartDemoPhase(DemoAutoplayPhase.FinishInfo);
+                    }
+                    break;
+                case DemoAutoplayPhase.FinishInfo:
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    TickInfoPhase(DemoAutoplayPhase.Finish);
                     break;
                 case DemoAutoplayPhase.Finish:
                     MoveShipTowardX(_demoShipStartX);
                     MoveHookToY(ResolveDemoDockY());
                     SetDemoHookVisible(false);
-                    if (IsDemoPhaseElapsed(0.6f))
+                    if (IsDemoPhaseElapsed(Mathf.Max(0.2f, _demoActionPauseSeconds)))
                     {
                         EndDemoSequence();
                     }
@@ -436,39 +603,91 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoPhase = phase;
             _demoPhaseStartedAt = Time.unscaledTime;
-            string message;
-            switch (phase)
+            _demoFishHookVisualReady = false;
+
+            if (phase == DemoAutoplayPhase.FishHook
+                || phase == DemoAutoplayPhase.Level4FishHook
+                || phase == DemoAutoplayPhase.Level5FishHook)
             {
-                case DemoAutoplayPhase.SteerRight:
-                case DemoAutoplayPhase.SteerLeft:
-                    message = "Fishing Tutorial Demo 1/4: Steer with A/D or Left/Right. The ship can move while the hook is down.";
-                    break;
-                case DemoAutoplayPhase.CastDrop:
-                    message = "Fishing Tutorial Demo 2/4: Press Down/S to cast. The hook auto-drops toward 25m.";
-                    break;
-                case DemoAutoplayPhase.FishHook:
-                    message = "Fishing Tutorial Demo 3/4: Move the ship so the hook collides with a fish to hook it.";
-                    break;
-                case DemoAutoplayPhase.ReelUp:
-                    message = "Fishing Tutorial Demo 4/4: Press Up/W to reel. Secure at 25m, then haul to the boat.";
-                    break;
-                case DemoAutoplayPhase.Finish:
-                    message = "Fishing Tutorial Demo complete. Your turn.";
-                    break;
-                default:
-                    message = string.Empty;
-                    break;
+                ResetDemoFishVisualState();
             }
 
+            if (phase == DemoAutoplayPhase.Level4DarknessInfo
+                || phase == DemoAutoplayPhase.Level4CastDrop
+                || phase == DemoAutoplayPhase.Level4FishHook
+                || phase == DemoAutoplayPhase.Level4ReelInfo
+                || phase == DemoAutoplayPhase.Level4ReelUp)
+            {
+                ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
+            }
+            else if (phase == DemoAutoplayPhase.Level5DeepDarkInfo
+                || phase == DemoAutoplayPhase.Level5CastDrop
+                || phase == DemoAutoplayPhase.Level5FishHook
+                || phase == DemoAutoplayPhase.Level5ReelInfo
+                || phase == DemoAutoplayPhase.Level5ReelUp)
+            {
+                ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
+            }
+            else
+            {
+                ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            }
+
+            var message = BuildDemoMessage(phase);
             if (!string.IsNullOrWhiteSpace(message))
             {
-                _hudOverlay?.SetFishingStatus(message);
+                SetTutorialMessage(message);
+            }
+            else
+            {
+                SetTutorialMessageBoxVisible(false);
             }
         }
 
         private bool IsDemoPhaseElapsed(float seconds)
         {
             return Time.unscaledTime >= _demoPhaseStartedAt + Mathf.Max(0.05f, seconds);
+        }
+
+        private void TickInfoPhase(DemoAutoplayPhase nextPhase)
+        {
+            if (IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoMessageSeconds)))
+            {
+                StartDemoPhase(nextPhase);
+            }
+        }
+
+        private string BuildDemoMessage(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    return "Fishing tutorial demo. Each card stays up for 3 seconds so you can follow every step.";
+                case DemoAutoplayPhase.MoveShipInfo:
+                    return "Step 1: Move the ship left and right. You can always steer, even while the hook is down.";
+                case DemoAutoplayPhase.CastInfo:
+                    return "Step 2: Cast. The hook descends to 30m.";
+                case DemoAutoplayPhase.FishHookInfo:
+                    return "Step 3: A fish approaches. Hook it by colliding hook and fish.";
+                case DemoAutoplayPhase.ReelInfo:
+                    return "Step 4: Reel in. Secure the fish, then haul it to the boat.";
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 4,000m.";
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    return "Hook upgrades improve drop speed and special effects as hook level increases.";
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                    return "Level 4 hook demo: cast into darkness (1km-3km). Lv4 light radius is 15m in darkness and 5m in deep-dark.";
+                case DemoAutoplayPhase.Level4ReelInfo:
+                    return "Level 4 darkness catch: hook and reel.";
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                    return "Level 5 hook demo: cast into deep-dark (3km-4km). Lv5 light radius is 30m in darkness and 15m in deep-dark.";
+                case DemoAutoplayPhase.Level5ReelInfo:
+                    return "Level 5 deep-dark catch: hook and reel.";
+                case DemoAutoplayPhase.FinishInfo:
+                    return "Demo complete. Your turn: steer, cast, hook on collision, then reel.";
+                default:
+                    return string.Empty;
+            }
         }
 
         private void TickDemoFishHookVisual()
@@ -490,10 +709,21 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            if (_demoFishBound && _ambientFishController.IsBoundFishApproachComplete())
+            if (_demoFishBound
+                && !_demoFishHookVisualReady
+                && _ambientFishController.IsBoundFishApproachComplete())
             {
                 _ambientFishController.SetBoundFishHooked(_demoHookTransform);
+                _demoFishHookVisualReady = true;
             }
+        }
+
+        private void ResetDemoFishVisualState()
+        {
+            ResolveDemoFish(caught: false);
+            _demoFishApproachStarted = false;
+            _demoFishBound = false;
+            _demoFishHookVisualReady = false;
         }
 
         private void ResolveDemoFish(bool caught)
@@ -502,12 +732,14 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _demoFishBound = false;
                 _demoFishApproachStarted = false;
+                _demoFishHookVisualReady = false;
                 return;
             }
 
             _ambientFishController.ResolveBoundFish(caught);
             _demoFishBound = false;
             _demoFishApproachStarted = false;
+            _demoFishHookVisualReady = false;
         }
 
         private void EndDemoSequence()
@@ -515,6 +747,8 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
             ResolveDemoFish(caught: false);
+            ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            SetTutorialMessageBoxVisible(false);
             SetDemoHookVisible(false);
             _step = TutorialStep.MoveShip;
             PushPrompt();
@@ -525,6 +759,8 @@ namespace RavenDevOps.Fishing.Fishing
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
             ResolveDemoFish(caught: false);
+            ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            SetTutorialMessageBoxVisible(false);
             if (resetHookToDock)
             {
                 SnapDemoHookToDock();
@@ -579,18 +815,32 @@ namespace RavenDevOps.Fishing.Fishing
 
         private bool MoveHookTowardDepth(float depthMeters)
         {
-            if (_demoShipTransform == null || _hookMovement == null)
+            return MoveHookTowardDepth(depthMeters, clampToWorldBounds: true);
+        }
+
+        private bool MoveHookTowardDepth(float depthMeters, bool clampToWorldBounds, float speedMultiplier = 1f)
+        {
+            if (_demoShipTransform == null)
             {
                 return true;
             }
 
-            _hookMovement.GetWorldDepthBounds(out var minY, out var maxY);
             var targetY = _demoShipTransform.position.y - Mathf.Max(0f, depthMeters);
-            targetY = Mathf.Clamp(targetY, minY, maxY);
-            return MoveHookToY(targetY);
+            if (clampToWorldBounds && _hookMovement != null)
+            {
+                _hookMovement.GetWorldDepthBounds(out var minY, out var maxY);
+                targetY = Mathf.Clamp(targetY, minY, maxY);
+            }
+
+            return MoveHookToY(targetY, speedMultiplier);
         }
 
         private bool MoveHookToY(float targetY)
+        {
+            return MoveHookToY(targetY, 1f);
+        }
+
+        private bool MoveHookToY(float targetY, float speedMultiplier)
         {
             if (_demoHookTransform == null)
             {
@@ -598,10 +848,11 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var position = _demoHookTransform.position;
+            var resolvedSpeed = Mathf.Max(0.1f, _demoHookMoveSpeed * Mathf.Max(0.1f, speedMultiplier));
             position.y = Mathf.MoveTowards(
                 position.y,
                 targetY,
-                Mathf.Max(0.1f, _demoHookMoveSpeed) * Time.deltaTime);
+                resolvedSpeed * Time.deltaTime);
             _demoHookTransform.position = position;
             return Mathf.Abs(position.y - targetY) <= 0.02f;
         }
@@ -643,6 +894,46 @@ namespace RavenDevOps.Fishing.Fishing
             if (_demoHookRenderer != null)
             {
                 _demoHookRenderer.enabled = visible;
+            }
+        }
+
+        private void SetTutorialMessage(string message)
+        {
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                _hudOverlay?.SetFishingStatus(message);
+            }
+
+            if (_tutorialMessageText != null)
+            {
+                _tutorialMessageText.text = message ?? string.Empty;
+            }
+
+            SetTutorialMessageBoxVisible(!string.IsNullOrWhiteSpace(message));
+        }
+
+        private void SetTutorialMessageBoxVisible(bool visible)
+        {
+            if (_tutorialMessageBox != null)
+            {
+                _tutorialMessageBox.SetActive(visible);
+            }
+        }
+
+        private void ApplyTutorialLightPreview(bool enabled, Vector2 lightRadiiMeters)
+        {
+            if (_depthDarknessController == null)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                _depthDarknessController.SetTutorialLightPreview(lightRadiiMeters);
+            }
+            else
+            {
+                _depthDarknessController.ClearTutorialLightPreview();
             }
         }
 
@@ -722,6 +1013,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _shipMovement, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _hookMovement, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _depthDarknessController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _ambientFishController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
 
@@ -742,6 +1034,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             _hookMovement ??= GetComponent<HookMovementController>();
             _hookMovement ??= FindAnyObjectByType<HookMovementController>(FindObjectsInactive.Include);
+
+            _depthDarknessController ??= GetComponent<FishingDepthDarknessController>();
+            _depthDarknessController ??= FindAnyObjectByType<FishingDepthDarknessController>(FindObjectsInactive.Include);
 
             _ambientFishController ??= GetComponent<FishingAmbientFishSwimController>();
             _ambientFishController ??= FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);

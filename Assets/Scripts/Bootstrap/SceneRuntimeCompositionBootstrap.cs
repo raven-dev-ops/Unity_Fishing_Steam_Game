@@ -724,6 +724,28 @@ namespace RavenDevOps.Fishing.Core
             menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
             var fishingTutorialSkipButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipButton", "Skip Tutorial", new Vector2(694f, 12f), new Vector2(160f, 28f));
             fishingTutorialSkipButton.gameObject.SetActive(false);
+            var fishingTutorialMessagePanel = CreatePanel(
+                canvas.transform,
+                "FishingTutorialMessagePanel",
+                new Vector2(0f, -248f),
+                new Vector2(1160f, 152f),
+                new Color(0.02f, 0.07f, 0.12f, 0.86f));
+            var fishingTutorialMessagePanelImage = fishingTutorialMessagePanel.GetComponent<Image>();
+            if (fishingTutorialMessagePanelImage != null)
+            {
+                fishingTutorialMessagePanelImage.raycastTarget = false;
+            }
+
+            var fishingTutorialMessageText = CreateTopLeftText(
+                fishingTutorialMessagePanel.transform,
+                "FishingTutorialMessageText",
+                string.Empty,
+                24,
+                TextAnchor.UpperLeft,
+                new Vector2(28f, 18f),
+                new Vector2(1104f, 116f));
+            fishingTutorialMessageText.raycastTarget = false;
+            fishingTutorialMessagePanel.SetActive(false);
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
@@ -873,6 +895,7 @@ namespace RavenDevOps.Fishing.Core
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
             var fishingTutorialController = GetOrAddComponent<FishingLoopTutorialController>(root);
             fishingTutorialController.ConfigureSkipButton(fishingTutorialSkipButton);
+            fishingTutorialController.ConfigureTutorialMessageBox(fishingTutorialMessagePanel, fishingTutorialMessageText);
 
             var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
             var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);
