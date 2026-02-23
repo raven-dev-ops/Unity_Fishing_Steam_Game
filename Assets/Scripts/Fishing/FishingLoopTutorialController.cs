@@ -71,8 +71,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoShipMoveSpeed = 4.8f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
         [SerializeField] private float _demoCastDepthMeters = 30f;
-        [SerializeField] private float _demoLevel4CastDepthMeters = 1400f;
-        [SerializeField] private float _demoLevel5CastDepthMeters = 3400f;
+        [SerializeField] private float _demoLevel4CastDepthMeters = 1500f;
+        [SerializeField] private float _demoLevel5CastDepthMeters = 3300f;
+        [SerializeField] private float _demoLevel4DarknessPreviewDepthMeters = 1700f;
+        [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(15f, 5f);
@@ -199,7 +201,6 @@ namespace RavenDevOps.Fishing.Fishing
             CompleteTutorial(
                 skipped: true,
                 completionMessage: "Fishing tutorial skipped.");
-            _orchestrator?.RequestOpenMainMenu();
         }
 
         private void EvaluateActivation()
@@ -311,6 +312,8 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _hudOverlay?.SetFishingStatus(completionMessage);
             }
+
+            _orchestrator?.RequestCompleteFishingTutorialFlow();
         }
 
         private void PushPrompt()
@@ -463,7 +466,7 @@ namespace RavenDevOps.Fishing.Fishing
                     TickInfoPhase(DemoAutoplayPhase.FishHook);
                     break;
                 case DemoAutoplayPhase.FishHook:
-                    MoveShipTowardX(_demoShipStartX);
+                    MoveShipDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false);
                     TickDemoFishHookVisual();
@@ -516,7 +519,7 @@ namespace RavenDevOps.Fishing.Fishing
                     }
                     break;
                 case DemoAutoplayPhase.Level4FishHook:
-                    MoveShipTowardX(_demoShipStartX);
+                    MoveShipDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
                     TickDemoFishHookVisual();
@@ -557,7 +560,7 @@ namespace RavenDevOps.Fishing.Fishing
                     }
                     break;
                 case DemoAutoplayPhase.Level5FishHook:
-                    MoveShipTowardX(_demoShipStartX);
+                    MoveShipDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
                     TickDemoFishHookVisual();
@@ -616,25 +619,36 @@ namespace RavenDevOps.Fishing.Fishing
                 ResetDemoFishVisualState();
             }
 
-            if (phase == DemoAutoplayPhase.Level4DarknessInfo
-                || phase == DemoAutoplayPhase.Level4CastDrop
+            if (phase == DemoAutoplayPhase.Level4DarknessInfo)
+            {
+                ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
+                ApplyTutorialDepthPreview(enabled: true, _demoLevel4DarknessPreviewDepthMeters);
+            }
+            else if (phase == DemoAutoplayPhase.Level4CastDrop
                 || phase == DemoAutoplayPhase.Level4FishHook
                 || phase == DemoAutoplayPhase.Level4ReelInfo
                 || phase == DemoAutoplayPhase.Level4ReelUp)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
+                ApplyTutorialDepthPreview(enabled: false, 0f);
             }
-            else if (phase == DemoAutoplayPhase.Level5DeepDarkInfo
-                || phase == DemoAutoplayPhase.Level5CastDrop
+            else if (phase == DemoAutoplayPhase.Level5DeepDarkInfo)
+            {
+                ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
+                ApplyTutorialDepthPreview(enabled: true, _demoLevel5DeepDarkPreviewDepthMeters);
+            }
+            else if (phase == DemoAutoplayPhase.Level5CastDrop
                 || phase == DemoAutoplayPhase.Level5FishHook
                 || phase == DemoAutoplayPhase.Level5ReelInfo
                 || phase == DemoAutoplayPhase.Level5ReelUp)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
+                ApplyTutorialDepthPreview(enabled: false, 0f);
             }
             else
             {
                 ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+                ApplyTutorialDepthPreview(enabled: false, 0f);
             }
 
             var message = BuildDemoMessage(phase);
@@ -672,11 +686,11 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.CastInfo:
                     return "Step 2: Cast. The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
-                    return "Step 3: A fish approaches. Hook it by colliding hook and fish.";
+                    return "Step 3: Keep steering while the hook is down. A fish approaches and is hooked on collision.";
                 case DemoAutoplayPhase.ReelInfo:
                     return "Step 4: Reel in. Secure the fish, then haul it to the boat.";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
-                    return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 4,000m.";
+                    return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 5,000m.";
                 case DemoAutoplayPhase.HookUpgradeInfo:
                     return "Hook upgrades improve drop speed and special effects as hook level increases.";
                 case DemoAutoplayPhase.Level4DarknessInfo:
@@ -684,7 +698,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level4ReelInfo:
                     return "Level 4 darkness catch: hook and reel.";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
-                    return "Level 5 hook demo: cast into deep-dark (3km-4km). Lv5 light radius is 30m in darkness and 15m in deep-dark.";
+                    return "Level 5 hook demo: cast into deep-dark (3km-5km). Lv5 light radius is 30m in darkness and 15m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
                     return "Level 5 deep-dark catch: hook and reel.";
                 case DemoAutoplayPhase.FinishInfo:
@@ -753,6 +767,7 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveDemoFish(caught: false);
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
             SetDemoHookVisible(false);
             _step = TutorialStep.MoveShip;
@@ -766,6 +781,7 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveDemoFish(caught: false);
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
             if (resetHookToDock)
             {
@@ -817,6 +833,14 @@ namespace RavenDevOps.Fishing.Fishing
                 Mathf.Max(0.1f, _demoShipMoveSpeed) * Time.deltaTime);
             _demoShipTransform.position = position;
             return Mathf.Abs(position.x - targetX) <= 0.02f;
+        }
+
+        private void MoveShipDuringHookDemo()
+        {
+            var travelSpan = Mathf.Max(0.5f, _demoShipTravelDistance * 0.55f);
+            var wave = Mathf.Sin((Time.unscaledTime - _demoPhaseStartedAt) * 2.8f);
+            var targetX = _demoShipStartX + (travelSpan * wave);
+            MoveShipTowardX(targetX);
         }
 
         private bool MoveHookTowardDepth(float depthMeters)
@@ -940,6 +964,23 @@ namespace RavenDevOps.Fishing.Fishing
             else
             {
                 _depthDarknessController.ClearTutorialLightPreview();
+            }
+        }
+
+        private void ApplyTutorialDepthPreview(bool enabled, float depthMeters)
+        {
+            if (_depthDarknessController == null)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                _depthDarknessController.SetTutorialDepthPreview(depthMeters);
+            }
+            else
+            {
+                _depthDarknessController.ClearTutorialDepthPreview();
             }
         }
 

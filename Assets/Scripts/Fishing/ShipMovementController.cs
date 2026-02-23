@@ -18,7 +18,7 @@ namespace RavenDevOps.Fishing.Fishing
         private const float FallbackMaxDepthTier2 = 700f;
         private const float FallbackMaxDepthTier3 = 1600f;
         private const float FallbackMaxDepthTier4 = 3000f;
-        private const float FallbackMaxDepthTier5 = 4000f;
+        private const float FallbackMaxDepthTier5 = 5000f;
 
         [SerializeField] private float _fallbackSpeed = 6f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-9f, 9f);

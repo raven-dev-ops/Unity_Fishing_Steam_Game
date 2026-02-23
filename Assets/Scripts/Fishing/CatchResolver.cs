@@ -21,7 +21,7 @@ namespace RavenDevOps.Fishing.Fishing
         private const float FallbackShipMaxDepthTier2 = 700f;
         private const float FallbackShipMaxDepthTier3 = 1600f;
         private const float FallbackShipMaxDepthTier4 = 3000f;
-        private const float FallbackShipMaxDepthTier5 = 4000f;
+        private const float FallbackShipMaxDepthTier5 = 5000f;
 
         private const int FallbackCargoCapacityTier1 = 12;
         private const int FallbackCargoCapacityTier2 = 20;

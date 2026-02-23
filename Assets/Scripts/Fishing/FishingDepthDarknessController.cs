@@ -23,7 +23,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _darkZoneStartDepthMeters = 1000f;
         [SerializeField] private float _deepDarkZoneStartDepthMeters = 2500f;
         [SerializeField] private float _deepDarkZoneGradientDepthMeters = 500f;
-        [SerializeField] private float _maxDepthMeters = 4000f;
+        [SerializeField] private float _maxDepthMeters = 5000f;
         [SerializeField, Range(0f, 1f)] private float _darkZoneAlphaAtDeepEdge = 0.78f;
         [SerializeField, Range(0f, 1f)] private float _deepDarkZoneAlphaAtMaxDepth = 0.95f;
         [SerializeField] private float _lightSoftnessMeters = 3f;
@@ -36,6 +36,8 @@ namespace RavenDevOps.Fishing.Fishing
         private Material _overlayMaterial;
         private bool _tutorialLightPreviewActive;
         private Vector2 _tutorialLightPreviewRadiiMeters;
+        private bool _tutorialDepthPreviewActive;
+        private float _tutorialDepthPreviewMeters;
 
         public void SetTutorialLightPreview(Vector2 lightRadiiMeters)
         {
@@ -49,6 +51,18 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _tutorialLightPreviewActive = false;
             _tutorialLightPreviewRadiiMeters = Vector2.zero;
+        }
+
+        public void SetTutorialDepthPreview(float depthMeters)
+        {
+            _tutorialDepthPreviewActive = true;
+            _tutorialDepthPreviewMeters = Mathf.Max(0f, depthMeters);
+        }
+
+        public void ClearTutorialDepthPreview()
+        {
+            _tutorialDepthPreviewActive = false;
+            _tutorialDepthPreviewMeters = 0f;
         }
 
         private void Awake()
@@ -148,7 +162,9 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var currentDepth = Mathf.Max(0f, _hookController.CurrentDepth);
+            var currentDepth = _tutorialDepthPreviewActive
+                ? Mathf.Max(0f, _tutorialDepthPreviewMeters)
+                : Mathf.Max(0f, _hookController.CurrentDepth);
             var darknessAlpha = ResolveDarknessAlpha(currentDepth, out var deepDarkBlend);
             if (darknessAlpha <= 0.001f)
             {

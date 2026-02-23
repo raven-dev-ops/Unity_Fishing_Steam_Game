@@ -15,6 +15,6 @@ MonoBehaviour:
   id: hook_lv1
   icon: {fileID: -5717297548280234298, guid: 41902eec228b6d247a1e38d19812d49f, type: 3}
   price: 0
-  maxDepth: 4000
+  maxDepth: 5000
   darkZoneLightRadiusMeters: 0
   deepDarkZoneLightRadiusMeters: 0

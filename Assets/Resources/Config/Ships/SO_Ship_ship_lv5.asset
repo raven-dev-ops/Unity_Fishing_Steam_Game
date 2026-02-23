@@ -19,4 +19,4 @@ MonoBehaviour:
   moveSpeed: 8.4
   cargoCapacity: 72
   minDepthMeters: 3000
-  maxDepthMeters: 4000
+  maxDepthMeters: 5000

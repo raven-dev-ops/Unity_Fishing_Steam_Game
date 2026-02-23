@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
+using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,6 +10,13 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class GameFlowOrchestrator : MonoBehaviour
     {
+        private enum FishingTutorialExitRoute
+        {
+            None = 0,
+            Harbor = 1,
+            MainMenuProfile = 2
+        }
+
         private static GameFlowOrchestrator _instance;
 
         [SerializeField] private GameFlowManager _gameFlowManager;
@@ -19,6 +27,8 @@ namespace RavenDevOps.Fishing.Core
 
         private Coroutine _activeLoadRoutine;
         private bool _eventsBound;
+        private FishingTutorialExitRoute _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.None;
+        private bool _openProfileAfterMainMenuLoad;
 
         public static GameFlowOrchestrator Instance => _instance;
 
@@ -181,6 +191,12 @@ namespace RavenDevOps.Fishing.Core
             }
 
             SetInputContext(postLoadContext);
+            if (_openProfileAfterMainMenuLoad && _gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.MainMenu)
+            {
+                yield return null;
+                TryOpenMainMenuProfilePanel();
+            }
+
             _activeLoadRoutine = null;
         }
 
@@ -228,6 +244,37 @@ namespace RavenDevOps.Fishing.Core
             _gameFlowManager?.SetState(GameFlowState.Fishing);
         }
 
+        public void RequestOpenFishingTutorialReplayFromProfile()
+        {
+            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.MainMenuProfile;
+            _gameFlowManager?.SetState(GameFlowState.Fishing);
+        }
+
+        public void RequestOpenFishingTutorialFromCinematicFirstTime()
+        {
+            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.Harbor;
+            _gameFlowManager?.SetState(GameFlowState.Fishing);
+        }
+
+        public void RequestCompleteFishingTutorialFlow()
+        {
+            var exitRoute = _pendingFishingTutorialExitRoute;
+            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.None;
+
+            switch (exitRoute)
+            {
+                case FishingTutorialExitRoute.MainMenuProfile:
+                    _openProfileAfterMainMenuLoad = true;
+                    _gameFlowManager?.SetState(GameFlowState.MainMenu);
+                    return;
+                case FishingTutorialExitRoute.Harbor:
+                    _gameFlowManager?.SetState(GameFlowState.Harbor);
+                    return;
+                default:
+                    return;
+            }
+        }
+
         public void RequestReturnToHarbor()
         {
             if (_gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.Fishing)
@@ -267,6 +314,26 @@ namespace RavenDevOps.Fishing.Core
         public void RequestExitGame()
         {
             AppExitUtility.QuitGame();
+        }
+
+        private void TryOpenMainMenuProfilePanel()
+        {
+            if (!_openProfileAfterMainMenuLoad)
+            {
+                return;
+            }
+
+            var mainMenuController = FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
+            if (mainMenuController != null)
+            {
+                mainMenuController.OpenProfile();
+            }
+            else
+            {
+                Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Profile panel after fishing tutorial return.");
+            }
+
+            _openProfileAfterMainMenuLoad = false;
         }
     }
 }
