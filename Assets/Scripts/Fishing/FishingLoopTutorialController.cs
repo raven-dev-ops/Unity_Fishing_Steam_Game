@@ -835,7 +835,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (phase == DemoAutoplayPhase.Level4DarknessInfo)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
-                ApplyTutorialDepthPreview(enabled: true, _demoLevel4DarknessPreviewDepthMeters);
+                ApplyTutorialDepthPreview(enabled: false, 0f);
             }
             else if (phase == DemoAutoplayPhase.Level4CastDrop
                 || phase == DemoAutoplayPhase.Level4FishHook
@@ -856,7 +856,7 @@ namespace RavenDevOps.Fishing.Fishing
             else if (phase == DemoAutoplayPhase.Level5DeepDarkInfo)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
-                ApplyTutorialDepthPreview(enabled: true, _demoLevel5DeepDarkPreviewDepthMeters);
+                ApplyTutorialDepthPreview(enabled: false, 0f);
             }
             else if (phase == DemoAutoplayPhase.Level5CastDrop
                 || phase == DemoAutoplayPhase.Level5FishHook

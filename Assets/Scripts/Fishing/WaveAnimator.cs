@@ -11,6 +11,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _waveSpeedB = 0.6f;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private float _reducedMotionSpeedScale = 0.4f;
+        [SerializeField] private bool _lockDuplicateBackdropLayers = true;
+
+        private bool _duplicateBackdropLayersLocked;
 
         private void Awake()
         {
@@ -33,6 +36,8 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _waveLayerA = waveLayerA;
             _waveLayerB = waveLayerB;
+            _duplicateBackdropLayersLocked = _lockDuplicateBackdropLayers
+                && AreLayersUsingSameSprite(_waveLayerA, _waveLayerB);
         }
 
         private void Update()
@@ -42,7 +47,16 @@ namespace RavenDevOps.Fishing.Fishing
                 : 1f;
 
             AnimateLayer(_waveLayerA, _waveSpeedA * speedScale);
-            AnimateLayer(_waveLayerB, _waveSpeedB * speedScale);
+            if (_duplicateBackdropLayersLocked && _waveLayerA != null && _waveLayerB != null)
+            {
+                var layerBPosition = _waveLayerB.localPosition;
+                layerBPosition.x = _waveLayerA.localPosition.x;
+                _waveLayerB.localPosition = layerBPosition;
+            }
+            else
+            {
+                AnimateLayer(_waveLayerB, _waveSpeedB * speedScale);
+            }
         }
 
         private static void AnimateLayer(Transform layer, float speed)
@@ -60,6 +74,23 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             layer.localPosition = p;
+        }
+
+        private static bool AreLayersUsingSameSprite(Transform layerA, Transform layerB)
+        {
+            if (layerA == null || layerB == null)
+            {
+                return false;
+            }
+
+            var rendererA = layerA.GetComponent<SpriteRenderer>();
+            var rendererB = layerB.GetComponent<SpriteRenderer>();
+            if (rendererA == null || rendererB == null || rendererA.sprite == null)
+            {
+                return false;
+            }
+
+            return rendererA.sprite == rendererB.sprite;
         }
     }
 }
