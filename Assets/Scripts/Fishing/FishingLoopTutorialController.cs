@@ -70,6 +70,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
         [SerializeField] private bool _showPromptCardDuringHandsOnTutorial = true;
+        [SerializeField] private bool _allowAutoplayInBatchMode = false;
         [SerializeField] private float _demoMessageSeconds = 3f;
         [SerializeField] private float _demoActionPauseSeconds = 0.65f;
         [SerializeField] private float _demoSceneEndPauseSeconds = 3f;
@@ -78,17 +79,17 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _tutorialCompletionOverlayMaxAlpha = 0.88f;
         [SerializeField] private float _tutorialCompletionFadeSeconds = 0.35f;
         [SerializeField] private float _demoTransitionFadeToBlackSeconds = 0.32f;
-        [SerializeField] private float _demoTransitionHoldSeconds = 0.45f;
+        [SerializeField] private float _demoTransitionHoldSeconds = 2f;
         [SerializeField] private float _demoTransitionFadeFromBlackSeconds = 0.32f;
         [SerializeField] private float _demoShipTravelDistance = 2.8f;
         [SerializeField] private float _demoShipMoveSpeed = 4.8f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
         [SerializeField] private float _demoCastDepthMeters = 30f;
-        [SerializeField] private float _demoLevel4CastDepthMeters = 1500f;
+        [SerializeField] private float _demoLevel4CastDepthMeters = 4500f;
         [SerializeField] private float _demoLevel5CastDepthMeters = 3300f;
         [SerializeField] private float _demoLevel4ReelTargetDepthMeters = 1000f;
         [SerializeField] private float _demoLevel5ReelTargetDepthMeters = 3000f;
-        [SerializeField] private float _demoLevel4DarknessPreviewDepthMeters = 1700f;
+        [SerializeField] private float _demoLevel4DarknessPreviewDepthMeters = 4500f;
         [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
@@ -109,6 +110,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _demoFishHookVisualReady;
         private bool _demoSceneTransitionActive;
         private DemoAutoplayPhase _demoPendingTransitionPhase = DemoAutoplayPhase.None;
+        private bool _demoPendingTransitionPhasePrepared;
         private float _demoSceneTransitionStartedAt;
         private string _demoSceneTransitionTitle = string.Empty;
         private DemoAutoplayPhase _demoQueuedNextPhase = DemoAutoplayPhase.None;
@@ -248,6 +250,21 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureDependencies();
             if (_saveManager == null)
             {
+                return;
+            }
+
+            if (Application.isBatchMode && !_allowAutoplayInBatchMode)
+            {
+                if (_isActive)
+                {
+                    _isActive = false;
+                    _demoActive = false;
+                    _step = TutorialStep.None;
+                    _failureCount = 0;
+                    CleanupDemoState(resetHookToDock: false);
+                    UpdateSkipButtonVisibility();
+                }
+
                 return;
             }
 
@@ -648,7 +665,7 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
                     if (MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier)
-                        || IsDemoPhaseElapsed(6.2f))
+                        || IsDemoPhaseElapsed(9f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level4FishHook);
                     }
@@ -878,9 +895,10 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             if (_demoPendingTransitionPhase != DemoAutoplayPhase.None
-                && _demoPhase != _demoPendingTransitionPhase)
+                && !_demoPendingTransitionPhasePrepared)
             {
                 StartDemoPhaseImmediate(_demoPendingTransitionPhase);
+                _demoPendingTransitionPhasePrepared = true;
             }
 
             if (elapsed < holdEndsAt)
@@ -895,6 +913,12 @@ namespace RavenDevOps.Fishing.Fishing
                 var overlayAlpha = 1f - fadeInProgress;
                 UpdateTransitionOverlayVisual(overlayAlpha, _demoSceneTransitionTitle, forceVisible: true);
                 return true;
+            }
+
+            if (_demoPendingTransitionPhasePrepared && _demoPhase != DemoAutoplayPhase.None)
+            {
+                // Reset phase timer once fade-in finishes so scene actions start visibly.
+                _demoPhaseStartedAt = Time.unscaledTime;
             }
 
             ClearDemoSceneTransition(forceHideOverlay: true);
@@ -913,6 +937,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             _demoSceneTransitionActive = true;
             _demoPendingTransitionPhase = phase;
+            _demoPendingTransitionPhasePrepared = false;
             _demoSceneTransitionStartedAt = Time.unscaledTime;
             _demoSceneTransitionTitle = title;
             SetTutorialMessageBoxVisible(false);
@@ -947,6 +972,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoSceneTransitionActive = false;
             _demoPendingTransitionPhase = DemoAutoplayPhase.None;
+            _demoPendingTransitionPhasePrepared = false;
             _demoSceneTransitionStartedAt = 0f;
             _demoSceneTransitionTitle = string.Empty;
 
@@ -1038,9 +1064,9 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.HookUpgradeInfo:
                     return "Hook upgrades improve drop speed and special effects as hook level increases.";
                 case DemoAutoplayPhase.Level4DarknessInfo:
-                    return "Level 4 hook demo: cast into darkness (1km-3km). Lv4 light radius is 15m in darkness and 5m in deep-dark.";
+                    return "Level 4 darkness tutorial: drop to 4,500m for a full low-visibility pass. Lv4 light radius is 15m in darkness and 5m in deep-dark.";
                 case DemoAutoplayPhase.Level4ReelInfo:
-                    return "Level 4 darkness catch: hook and reel toward the Lv4 ship line at 1,000m.";
+                    return "Level 4 darkness catch: fish is hooked, then reels from 4,500m toward the 1,000m line while fading out.";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
                     return "Level 5 hook demo: cast into deep-dark (3km-5km). Lv5 light radius is 30m in darkness and 15m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
@@ -1057,7 +1083,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Scene 1: Intro";
+                    return "Scene 1: Tutorial Intro";
                 case DemoAutoplayPhase.MoveShipInfo:
                     return "Scene 2: Steering";
                 case DemoAutoplayPhase.CastInfo:
