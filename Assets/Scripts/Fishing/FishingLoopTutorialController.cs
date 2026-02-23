@@ -644,7 +644,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.ReelUp:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    if (MoveHookToY(ResolveDemoDockY()) || IsDemoPhaseElapsed(3.2f))
+                    if (MoveHookToY(ResolveDemoDockY()))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.ShipUpgradeInfo, _demoSceneEndPauseSeconds))
                         {
