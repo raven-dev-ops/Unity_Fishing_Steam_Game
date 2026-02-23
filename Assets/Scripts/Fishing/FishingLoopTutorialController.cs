@@ -135,6 +135,8 @@ namespace RavenDevOps.Fishing.Fishing
         private Coroutine _completeTutorialFlowRoutine;
         private float _demoLevel4ReelStartDepthMeters;
         private float _demoLevel5ReelStartDepthMeters;
+        private bool _demoHookDepthOverrideApplied;
+        private float _demoHookPreviousMaxDepthMeters;
 
         public void ConfigureSkipButton(Button skipTutorialButton)
         {
@@ -543,6 +545,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             EnsureDependencies();
             EnsureDemoAnchors();
+            ApplyDemoHookDepthOverride();
             SuppressRuntimeHookCastControllerForDemo();
             ClearDemoSceneTransition(forceHideOverlay: true);
             ClearQueuedDemoPhaseTransition();
@@ -1312,6 +1315,7 @@ namespace RavenDevOps.Fishing.Fishing
             ClearDemoSceneTransition(forceHideOverlay: true);
             ClearQueuedDemoPhaseTransition();
             ResolveDemoFish(caught: false);
+            RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
@@ -1329,6 +1333,7 @@ namespace RavenDevOps.Fishing.Fishing
             ClearDemoSceneTransition(forceHideOverlay: true);
             ClearQueuedDemoPhaseTransition();
             ResolveDemoFish(caught: false);
+            RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
@@ -1372,6 +1377,38 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _demoHookRenderer = _demoHookTransform.GetComponent<SpriteRenderer>();
             }
+        }
+
+        private void ApplyDemoHookDepthOverride()
+        {
+            if (_hookMovement == null || _demoHookDepthOverrideApplied)
+            {
+                return;
+            }
+
+            _demoHookDepthOverrideApplied = true;
+            _demoHookPreviousMaxDepthMeters = Mathf.Max(0.5f, _hookMovement.MaxDepth);
+            var requiredMaxDepth = Mathf.Max(
+                Mathf.Max(_demoLevel4CastDepthMeters, _demoLevel5CastDepthMeters),
+                Mathf.Max(_demoLevel4DarknessPreviewDepthMeters, _demoLevel5DeepDarkPreviewDepthMeters));
+            requiredMaxDepth = Mathf.Max(requiredMaxDepth, _demoHookPreviousMaxDepthMeters);
+            _hookMovement.MaxDepth = Mathf.Clamp(requiredMaxDepth, 0.5f, 5000f);
+            // Demo drives hook movement directly; disable player input/clamping side-effects.
+            _hookMovement.SetMovementEnabled(false);
+        }
+
+        private void RestoreDemoHookDepthOverride()
+        {
+            if (_hookMovement == null || !_demoHookDepthOverrideApplied)
+            {
+                return;
+            }
+
+            _demoHookDepthOverrideApplied = false;
+            _hookMovement.MaxDepth = Mathf.Clamp(_demoHookPreviousMaxDepthMeters, 0.5f, 5000f);
+            _hookMovement.RefreshHookStats();
+            _hookMovement.SetMovementEnabled(true);
+            _demoHookPreviousMaxDepthMeters = 0f;
         }
 
         private bool MoveShipTowardX(float targetX)
