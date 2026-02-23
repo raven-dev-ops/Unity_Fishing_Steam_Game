@@ -667,17 +667,26 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level4ReelInfo:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    var level4ReelInfoTargetDepth = Mathf.Clamp(
+                        _demoLevel4ReelTargetDepthMeters,
+                        0f,
+                        Mathf.Max(0f, _demoLevel4CastDepthMeters));
+                    MoveHookTowardDepth(level4ReelInfoTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    UpdateDemoHookedFishFade(Mathf.Max(1f, _demoLevel4CastDepthMeters), level4ReelInfoTargetDepth);
                     TickInfoPhase(DemoAutoplayPhase.Level4ReelUp);
                     break;
                 case DemoAutoplayPhase.Level4ReelUp:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    var level4ReelTargetDepth = Mathf.Clamp(
+                    var level4ReelUpTargetDepth = Mathf.Clamp(
                         _demoLevel4ReelTargetDepthMeters,
                         0f,
                         Mathf.Max(0f, _demoLevel4CastDepthMeters));
-                    if (MoveHookTowardDepth(level4ReelTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier)
+                    MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    UpdateDemoHookedFishFade(Mathf.Max(1f, _demoLevel4CastDepthMeters), level4ReelUpTargetDepth);
+                    if (Mathf.Abs(ResolveDemoHookDepthMeters() - level4ReelUpTargetDepth) <= 0.08f
                         || IsDemoPhaseElapsed(6.2f))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.Level5DeepDarkInfo, _demoSceneEndPauseSeconds))
@@ -715,17 +724,26 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5ReelInfo:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    var level5ReelInfoTargetDepth = Mathf.Clamp(
+                        _demoLevel5ReelTargetDepthMeters,
+                        0f,
+                        Mathf.Max(0f, _demoLevel5CastDepthMeters));
+                    MoveHookTowardDepth(level5ReelInfoTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    UpdateDemoHookedFishFade(Mathf.Max(1f, _demoLevel5CastDepthMeters), level5ReelInfoTargetDepth);
                     TickInfoPhase(DemoAutoplayPhase.Level5ReelUp);
                     break;
                 case DemoAutoplayPhase.Level5ReelUp:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    var level5ReelTargetDepth = Mathf.Clamp(
+                    var level5ReelUpTargetDepth = Mathf.Clamp(
                         _demoLevel5ReelTargetDepthMeters,
                         0f,
                         Mathf.Max(0f, _demoLevel5CastDepthMeters));
-                    if (MoveHookTowardDepth(level5ReelTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier)
+                    MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    UpdateDemoHookedFishFade(Mathf.Max(1f, _demoLevel5CastDepthMeters), level5ReelUpTargetDepth);
+                    if (Mathf.Abs(ResolveDemoHookDepthMeters() - level5ReelUpTargetDepth) <= 0.08f
                         || IsDemoPhaseElapsed(7f))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.FinishInfo, _demoSceneEndPauseSeconds))
@@ -1039,7 +1057,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Scene 1: Demo Overview";
+                    return "Scene 1: Intro";
                 case DemoAutoplayPhase.MoveShipInfo:
                     return "Scene 2: Steering";
                 case DemoAutoplayPhase.CastInfo:
@@ -1087,8 +1105,39 @@ namespace RavenDevOps.Fishing.Fishing
                 && _ambientFishController.IsBoundFishApproachComplete())
             {
                 _ambientFishController.SetBoundFishHooked(_demoHookTransform);
+                _ambientFishController.SetBoundFishVisualFade(1f);
                 _demoFishHookVisualReady = true;
             }
+        }
+
+        private float ResolveDemoHookDepthMeters()
+        {
+            if (_hookMovement != null)
+            {
+                return Mathf.Max(0f, _hookMovement.CurrentDepth);
+            }
+
+            if (_demoShipTransform != null && _demoHookTransform != null)
+            {
+                return Mathf.Max(0f, _demoShipTransform.position.y - _demoHookTransform.position.y);
+            }
+
+            return 0f;
+        }
+
+        private void UpdateDemoHookedFishFade(float reelStartDepthMeters, float reelTargetDepthMeters)
+        {
+            if (_ambientFishController == null)
+            {
+                return;
+            }
+
+            var startDepth = Mathf.Max(0.1f, reelStartDepthMeters);
+            var targetDepth = Mathf.Clamp(reelTargetDepthMeters, 0f, startDepth);
+            var currentDepth = ResolveDemoHookDepthMeters();
+            var progress = Mathf.Clamp01(Mathf.InverseLerp(startDepth, targetDepth, currentDepth));
+            var fade = Mathf.Lerp(1f, 0.06f, progress);
+            _ambientFishController.SetBoundFishVisualFade(fade);
         }
 
         private void ResetDemoFishVisualState()

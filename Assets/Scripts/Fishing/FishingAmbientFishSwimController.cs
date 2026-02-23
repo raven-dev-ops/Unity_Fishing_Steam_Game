@@ -381,6 +381,9 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.approaching = false;
             _boundTrack.settled = false;
             _boundTrack.renderer.enabled = true;
+            var hookedColor = Color.Lerp(_boundTrack.baseColor, Color.white, 0.35f);
+            hookedColor.a = _boundTrack.baseColor.a;
+            _boundTrack.renderer.color = hookedColor;
             _boundHookTransform = hookTransform;
             if (hookTransform != null)
             {
@@ -401,11 +404,27 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.approaching = false;
             _boundTrack.settled = true;
             _boundTrack.renderer.enabled = true;
+            var settledColor = Color.Lerp(_boundTrack.baseColor, Color.white, 0.35f);
+            settledColor.a = _boundTrack.baseColor.a;
+            _boundTrack.renderer.color = settledColor;
             if (hookTransform != null)
             {
                 _boundHookTransform = hookTransform;
                 _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
             }
+        }
+
+        public void SetBoundFishVisualFade(float normalizedFade)
+        {
+            if (_boundTrack == null || _boundTrack.renderer == null)
+            {
+                return;
+            }
+
+            var fade = Mathf.Clamp01(normalizedFade);
+            var hookedColor = Color.Lerp(_boundTrack.baseColor, Color.white, 0.35f);
+            hookedColor.a = _boundTrack.baseColor.a * fade;
+            _boundTrack.renderer.color = hookedColor;
         }
 
         public void ResolveBoundFish(bool caught)

@@ -64,7 +64,12 @@ Shader "Raven/Fishing/DepthDarkness"
                 {
                     float2 delta = i.worldPos.xy - _HookWorldPos.xy;
                     float distanceToHook = length(delta);
-                    mask = smoothstep(radius, radius + softness, distanceToHook);
+                    float normalizedDistance = distanceToHook / radius;
+                    float softnessScale = max(softness / radius, 0.001);
+                    // Build a true center-out falloff, then blend to full darkness outside the radius.
+                    float innerGradient = smoothstep(0.0, 1.0, saturate(normalizedDistance));
+                    float outerBlend = smoothstep(1.0, 1.0 + softnessScale, normalizedDistance);
+                    mask = lerp(innerGradient, 1.0, outerBlend);
                 }
 
                 return fixed4(0.0, 0.0, 0.0, alpha * saturate(mask));
