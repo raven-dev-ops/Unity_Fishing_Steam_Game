@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
-using RavenDevOps.Fishing.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -323,12 +322,28 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            var mainMenuController = FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
-            if (mainMenuController != null)
+            var openedProfile = false;
+            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < candidates.Length; i++)
             {
-                mainMenuController.OpenProfile();
+                var candidate = candidates[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                var candidateType = candidate.GetType();
+                if (!string.Equals(candidateType.FullName, "RavenDevOps.Fishing.UI.MainMenuController", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                candidate.SendMessage("OpenProfile", SendMessageOptions.DontRequireReceiver);
+                openedProfile = true;
+                break;
             }
-            else
+
+            if (!openedProfile)
             {
                 Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Profile panel after fishing tutorial return.");
             }
