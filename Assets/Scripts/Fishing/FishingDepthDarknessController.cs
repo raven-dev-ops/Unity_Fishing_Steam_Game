@@ -175,10 +175,9 @@ namespace RavenDevOps.Fishing.Fishing
             _overlayRenderer.enabled = true;
             var lightRadii = ResolveCurrentHookLightRadii();
             var lightRadius = ResolveActiveLightRadius(currentDepth, lightRadii, deepDarkBlend);
-            var hookWorldPosition = ResolveActiveHookWorldPosition(currentDepth);
 
             _overlayMaterial.SetFloat(DarknessAlphaId, darknessAlpha);
-            _overlayMaterial.SetVector(HookWorldPosId, hookWorldPosition);
+            _overlayMaterial.SetVector(HookWorldPosId, _hook.position);
             _overlayMaterial.SetFloat(LightRadiusId, Mathf.Max(0f, lightRadius));
             _overlayMaterial.SetFloat(LightSoftnessId, Mathf.Max(0.01f, _lightSoftnessMeters));
 
@@ -195,20 +194,6 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 overlayTransform.localScale = new Vector3(120f, 120f, 1f);
             }
-        }
-
-        private Vector3 ResolveActiveHookWorldPosition(float depthMeters)
-        {
-            if (!_tutorialDepthPreviewActive || _hookController == null || _hook == null)
-            {
-                return _hook != null ? _hook.position : Vector3.zero;
-            }
-
-            var shipTransform = _hookController.ShipTransform;
-            var surfaceY = shipTransform != null
-                ? shipTransform.position.y
-                : (_hook.position.y + Mathf.Max(0f, _hookController.CurrentDepth));
-            return new Vector3(_hook.position.x, surfaceY - Mathf.Max(0f, depthMeters), _hook.position.z);
         }
 
         private float ResolveDarknessAlpha(float depthMeters, out float deepDarkBlend)
