@@ -69,10 +69,14 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Text _tutorialTransitionTitleText;
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
+        [SerializeField] private bool _showPromptCardDuringHandsOnTutorial = true;
         [SerializeField] private float _demoMessageSeconds = 3f;
         [SerializeField] private float _demoActionPauseSeconds = 0.65f;
         [SerializeField] private float _demoSceneEndPauseSeconds = 3f;
         [SerializeField] private float _tutorialCompletionPauseSeconds = 3f;
+        [SerializeField] private string _tutorialCompletionTitle = "Congratulations, Captain!";
+        [SerializeField] private float _tutorialCompletionOverlayMaxAlpha = 0.88f;
+        [SerializeField] private float _tutorialCompletionFadeSeconds = 0.35f;
         [SerializeField] private float _demoTransitionFadeToBlackSeconds = 0.32f;
         [SerializeField] private float _demoTransitionHoldSeconds = 0.45f;
         [SerializeField] private float _demoTransitionFadeFromBlackSeconds = 0.32f;
@@ -183,6 +187,8 @@ namespace RavenDevOps.Fishing.Fishing
                 StopCoroutine(_completeTutorialFlowRoutine);
                 _completeTutorialFlowRoutine = null;
             }
+
+            ClearTutorialCompletionOverlay();
 
             if (_skipTutorialButton != null)
             {
@@ -359,25 +365,64 @@ namespace RavenDevOps.Fishing.Fishing
                 : Mathf.Max(0f, _tutorialCompletionPauseSeconds);
             if (pauseSeconds <= 0f)
             {
+                ClearTutorialCompletionOverlay();
                 SetTutorialMessageBoxVisible(false);
                 _orchestrator?.RequestCompleteFishingTutorialFlow();
                 return;
             }
 
-            _completeTutorialFlowRoutine = StartCoroutine(CompleteTutorialFlowAfterDelay(pauseSeconds));
+            _completeTutorialFlowRoutine = StartCoroutine(CompleteTutorialFlowAfterDelay(pauseSeconds, skipped));
         }
 
-        private IEnumerator CompleteTutorialFlowAfterDelay(float delaySeconds)
+        private IEnumerator CompleteTutorialFlowAfterDelay(float delaySeconds, bool skipped)
         {
-            var targetTime = Time.unscaledTime + Mathf.Max(0f, delaySeconds);
+            var totalDuration = Mathf.Max(0.05f, delaySeconds);
+            var startedAt = Time.unscaledTime;
+            var targetTime = startedAt + totalDuration;
             while (Time.unscaledTime < targetTime)
             {
+                if (!skipped)
+                {
+                    var elapsed = Time.unscaledTime - startedAt;
+                    UpdateTutorialCompletionOverlay(elapsed, totalDuration);
+                }
+
                 yield return null;
             }
 
+            ClearTutorialCompletionOverlay();
             SetTutorialMessageBoxVisible(false);
             _orchestrator?.RequestCompleteFishingTutorialFlow();
             _completeTutorialFlowRoutine = null;
+        }
+
+        private void UpdateTutorialCompletionOverlay(float elapsedSeconds, float totalDurationSeconds)
+        {
+            if (_tutorialTransitionOverlay == null || _tutorialTransitionFadeImage == null)
+            {
+                return;
+            }
+
+            var total = Mathf.Max(0.05f, totalDurationSeconds);
+            var fadeWindow = Mathf.Clamp(_tutorialCompletionFadeSeconds, 0.05f, total * 0.45f);
+            var normalizedAlpha = 1f;
+            if (elapsedSeconds < fadeWindow)
+            {
+                normalizedAlpha = Mathf.Clamp01(elapsedSeconds / fadeWindow);
+            }
+            else if (elapsedSeconds > total - fadeWindow)
+            {
+                normalizedAlpha = Mathf.Clamp01((total - elapsedSeconds) / fadeWindow);
+            }
+
+            var maxAlpha = Mathf.Clamp01(_tutorialCompletionOverlayMaxAlpha);
+            var overlayAlpha = maxAlpha * normalizedAlpha;
+            UpdateTransitionOverlayVisual(overlayAlpha, _tutorialCompletionTitle, forceVisible: overlayAlpha > 0.001f);
+        }
+
+        private void ClearTutorialCompletionOverlay()
+        {
+            UpdateTransitionOverlayVisual(0f, string.Empty, forceVisible: false);
         }
 
         private void PushPrompt()
@@ -386,6 +431,18 @@ namespace RavenDevOps.Fishing.Fishing
             if (!string.IsNullOrWhiteSpace(prompt))
             {
                 _hudOverlay?.SetFishingStatus(prompt);
+                if (_showPromptCardDuringHandsOnTutorial && !_demoActive)
+                {
+                    SetTutorialMessage(prompt);
+                }
+                else if (!_demoActive)
+                {
+                    SetTutorialMessageBoxVisible(false);
+                }
+            }
+            else if (!_demoActive)
+            {
+                SetTutorialMessageBoxVisible(false);
             }
 
             _nextPromptRefreshAt = Time.unscaledTime + Mathf.Max(0.25f, _promptRefreshIntervalSeconds);
@@ -396,15 +453,15 @@ namespace RavenDevOps.Fishing.Fishing
             switch (step)
             {
                 case TutorialStep.MoveShip:
-                    return "Fishing Tutorial Step 1/5: Move the ship left/right (A/D or Arrow keys). You can always steer, even while hook is down.";
+                    return "Hands-On Step 1/5: Steer left or right (A/D, Arrow keys, or Left Stick/D-Pad). Steering always works, even with the hook down.";
                 case TutorialStep.Cast:
-                    return "Fishing Tutorial Step 2/5: Press Down Arrow or S to cast. The hook auto-drops toward 25m.";
+                    return "Hands-On Step 2/5: Cast by pressing Down/S (or Left Stick down). The hook drops toward 25m.";
                 case TutorialStep.Hook:
-                    return "Fishing Tutorial Step 3/5: Steer the ship so the hook collides with a fish to hook it.";
+                    return "Hands-On Step 3/5: Keep steering until the hook collides with a fish to secure the hook.";
                 case TutorialStep.Reel:
-                    return "Fishing Tutorial Step 4/5: Press Up Arrow or W to start reeling.";
+                    return "Hands-On Step 4/5: Start reeling with Up/W (or Left Stick up).";
                 case TutorialStep.Land:
-                    return "Fishing Tutorial Step 5/5: Keep reeling. At 25m the catch is secured and then hauled to the boat.";
+                    return "Hands-On Step 5/5: Keep reeling. At 25m the catch is secured, then hauled to the boat.";
                 default:
                     return string.Empty;
             }
@@ -949,15 +1006,15 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Fishing tutorial demo. Each card stays up for 3 seconds so you can follow every step.";
+                    return "Fishing tutorial demo. Each scene pauses before transitions so you can track the full loop.";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Step 1: Move the ship left and right. You can always steer, even while the hook is down.";
+                    return "Step 1: Steer left/right (A/D, Arrow keys, or Left Stick/D-Pad). You can always steer, even while the hook is down.";
                 case DemoAutoplayPhase.CastInfo:
-                    return "Step 2: Cast. The hook descends to 30m.";
+                    return "Step 2: Cast with Down/S (or Left Stick down). The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
                     return "Step 3: Keep steering while the hook is down. A fish approaches and is hooked on collision.";
                 case DemoAutoplayPhase.ReelInfo:
-                    return "Step 4: Reel in. Secure the fish, then haul it to the boat.";
+                    return "Step 4: Reel with Up/W (or Left Stick up). Secure the fish, then haul it to the boat.";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
                     return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 5,000m.";
                 case DemoAutoplayPhase.HookUpgradeInfo:
@@ -971,7 +1028,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5ReelInfo:
                     return "Level 5 deep-dark catch: hook and reel toward the Lv5 ship line at 3,000m.";
                 case DemoAutoplayPhase.FinishInfo:
-                    return "Demo complete. Your turn: steer, cast, hook on collision, then reel. Complete it to earn your congratulations.";
+                    return "Demo complete. Your turn next: steer, cast, hook on collision, then reel your fish in.";
                 default:
                     return string.Empty;
             }
@@ -982,25 +1039,25 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Scene 1: Tutorial Intro";
+                    return "Scene 1: Demo Overview";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Scene 2: Ship Steering";
+                    return "Scene 2: Steering";
                 case DemoAutoplayPhase.CastInfo:
-                    return "Scene 3: Casting";
+                    return "Scene 3: Cast";
                 case DemoAutoplayPhase.FishHookInfo:
-                    return "Scene 4: Hooking Fish";
+                    return "Scene 4: Hook";
                 case DemoAutoplayPhase.ReelInfo:
-                    return "Scene 5: Reeling";
+                    return "Scene 5: Reel";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
-                    return "Scene 6: Ship Upgrades";
+                    return "Scene 6: Ship Depth Bands";
                 case DemoAutoplayPhase.HookUpgradeInfo:
-                    return "Scene 7: Hook Upgrades";
+                    return "Scene 7: Hook Light Tiers";
                 case DemoAutoplayPhase.Level4DarknessInfo:
-                    return "Scene 8: Darkness Zone";
+                    return "Scene 8: Darkness Catch";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
-                    return "Scene 9: Deep-Dark Zone";
+                    return "Scene 9: Deep-Dark Catch";
                 case DemoAutoplayPhase.FinishInfo:
-                    return "Scene 10: Ready";
+                    return "Scene 10: Your Turn";
                 default:
                     return string.Empty;
             }
