@@ -167,8 +167,8 @@ namespace RavenDevOps.Fishing.Core
 
             var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 552f), new Vector2(1274f, 72f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
             var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 8f), new Vector2(1238f, 22f));
-            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Event", new Vector2(18f, 36f), new Vector2(300f, 30f));
-            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Event", new Vector2(332f, 36f), new Vector2(320f, 30f));
+            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Tutorial", new Vector2(18f, 36f), new Vector2(300f, 30f));
+            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tutorial", new Vector2(332f, 36f), new Vector2(320f, 30f));
 
             var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -320f), new Vector2(240f, 52f));
             var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -320f), new Vector2(240f, 52f));

@@ -16,6 +16,7 @@ namespace RavenDevOps.Fishing.Harbor
         [SerializeField] private Button _skipIntroButton;
 
         [SerializeField] private bool _isBlockingInteractions;
+        private bool _isConfigured;
         private InputAction _cancelAction;
 
         public bool IsBlockingInteractions => _isBlockingInteractions;
@@ -24,6 +25,7 @@ namespace RavenDevOps.Fishing.Harbor
         {
             _dialogue = dialogue;
             ConfigureSkipButton(skipIntroButton);
+            _isConfigured = _dialogue != null;
             EvaluateTutorialState();
         }
 
@@ -67,7 +69,10 @@ namespace RavenDevOps.Fishing.Harbor
                 _skipIntroButton.onClick.AddListener(CompleteTutorial);
             }
 
-            EvaluateTutorialState();
+            if (_isConfigured || _dialogue != null)
+            {
+                EvaluateTutorialState();
+            }
         }
 
         private void OnDisable()
@@ -120,7 +125,7 @@ namespace RavenDevOps.Fishing.Harbor
         private void EvaluateTutorialState()
         {
             EnsureDependencies();
-            if (_saveManager == null || _saveManager.Current == null)
+            if (_saveManager == null || _saveManager.Current == null || _dialogue == null)
             {
                 return;
             }
@@ -140,7 +145,6 @@ namespace RavenDevOps.Fishing.Harbor
         {
             if (_dialogue == null)
             {
-                _saveManager?.SetTutorialSeen(true);
                 _isBlockingInteractions = false;
                 UpdateSkipButtonVisibility();
                 return;

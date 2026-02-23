@@ -8,6 +8,7 @@ namespace RavenDevOps.Fishing.UI
     public sealed class TutorialControlPanel : MonoBehaviour
     {
         [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private TMP_Text _statusText;
 
         public void Configure(TMP_Text statusText)
@@ -53,6 +54,7 @@ namespace RavenDevOps.Fishing.UI
         {
             EnsureSaveManager();
             _saveManager?.RequestIntroTutorialReplay();
+            _orchestrator?.RequestReturnToHarbor();
             RefreshStatus();
         }
 
@@ -103,18 +105,22 @@ namespace RavenDevOps.Fishing.UI
 
         private void EnsureSaveManager()
         {
-            if (_saveManager != null)
+            if (_saveManager != null && _orchestrator != null)
             {
                 return;
             }
 
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
-            if (_saveManager != null)
+            if (_saveManager == null)
             {
-                return;
+                RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+                _saveManager ??= FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
             }
 
-            _saveManager = FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            if (_orchestrator == null)
+            {
+                RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
+                _orchestrator ??= FindAnyObjectByType<GameFlowOrchestrator>(FindObjectsInactive.Include);
+            }
         }
     }
 }
