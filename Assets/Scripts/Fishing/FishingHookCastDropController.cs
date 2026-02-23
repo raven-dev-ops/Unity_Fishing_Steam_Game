@@ -42,6 +42,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _axisUpHeldLastFrame;
         private float _levelOneReelPulseTimeRemaining;
         private SpriteRenderer _hookRenderer;
+        private bool _suppressAutoRetractUntilUpReleased;
 
         public void Configure(
             FishingActionStateMachine stateMachine,
@@ -148,6 +149,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
                 _levelOneReelPulseTimeRemaining = 0f;
+                _suppressAutoRetractUntilUpReleased = false;
                 _axisDownHeldLastFrame = false;
                 _axisUpHeldLastFrame = false;
                 _hookController.SetMovementEnabled(false);
@@ -163,6 +165,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
                 _levelOneReelPulseTimeRemaining = 0f;
+                _suppressAutoRetractUntilUpReleased = previous == FishingActionState.Resolve;
                 _lastDownPressTime = -10f;
                 _lastUpPressTime = -10f;
                 _axisDownHeldLastFrame = false;
@@ -181,6 +184,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
                     ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
                     : 0f;
+                _suppressAutoRetractUntilUpReleased = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -193,6 +197,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _autoLowerActive = false;
                 _autoRaiseActive = false;
                 _levelOneReelPulseTimeRemaining = 0f;
+                _suppressAutoRetractUntilUpReleased = false;
                 _hookController.SetMovementEnabled(false);
                 SetHookVisible(true);
                 return;
@@ -203,6 +208,7 @@ namespace RavenDevOps.Fishing.Fishing
             _autoLowerActive = false;
             _autoRaiseActive = false;
             _levelOneReelPulseTimeRemaining = 0f;
+            _suppressAutoRetractUntilUpReleased = false;
             _hookController.SetMovementEnabled(true);
             SetHookVisible(true);
         }
@@ -222,6 +228,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
                     _levelOneReelPulseTimeRemaining = 0f;
+                    _suppressAutoRetractUntilUpReleased = false;
                     _axisDownHeldLastFrame = false;
                     _axisUpHeldLastFrame = false;
                     _hookController.SetMovementEnabled(false);
@@ -234,6 +241,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
                     _levelOneReelPulseTimeRemaining = 0f;
+                    _suppressAutoRetractUntilUpReleased = false;
                     _lastDownPressTime = -10f;
                     _lastUpPressTime = -10f;
                     _axisDownHeldLastFrame = false;
@@ -249,6 +257,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _levelOneReelPulseTimeRemaining = ResolveHookReelInputMode() == HookReelInputMode.Level1Tap
                         ? Mathf.Max(0.05f, _levelOneReelPulseDurationSeconds)
                         : 0f;
+                    _suppressAutoRetractUntilUpReleased = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
@@ -258,6 +267,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
                     _levelOneReelPulseTimeRemaining = 0f;
+                    _suppressAutoRetractUntilUpReleased = false;
                     _hookController.SetMovementEnabled(false);
                     SetHookVisible(true);
                     break;
@@ -267,6 +277,7 @@ namespace RavenDevOps.Fishing.Fishing
                     _autoLowerActive = false;
                     _autoRaiseActive = false;
                     _levelOneReelPulseTimeRemaining = 0f;
+                    _suppressAutoRetractUntilUpReleased = false;
                     _hookController.SetMovementEnabled(true);
                     SetHookVisible(true);
                     break;
@@ -487,6 +498,16 @@ namespace RavenDevOps.Fishing.Fishing
                 || _autoDropActive
                 || _autoRaiseActive)
             {
+                return;
+            }
+
+            if (_suppressAutoRetractUntilUpReleased)
+            {
+                if (!IsUpInputHeld())
+                {
+                    _suppressAutoRetractUntilUpReleased = false;
+                }
+
                 return;
             }
 

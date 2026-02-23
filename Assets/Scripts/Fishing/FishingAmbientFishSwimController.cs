@@ -71,7 +71,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _hookedFollowLerp = 6f;
         [SerializeField] private float _hookedStruggleAmplitude = 0.08f;
         [SerializeField] private float _hookedStruggleFrequency = 6.8f;
-        [SerializeField] private float _escapedFishSpeedMultiplier = 1.65f;
+        [SerializeField] private float _escapedFishSpeedMultiplier = 3f;
         [SerializeField] private bool _enforceCatchableSpawnRules = true;
         [SerializeField] private Camera _runtimeCamera;
         [SerializeField] private Transform _ship;
