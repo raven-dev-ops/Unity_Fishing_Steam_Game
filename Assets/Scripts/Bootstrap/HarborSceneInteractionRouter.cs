@@ -22,8 +22,8 @@ namespace RavenDevOps.Fishing.Core
         }
 
         private const int MaxActivityLines = 4;
-        private static readonly string[] FallbackHookMenuOrder = { "hook_lv1", "hook_lv2", "hook_lv3" };
-        private static readonly string[] FallbackShipMenuOrder = { "ship_lv1", "ship_lv2", "ship_lv3" };
+        private static readonly string[] FallbackHookMenuOrder = { "hook_lv1", "hook_lv2", "hook_lv3", "hook_lv4", "hook_lv5" };
+        private static readonly string[] FallbackShipMenuOrder = { "ship_lv1", "ship_lv2", "ship_lv3", "ship_lv4", "ship_lv5" };
 
         [SerializeField] private List<WorldInteractable> _interactables = new List<WorldInteractable>();
         [SerializeField] private HookShopController _hookShop;
@@ -54,6 +54,8 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
         [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
         [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
+        [SerializeField] private int _fallbackCargoCapacityTier4 = 48;
+        [SerializeField] private int _fallbackCargoCapacityTier5 = 72;
 
         private readonly Queue<string> _recentActivity = new Queue<string>();
         private readonly List<Button> _hookShopButtons = new List<Button>();
@@ -1286,6 +1288,16 @@ namespace RavenDevOps.Fishing.Core
             var normalizedId = string.IsNullOrWhiteSpace(shipId)
                 ? string.Empty
                 : shipId.Trim().ToLowerInvariant();
+            if (normalizedId.Contains("lv5"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier5);
+            }
+
+            if (normalizedId.Contains("lv4"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier4);
+            }
+
             if (normalizedId.Contains("lv3"))
             {
                 return Mathf.Max(1, _fallbackCargoCapacityTier3);

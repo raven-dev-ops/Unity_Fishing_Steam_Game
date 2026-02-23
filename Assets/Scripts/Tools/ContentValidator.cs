@@ -195,6 +195,21 @@ namespace RavenDevOps.Fishing.Tools
                 {
                     messages.Add($"ERROR: Ship '{ship.id}' has non-positive cargoCapacity.");
                 }
+
+                if (ship.minDepthMeters < 0f)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has negative minDepthMeters.");
+                }
+
+                if (ship.maxDepthMeters <= 0f)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has non-positive maxDepthMeters.");
+                }
+
+                if (ship.maxDepthMeters <= ship.minDepthMeters)
+                {
+                    messages.Add($"ERROR: Ship '{ship.id}' has invalid depth range (minDepthMeters must be less than maxDepthMeters).");
+                }
             }
         }
 

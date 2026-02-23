@@ -16,7 +16,9 @@ namespace RavenDevOps.Fishing.Fishing
                 ? string.Empty
                 : equippedHookId.Trim().ToLowerInvariant();
 
-            if (normalizedId.Contains("hook_lv3"))
+            if (normalizedId.Contains("hook_lv5")
+                || normalizedId.Contains("hook_lv4")
+                || normalizedId.Contains("hook_lv3"))
             {
                 return HookReelInputMode.Level3Auto;
             }

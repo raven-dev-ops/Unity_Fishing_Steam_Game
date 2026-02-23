@@ -711,6 +711,34 @@ namespace RavenDevOps.Fishing.Save
                 unlockId = "ship_lv3",
                 displayName = "Ship Lv3"
             });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 6,
+                unlockType = ProgressionUnlockType.Hook,
+                unlockId = "hook_lv4",
+                displayName = "Hook Lv4"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 7,
+                unlockType = ProgressionUnlockType.Hook,
+                unlockId = "hook_lv5",
+                displayName = "Hook Lv5"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 8,
+                unlockType = ProgressionUnlockType.Ship,
+                unlockId = "ship_lv4",
+                displayName = "Ship Lv4"
+            });
+            _progressionUnlocks.Add(new ProgressionUnlockDefinition
+            {
+                level = 9,
+                unlockType = ProgressionUnlockType.Ship,
+                unlockId = "ship_lv5",
+                displayName = "Ship Lv5"
+            });
         }
 
         private static bool IsInvalidUnlockDefinition(ProgressionUnlockDefinition unlock)

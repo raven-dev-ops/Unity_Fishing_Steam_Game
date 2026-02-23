@@ -9,6 +9,17 @@ namespace RavenDevOps.Fishing.Fishing
 {
     public sealed class ShipMovementController : MonoBehaviour
     {
+        private const float FallbackMinDepthTier1 = 0f;
+        private const float FallbackMinDepthTier2 = 0f;
+        private const float FallbackMinDepthTier3 = 0f;
+        private const float FallbackMinDepthTier4 = 1000f;
+        private const float FallbackMinDepthTier5 = 3000f;
+        private const float FallbackMaxDepthTier1 = 400f;
+        private const float FallbackMaxDepthTier2 = 700f;
+        private const float FallbackMaxDepthTier3 = 1600f;
+        private const float FallbackMaxDepthTier4 = 3000f;
+        private const float FallbackMaxDepthTier5 = 4000f;
+
         [SerializeField] private float _fallbackSpeed = 6f;
         [SerializeField] private Vector2 _xBounds = new Vector2(-9f, 9f);
         [SerializeField] private bool _clampHorizontalPosition = false;
@@ -20,6 +31,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
         [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
         [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
+        [SerializeField] private int _fallbackCargoCapacityTier4 = 48;
+        [SerializeField] private int _fallbackCargoCapacityTier5 = 72;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
         [SerializeField] private UserSettingsService _settingsService;
@@ -30,6 +43,8 @@ namespace RavenDevOps.Fishing.Fishing
 
         public int DistanceTierCap { get; private set; } = 1;
         public int CargoCapacity { get; private set; } = 12;
+        public float MinOperationalDepthMeters { get; private set; } = FallbackMinDepthTier1;
+        public float MaxOperationalDepthMeters { get; private set; } = FallbackMaxDepthTier1;
         public int CurrentDistanceTier => ResolveDistanceTier(transform.position.x);
         public float DistanceTraveledUnits => _distanceTraveledUnits;
         public bool SteeringLockedForFishingState => IsSteeringLockedByFishingState();
@@ -63,6 +78,8 @@ namespace RavenDevOps.Fishing.Fishing
         {
             DistanceTierCap = 1;
             CargoCapacity = Mathf.Max(1, _fallbackCargoCapacityTier1);
+            MinOperationalDepthMeters = FallbackMinDepthTier1;
+            MaxOperationalDepthMeters = FallbackMaxDepthTier1;
             if (_saveManager == null || _saveManager.Current == null)
             {
                 return;
@@ -75,10 +92,17 @@ namespace RavenDevOps.Fishing.Fishing
                 CargoCapacity = shipDefinition.cargoCapacity > 0
                     ? shipDefinition.cargoCapacity
                     : ResolveFallbackCargoCapacity(equippedId);
+                var minDepth = Mathf.Max(0f, shipDefinition.minDepthMeters);
+                var maxDepth = Mathf.Max(minDepth + 0.1f, shipDefinition.maxDepthMeters);
+                MinOperationalDepthMeters = minDepth;
+                MaxOperationalDepthMeters = maxDepth;
                 return;
             }
 
             CargoCapacity = ResolveFallbackCargoCapacity(equippedId);
+            ResolveFallbackDepthBand(equippedId, out var fallbackMinDepth, out var fallbackMaxDepth);
+            MinOperationalDepthMeters = fallbackMinDepth;
+            MaxOperationalDepthMeters = fallbackMaxDepth;
         }
 
         public void SetSpeedMultiplier(float multiplier)
@@ -116,6 +140,20 @@ namespace RavenDevOps.Fishing.Fishing
             var normalized = Mathf.Clamp01(Mathf.InverseLerp(minX, maxX, xPosition));
             var tierIndex = Mathf.FloorToInt(normalized * tierCap);
             return Mathf.Clamp(tierIndex + 1, 1, tierCap);
+        }
+
+        public bool IsDepthWithinOperationalBand(float depthMeters)
+        {
+            var depth = Mathf.Max(0f, depthMeters);
+            var minDepth = Mathf.Max(0f, MinOperationalDepthMeters);
+            var maxDepth = Mathf.Max(minDepth + 0.1f, MaxOperationalDepthMeters);
+            return depth >= minDepth && depth <= maxDepth;
+        }
+
+        public void GetOperationalDepthBand(out float minDepthMeters, out float maxDepthMeters)
+        {
+            minDepthMeters = Mathf.Max(0f, MinOperationalDepthMeters);
+            maxDepthMeters = Mathf.Max(minDepthMeters + 0.1f, MaxOperationalDepthMeters);
         }
 
         private void Update()
@@ -319,6 +357,16 @@ namespace RavenDevOps.Fishing.Fishing
                 ? string.Empty
                 : shipId.Trim().ToLowerInvariant();
 
+            if (id.Contains("lv5"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier5);
+            }
+
+            if (id.Contains("lv4"))
+            {
+                return Mathf.Max(1, _fallbackCargoCapacityTier4);
+            }
+
             if (id.Contains("lv3"))
             {
                 return Mathf.Max(1, _fallbackCargoCapacityTier3);
@@ -330,6 +378,44 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(1, _fallbackCargoCapacityTier1);
+        }
+
+        private static void ResolveFallbackDepthBand(string shipId, out float minDepthMeters, out float maxDepthMeters)
+        {
+            var id = string.IsNullOrWhiteSpace(shipId)
+                ? string.Empty
+                : shipId.Trim().ToLowerInvariant();
+
+            if (id.Contains("lv5"))
+            {
+                minDepthMeters = FallbackMinDepthTier5;
+                maxDepthMeters = FallbackMaxDepthTier5;
+                return;
+            }
+
+            if (id.Contains("lv4"))
+            {
+                minDepthMeters = FallbackMinDepthTier4;
+                maxDepthMeters = FallbackMaxDepthTier4;
+                return;
+            }
+
+            if (id.Contains("lv3"))
+            {
+                minDepthMeters = FallbackMinDepthTier3;
+                maxDepthMeters = FallbackMaxDepthTier3;
+                return;
+            }
+
+            if (id.Contains("lv2"))
+            {
+                minDepthMeters = FallbackMinDepthTier2;
+                maxDepthMeters = FallbackMaxDepthTier2;
+                return;
+            }
+
+            minDepthMeters = FallbackMinDepthTier1;
+            maxDepthMeters = FallbackMaxDepthTier1;
         }
     }
 }

@@ -20,7 +20,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f3efd57182a1c8a4daee367ca1ebacd7, type: 2}
   - {fileID: 11400000, guid: cfdc8d002f635754aabcd87329d5dda4, type: 2}
   - {fileID: 11400000, guid: a157b097d2c3d6e40b97b2847919d13c, type: 2}
+  - {fileID: 11400000, guid: 23ea4d0ffded49aeb808ec23044f1eb3, type: 2}
+  - {fileID: 11400000, guid: af2cbc3fdef34760bc964dcd81627554, type: 2}
   hookDefinitions:
   - {fileID: 11400000, guid: 60ff380f30b93e246b784d80865c1e10, type: 2}
   - {fileID: 11400000, guid: 0c1e4afc335c8254697d76564315896d, type: 2}
   - {fileID: 11400000, guid: c32226e457d2ec74995193ff2423a52e, type: 2}
+  - {fileID: 11400000, guid: b64042b30c814e59a450395d5219dd4b, type: 2}
+  - {fileID: 11400000, guid: 34fd100de10048c6a19090a09fde5d82, type: 2}

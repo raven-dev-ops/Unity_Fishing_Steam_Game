@@ -9,5 +9,7 @@ namespace RavenDevOps.Fishing.Data
         public Sprite icon;
         public int price = 100;
         public float maxDepth = 4000f;
+        public float darkZoneLightRadiusMeters = 0f;
+        public float deepDarkZoneLightRadiusMeters = 0f;
     }
 }

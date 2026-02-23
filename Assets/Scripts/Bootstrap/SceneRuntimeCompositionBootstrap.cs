@@ -443,15 +443,19 @@ namespace RavenDevOps.Fishing.Core
                 "Loading hook inventory...",
                 16,
                 TextAnchor.UpperLeft,
-                new Vector2(28f, 106f),
-                new Vector2(464f, 148f));
-            var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
-            var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
-            var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
-            var hookLv1Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv1Icon", new Vector2(-204f, 18f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv2Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv2Icon", new Vector2(-204f, -42f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv3Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv3Icon", new Vector2(-204f, -102f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
+                new Vector2(28f, 122f),
+                new Vector2(464f, 116f));
+            var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 28f), new Vector2(332f, 44f));
+            var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -24f), new Vector2(332f, 44f));
+            var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -76f), new Vector2(332f, 44f));
+            var hookLv4Button = CreateButton(hookShopPanel.transform, "HarborHookLv4Button", "Hook Lv4", new Vector2(0f, -128f), new Vector2(332f, 44f));
+            var hookLv5Button = CreateButton(hookShopPanel.transform, "HarborHookLv5Button", "Hook Lv5", new Vector2(0f, -180f), new Vector2(332f, 44f));
+            var hookLv1Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv1Icon", new Vector2(-204f, 28f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv2Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv2Icon", new Vector2(-204f, -24f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv3Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv3Icon", new Vector2(-204f, -76f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv4Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv4Icon", new Vector2(-204f, -128f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv5Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv5Icon", new Vector2(-204f, -180f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -226f), new Vector2(260f, 42f));
             hookShopPanel.SetActive(false);
 
             var boatShopPanel = CreatePanel(
@@ -468,15 +472,19 @@ namespace RavenDevOps.Fishing.Core
                 "Loading ship inventory...",
                 16,
                 TextAnchor.UpperLeft,
-                new Vector2(28f, 106f),
-                new Vector2(464f, 148f));
-            var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 18f), new Vector2(332f, 50f));
-            var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -42f), new Vector2(332f, 50f));
-            var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -102f), new Vector2(332f, 50f));
-            var boatLv1Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv1Icon", new Vector2(-204f, 18f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv2Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv2Icon", new Vector2(-204f, -42f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv3Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv3Icon", new Vector2(-204f, -102f), new Vector2(44f, 44f), new Color(1f, 1f, 1f, 0.98f));
-            var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -182f), new Vector2(260f, 46f));
+                new Vector2(28f, 122f),
+                new Vector2(464f, 116f));
+            var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 28f), new Vector2(332f, 44f));
+            var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -24f), new Vector2(332f, 44f));
+            var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -76f), new Vector2(332f, 44f));
+            var boatLv4Button = CreateButton(boatShopPanel.transform, "HarborBoatLv4Button", "Ship Lv4", new Vector2(0f, -128f), new Vector2(332f, 44f));
+            var boatLv5Button = CreateButton(boatShopPanel.transform, "HarborBoatLv5Button", "Ship Lv5", new Vector2(0f, -180f), new Vector2(332f, 44f));
+            var boatLv1Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv1Icon", new Vector2(-204f, 28f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv2Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv2Icon", new Vector2(-204f, -24f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv3Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv3Icon", new Vector2(-204f, -76f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv4Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv4Icon", new Vector2(-204f, -128f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv5Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv5Icon", new Vector2(-204f, -180f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -226f), new Vector2(260f, 42f));
             boatShopPanel.SetActive(false);
 
             var fishShopPanel = CreatePanel(
@@ -584,7 +592,9 @@ namespace RavenDevOps.Fishing.Core
             {
                 new ShopItem { id = "hook_lv1", price = 0, valueTier = 1 },
                 new ShopItem { id = "hook_lv2", price = 120, valueTier = 2 },
-                new ShopItem { id = "hook_lv3", price = 320, valueTier = 3 }
+                new ShopItem { id = "hook_lv3", price = 320, valueTier = 3 },
+                new ShopItem { id = "hook_lv4", price = 680, valueTier = 4 },
+                new ShopItem { id = "hook_lv5", price = 1200, valueTier = 5 }
             });
 
             var boatShop = GetOrAddComponent<BoatShopController>(root);
@@ -592,7 +602,9 @@ namespace RavenDevOps.Fishing.Core
             {
                 new ShopItem { id = "ship_lv1", price = 0, valueTier = 1 },
                 new ShopItem { id = "ship_lv2", price = 180, valueTier = 2 },
-                new ShopItem { id = "ship_lv3", price = 420, valueTier = 3 }
+                new ShopItem { id = "ship_lv3", price = 420, valueTier = 3 },
+                new ShopItem { id = "ship_lv4", price = 860, valueTier = 4 },
+                new ShopItem { id = "ship_lv5", price = 1500, valueTier = 5 }
             });
 
             var fishShop = GetOrAddComponent<FishShopController>(root);
@@ -621,10 +633,10 @@ namespace RavenDevOps.Fishing.Core
                 boatLv1Button.gameObject,
                 fishSellButton.gameObject,
                 sailButton,
-                new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button },
-                new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button },
-                new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon },
-                new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon });
+                new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
+                new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
+                new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon, hookLv4Icon, hookLv5Icon },
+                new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon, boatLv4Icon, boatLv5Icon });
 
             hookButton.onClick.AddListener(router.OnHookShopRequested);
             boatButton.onClick.AddListener(router.OnBoatShopRequested);
@@ -633,10 +645,14 @@ namespace RavenDevOps.Fishing.Core
             hookLv1Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv1"));
             hookLv2Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv2"));
             hookLv3Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv3"));
+            hookLv4Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv4"));
+            hookLv5Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv5"));
             hookBackButton.onClick.AddListener(router.OnShopBackRequested);
             boatLv1Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv1"));
             boatLv2Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv2"));
             boatLv3Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv3"));
+            boatLv4Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv4"));
+            boatLv5Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv5"));
             boatBackButton.onClick.AddListener(router.OnShopBackRequested);
             fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
             fishBackButton.onClick.AddListener(router.OnShopBackRequested);
@@ -791,6 +807,7 @@ namespace RavenDevOps.Fishing.Core
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
             hookMovement.RefreshHookStats();
+            GetOrAddComponent<FishingDepthDarknessController>(root);
             var hookSway = hookObject.GetComponent<SpriteSwayMotion2D>();
             if (hookSway != null)
             {

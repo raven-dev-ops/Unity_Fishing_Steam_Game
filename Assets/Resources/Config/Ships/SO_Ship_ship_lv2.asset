@@ -18,3 +18,5 @@ MonoBehaviour:
   maxDistanceTier: 2
   moveSpeed: 6.7
   cargoCapacity: 20
+  minDepthMeters: 0
+  maxDepthMeters: 700

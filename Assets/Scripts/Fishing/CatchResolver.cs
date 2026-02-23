@@ -12,6 +12,17 @@ namespace RavenDevOps.Fishing.Fishing
 {
     public sealed class CatchResolver : MonoBehaviour
     {
+        private const float FallbackShipMinDepthTier1 = 0f;
+        private const float FallbackShipMinDepthTier2 = 0f;
+        private const float FallbackShipMinDepthTier3 = 0f;
+        private const float FallbackShipMinDepthTier4 = 1000f;
+        private const float FallbackShipMinDepthTier5 = 3000f;
+        private const float FallbackShipMaxDepthTier1 = 400f;
+        private const float FallbackShipMaxDepthTier2 = 700f;
+        private const float FallbackShipMaxDepthTier3 = 1600f;
+        private const float FallbackShipMaxDepthTier4 = 3000f;
+        private const float FallbackShipMaxDepthTier5 = 4000f;
+
         private const int FallbackCargoCapacityTier1 = 12;
         private const int FallbackCargoCapacityTier2 = 20;
         private const int FallbackCargoCapacityTier3 = 32;
@@ -889,6 +900,13 @@ namespace RavenDevOps.Fishing.Fishing
 
             RefreshDistanceTier();
             var depth = Mathf.Max(0f, _hook.CurrentDepth);
+            if (!IsDepthWithinShipOperationalBand(depth, out var shipMinDepth, out var shipMaxDepth))
+            {
+                _targetFish = null;
+                SetShipDepthBandStatus(depth, shipMinDepth, shipMaxDepth);
+                return false;
+            }
+
             var minimumSpawnDepth = Mathf.Max(0f, _minimumFishSpawnDepth);
             if (depth < minimumSpawnDepth)
             {
@@ -1001,6 +1019,13 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
+            var depth = Mathf.Max(0f, _hook.CurrentDepth);
+            if (!IsDepthWithinShipOperationalBand(depth, out var shipMinDepth, out var shipMaxDepth))
+            {
+                SetShipDepthBandStatus(depth, shipMinDepth, shipMaxDepth);
+                return false;
+            }
+
             string collidedFishId = string.Empty;
             var collisionRadius = Mathf.Max(0.02f, _hookCollisionRadius);
             if (_targetFishBoundToAmbient
@@ -1026,6 +1051,92 @@ namespace RavenDevOps.Fishing.Fishing
                 allowFallbackDefinition: true,
                 overwriteExistingTarget: true);
             return true;
+        }
+
+        private bool IsDepthWithinShipOperationalBand(
+            float depthMeters,
+            out float minDepthMeters,
+            out float maxDepthMeters)
+        {
+            ResolveShipOperationalDepthBand(out minDepthMeters, out maxDepthMeters);
+            var depth = Mathf.Max(0f, depthMeters);
+            return depth >= minDepthMeters && depth <= maxDepthMeters;
+        }
+
+        private void ResolveShipOperationalDepthBand(out float minDepthMeters, out float maxDepthMeters)
+        {
+            if (_shipMovement == null)
+            {
+                RuntimeServiceRegistry.TryGet(out _shipMovement);
+                if (_shipMovement == null && _hook != null && _hook.ShipTransform != null)
+                {
+                    _shipMovement = _hook.ShipTransform.GetComponent<ShipMovementController>();
+                }
+            }
+
+            if (_shipMovement != null)
+            {
+                _shipMovement.GetOperationalDepthBand(out minDepthMeters, out maxDepthMeters);
+                return;
+            }
+
+            ResolveFallbackShipDepthBand(
+                _saveManager != null && _saveManager.Current != null ? _saveManager.Current.equippedShipId : string.Empty,
+                out minDepthMeters,
+                out maxDepthMeters);
+        }
+
+        private void SetShipDepthBandStatus(float depthMeters, float minDepthMeters, float maxDepthMeters)
+        {
+            if (depthMeters < minDepthMeters)
+            {
+                _hudOverlay?.SetFishingStatus(
+                    $"Ship depth band is {minDepthMeters:0}-{maxDepthMeters:0}m. Lower to {minDepthMeters:0}m+.");
+                return;
+            }
+
+            _hudOverlay?.SetFishingStatus(
+                $"Ship depth band is {minDepthMeters:0}-{maxDepthMeters:0}m. Reel up shallower.");
+        }
+
+        private static void ResolveFallbackShipDepthBand(
+            string shipId,
+            out float minDepthMeters,
+            out float maxDepthMeters)
+        {
+            var normalizedId = string.IsNullOrWhiteSpace(shipId)
+                ? string.Empty
+                : shipId.Trim().ToLowerInvariant();
+            if (normalizedId.Contains("lv5"))
+            {
+                minDepthMeters = FallbackShipMinDepthTier5;
+                maxDepthMeters = FallbackShipMaxDepthTier5;
+                return;
+            }
+
+            if (normalizedId.Contains("lv4"))
+            {
+                minDepthMeters = FallbackShipMinDepthTier4;
+                maxDepthMeters = FallbackShipMaxDepthTier4;
+                return;
+            }
+
+            if (normalizedId.Contains("lv3"))
+            {
+                minDepthMeters = FallbackShipMinDepthTier3;
+                maxDepthMeters = FallbackShipMaxDepthTier3;
+                return;
+            }
+
+            if (normalizedId.Contains("lv2"))
+            {
+                minDepthMeters = FallbackShipMinDepthTier2;
+                maxDepthMeters = FallbackShipMaxDepthTier2;
+                return;
+            }
+
+            minDepthMeters = FallbackShipMinDepthTier1;
+            maxDepthMeters = FallbackShipMaxDepthTier1;
         }
 
         private bool TryPromoteCollidingAmbientFishToTarget(float collisionRadius, out string fishId)

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c1b1e981d44d43359e83d4068fcdb4cf, type: 3}
-  m_Name: SO_Ship_ship_lv3
+  m_Name: SO_Ship_ship_lv4
   m_EditorClassIdentifier: RavenDevOps.Fishing.Data::RavenDevOps.Fishing.Data.ShipDefinitionSO
-  id: ship_lv3
-  icon: {fileID: 8259967691659168871, guid: ff8349ade8acc5a44a15ff3d6c88e406, type: 3}
-  price: 420
-  maxDistanceTier: 3
-  moveSpeed: 7.3
-  cargoCapacity: 32
-  minDepthMeters: 0
-  maxDepthMeters: 1600
+  id: ship_lv4
+  icon: {fileID: 7603594374696075083, guid: ff8349ade8acc5a44a15ff3d6c88e406, type: 3}
+  price: 860
+  maxDistanceTier: 4
+  moveSpeed: 7.9
+  cargoCapacity: 48
+  minDepthMeters: 1000
+  maxDepthMeters: 3000

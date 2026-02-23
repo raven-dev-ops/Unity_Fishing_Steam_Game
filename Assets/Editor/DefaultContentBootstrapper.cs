@@ -95,7 +95,9 @@ namespace RavenDevOps.Fishing.EditorTools
                 price: 0,
                 maxDistanceTier: 1,
                 moveSpeed: 6.0f,
-                cargoCapacity: 12);
+                cargoCapacity: 12,
+                minDepthMeters: 0f,
+                maxDepthMeters: 400f);
 
             var shipLv2 = UpsertShipDefinition(
                 ShipFolder + "/SO_Ship_ship_lv2.asset",
@@ -105,7 +107,9 @@ namespace RavenDevOps.Fishing.EditorTools
                 price: 180,
                 maxDistanceTier: 2,
                 moveSpeed: 6.7f,
-                cargoCapacity: 20);
+                cargoCapacity: 20,
+                minDepthMeters: 0f,
+                maxDepthMeters: 700f);
 
             var shipLv3 = UpsertShipDefinition(
                 ShipFolder + "/SO_Ship_ship_lv3.asset",
@@ -115,7 +119,33 @@ namespace RavenDevOps.Fishing.EditorTools
                 price: 420,
                 maxDistanceTier: 3,
                 moveSpeed: 7.3f,
-                cargoCapacity: 32);
+                cargoCapacity: 32,
+                minDepthMeters: 0f,
+                maxDepthMeters: 1600f);
+
+            var shipLv4 = UpsertShipDefinition(
+                ShipFolder + "/SO_Ship_ship_lv4.asset",
+                "ship_lv4",
+                "Assets/Art/Sheets/Icons/icons_ships_sheet_v01.png",
+                "ship_coastal_runner",
+                price: 860,
+                maxDistanceTier: 4,
+                moveSpeed: 7.9f,
+                cargoCapacity: 48,
+                minDepthMeters: 1000f,
+                maxDepthMeters: 3000f);
+
+            var shipLv5 = UpsertShipDefinition(
+                ShipFolder + "/SO_Ship_ship_lv5.asset",
+                "ship_lv5",
+                "Assets/Art/Sheets/Icons/icons_ships_sheet_v01.png",
+                "ship_icon_coastal",
+                price: 1500,
+                maxDistanceTier: 5,
+                moveSpeed: 8.4f,
+                cargoCapacity: 72,
+                minDepthMeters: 3000f,
+                maxDepthMeters: 4000f);
 
             var hookLv1 = UpsertHookDefinition(
                 HookFolder + "/SO_Hook_hook_lv1.asset",
@@ -123,7 +153,9 @@ namespace RavenDevOps.Fishing.EditorTools
                 "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
                 "hook_lv1",
                 price: 0,
-                maxDepth: 40f);
+                maxDepth: 4000f,
+                darkZoneLightRadiusMeters: 0f,
+                deepDarkZoneLightRadiusMeters: 0f);
 
             var hookLv2 = UpsertHookDefinition(
                 HookFolder + "/SO_Hook_hook_lv2.asset",
@@ -131,7 +163,9 @@ namespace RavenDevOps.Fishing.EditorTools
                 "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
                 "hook_lv2",
                 price: 120,
-                maxDepth: 75f);
+                maxDepth: 4000f,
+                darkZoneLightRadiusMeters: 0f,
+                deepDarkZoneLightRadiusMeters: 0f);
 
             var hookLv3 = UpsertHookDefinition(
                 HookFolder + "/SO_Hook_hook_lv3.asset",
@@ -139,12 +173,34 @@ namespace RavenDevOps.Fishing.EditorTools
                 "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
                 "hook_lv3",
                 price: 320,
-                maxDepth: 120f);
+                maxDepth: 4000f,
+                darkZoneLightRadiusMeters: 0f,
+                deepDarkZoneLightRadiusMeters: 0f);
+
+            var hookLv4 = UpsertHookDefinition(
+                HookFolder + "/SO_Hook_hook_lv4.asset",
+                "hook_lv4",
+                "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
+                "hook_lvl2_barbed_v01",
+                price: 680,
+                maxDepth: 4000f,
+                darkZoneLightRadiusMeters: 15f,
+                deepDarkZoneLightRadiusMeters: 5f);
+
+            var hookLv5 = UpsertHookDefinition(
+                HookFolder + "/SO_Hook_hook_lv5.asset",
+                "hook_lv5",
+                "Assets/Art/Sheets/Icons/icons_hooks_sheet_v01.png",
+                "hook_coastal_deep",
+                price: 1200,
+                maxDepth: 4000f,
+                darkZoneLightRadiusMeters: 30f,
+                deepDarkZoneLightRadiusMeters: 15f);
 
             var config = LoadOrCreateAsset<GameConfigSO>(ConfigAssetPath);
             config.fishDefinitions = new[] { fishCod, fishSnapper, fishHeavy };
-            config.shipDefinitions = new[] { shipLv1, shipLv2, shipLv3 };
-            config.hookDefinitions = new[] { hookLv1, hookLv2, hookLv3 };
+            config.shipDefinitions = new[] { shipLv1, shipLv2, shipLv3, shipLv4, shipLv5 };
+            config.hookDefinitions = new[] { hookLv1, hookLv2, hookLv3, hookLv4, hookLv5 };
             EditorUtility.SetDirty(config);
 
             var tuningConfig = LoadOrCreateAsset<TuningConfigSO>(TuningAssetPath);
@@ -209,7 +265,9 @@ namespace RavenDevOps.Fishing.EditorTools
             int price,
             int maxDistanceTier,
             float moveSpeed,
-            int cargoCapacity)
+            int cargoCapacity,
+            float minDepthMeters,
+            float maxDepthMeters)
         {
             var ship = LoadOrCreateAsset<ShipDefinitionSO>(assetPath);
             ship.id = id;
@@ -218,6 +276,8 @@ namespace RavenDevOps.Fishing.EditorTools
             ship.maxDistanceTier = maxDistanceTier;
             ship.moveSpeed = moveSpeed;
             ship.cargoCapacity = cargoCapacity;
+            ship.minDepthMeters = Mathf.Max(0f, minDepthMeters);
+            ship.maxDepthMeters = Mathf.Max(ship.minDepthMeters + 0.1f, maxDepthMeters);
             EditorUtility.SetDirty(ship);
             return ship;
         }
@@ -228,13 +288,17 @@ namespace RavenDevOps.Fishing.EditorTools
             string spriteSheetPath,
             string spriteName,
             int price,
-            float maxDepth)
+            float maxDepth,
+            float darkZoneLightRadiusMeters,
+            float deepDarkZoneLightRadiusMeters)
         {
             var hook = LoadOrCreateAsset<HookDefinitionSO>(assetPath);
             hook.id = id;
             hook.icon = LoadSpriteFromSheet(spriteSheetPath, spriteName);
             hook.price = price;
             hook.maxDepth = maxDepth;
+            hook.darkZoneLightRadiusMeters = darkZoneLightRadiusMeters;
+            hook.deepDarkZoneLightRadiusMeters = deepDarkZoneLightRadiusMeters;
             EditorUtility.SetDirty(hook);
             return hook;
         }

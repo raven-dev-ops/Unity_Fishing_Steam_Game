@@ -11,5 +11,7 @@ namespace RavenDevOps.Fishing.Data
         public int maxDistanceTier = 1;
         public float moveSpeed = 6f;
         public int cargoCapacity = 12;
+        public float minDepthMeters = 0f;
+        public float maxDepthMeters = 4000f;
     }
 }

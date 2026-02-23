@@ -147,6 +147,31 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(ContentValidator.CountErrors(messages), Is.GreaterThan(0));
         }
 
+        [Test]
+        public void Validate_ReturnsErrors_ForInvalidShipDepthRange()
+        {
+            var config = Create<GameConfigSO>();
+            var ship = Create<ShipDefinitionSO>();
+
+            ship.id = "ship_invalid_depth";
+            ship.icon = BuildSprite();
+            ship.price = 100;
+            ship.maxDistanceTier = 2;
+            ship.moveSpeed = 5f;
+            ship.cargoCapacity = 10;
+            ship.minDepthMeters = 800f;
+            ship.maxDepthMeters = 700f;
+
+            config.fishDefinitions = new FishDefinitionSO[0];
+            config.shipDefinitions = new[] { ship };
+            config.hookDefinitions = new HookDefinitionSO[0];
+
+            var messages = ContentValidator.Validate(config);
+
+            Assert.That(messages, Has.Some.Contains("invalid depth range"));
+            Assert.That(ContentValidator.CountErrors(messages), Is.GreaterThan(0));
+        }
+
         private T Create<T>() where T : ScriptableObject
         {
             var instance = ScriptableObject.CreateInstance<T>();

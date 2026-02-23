@@ -919,6 +919,11 @@ namespace RavenDevOps.Fishing.Fishing
 
             var distanceTier = _shipMovement != null ? Mathf.Max(1, _shipMovement.CurrentDistanceTier) : 1;
             var depth = Mathf.Max(0f, _ship.position.y - spawnWorldY);
+            if (_shipMovement != null && !_shipMovement.IsDepthWithinOperationalBand(depth))
+            {
+                return false;
+            }
+
             var rolledFish = _fishSpawner.RollFish(distanceTier, depth);
             if (rolledFish == null || string.IsNullOrWhiteSpace(rolledFish.id))
             {
