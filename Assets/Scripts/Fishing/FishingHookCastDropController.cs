@@ -62,6 +62,11 @@ namespace RavenDevOps.Fishing.Fishing
             SubscribeToStateMachine();
             _hookController = hookController;
             _ship = ship;
+            if (_hookController != null)
+            {
+                _hookController.ConfigureShipTransform(_ship);
+            }
+
             CacheHookRenderer();
             ApplyStateImmediate();
         }
@@ -311,6 +316,14 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            // When the hook object becomes active later than runtime-root controllers,
+            // defer auto-drop until hook movement bounds are initialized.
+            if (!_hookController.IsInitialized)
+            {
+                return;
+            }
+
+            _hookController.RefreshHookStats();
             _hookController.SetMovementEnabled(false);
             RefreshMoveHookAction();
 

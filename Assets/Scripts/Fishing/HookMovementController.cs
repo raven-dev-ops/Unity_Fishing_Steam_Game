@@ -51,6 +51,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
         public Transform ShipTransform => _shipTransform;
+        public bool IsInitialized => _initialized;
         private InputAction _moveHookAction;
         private float _smoothedAxis;
         private float _baseMaxDepth;
@@ -59,6 +60,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasRecordedShipXForLag;
         private float _lastShipXForLag;
         private float _horizontalLagOffset;
+        private bool _initialized;
 
         public void ConfigureShipTransform(Transform shipTransform)
         {
@@ -86,6 +88,7 @@ namespace RavenDevOps.Fishing.Fishing
             _distanceTier = Mathf.Max(1, _distanceTier);
             RefreshHookStats();
             ResetHorizontalLagState();
+            _initialized = true;
         }
 
         private void OnValidate()

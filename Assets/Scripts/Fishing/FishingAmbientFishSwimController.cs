@@ -37,7 +37,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _dynamicHorizontalBand = true;
         [SerializeField] private float _horizontalHalfSpan = 9.8f;
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
-        [SerializeField] private float _minimumAmbientSpawnDepth = 30f;
+        [SerializeField] private float _minimumAmbientSpawnDepth = 20f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
         [SerializeField] private float _maxBandHeight = 90f;
@@ -223,6 +223,7 @@ namespace RavenDevOps.Fishing.Fishing
                     }
                 }
             }
+
         }
 
         private void InitializeTracks()
