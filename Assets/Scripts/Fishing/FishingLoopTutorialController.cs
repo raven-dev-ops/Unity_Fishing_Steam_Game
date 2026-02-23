@@ -63,10 +63,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Button _skipTutorialButton;
         [SerializeField] private GameObject _tutorialMessageBox;
         [SerializeField] private Text _tutorialMessageText;
+        [SerializeField] private GameObject _tutorialTransitionOverlay;
+        [SerializeField] private Image _tutorialTransitionFadeImage;
+        [SerializeField] private Text _tutorialTransitionTitleText;
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
         [SerializeField] private float _demoMessageSeconds = 3f;
         [SerializeField] private float _demoActionPauseSeconds = 0.65f;
+        [SerializeField] private float _demoTransitionFadeToBlackSeconds = 0.32f;
+        [SerializeField] private float _demoTransitionHoldSeconds = 0.45f;
+        [SerializeField] private float _demoTransitionFadeFromBlackSeconds = 0.32f;
         [SerializeField] private float _demoShipTravelDistance = 2.8f;
         [SerializeField] private float _demoShipMoveSpeed = 4.8f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
@@ -92,6 +98,10 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _demoFishApproachStarted;
         private bool _demoFishBound;
         private bool _demoFishHookVisualReady;
+        private bool _demoSceneTransitionActive;
+        private DemoAutoplayPhase _demoPendingTransitionPhase = DemoAutoplayPhase.None;
+        private float _demoSceneTransitionStartedAt;
+        private string _demoSceneTransitionTitle = string.Empty;
         private IFishingHudOverlay _hudOverlay;
         private FishingActionStateMachine _subscribedStateMachine;
         private CatchResolver _subscribedCatchResolver;
@@ -124,6 +134,17 @@ namespace RavenDevOps.Fishing.Fishing
             _tutorialMessageBox = tutorialMessageBox;
             _tutorialMessageText = tutorialMessageText;
             SetTutorialMessageBoxVisible(false);
+        }
+
+        public void ConfigureTutorialTransitionOverlay(
+            GameObject tutorialTransitionOverlay,
+            Image tutorialTransitionFadeImage,
+            Text tutorialTransitionTitleText)
+        {
+            _tutorialTransitionOverlay = tutorialTransitionOverlay;
+            _tutorialTransitionFadeImage = tutorialTransitionFadeImage;
+            _tutorialTransitionTitleText = tutorialTransitionTitleText;
+            ClearDemoSceneTransition(forceHideOverlay: true);
         }
 
         private void Awake()
@@ -386,6 +407,7 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureDependencies();
             EnsureDemoAnchors();
             SuppressRuntimeHookCastControllerForDemo();
+            ClearDemoSceneTransition(forceHideOverlay: true);
             _demoActive = true;
             _demoFishApproachStarted = false;
             _demoFishBound = false;
@@ -411,6 +433,11 @@ namespace RavenDevOps.Fishing.Fishing
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
+                return;
+            }
+
+            if (TickDemoSceneTransition())
+            {
                 return;
             }
 
@@ -608,6 +635,16 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void StartDemoPhase(DemoAutoplayPhase phase)
         {
+            if (TryBeginDemoSceneTransition(phase))
+            {
+                return;
+            }
+
+            StartDemoPhaseImmediate(phase);
+        }
+
+        private void StartDemoPhaseImmediate(DemoAutoplayPhase phase)
+        {
             _demoPhase = phase;
             _demoPhaseStartedAt = Time.unscaledTime;
             _demoFishHookVisualReady = false;
@@ -662,6 +699,109 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
+        private bool TickDemoSceneTransition()
+        {
+            if (!_demoSceneTransitionActive)
+            {
+                return false;
+            }
+
+            var fadeToBlackSeconds = Mathf.Max(0.05f, _demoTransitionFadeToBlackSeconds);
+            var holdSeconds = Mathf.Max(0f, _demoTransitionHoldSeconds);
+            var fadeFromBlackSeconds = Mathf.Max(0.05f, _demoTransitionFadeFromBlackSeconds);
+            var elapsed = Time.unscaledTime - _demoSceneTransitionStartedAt;
+            var fadeOutEndsAt = fadeToBlackSeconds;
+            var holdEndsAt = fadeOutEndsAt + holdSeconds;
+            var fadeInEndsAt = holdEndsAt + fadeFromBlackSeconds;
+
+            if (elapsed < fadeOutEndsAt)
+            {
+                var fadeOutProgress = Mathf.Clamp01(elapsed / fadeToBlackSeconds);
+                UpdateTransitionOverlayVisual(fadeOutProgress, _demoSceneTransitionTitle, forceVisible: true);
+                return true;
+            }
+
+            if (_demoPendingTransitionPhase != DemoAutoplayPhase.None
+                && _demoPhase != _demoPendingTransitionPhase)
+            {
+                StartDemoPhaseImmediate(_demoPendingTransitionPhase);
+            }
+
+            if (elapsed < holdEndsAt)
+            {
+                UpdateTransitionOverlayVisual(1f, _demoSceneTransitionTitle, forceVisible: true);
+                return true;
+            }
+
+            if (elapsed < fadeInEndsAt)
+            {
+                var fadeInProgress = Mathf.Clamp01((elapsed - holdEndsAt) / fadeFromBlackSeconds);
+                var overlayAlpha = 1f - fadeInProgress;
+                UpdateTransitionOverlayVisual(overlayAlpha, _demoSceneTransitionTitle, forceVisible: true);
+                return true;
+            }
+
+            ClearDemoSceneTransition(forceHideOverlay: true);
+            return false;
+        }
+
+        private bool TryBeginDemoSceneTransition(DemoAutoplayPhase phase)
+        {
+            var title = BuildDemoSceneTitle(phase);
+            if (string.IsNullOrWhiteSpace(title)
+                || _tutorialTransitionOverlay == null
+                || _tutorialTransitionFadeImage == null)
+            {
+                return false;
+            }
+
+            _demoSceneTransitionActive = true;
+            _demoPendingTransitionPhase = phase;
+            _demoSceneTransitionStartedAt = Time.unscaledTime;
+            _demoSceneTransitionTitle = title;
+            SetTutorialMessageBoxVisible(false);
+            UpdateTransitionOverlayVisual(0f, title, forceVisible: true);
+            return true;
+        }
+
+        private void UpdateTransitionOverlayVisual(float overlayAlpha, string title, bool forceVisible)
+        {
+            if (_tutorialTransitionFadeImage != null)
+            {
+                var fadeColor = _tutorialTransitionFadeImage.color;
+                fadeColor.a = Mathf.Clamp01(overlayAlpha);
+                _tutorialTransitionFadeImage.color = fadeColor;
+            }
+
+            if (_tutorialTransitionTitleText != null)
+            {
+                _tutorialTransitionTitleText.text = title ?? string.Empty;
+                var titleColor = _tutorialTransitionTitleText.color;
+                titleColor.a = Mathf.Clamp01(overlayAlpha);
+                _tutorialTransitionTitleText.color = titleColor;
+            }
+
+            if (_tutorialTransitionOverlay != null)
+            {
+                _tutorialTransitionOverlay.SetActive(forceVisible);
+            }
+        }
+
+        private void ClearDemoSceneTransition(bool forceHideOverlay)
+        {
+            _demoSceneTransitionActive = false;
+            _demoPendingTransitionPhase = DemoAutoplayPhase.None;
+            _demoSceneTransitionStartedAt = 0f;
+            _demoSceneTransitionTitle = string.Empty;
+
+            if (!forceHideOverlay)
+            {
+                return;
+            }
+
+            UpdateTransitionOverlayVisual(0f, string.Empty, forceVisible: false);
+        }
+
         private bool IsDemoPhaseElapsed(float seconds)
         {
             return Time.unscaledTime >= _demoPhaseStartedAt + Mathf.Max(0.05f, seconds);
@@ -703,6 +843,35 @@ namespace RavenDevOps.Fishing.Fishing
                     return "Level 5 deep-dark catch: hook and reel.";
                 case DemoAutoplayPhase.FinishInfo:
                     return "Demo complete. Your turn: steer, cast, hook on collision, then reel.";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string BuildDemoSceneTitle(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    return "Scene 1: Tutorial Intro";
+                case DemoAutoplayPhase.MoveShipInfo:
+                    return "Scene 2: Ship Steering";
+                case DemoAutoplayPhase.CastInfo:
+                    return "Scene 3: Casting";
+                case DemoAutoplayPhase.FishHookInfo:
+                    return "Scene 4: Hooking Fish";
+                case DemoAutoplayPhase.ReelInfo:
+                    return "Scene 5: Reeling";
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    return "Scene 6: Ship Upgrades";
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    return "Scene 7: Hook Upgrades";
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                    return "Scene 8: Darkness Zone";
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                    return "Scene 9: Deep-Dark Zone";
+                case DemoAutoplayPhase.FinishInfo:
+                    return "Scene 10: Ready";
                 default:
                     return string.Empty;
             }
@@ -764,6 +933,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
+            ClearDemoSceneTransition(forceHideOverlay: true);
             ResolveDemoFish(caught: false);
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
@@ -778,6 +948,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
+            ClearDemoSceneTransition(forceHideOverlay: true);
             ResolveDemoFish(caught: false);
             RestoreRuntimeHookCastController();
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);

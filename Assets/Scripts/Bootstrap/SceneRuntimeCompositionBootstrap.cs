@@ -746,6 +746,28 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(1104f, 116f));
             fishingTutorialMessageText.raycastTarget = false;
             fishingTutorialMessagePanel.SetActive(false);
+            var fishingTutorialTransitionPanel = new GameObject("FishingTutorialTransitionPanel");
+            fishingTutorialTransitionPanel.transform.SetParent(canvas.transform, worldPositionStays: false);
+            var fishingTutorialTransitionRect = fishingTutorialTransitionPanel.AddComponent<RectTransform>();
+            fishingTutorialTransitionRect.anchorMin = Vector2.zero;
+            fishingTutorialTransitionRect.anchorMax = Vector2.one;
+            fishingTutorialTransitionRect.pivot = new Vector2(0.5f, 0.5f);
+            fishingTutorialTransitionRect.offsetMin = Vector2.zero;
+            fishingTutorialTransitionRect.offsetMax = Vector2.zero;
+            var fishingTutorialTransitionFadeImage = fishingTutorialTransitionPanel.AddComponent<Image>();
+            fishingTutorialTransitionFadeImage.color = new Color(0f, 0f, 0f, 0f);
+            fishingTutorialTransitionFadeImage.raycastTarget = false;
+            var fishingTutorialTransitionTitleText = CreateText(
+                fishingTutorialTransitionPanel.transform,
+                "FishingTutorialTransitionTitleText",
+                string.Empty,
+                52,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, 0f),
+                new Vector2(1520f, 170f));
+            fishingTutorialTransitionTitleText.color = new Color(0.95f, 0.98f, 1f, 0f);
+            fishingTutorialTransitionTitleText.raycastTarget = false;
+            fishingTutorialTransitionPanel.SetActive(false);
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
             CreateText(pauseRoot.transform, "PauseTitle", "Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 108f), new Vector2(320f, 62f));
@@ -894,8 +916,13 @@ namespace RavenDevOps.Fishing.Core
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
             var fishingTutorialController = GetOrAddComponent<FishingLoopTutorialController>(root);
+            fishingTutorialTransitionPanel.transform.SetAsLastSibling();
             fishingTutorialController.ConfigureSkipButton(fishingTutorialSkipButton);
             fishingTutorialController.ConfigureTutorialMessageBox(fishingTutorialMessagePanel, fishingTutorialMessageText);
+            fishingTutorialController.ConfigureTutorialTransitionOverlay(
+                fishingTutorialTransitionPanel,
+                fishingTutorialTransitionFadeImage,
+                fishingTutorialTransitionTitleText);
 
             var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
             var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);
