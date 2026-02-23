@@ -80,7 +80,7 @@ namespace RavenDevOps.Fishing.Harbor
         public void OnExitGamePressed()
         {
             ExitPauseIfNeeded();
-            Application.Quit();
+            AppExitUtility.QuitGame();
         }
 
         private void HandleStateChanged(GameFlowState previous, GameFlowState next)

@@ -13,17 +13,19 @@ namespace RavenDevOps.Fishing.UI
         public void Configure(TMP_Text statusText)
         {
             _statusText = statusText;
+            EnsureSaveManager();
             RefreshStatus();
         }
 
         private void Awake()
         {
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            EnsureSaveManager();
             RefreshStatus();
         }
 
         private void OnEnable()
         {
+            EnsureSaveManager();
             if (_saveManager != null)
             {
                 _saveManager.SaveDataChanged += OnSaveDataChanged;
@@ -42,24 +44,28 @@ namespace RavenDevOps.Fishing.UI
 
         public void SkipTutorial()
         {
+            EnsureSaveManager();
             _saveManager?.SetTutorialSeen(true);
             RefreshStatus();
         }
 
         public void ReplayTutorial()
         {
+            EnsureSaveManager();
             _saveManager?.SetTutorialSeen(false);
             RefreshStatus();
         }
 
         public void SkipFishingTutorial()
         {
+            EnsureSaveManager();
             _saveManager?.CompleteFishingLoopTutorial(skipped: true);
             RefreshStatus();
         }
 
         public void ReplayFishingTutorial()
         {
+            EnsureSaveManager();
             _saveManager?.RequestFishingLoopTutorialReplay();
             RefreshStatus();
         }
@@ -71,6 +77,7 @@ namespace RavenDevOps.Fishing.UI
 
         private void RefreshStatus()
         {
+            EnsureSaveManager();
             if (_statusText == null)
             {
                 return;
@@ -91,6 +98,22 @@ namespace RavenDevOps.Fishing.UI
                 : "Pending";
             var replay = flags.fishingLoopTutorialReplayRequested ? "Yes" : "No";
             _statusText.text = $"Tutorial flags: Intro={intro} | Fishing={fishing} | ReplayRequested={replay}";
+        }
+
+        private void EnsureSaveManager()
+        {
+            if (_saveManager != null)
+            {
+                return;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            if (_saveManager != null)
+            {
+                return;
+            }
+
+            _saveManager = FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
         }
     }
 }

@@ -266,7 +266,7 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestExitGame()
         {
-            Application.Quit();
+            AppExitUtility.QuitGame();
         }
     }
 }
