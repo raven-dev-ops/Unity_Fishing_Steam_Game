@@ -67,6 +67,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private GameObject _tutorialTransitionOverlay;
         [SerializeField] private Image _tutorialTransitionFadeImage;
         [SerializeField] private Text _tutorialTransitionTitleText;
+        [SerializeField] private Text _tutorialTransitionSubtitleText;
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
         [SerializeField] private bool _showPromptCardDuringHandsOnTutorial = true;
@@ -93,8 +94,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
-        [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(15f, 5f);
+        [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(28f, 14f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
+        [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
         [SerializeField] private float _demoDockOffsetY = 0.65f;
 
         private TutorialStep _step = TutorialStep.None;
@@ -113,6 +115,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _demoPendingTransitionPhasePrepared;
         private float _demoSceneTransitionStartedAt;
         private string _demoSceneTransitionTitle = string.Empty;
+        private string _demoSceneTransitionSubtitle = string.Empty;
         private DemoAutoplayPhase _demoQueuedNextPhase = DemoAutoplayPhase.None;
         private float _demoQueuedNextPhaseAt;
         private IFishingHudOverlay _hudOverlay;
@@ -153,11 +156,13 @@ namespace RavenDevOps.Fishing.Fishing
         public void ConfigureTutorialTransitionOverlay(
             GameObject tutorialTransitionOverlay,
             Image tutorialTransitionFadeImage,
-            Text tutorialTransitionTitleText)
+            Text tutorialTransitionTitleText,
+            Text tutorialTransitionSubtitleText = null)
         {
             _tutorialTransitionOverlay = tutorialTransitionOverlay;
             _tutorialTransitionFadeImage = tutorialTransitionFadeImage;
             _tutorialTransitionTitleText = tutorialTransitionTitleText;
+            _tutorialTransitionSubtitleText = tutorialTransitionSubtitleText;
             ClearDemoSceneTransition(forceHideOverlay: true);
         }
 
@@ -434,12 +439,16 @@ namespace RavenDevOps.Fishing.Fishing
 
             var maxAlpha = Mathf.Clamp01(_tutorialCompletionOverlayMaxAlpha);
             var overlayAlpha = maxAlpha * normalizedAlpha;
-            UpdateTransitionOverlayVisual(overlayAlpha, _tutorialCompletionTitle, forceVisible: overlayAlpha > 0.001f);
+            UpdateTransitionOverlayVisual(
+                overlayAlpha,
+                _tutorialCompletionTitle,
+                string.Empty,
+                forceVisible: overlayAlpha > 0.001f);
         }
 
         private void ClearTutorialCompletionOverlay()
         {
-            UpdateTransitionOverlayVisual(0f, string.Empty, forceVisible: false);
+            UpdateTransitionOverlayVisual(0f, string.Empty, string.Empty, forceVisible: false);
         }
 
         private void PushPrompt()
@@ -664,8 +673,12 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level4CastDrop:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier)
-                        || IsDemoPhaseElapsed(9f))
+                    var level4CastComplete = MoveHookTowardDepth(
+                        Mathf.Max(1f, _demoLevel4CastDepthMeters),
+                        clampToWorldBounds: false,
+                        _demoDeepCastSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    if (level4CastComplete || IsDemoPhaseElapsed(9f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level4FishHook);
                     }
@@ -674,6 +687,7 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
                     TickDemoFishHookVisual();
                     if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
                         || IsDemoPhaseElapsed(3.8f))
@@ -721,8 +735,12 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5CastDrop:
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
-                    if (MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier)
-                        || IsDemoPhaseElapsed(7f))
+                    var level5CastComplete = MoveHookTowardDepth(
+                        Mathf.Max(1f, _demoLevel5CastDepthMeters),
+                        clampToWorldBounds: false,
+                        _demoDeepCastSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    if (level5CastComplete || IsDemoPhaseElapsed(7f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level5FishHook);
                     }
@@ -731,6 +749,7 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
+                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
                     TickDemoFishHookVisual();
                     if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.25f))
                         || IsDemoPhaseElapsed(3.9f))
@@ -823,7 +842,7 @@ namespace RavenDevOps.Fishing.Fishing
                 || phase == DemoAutoplayPhase.Level4ReelInfo)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
-                ApplyTutorialDepthPreview(enabled: true, _demoLevel4CastDepthMeters);
+                ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
             }
             else if (phase == DemoAutoplayPhase.Level4ReelUp)
             {
@@ -844,7 +863,7 @@ namespace RavenDevOps.Fishing.Fishing
                 || phase == DemoAutoplayPhase.Level5ReelInfo)
             {
                 ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
-                ApplyTutorialDepthPreview(enabled: true, _demoLevel5CastDepthMeters);
+                ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
             }
             else if (phase == DemoAutoplayPhase.Level5ReelUp)
             {
@@ -890,7 +909,7 @@ namespace RavenDevOps.Fishing.Fishing
             if (elapsed < fadeOutEndsAt)
             {
                 var fadeOutProgress = Mathf.Clamp01(elapsed / fadeToBlackSeconds);
-                UpdateTransitionOverlayVisual(fadeOutProgress, _demoSceneTransitionTitle, forceVisible: true);
+                UpdateTransitionOverlayVisual(fadeOutProgress, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
                 return true;
             }
 
@@ -903,7 +922,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (elapsed < holdEndsAt)
             {
-                UpdateTransitionOverlayVisual(1f, _demoSceneTransitionTitle, forceVisible: true);
+                UpdateTransitionOverlayVisual(1f, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
                 return true;
             }
 
@@ -911,7 +930,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 var fadeInProgress = Mathf.Clamp01((elapsed - holdEndsAt) / fadeFromBlackSeconds);
                 var overlayAlpha = 1f - fadeInProgress;
-                UpdateTransitionOverlayVisual(overlayAlpha, _demoSceneTransitionTitle, forceVisible: true);
+                UpdateTransitionOverlayVisual(overlayAlpha, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
                 return true;
             }
 
@@ -940,12 +959,13 @@ namespace RavenDevOps.Fishing.Fishing
             _demoPendingTransitionPhasePrepared = false;
             _demoSceneTransitionStartedAt = Time.unscaledTime;
             _demoSceneTransitionTitle = title;
+            _demoSceneTransitionSubtitle = BuildDemoSceneSubtitle(phase);
             SetTutorialMessageBoxVisible(false);
-            UpdateTransitionOverlayVisual(0f, title, forceVisible: true);
+            UpdateTransitionOverlayVisual(0f, title, _demoSceneTransitionSubtitle, forceVisible: true);
             return true;
         }
 
-        private void UpdateTransitionOverlayVisual(float overlayAlpha, string title, bool forceVisible)
+        private void UpdateTransitionOverlayVisual(float overlayAlpha, string title, string subtitle, bool forceVisible)
         {
             if (_tutorialTransitionFadeImage != null)
             {
@@ -962,6 +982,14 @@ namespace RavenDevOps.Fishing.Fishing
                 _tutorialTransitionTitleText.color = titleColor;
             }
 
+            if (_tutorialTransitionSubtitleText != null)
+            {
+                _tutorialTransitionSubtitleText.text = subtitle ?? string.Empty;
+                var subtitleColor = _tutorialTransitionSubtitleText.color;
+                subtitleColor.a = Mathf.Clamp01(overlayAlpha);
+                _tutorialTransitionSubtitleText.color = subtitleColor;
+            }
+
             if (_tutorialTransitionOverlay != null)
             {
                 _tutorialTransitionOverlay.SetActive(forceVisible);
@@ -975,13 +1003,14 @@ namespace RavenDevOps.Fishing.Fishing
             _demoPendingTransitionPhasePrepared = false;
             _demoSceneTransitionStartedAt = 0f;
             _demoSceneTransitionTitle = string.Empty;
+            _demoSceneTransitionSubtitle = string.Empty;
 
             if (!forceHideOverlay)
             {
                 return;
             }
 
-            UpdateTransitionOverlayVisual(0f, string.Empty, forceVisible: false);
+            UpdateTransitionOverlayVisual(0f, string.Empty, string.Empty, forceVisible: false);
         }
 
         private bool TickQueuedDemoPhaseTransition()
@@ -1064,13 +1093,13 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.HookUpgradeInfo:
                     return "Hook upgrades improve drop speed and special effects as hook level increases.";
                 case DemoAutoplayPhase.Level4DarknessInfo:
-                    return "Level 4 darkness tutorial: drop to 4,500m for a full low-visibility pass. Lv4 light radius is 15m in darkness and 5m in deep-dark.";
+                    return $"Level 4 darkness tutorial: drop to {_demoLevel4CastDepthMeters:0,0}m for a full low-visibility pass. Lv4 light radius is {_demoLevel4LightRadiiMeters.x:0.#}m in darkness and {_demoLevel4LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level4ReelInfo:
-                    return "Level 4 darkness catch: fish is hooked, then reels from 4,500m toward the 1,000m line while fading out.";
+                    return $"Level 4 darkness catch: fish is hooked, then reels from {_demoLevel4CastDepthMeters:0,0}m toward the {_demoLevel4ReelTargetDepthMeters:0,0}m line while fading out.";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
-                    return "Level 5 hook demo: cast into deep-dark (3km-5km). Lv5 light radius is 30m in darkness and 15m in deep-dark.";
+                    return $"Level 5 hook demo: cast into deep-dark (3km-5km). Lv5 light radius is {_demoLevel5LightRadiiMeters.x:0.#}m in darkness and {_demoLevel5LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
-                    return "Level 5 deep-dark catch: hook and reel toward the Lv5 ship line at 3,000m.";
+                    return $"Level 5 deep-dark catch: hook and reel toward the Lv5 ship line at {_demoLevel5ReelTargetDepthMeters:0,0}m.";
                 case DemoAutoplayPhase.FinishInfo:
                     return "Demo complete. Your turn next: steer, cast, hook on collision, then reel your fish in.";
                 default:
@@ -1102,6 +1131,35 @@ namespace RavenDevOps.Fishing.Fishing
                     return "Scene 9: Deep-Dark Catch";
                 case DemoAutoplayPhase.FinishInfo:
                     return "Scene 10: Your Turn";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string BuildDemoSceneSubtitle(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    return "Tutorial flow overview";
+                case DemoAutoplayPhase.MoveShipInfo:
+                    return "Core ship movement";
+                case DemoAutoplayPhase.CastInfo:
+                    return "Hook deployment";
+                case DemoAutoplayPhase.FishHookInfo:
+                    return "Fish approach and collision";
+                case DemoAutoplayPhase.ReelInfo:
+                    return "Reel mechanics";
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    return "Depth range progression";
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    return "Hook tier abilities";
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                    return "Low visibility at 4,500m";
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                    return "Deep-dark pass at 3,300m";
+                case DemoAutoplayPhase.FinishInfo:
+                    return "Transition to player control";
                 default:
                     return string.Empty;
             }
@@ -1161,7 +1219,11 @@ namespace RavenDevOps.Fishing.Fishing
             var startDepth = Mathf.Max(0.1f, reelStartDepthMeters);
             var targetDepth = Mathf.Clamp(reelTargetDepthMeters, 0f, startDepth);
             var currentDepth = ResolveDemoHookDepthMeters();
-            var progress = Mathf.Clamp01(Mathf.InverseLerp(startDepth, targetDepth, currentDepth));
+            var fadeDelayMeters = Mathf.Clamp(_demoHookedFishFadeDelayMeters, 0f, startDepth);
+            var fadeStartDepth = Mathf.Clamp(startDepth - fadeDelayMeters, targetDepth, startDepth);
+            var progress = fadeStartDepth <= targetDepth + 0.001f
+                ? 1f
+                : Mathf.Clamp01(Mathf.InverseLerp(fadeStartDepth, targetDepth, currentDepth));
             var fade = Mathf.Lerp(1f, 0.06f, progress);
             _ambientFishController.SetBoundFishVisualFade(fade);
         }

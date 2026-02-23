@@ -763,10 +763,20 @@ namespace RavenDevOps.Fishing.Core
                 string.Empty,
                 52,
                 TextAnchor.MiddleCenter,
-                new Vector2(0f, 0f),
+                new Vector2(0f, 38f),
                 new Vector2(1520f, 170f));
             fishingTutorialTransitionTitleText.color = new Color(0.95f, 0.98f, 1f, 0f);
             fishingTutorialTransitionTitleText.raycastTarget = false;
+            var fishingTutorialTransitionSubtitleText = CreateText(
+                fishingTutorialTransitionPanel.transform,
+                "FishingTutorialTransitionSubtitleText",
+                string.Empty,
+                30,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, -34f),
+                new Vector2(1440f, 84f));
+            fishingTutorialTransitionSubtitleText.color = new Color(0.78f, 0.88f, 0.96f, 0f);
+            fishingTutorialTransitionSubtitleText.raycastTarget = false;
             fishingTutorialTransitionPanel.SetActive(false);
 
             var pauseRoot = CreatePanel(canvas.transform, "PausePanel", Vector2.zero, new Vector2(440f, 300f), new Color(0.04f, 0.09f, 0.15f, 0.84f));
@@ -922,7 +932,8 @@ namespace RavenDevOps.Fishing.Core
             fishingTutorialController.ConfigureTutorialTransitionOverlay(
                 fishingTutorialTransitionPanel,
                 fishingTutorialTransitionFadeImage,
-                fishingTutorialTransitionTitleText);
+                fishingTutorialTransitionTitleText,
+                fishingTutorialTransitionSubtitleText);
 
             var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
             var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);
