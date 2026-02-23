@@ -123,17 +123,19 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var save = _saveManager.Current;
-            var equippedHookId = save.equippedHookId;
-            if (_catalogService.TryGetHook(equippedHookId, out var hookDefinition))
-            {
-                resolvedMaxDepth = Mathf.Clamp(hookDefinition.maxDepth, 0.5f, maxDepthCap);
-            }
-
             var equippedShipId = save.equippedShipId;
             if (_catalogService.TryGetShip(equippedShipId, out var shipDefinition))
             {
-                var shipMaxDepth = Mathf.Clamp(shipDefinition.maxDepthMeters, 0.5f, maxDepthCap);
-                resolvedMaxDepth = Mathf.Min(resolvedMaxDepth, shipMaxDepth);
+                // Ship depth is authoritative; hooks should descend to the active ship's limit.
+                resolvedMaxDepth = Mathf.Clamp(shipDefinition.maxDepthMeters, 0.5f, maxDepthCap);
+            }
+            else
+            {
+                var equippedHookId = save.equippedHookId;
+                if (_catalogService.TryGetHook(equippedHookId, out var hookDefinition))
+                {
+                    resolvedMaxDepth = Mathf.Clamp(hookDefinition.maxDepth, 0.5f, maxDepthCap);
+                }
             }
 
             _baseMaxDepth = resolvedMaxDepth;
@@ -306,6 +308,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _minDepthBelowSurface = Mathf.Max(0.1f, _minDepthBelowSurface);
             var tierScale = 1f + (Mathf.Max(1, _distanceTier) - 1f) * Mathf.Max(0f, _distanceTierDepthStep);
+            var baseDepthCap = Mathf.Max(_minDepthBelowSurface + 0.1f, _baseMaxDepth);
             var maxDepth = Mathf.Max(
                 _minDepthBelowSurface + 0.1f,
                 _baseMaxDepth * tierScale);
@@ -316,6 +319,8 @@ namespace RavenDevOps.Fishing.Fishing
                 maxDepth = Mathf.Max(maxDepth, enforcedMinimumDepth);
             }
 
+            // Never exceed the authoritative equipped-depth cap resolved in RefreshHookStats.
+            maxDepth = Mathf.Min(maxDepth, baseDepthCap);
             var maxDepthCap = Mathf.Max(_minDepthBelowSurface + 0.1f, _absoluteMaxDepthMeters);
             maxDepth = Mathf.Min(maxDepth, maxDepthCap);
 
