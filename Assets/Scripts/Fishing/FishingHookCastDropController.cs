@@ -29,6 +29,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _manualOverrideThreshold = 0.45f;
         [SerializeField] private float _levelOneReelPulseDurationSeconds = 0.2f;
         [SerializeField] private float _levelTwoReelSpeedMultiplier = 2f;
+        [SerializeField] private float _shipReelSpeedTierStep = 0.22f;
+        [SerializeField] private float _shipReelSpeedMaxMultiplier = 2f;
+        [SerializeField] private float _hookDropSpeedTierStep = 0.18f;
+        [SerializeField] private float _hookDropSpeedMaxMultiplier = 2f;
 
         private InputAction _moveHookAction;
         private bool _autoDropActive;
@@ -318,7 +322,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             var targetY = ResolveWorldYForDepth(_initialAutoCastDepth);
             var position = hookTransform.position;
-            position.y = Mathf.MoveTowards(position.y, targetY, Mathf.Max(0.1f, _autoDropSpeed) * Time.deltaTime);
+            var dropSpeed = Mathf.Max(0.1f, _autoDropSpeed) * ResolveHookDropSpeedMultiplier();
+            position.y = Mathf.MoveTowards(position.y, targetY, dropSpeed * Time.deltaTime);
             hookTransform.position = position;
 
             if (Mathf.Abs(position.y - targetY) <= 0.01f)
@@ -342,7 +347,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var targetY = _hookController.GetDockedY(_dockOffsetY);
-            var reelSpeed = ResolveAutoReelSpeed() * ResolveHookReelSpeedMultiplier();
+            var reelSpeed = ResolveAutoReelSpeed() * ResolveHookReelSpeedMultiplier() * ResolveShipReelSpeedMultiplier();
 
             var position = hookTransform.position;
             position.y = Mathf.MoveTowards(position.y, targetY, reelSpeed * Time.deltaTime);
@@ -425,7 +430,8 @@ namespace RavenDevOps.Fishing.Fishing
             _hookController.GetWorldDepthBounds(out var minY, out _);
             var hookTransform = _hookController.transform;
             var position = hookTransform.position;
-            position.y = Mathf.MoveTowards(position.y, minY, Mathf.Max(0.1f, _autoLowerSpeed) * Time.deltaTime);
+            var lowerSpeed = Mathf.Max(0.1f, _autoLowerSpeed) * ResolveHookDropSpeedMultiplier();
+            position.y = Mathf.MoveTowards(position.y, minY, lowerSpeed * Time.deltaTime);
             hookTransform.position = position;
 
             if (Mathf.Abs(position.y - minY) <= 0.01f)
@@ -478,7 +484,8 @@ namespace RavenDevOps.Fishing.Fishing
             var hookTransform = _hookController.transform;
             var targetY = ResolveWorldYForDepth(_autoRetractDepth);
             var position = hookTransform.position;
-            position.y = Mathf.MoveTowards(position.y, targetY, ResolveAutoReelSpeed() * Time.deltaTime);
+            var raiseSpeed = ResolveAutoReelSpeed() * ResolveShipReelSpeedMultiplier();
+            position.y = Mathf.MoveTowards(position.y, targetY, raiseSpeed * Time.deltaTime);
             hookTransform.position = position;
 
             if (_hookController.CurrentDepth <= Mathf.Max(0.1f, _autoRetractDepth) + 0.05f
@@ -683,6 +690,84 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(0.1f, _autoReelSpeed);
+        }
+
+        private float ResolveShipReelSpeedMultiplier()
+        {
+            var shipTier = ResolveEquippedTier("ship_lv", fallbackTier: 1);
+            var unclampedMultiplier = 1f + ((shipTier - 1) * Mathf.Max(0f, _shipReelSpeedTierStep));
+            var maxMultiplier = Mathf.Max(1f, _shipReelSpeedMaxMultiplier);
+            return Mathf.Clamp(unclampedMultiplier, 1f, maxMultiplier);
+        }
+
+        private float ResolveHookDropSpeedMultiplier()
+        {
+            var hookTier = ResolveEquippedTier("hook_lv", fallbackTier: 1);
+            var unclampedMultiplier = 1f + ((hookTier - 1) * Mathf.Max(0f, _hookDropSpeedTierStep));
+            var maxMultiplier = Mathf.Max(1f, _hookDropSpeedMaxMultiplier);
+            return Mathf.Clamp(unclampedMultiplier, 1f, maxMultiplier);
+        }
+
+        private int ResolveEquippedTier(string tierToken, int fallbackTier)
+        {
+            var equippedId = ResolveEquippedItemId(tierToken);
+            if (string.IsNullOrWhiteSpace(equippedId))
+            {
+                return Mathf.Max(1, fallbackTier);
+            }
+
+            var normalizedId = equippedId.Trim().ToLowerInvariant();
+            var tokenIndex = normalizedId.IndexOf(tierToken, System.StringComparison.Ordinal);
+            if (tokenIndex >= 0)
+            {
+                var digitsStart = tokenIndex + tierToken.Length;
+                var tier = ParseTierDigits(normalizedId, digitsStart);
+                if (tier > 0)
+                {
+                    return tier;
+                }
+            }
+
+            return Mathf.Max(1, fallbackTier);
+        }
+
+        private string ResolveEquippedItemId(string tierToken)
+        {
+            if (_saveManager == null || _saveManager.Current == null)
+            {
+                return string.Empty;
+            }
+
+            if (string.Equals(tierToken, "ship_lv", System.StringComparison.Ordinal))
+            {
+                return _saveManager.Current.equippedShipId;
+            }
+
+            return _saveManager.Current.equippedHookId;
+        }
+
+        private static int ParseTierDigits(string normalizedId, int startIndex)
+        {
+            if (string.IsNullOrEmpty(normalizedId) || startIndex < 0 || startIndex >= normalizedId.Length)
+            {
+                return 0;
+            }
+
+            var endIndex = startIndex;
+            while (endIndex < normalizedId.Length && char.IsDigit(normalizedId[endIndex]))
+            {
+                endIndex++;
+            }
+
+            if (endIndex <= startIndex)
+            {
+                return 0;
+            }
+
+            var digits = normalizedId.Substring(startIndex, endIndex - startIndex);
+            return int.TryParse(digits, out var parsedTier)
+                ? Mathf.Max(1, parsedTier)
+                : 0;
         }
 
         private HookReelInputMode ResolveHookReelInputMode()
