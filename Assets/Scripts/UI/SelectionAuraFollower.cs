@@ -11,12 +11,16 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private float _followSpeed = 18f;
 
         private RectTransform _target;
+        private Canvas _auraCanvas;
 
         public void Configure(RectTransform auraTransform, Vector2 padding, float followSpeed = 18f)
         {
             _auraTransform = auraTransform;
             _padding = new Vector2(Mathf.Max(0f, padding.x), Mathf.Max(0f, padding.y));
             _followSpeed = Mathf.Max(1f, followSpeed);
+            _auraCanvas = _auraTransform != null
+                ? _auraTransform.GetComponentInParent<Canvas>()
+                : null;
         }
 
         private void LateUpdate()
@@ -28,7 +32,7 @@ namespace RavenDevOps.Fishing.UI
 
             var selected = EventSystem.current.currentSelectedGameObject;
             var selectedTransform = ResolveSelectedRectTransform(selected);
-            if (selectedTransform == null)
+            if (!IsValidSelectedTarget(selectedTransform))
             {
                 _auraTransform.gameObject.SetActive(false);
                 _target = null;
@@ -38,6 +42,8 @@ namespace RavenDevOps.Fishing.UI
             _target = selectedTransform;
 
             _auraTransform.gameObject.SetActive(true);
+            // Keep the aura above active panels so it remains visible in nested menus.
+            _auraTransform.SetAsLastSibling();
             var blend = 1f - Mathf.Exp(-Mathf.Max(1f, _followSpeed) * Time.unscaledDeltaTime);
             _auraTransform.position = Vector3.Lerp(
                 _auraTransform.position,
@@ -62,6 +68,37 @@ namespace RavenDevOps.Fishing.UI
             }
 
             return selected.transform as RectTransform;
+        }
+
+        private bool IsValidSelectedTarget(RectTransform selectedTransform)
+        {
+            if (selectedTransform == null || !selectedTransform.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            var selectable = selectedTransform.GetComponent<Selectable>() ?? selectedTransform.GetComponentInParent<Selectable>();
+            if (selectable != null && !selectable.IsInteractable())
+            {
+                return false;
+            }
+
+            if (_auraCanvas == null)
+            {
+                _auraCanvas = _auraTransform != null
+                    ? _auraTransform.GetComponentInParent<Canvas>()
+                    : null;
+            }
+
+            var selectedCanvas = selectedTransform.GetComponentInParent<Canvas>();
+            if (_auraCanvas != null
+                && selectedCanvas != null
+                && _auraCanvas.rootCanvas != selectedCanvas.rootCanvas)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
