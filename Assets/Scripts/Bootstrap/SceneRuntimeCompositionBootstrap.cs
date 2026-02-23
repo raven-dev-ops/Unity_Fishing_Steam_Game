@@ -612,6 +612,7 @@ namespace RavenDevOps.Fishing.Core
                 new ShopItem { id = "hook_lv4", price = 680, valueTier = 4 },
                 new ShopItem { id = "hook_lv5", price = 1200, valueTier = 5 }
             });
+            hookShop.SetUnlockAllItemsForQa(true);
 
             var boatShop = GetOrAddComponent<BoatShopController>(root);
             boatShop.ConfigureItems(new List<ShopItem>
@@ -622,6 +623,7 @@ namespace RavenDevOps.Fishing.Core
                 new ShopItem { id = "ship_lv4", price = 860, valueTier = 4 },
                 new ShopItem { id = "ship_lv5", price = 1500, valueTier = 5 }
             });
+            boatShop.SetUnlockAllItemsForQa(true);
 
             var fishShop = GetOrAddComponent<FishShopController>(root);
             var router = GetOrAddComponent<HarborSceneInteractionRouter>(root);
@@ -653,6 +655,7 @@ namespace RavenDevOps.Fishing.Core
                 new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
                 new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon, hookLv4Icon, hookLv5Icon },
                 new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon, boatLv4Icon, boatLv5Icon });
+            router.SetUnlockAllShopItemsForQa(true);
 
             hookButton.onClick.AddListener(router.OnHookShopRequested);
             boatButton.onClick.AddListener(router.OnBoatShopRequested);

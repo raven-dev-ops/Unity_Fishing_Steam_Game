@@ -56,6 +56,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private int _fallbackCargoCapacityTier3 = 32;
         [SerializeField] private int _fallbackCargoCapacityTier4 = 48;
         [SerializeField] private int _fallbackCargoCapacityTier5 = 72;
+        [SerializeField] private bool _unlockAllShopItemsForQa;
 
         private readonly Queue<string> _recentActivity = new Queue<string>();
         private readonly List<Button> _hookShopButtons = new List<Button>();
@@ -177,6 +178,12 @@ namespace RavenDevOps.Fishing.Core
         public void OnFishShopSellRequested()
         {
             HandleFishShopSale();
+        }
+
+        public void SetUnlockAllShopItemsForQa(bool enabled)
+        {
+            _unlockAllShopItemsForQa = enabled;
+            RefreshShopMenuDetails();
         }
 
         public void OnShopBackRequested()
@@ -385,9 +392,9 @@ namespace RavenDevOps.Fishing.Core
             var wasEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
             var price = Mathf.Max(0, _hookShop.GetPrice(hookId));
             var hookOrder = ResolveHookMenuOrder();
-            var hasRequiredTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
+            var hasRequiredTier = HasRequiredPreviousTierForShop(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
 
-            if (!_saveManager.IsContentUnlocked(hookId))
+            if (!IsShopItemUnlocked(hookId))
             {
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
                 SetStatus($"{ToDisplayLabel(hookId)} unlocks at level {unlockLevel}.");
@@ -470,9 +477,9 @@ namespace RavenDevOps.Fishing.Core
             var wasEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
             var price = Mathf.Max(0, _boatShop.GetPrice(shipId));
             var shipOrder = ResolveShipMenuOrder();
-            var hasRequiredTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out var requiredTierId);
+            var hasRequiredTier = HasRequiredPreviousTierForShop(save.ownedShips, shipId, shipOrder, out var requiredTierId);
 
-            if (!_saveManager.IsContentUnlocked(shipId))
+            if (!IsShopItemUnlocked(shipId))
             {
                 var unlockLevel = _saveManager.GetUnlockLevel(shipId);
                 SetStatus($"{ToDisplayLabel(shipId)} unlocks at level {unlockLevel}.");
@@ -612,10 +619,10 @@ namespace RavenDevOps.Fishing.Core
                 var hookId = hookOrder[i];
                 var isOwned = save.ownedHooks != null && save.ownedHooks.Contains(hookId);
                 var isEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
-                var isUnlocked = _saveManager.IsContentUnlocked(hookId);
+                var isUnlocked = IsShopItemUnlocked(hookId);
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
                 var price = _hookShop.GetPrice(hookId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
+                var hasRequiredPreviousTier = HasRequiredPreviousTierForShop(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
                 output += "\n" + BuildShopItemLine(
                     hookId,
                     isOwned,
@@ -653,10 +660,10 @@ namespace RavenDevOps.Fishing.Core
                 var shipId = shipOrder[i];
                 var isOwned = save.ownedShips != null && save.ownedShips.Contains(shipId);
                 var isEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
-                var isUnlocked = _saveManager.IsContentUnlocked(shipId);
+                var isUnlocked = IsShopItemUnlocked(shipId);
                 var unlockLevel = _saveManager.GetUnlockLevel(shipId);
                 var price = _boatShop.GetPrice(shipId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out var requiredTierId);
+                var hasRequiredPreviousTier = HasRequiredPreviousTierForShop(save.ownedShips, shipId, shipOrder, out var requiredTierId);
                 output += "\n" + BuildShopItemLine(
                     shipId,
                     isOwned,
@@ -770,9 +777,9 @@ namespace RavenDevOps.Fishing.Core
 
                 var isOwned = save.ownedHooks != null && save.ownedHooks.Contains(hookId);
                 var isEquipped = string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal);
-                var isUnlocked = _saveManager.IsContentUnlocked(hookId);
+                var isUnlocked = IsShopItemUnlocked(hookId);
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedHooks, hookId, hookOrder, out _);
+                var hasRequiredPreviousTier = HasRequiredPreviousTierForShop(save.ownedHooks, hookId, hookOrder, out _);
                 var price = _hookShop.GetPrice(hookId);
                 var canUpgrade = price >= 0 && save.copecs >= Mathf.Max(0, price);
                 var interactable = isOwned || (isUnlocked && hasRequiredPreviousTier && canUpgrade && price >= 0);
@@ -807,9 +814,9 @@ namespace RavenDevOps.Fishing.Core
 
                 var isOwned = save.ownedShips != null && save.ownedShips.Contains(shipId);
                 var isEquipped = string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal);
-                var isUnlocked = _saveManager.IsContentUnlocked(shipId);
+                var isUnlocked = IsShopItemUnlocked(shipId);
                 var unlockLevel = _saveManager.GetUnlockLevel(shipId);
-                var hasRequiredPreviousTier = HasRequiredPreviousTier(save.ownedShips, shipId, shipOrder, out _);
+                var hasRequiredPreviousTier = HasRequiredPreviousTierForShop(save.ownedShips, shipId, shipOrder, out _);
                 var price = _boatShop.GetPrice(shipId);
                 var canUpgrade = price >= 0 && save.copecs >= Mathf.Max(0, price);
                 var interactable = isOwned || (isUnlocked && hasRequiredPreviousTier && canUpgrade && price >= 0);
@@ -885,14 +892,14 @@ namespace RavenDevOps.Fishing.Core
                 return new Color(0.86f, 1f, 0.9f, 0.98f);
             }
 
-            if (!_saveManager.IsContentUnlocked(normalizedItemId))
+            if (!IsShopItemUnlocked(normalizedItemId))
             {
                 return new Color(0.56f, 0.56f, 0.56f, 0.85f);
             }
 
             var orderedIds = isHookCatalog ? ResolveHookMenuOrder() : ResolveShipMenuOrder();
             var ownedIds = isHookCatalog ? save.ownedHooks : save.ownedShips;
-            if (!HasRequiredPreviousTier(ownedIds, normalizedItemId, orderedIds, out _))
+            if (!HasRequiredPreviousTierForShop(ownedIds, normalizedItemId, orderedIds, out _))
             {
                 return new Color(0.56f, 0.56f, 0.56f, 0.85f);
             }
@@ -999,6 +1006,27 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return $"Upgrade ({Mathf.Max(0, price)}c)";
+        }
+
+        private bool IsShopItemUnlocked(string itemId)
+        {
+            if (_unlockAllShopItemsForQa)
+            {
+                return true;
+            }
+
+            return _saveManager != null && _saveManager.IsContentUnlocked(itemId);
+        }
+
+        private bool HasRequiredPreviousTierForShop(List<string> ownedIds, string itemId, string[] orderedIds, out string requiredTierId)
+        {
+            if (_unlockAllShopItemsForQa)
+            {
+                requiredTierId = string.Empty;
+                return true;
+            }
+
+            return HasRequiredPreviousTier(ownedIds, itemId, orderedIds, out requiredTierId);
         }
 
         private static void ApplyShopButtonState(Button button, bool interactable, string label)

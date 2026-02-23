@@ -13,6 +13,7 @@ namespace RavenDevOps.Fishing.Economy
         [SerializeField] private List<ShopItem> _items = new List<ShopItem>();
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private bool _unlockAllItemsForQa;
 
         private void Awake()
         {
@@ -23,6 +24,11 @@ namespace RavenDevOps.Fishing.Economy
         public void ConfigureItems(List<ShopItem> items)
         {
             _items = items ?? new List<ShopItem>();
+        }
+
+        public void SetUnlockAllItemsForQa(bool enabled)
+        {
+            _unlockAllItemsForQa = enabled;
         }
 
         public bool BuyOrEquip(string hookId)
@@ -39,7 +45,7 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             save.ownedHooks ??= new List<string>();
-            if (!_saveManager.IsContentUnlocked(hookId))
+            if (!_unlockAllItemsForQa && !_saveManager.IsContentUnlocked(hookId))
             {
                 var unlockLevel = _saveManager.GetUnlockLevel(hookId);
                 Debug.Log($"HookShopController: '{hookId}' is locked until level {unlockLevel}.");
@@ -53,7 +59,7 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var wasOwned = save.ownedHooks.Contains(hookId);
-            if (!wasOwned && !HasRequiredPreviousTierOwnership(hookId, save, out var requiredHookId))
+            if (!wasOwned && !_unlockAllItemsForQa && !HasRequiredPreviousTierOwnership(hookId, save, out var requiredHookId))
             {
                 Debug.Log($"HookShopController: '{hookId}' requires prior tier '{requiredHookId}' ownership.");
                 return false;

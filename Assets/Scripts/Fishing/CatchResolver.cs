@@ -107,6 +107,7 @@ namespace RavenDevOps.Fishing.Fishing
         private string _pendingCollisionFishId = string.Empty;
         private bool _hasPendingCollisionHookCandidate;
         private bool _resumeInWaterAfterFishEscaped;
+        private string _resumeInWaterStatusOverride = string.Empty;
         private bool _haulCatchInProgress;
         private bool _catchSecuredAtThresholdDepth;
         private float _reelEscapeTimeRemaining;
@@ -235,8 +236,13 @@ namespace RavenDevOps.Fishing.Fishing
                 case FishingActionState.InWater:
                     if (_resumeInWaterAfterFishEscaped)
                     {
+                        var resumeStatusOverride = _resumeInWaterStatusOverride;
                         _resumeInWaterAfterFishEscaped = false;
-                        BeginCastPhase(playCastSfx: false, recoveredFromEscapedFish: true);
+                        _resumeInWaterStatusOverride = string.Empty;
+                        BeginCastPhase(
+                            playCastSfx: false,
+                            recoveredFromEscapedFish: true,
+                            recoveredStatusOverride: resumeStatusOverride);
                     }
                     else
                     {
@@ -256,7 +262,10 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
-        private void BeginCastPhase(bool playCastSfx = true, bool recoveredFromEscapedFish = false)
+        private void BeginCastPhase(
+            bool playCastSfx = true,
+            bool recoveredFromEscapedFish = false,
+            string recoveredStatusOverride = null)
         {
             if (playCastSfx)
             {
@@ -304,7 +313,14 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (recoveredFromEscapedFish)
             {
-                _hudOverlay?.SetFishingStatus("Fish escaped. Keep the hook down and collide with another fish.");
+                if (!string.IsNullOrWhiteSpace(recoveredStatusOverride))
+                {
+                    _hudOverlay?.SetFishingStatus(recoveredStatusOverride);
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus("Fish escaped. Keep the hook down and collide with another fish.");
+                }
             }
             else
             {
@@ -614,7 +630,9 @@ namespace RavenDevOps.Fishing.Fishing
         {
             var resolvedFishId = _hookedFish != null ? _hookedFish.id : string.Empty;
             var resolvedFailReason = _catchSucceeded ? FishingFailReason.None : _pendingFailReason;
-            var shouldResumeInWaterAfterOutcome = !_catchSucceeded && resolvedFailReason == FishingFailReason.FishEscaped;
+            var shouldResumeInWaterAfterOutcome = !_catchSucceeded
+                && (resolvedFailReason == FishingFailReason.FishEscaped
+                    || resolvedFailReason == FishingFailReason.LineSnap);
 
             if (_catchSucceeded && _hookedFish != null)
             {
@@ -672,11 +690,15 @@ namespace RavenDevOps.Fishing.Fishing
             if (shouldResumeInWaterAfterOutcome)
             {
                 _resumeInWaterAfterFishEscaped = true;
+                _resumeInWaterStatusOverride = resolvedFailReason == FishingFailReason.LineSnap
+                    ? "Line snapped. Keep the hook down and collide with another fish."
+                    : "Fish escaped. Keep the hook down and collide with another fish.";
                 _stateMachine?.SetInWater();
             }
             else
             {
                 _resumeInWaterAfterFishEscaped = false;
+                _resumeInWaterStatusOverride = string.Empty;
                 _stateMachine?.ResetToCast();
             }
         }
