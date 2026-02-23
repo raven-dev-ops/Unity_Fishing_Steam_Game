@@ -27,6 +27,9 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _isActive;
         private int _failureCount;
         private IFishingHudOverlay _hudOverlay;
+        private FishingActionStateMachine _subscribedStateMachine;
+        private CatchResolver _subscribedCatchResolver;
+        private SaveManager _subscribedSaveManager;
 
         public void ConfigureSkipButton(Button skipTutorialButton)
         {
@@ -47,30 +50,12 @@ namespace RavenDevOps.Fishing.Fishing
         private void Awake()
         {
             EnsureDependencies();
-            _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
-            if (_hudOverlay == null)
-            {
-                _hudOverlay = FindFishingHudOverlay();
-            }
         }
 
         private void OnEnable()
         {
             EnsureDependencies();
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged += OnFishingStateChanged;
-            }
-
-            if (_catchResolver != null)
-            {
-                _catchResolver.CatchResolved += OnCatchResolved;
-            }
-
-            if (_saveManager != null)
-            {
-                _saveManager.SaveDataChanged += OnSaveDataChanged;
-            }
+            SubscribeToDependencies();
 
             if (_skipTutorialButton != null)
             {
@@ -83,25 +68,18 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnDisable()
         {
-            if (_stateMachine != null)
-            {
-                _stateMachine.StateChanged -= OnFishingStateChanged;
-            }
-
-            if (_catchResolver != null)
-            {
-                _catchResolver.CatchResolved -= OnCatchResolved;
-            }
-
-            if (_saveManager != null)
-            {
-                _saveManager.SaveDataChanged -= OnSaveDataChanged;
-            }
+            UnsubscribeFromDependencies();
 
             if (_skipTutorialButton != null)
             {
                 _skipTutorialButton.onClick.RemoveListener(SkipActiveTutorial);
             }
+        }
+
+        private void Update()
+        {
+            EnsureDependencies();
+            SubscribeToDependencies();
         }
 
         public void SkipActiveTutorial()
@@ -260,6 +238,94 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catchResolver, this, warnIfMissing: false);
+
+            _saveManager ??= GetComponent<SaveManager>();
+            _saveManager ??= FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+
+            _stateMachine ??= GetComponent<FishingActionStateMachine>();
+            _stateMachine ??= FindAnyObjectByType<FishingActionStateMachine>(FindObjectsInactive.Include);
+
+            _catchResolver ??= GetComponent<CatchResolver>();
+            _catchResolver ??= FindAnyObjectByType<CatchResolver>(FindObjectsInactive.Include);
+
+            if (_hudOverlay == null)
+            {
+                _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
+            }
+
+            if (_hudOverlay == null)
+            {
+                _hudOverlay = FindFishingHudOverlay();
+            }
+        }
+
+        private void SubscribeToDependencies()
+        {
+            if (_subscribedStateMachine != _stateMachine)
+            {
+                if (_subscribedStateMachine != null)
+                {
+                    _subscribedStateMachine.StateChanged -= OnFishingStateChanged;
+                }
+
+                if (_stateMachine != null)
+                {
+                    _stateMachine.StateChanged += OnFishingStateChanged;
+                }
+
+                _subscribedStateMachine = _stateMachine;
+            }
+
+            if (_subscribedCatchResolver != _catchResolver)
+            {
+                if (_subscribedCatchResolver != null)
+                {
+                    _subscribedCatchResolver.CatchResolved -= OnCatchResolved;
+                }
+
+                if (_catchResolver != null)
+                {
+                    _catchResolver.CatchResolved += OnCatchResolved;
+                }
+
+                _subscribedCatchResolver = _catchResolver;
+            }
+
+            if (_subscribedSaveManager != _saveManager)
+            {
+                if (_subscribedSaveManager != null)
+                {
+                    _subscribedSaveManager.SaveDataChanged -= OnSaveDataChanged;
+                }
+
+                if (_saveManager != null)
+                {
+                    _saveManager.SaveDataChanged += OnSaveDataChanged;
+                }
+
+                _subscribedSaveManager = _saveManager;
+            }
+        }
+
+        private void UnsubscribeFromDependencies()
+        {
+            if (_subscribedStateMachine != null)
+            {
+                _subscribedStateMachine.StateChanged -= OnFishingStateChanged;
+                _subscribedStateMachine = null;
+            }
+
+            if (_subscribedCatchResolver != null)
+            {
+                _subscribedCatchResolver.CatchResolved -= OnCatchResolved;
+                _subscribedCatchResolver = null;
+            }
+
+            if (_subscribedSaveManager != null)
+            {
+                _subscribedSaveManager.SaveDataChanged -= OnSaveDataChanged;
+                _subscribedSaveManager = null;
+            }
         }
 
         private void UpdateSkipButtonVisibility()

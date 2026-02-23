@@ -69,6 +69,7 @@ namespace RavenDevOps.Fishing.UI
         {
             EnsureSaveManager();
             _saveManager?.RequestFishingLoopTutorialReplay();
+            _orchestrator?.RequestOpenFishing();
             RefreshStatus();
         }
 
