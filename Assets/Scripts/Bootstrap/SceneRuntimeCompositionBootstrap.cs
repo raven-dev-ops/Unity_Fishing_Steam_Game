@@ -893,6 +893,21 @@ namespace RavenDevOps.Fishing.Core
 
             var backdropLayerA = FindSceneObject(scene, "BackdropFar");
             var backdropLayerB = FindSceneObject(scene, "BackdropVeil");
+            if (backdropLayerA != null && backdropLayerB != null)
+            {
+                var backdropRendererA = backdropLayerA.GetComponent<SpriteRenderer>();
+                var backdropRendererB = backdropLayerB.GetComponent<SpriteRenderer>();
+                if (backdropRendererA != null
+                    && backdropRendererB != null
+                    && backdropRendererA.sprite != null
+                    && backdropRendererA.sprite == backdropRendererB.sprite)
+                {
+                    // Prevent stacked-opacity ghosting when both backdrop layers share the same sprite.
+                    backdropLayerB.SetActive(false);
+                    backdropLayerB = null;
+                }
+            }
+
             var waveAnimator = GetOrAddComponent<WaveAnimator>(root);
             waveAnimator.ConfigureLayers(
                 backdropLayerA != null ? backdropLayerA.transform : null,
