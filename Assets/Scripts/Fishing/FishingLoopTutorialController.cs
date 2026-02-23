@@ -68,6 +68,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Image _tutorialTransitionFadeImage;
         [SerializeField] private Text _tutorialTransitionTitleText;
         [SerializeField] private Text _tutorialTransitionSubtitleText;
+        [SerializeField] private string _skipTutorialButtonText = "Skip Tutorial";
+        [SerializeField] private string _skipSceneButtonText = "Next Scene";
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
         [SerializeField] private bool _showPromptCardDuringHandsOnTutorial = true;
@@ -241,6 +243,11 @@ namespace RavenDevOps.Fishing.Fishing
         public void SkipActiveTutorial()
         {
             if (!_isActive)
+            {
+                return;
+            }
+
+            if (_demoActive && TrySkipToNextDemoScene())
             {
                 return;
             }
@@ -1265,6 +1272,7 @@ namespace RavenDevOps.Fishing.Fishing
             SetTutorialMessageBoxVisible(false);
             SetDemoHookVisible(false);
             _step = TutorialStep.MoveShip;
+            UpdateSkipButtonVisibility();
             PushPrompt();
         }
 
@@ -1679,6 +1687,123 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _skipTutorialButton.gameObject.SetActive(_isActive);
+            var skipButtonLabel = _skipTutorialButton.GetComponentInChildren<Text>();
+            if (skipButtonLabel != null)
+            {
+                skipButtonLabel.text = _demoActive ? _skipSceneButtonText : _skipTutorialButtonText;
+            }
+        }
+
+        private bool TrySkipToNextDemoScene()
+        {
+            var anchorPhase = ResolveDemoSceneSkipAnchorPhase();
+            if (anchorPhase == DemoAutoplayPhase.None)
+            {
+                return false;
+            }
+
+            var nextSceneStartPhase = ResolveNextDemoSceneStartPhase(anchorPhase);
+            if (nextSceneStartPhase == DemoAutoplayPhase.None)
+            {
+                EndDemoSequence();
+                return true;
+            }
+
+            ClearQueuedDemoPhaseTransition();
+            if (_demoSceneTransitionActive)
+            {
+                ClearDemoSceneTransition(forceHideOverlay: true);
+            }
+
+            ResolveDemoFish(caught: false);
+            StartDemoPhase(nextSceneStartPhase);
+            _hudOverlay?.SetFishingStatus("Skipped to next tutorial scene.");
+            return true;
+        }
+
+        private DemoAutoplayPhase ResolveDemoSceneSkipAnchorPhase()
+        {
+            if (_demoSceneTransitionActive && _demoPendingTransitionPhase != DemoAutoplayPhase.None)
+            {
+                return _demoPendingTransitionPhase;
+            }
+
+            if (_demoQueuedNextPhase != DemoAutoplayPhase.None)
+            {
+                return _demoQueuedNextPhase;
+            }
+
+            return _demoPhase;
+        }
+
+        private static DemoAutoplayPhase ResolveNextDemoSceneStartPhase(DemoAutoplayPhase phase)
+        {
+            switch (ResolveDemoSceneStartPhase(phase))
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    return DemoAutoplayPhase.MoveShipInfo;
+                case DemoAutoplayPhase.MoveShipInfo:
+                    return DemoAutoplayPhase.CastInfo;
+                case DemoAutoplayPhase.CastInfo:
+                    return DemoAutoplayPhase.FishHookInfo;
+                case DemoAutoplayPhase.FishHookInfo:
+                    return DemoAutoplayPhase.ReelInfo;
+                case DemoAutoplayPhase.ReelInfo:
+                    return DemoAutoplayPhase.ShipUpgradeInfo;
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    return DemoAutoplayPhase.HookUpgradeInfo;
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    return DemoAutoplayPhase.Level4DarknessInfo;
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                    return DemoAutoplayPhase.Level5DeepDarkInfo;
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                    return DemoAutoplayPhase.FinishInfo;
+                default:
+                    return DemoAutoplayPhase.None;
+            }
+        }
+
+        private static DemoAutoplayPhase ResolveDemoSceneStartPhase(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    return DemoAutoplayPhase.IntroInfo;
+                case DemoAutoplayPhase.MoveShipInfo:
+                case DemoAutoplayPhase.SteerRight:
+                case DemoAutoplayPhase.SteerLeft:
+                    return DemoAutoplayPhase.MoveShipInfo;
+                case DemoAutoplayPhase.CastInfo:
+                case DemoAutoplayPhase.CastDrop:
+                    return DemoAutoplayPhase.CastInfo;
+                case DemoAutoplayPhase.FishHookInfo:
+                case DemoAutoplayPhase.FishHook:
+                    return DemoAutoplayPhase.FishHookInfo;
+                case DemoAutoplayPhase.ReelInfo:
+                case DemoAutoplayPhase.ReelUp:
+                    return DemoAutoplayPhase.ReelInfo;
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    return DemoAutoplayPhase.ShipUpgradeInfo;
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    return DemoAutoplayPhase.HookUpgradeInfo;
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                case DemoAutoplayPhase.Level4CastDrop:
+                case DemoAutoplayPhase.Level4FishHook:
+                case DemoAutoplayPhase.Level4ReelInfo:
+                case DemoAutoplayPhase.Level4ReelUp:
+                    return DemoAutoplayPhase.Level4DarknessInfo;
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                case DemoAutoplayPhase.Level5CastDrop:
+                case DemoAutoplayPhase.Level5FishHook:
+                case DemoAutoplayPhase.Level5ReelInfo:
+                case DemoAutoplayPhase.Level5ReelUp:
+                    return DemoAutoplayPhase.Level5DeepDarkInfo;
+                case DemoAutoplayPhase.FinishInfo:
+                case DemoAutoplayPhase.Finish:
+                    return DemoAutoplayPhase.FinishInfo;
+                default:
+                    return DemoAutoplayPhase.None;
+            }
         }
 
         private static IFishingHudOverlay FindFishingHudOverlay()

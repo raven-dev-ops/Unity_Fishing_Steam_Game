@@ -902,9 +902,10 @@ namespace RavenDevOps.Fishing.Core
                     && backdropRendererA.sprite != null
                     && backdropRendererA.sprite == backdropRendererB.sprite)
                 {
-                    // Prevent stacked-opacity ghosting when both backdrop layers share the same sprite.
-                    backdropLayerB.SetActive(false);
-                    backdropLayerB = null;
+                    // Keep the veil object for scene/layout checks, but remove duplicate visual stacking.
+                    var veilColor = backdropRendererB.color;
+                    veilColor.a = 0f;
+                    backdropRendererB.color = veilColor;
                 }
             }
 
