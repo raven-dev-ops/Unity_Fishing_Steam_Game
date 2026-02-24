@@ -34,6 +34,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         };
 
         private const string SceneCaptureEnabledEnvVar = "RAVEN_SCENE_CAPTURE_ENABLED";
+        private const string CinematicScenePath = "Assets/Scenes/01_Cinematic.unity";
         private const string MainMenuScenePath = "Assets/Scenes/02_MainMenu.unity";
         private const string HarborScenePath = "Assets/Scenes/03_Harbor.unity";
         private const string FishingScenePath = "Assets/Scenes/04_Fishing.unity";
@@ -140,6 +141,37 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("SettingRebindReturnHarborButton"), Is.Not.Null, "Expected rebind return-harbor button.");
             Assert.That(FindSceneObject("SettingResetRebindsButton"), Is.Not.Null, "Expected reset rebinds button.");
             Assert.That(FindSceneObject("SettingsBackButton"), Is.Not.Null, "Expected settings back button.");
+        }
+
+        [UnityTest]
+        public IEnumerator CinematicScene_UsesDedicatedBackdropAndNoHarborHud()
+        {
+            yield return LoadScene(CinematicScenePath);
+            yield return null;
+
+            var runtimeRoot = GameObject.Find("__SceneRuntime");
+            Assert.That(runtimeRoot, Is.Not.Null, "Expected cinematic runtime root.");
+            Assert.That(runtimeRoot.GetComponent<CinematicSceneFlowController>(), Is.Not.Null, "Expected cinematic flow controller.");
+
+            var cinematicCanvas = FindSceneObject("CinematicCanvas");
+            Assert.That(cinematicCanvas, Is.Not.Null, "Expected cinematic canvas.");
+            Assert.That(FindSceneObject("HarborCanvas"), Is.Null, "Cinematic scene should not compose harbor HUD.");
+
+            var backdropFar = FindSceneObject("BackdropFar");
+            var backdropVeil = FindSceneObject("BackdropVeil");
+            Assert.That(backdropFar, Is.Not.Null, "Expected cinematic BackdropFar object.");
+            Assert.That(backdropVeil, Is.Not.Null, "Expected cinematic BackdropVeil object.");
+
+            var farRenderer = backdropFar.GetComponent<SpriteRenderer>();
+            var veilRenderer = backdropVeil.GetComponent<SpriteRenderer>();
+            Assert.That(farRenderer, Is.Not.Null, "Expected SpriteRenderer on BackdropFar.");
+            Assert.That(veilRenderer, Is.Not.Null, "Expected SpriteRenderer on BackdropVeil.");
+
+            if (veilRenderer.sprite != null)
+            {
+                Assert.That(veilRenderer.color.a, Is.GreaterThanOrEqualTo(0.99f), "Expected cinematic veil layer to stay visible.");
+                Assert.That(farRenderer.color.a, Is.LessThanOrEqualTo(0.01f), "Expected generic far layer to be hidden in cinematic.");
+            }
         }
 
         [UnityTest]

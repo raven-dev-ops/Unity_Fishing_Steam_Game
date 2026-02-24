@@ -99,6 +99,8 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            HideHarborVisualArtifactsFromCinematic(scene);
+            NormalizeCinematicBackdrop(scene);
             var canvas = CreateCanvas(root.transform, "CinematicCanvas", 250);
             CreatePanel(canvas.transform, "CinematicPanel", new Vector2(0f, -180f), new Vector2(940f, 230f), new Color(0.04f, 0.07f, 0.16f, 0.68f));
             CreateText(canvas.transform, "CinematicTitle", "Opening Voyage", 34, TextAnchor.MiddleCenter, new Vector2(0f, -142f), new Vector2(840f, 68f));
@@ -109,6 +111,73 @@ namespace RavenDevOps.Fishing.Core
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
             controller.Configure(status);
             EnsurePerfSanityRunner(root, canvas.transform, "CinematicPerfLabel");
+        }
+
+        private static void HideHarborVisualArtifactsFromCinematic(Scene scene)
+        {
+            HideSceneObjects(
+                scene,
+                "TopBadge",
+                "HarborShipMain",
+                "HarborShipSide",
+                "HarborMarketHook1",
+                "HarborMarketHook2",
+                "HarborMarketFish1",
+                "HarborMarketFish2",
+                "HarborMarketFish3",
+                "DockPlank_-5",
+                "DockPlank_-4",
+                "DockPlank_-3",
+                "DockPlank_-2",
+                "DockPlank_-1",
+                "DockPlank_0",
+                "DockPlank_1",
+                "DockPlank_2",
+                "DockPlank_3",
+                "DockPlank_4",
+                "DockPlank_5");
+        }
+
+        private static void NormalizeCinematicBackdrop(Scene scene)
+        {
+            var backdropLayerA = FindSceneObject(scene, "BackdropFar");
+            var backdropLayerB = FindSceneObject(scene, "BackdropVeil");
+            if (backdropLayerA == null && backdropLayerB == null)
+            {
+                return;
+            }
+
+            var backdropRendererA = backdropLayerA != null ? backdropLayerA.GetComponent<SpriteRenderer>() : null;
+            var backdropRendererB = backdropLayerB != null ? backdropLayerB.GetComponent<SpriteRenderer>() : null;
+            if (backdropRendererB != null && backdropRendererB.sprite != null)
+            {
+                SetSpriteRendererAlpha(backdropRendererB, 1f);
+                if (backdropRendererA != null)
+                {
+                    SetSpriteRendererAlpha(backdropRendererA, 0f);
+                    backdropRendererB.sortingLayerID = backdropRendererA.sortingLayerID;
+                    backdropRendererB.sortingOrder = Mathf.Max(backdropRendererB.sortingOrder, backdropRendererA.sortingOrder + 1);
+                }
+
+                return;
+            }
+
+            if (backdropRendererA != null)
+            {
+                SetSpriteRendererAlpha(backdropRendererA, 1f);
+            }
+        }
+
+        private static void SetSpriteRendererAlpha(SpriteRenderer renderer, float alpha)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var color = renderer.color;
+            color.a = Mathf.Clamp01(alpha);
+            renderer.color = color;
         }
 
         private static void ComposeMainMenu(Scene scene)
