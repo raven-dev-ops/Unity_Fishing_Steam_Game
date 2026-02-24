@@ -665,30 +665,30 @@ namespace RavenDevOps.Fishing.Core
             var hookShopPanel = CreatePanel(
                 hudRoot.transform,
                 "HarborHookShopPanel",
-                new Vector2(0f, -8f),
-                new Vector2(560f, 560f),
-                new Color(0.05f, 0.12f, 0.21f, 0.91f));
-            CreateText(hookShopPanel.transform, "HarborHookShopTitle", "Warehouse", 30, TextAnchor.MiddleCenter, new Vector2(0f, 236f), new Vector2(500f, 56f));
-            CreateText(hookShopPanel.transform, "HarborHookShopHint", "Purchase hooks and send them to Shipyard inventory.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 196f), new Vector2(500f, 38f));
+                new Vector2(0f, 6f),
+                new Vector2(640f, 680f),
+                new Color(0.04f, 0.12f, 0.21f, 0.94f));
+            CreateText(hookShopPanel.transform, "HarborHookShopTitle", "Warehouse", 30, TextAnchor.MiddleCenter, new Vector2(0f, 294f), new Vector2(560f, 56f));
+            CreateText(hookShopPanel.transform, "HarborHookShopHint", "Purchase hooks and send them to Shipyard inventory.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 252f), new Vector2(560f, 38f));
             var hookShopInfo = CreateTopLeftText(
                 hookShopPanel.transform,
                 "HarborHookShopInfo",
                 "Loading warehouse inventory...",
                 16,
                 TextAnchor.UpperLeft,
-                new Vector2(28f, 124f),
-                new Vector2(500f, 102f));
-            var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 6f), new Vector2(360f, 44f));
-            var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -48f), new Vector2(360f, 44f));
-            var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -102f), new Vector2(360f, 44f));
-            var hookLv4Button = CreateButton(hookShopPanel.transform, "HarborHookLv4Button", "Hook Lv4", new Vector2(0f, -156f), new Vector2(360f, 44f));
-            var hookLv5Button = CreateButton(hookShopPanel.transform, "HarborHookLv5Button", "Hook Lv5", new Vector2(0f, -210f), new Vector2(360f, 44f));
-            var hookLv1Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv1Icon", new Vector2(-220f, 6f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv2Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv2Icon", new Vector2(-220f, -48f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv3Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv3Icon", new Vector2(-220f, -102f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv4Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv4Icon", new Vector2(-220f, -156f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var hookLv5Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv5Icon", new Vector2(-220f, -210f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -256f), new Vector2(280f, 42f));
+                new Vector2(36f, 154f),
+                new Vector2(568f, 118f));
+            var hookLv1Button = CreateButton(hookShopPanel.transform, "HarborHookLv1Button", "Hook Lv1", new Vector2(0f, 28f), new Vector2(400f, 46f));
+            var hookLv2Button = CreateButton(hookShopPanel.transform, "HarborHookLv2Button", "Hook Lv2", new Vector2(0f, -32f), new Vector2(400f, 46f));
+            var hookLv3Button = CreateButton(hookShopPanel.transform, "HarborHookLv3Button", "Hook Lv3", new Vector2(0f, -92f), new Vector2(400f, 46f));
+            var hookLv4Button = CreateButton(hookShopPanel.transform, "HarborHookLv4Button", "Hook Lv4", new Vector2(0f, -152f), new Vector2(400f, 46f));
+            var hookLv5Button = CreateButton(hookShopPanel.transform, "HarborHookLv5Button", "Hook Lv5", new Vector2(0f, -212f), new Vector2(400f, 46f));
+            var hookLv1Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv1Icon", new Vector2(-246f, 28f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv2Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv2Icon", new Vector2(-246f, -32f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv3Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv3Icon", new Vector2(-246f, -92f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv4Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv4Icon", new Vector2(-246f, -152f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookLv5Icon = CreateImageElement(hookShopPanel.transform, "HarborHookLv5Icon", new Vector2(-246f, -212f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var hookBackButton = CreateButton(hookShopPanel.transform, "HarborHookShopBackButton", "Back", new Vector2(0f, -274f), new Vector2(318f, 44f));
             hookShopPanel.SetActive(false);
 
             var boatShopPanel = CreatePanel(
