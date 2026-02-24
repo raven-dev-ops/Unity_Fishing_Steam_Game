@@ -159,6 +159,7 @@ namespace RavenDevOps.Fishing.Core
 
             _transitionTitleText.text = _nextTransitionTitleCardLabel;
             _transitionTitleOverlay.gameObject.SetActive(true);
+            _transitionTitleOverlay.transform.SetAsLastSibling();
             _transitionTitleOverlay.alpha = 1f;
             _transitionTitleOverlay.blocksRaycasts = false;
             _transitionTitleOverlay.interactable = false;
@@ -226,8 +227,9 @@ namespace RavenDevOps.Fishing.Core
                 titleText.verticalOverflow = VerticalWrapMode.Truncate;
                 titleText.color = new Color(0.94f, 0.98f, 1f, 1f);
                 titleText.text = string.Empty;
-                titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                titleText.font = ResolveBuiltInUiFont();
                 _transitionTitleText = titleText;
+                titleObject.transform.SetAsLastSibling();
             }
 
             _transitionTitleOverlay.alpha = 0f;
@@ -275,6 +277,17 @@ namespace RavenDevOps.Fishing.Core
             _nextTransitionHasTitleCard = false;
             _nextTransitionTitleCardLabel = string.Empty;
             _nextTransitionTitleCardHoldSeconds = _defaultTitleCardHoldSeconds;
+        }
+
+        private static Font ResolveBuiltInUiFont()
+        {
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null)
+            {
+                return font;
+            }
+
+            return Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
     }
 }

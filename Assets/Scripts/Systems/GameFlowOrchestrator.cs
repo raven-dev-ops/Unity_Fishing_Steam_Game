@@ -383,7 +383,7 @@ namespace RavenDevOps.Fishing.Core
 
         private void QueueFishingDepartureTitleCard()
         {
-            if (_sceneLoader == null || _gameFlowManager == null || _gameFlowManager.CurrentState != GameFlowState.Harbor)
+            if (_sceneLoader == null)
             {
                 return;
             }
