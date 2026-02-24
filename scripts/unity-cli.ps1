@@ -10,7 +10,10 @@ param(
     [string[]]$ExtraArgs,
     [switch]$EnableGraphics,
     [switch]$AllowVersionMismatch,
-    [switch]$KeepGeneratedProjectFiles
+    [switch]$KeepGeneratedProjectFiles,
+    [switch]$DisableProjectRunLock,
+    [ValidateRange(1, 86400)]
+    [int]$ProjectRunLockTimeoutSeconds = 900
 )
 
 $ErrorActionPreference = 'Stop'
@@ -526,6 +529,90 @@ function Remove-StaleProjectLockFiles {
     }
 }
 
+function Get-ProjectRunMutexName {
+    param([string]$Root)
+
+    if ([string]::IsNullOrWhiteSpace($Root)) {
+        throw 'Unity CLI: project root is required to resolve project run lock name.'
+    }
+
+    $normalizedRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\').ToLowerInvariant()
+    $rootBytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedRoot)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha256.ComputeHash($rootBytes)
+    }
+    finally {
+        $sha256.Dispose()
+    }
+
+    $token = ([System.BitConverter]::ToString($hash)).Replace('-', '')
+    $suffixLength = [Math]::Min(24, $token.Length)
+    return "Local\RavenDevOps.UnityCli.$($token.Substring(0, $suffixLength))"
+}
+
+function Enter-ProjectRunLock {
+    param(
+        [string]$Root,
+        [int]$TimeoutSeconds,
+        [bool]$Disabled
+    )
+
+    if ($Disabled) {
+        return $null
+    }
+
+    $mutexName = Get-ProjectRunMutexName -Root $Root
+    $createdNew = $false
+    $mutex = $null
+    try {
+        $mutex = New-Object System.Threading.Mutex($false, $mutexName, [ref]$createdNew)
+        if ($null -eq $mutex) {
+            throw "Unity CLI: failed to allocate project run lock '$mutexName'."
+        }
+
+        $timeout = [System.TimeSpan]::FromSeconds([Math]::Max(1, $TimeoutSeconds))
+        $acquired = $false
+        try {
+            $acquired = $mutex.WaitOne($timeout)
+        }
+        catch [System.Threading.AbandonedMutexException] {
+            $acquired = $true
+        }
+
+        if (-not $acquired) {
+            throw "Unity CLI: timed out after $TimeoutSeconds seconds waiting for project run lock '$mutexName'. Another Unity CLI run is likely still active for this project."
+        }
+
+        Write-Host "Unity CLI: acquired project run lock '$mutexName'."
+        return $mutex
+    }
+    catch {
+        if ($null -ne $mutex) {
+            $mutex.Dispose()
+        }
+
+        throw
+    }
+}
+
+function Exit-ProjectRunLock {
+    param([object]$Mutex)
+
+    if ($null -eq $Mutex) {
+        return
+    }
+
+    try {
+        $Mutex.ReleaseMutex()
+    }
+    catch {
+    }
+    finally {
+        $Mutex.Dispose()
+    }
+}
+
 function Resolve-TestResultsPathFromArguments {
     param(
         [string]$Root,
@@ -762,7 +849,6 @@ $testResultsPath = $null
 $testResultsBeforeSnapshot = $null
 if ($isTestTask) {
     $testResultsPath = Resolve-TestResultsPathFromArguments -Root $root -Arguments $args
-    $testResultsBeforeSnapshot = Get-FileStateSnapshot -Path $testResultsPath
 }
 
 Write-Host "Unity CLI: $unityExe"
@@ -781,12 +867,18 @@ else {
     Write-Host 'GeneratedFileCleanup: disabled'
 }
 
-Remove-StaleProjectLockFiles -Root $root
-
 $unityExitCode = 0
 $argumentString = (($args | ForEach-Object { Convert-ToProcessArgumentString -Value $_ }) -join ' ')
+$projectRunMutex = $null
 
 try {
+    $projectRunMutex = Enter-ProjectRunLock -Root $root -TimeoutSeconds $ProjectRunLockTimeoutSeconds -Disabled $DisableProjectRunLock.IsPresent
+    if ($isTestTask) {
+        $testResultsBeforeSnapshot = Get-FileStateSnapshot -Path $testResultsPath
+    }
+
+    Remove-StaleProjectLockFiles -Root $root
+
     $unityProcess = Start-Process -FilePath $unityExe -ArgumentList $argumentString -PassThru -Wait
     if ($null -eq $unityProcess) {
         throw 'Unity CLI: failed to launch Unity process.'
@@ -798,6 +890,8 @@ finally {
     if ($cleanupEnabled) {
         Invoke-GeneratedFileCleanup -Plan $cleanupPlan
     }
+
+    Exit-ProjectRunLock -Mutex $projectRunMutex
 }
 
 $exitCode = $unityExitCode

@@ -96,6 +96,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
+        [SerializeField] private float _demoLevel4ReelSpeedMultiplier = 55f;
+        [SerializeField] private float _demoLevel5ReelSpeedMultiplier = 15f;
+        [SerializeField] private float _demoLevel4ReelMaxPhaseSeconds = 8.4f;
+        [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 5.2f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
         [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
@@ -579,6 +583,12 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            var depthOverrideReapplied = EnsureDemoHookDepthOverrideActive();
+            if (depthOverrideReapplied)
+            {
+                RecoverDemoHookDepthAfterOverrideReset();
+            }
+
             if (TickDemoSceneTransition())
             {
                 return;
@@ -732,12 +742,13 @@ namespace RavenDevOps.Fishing.Fishing
                         _demoLevel4ReelTargetDepthMeters,
                         0f,
                         Mathf.Max(0f, _demoLevel4CastDepthMeters));
-                    MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    var level4ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel4ReelSpeedMultiplier);
+                    MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, level4ReelSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
                     ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
-                    UpdateDemoHookedFishFade(_demoLevel4ReelStartDepthMeters, level4ReelUpTargetDepth, _demoDeepReelSpeedMultiplier);
+                    UpdateDemoHookedFishFade(_demoLevel4ReelStartDepthMeters, level4ReelUpTargetDepth, level4ReelSpeedMultiplier);
                     if (Mathf.Abs(ResolveDemoHookDepthMeters() - level4ReelUpTargetDepth) <= 0.08f
-                        || IsDemoPhaseElapsed(6.2f))
+                        || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds)))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.Level5DeepDarkInfo, _demoSceneEndPauseSeconds))
                         {
@@ -796,12 +807,13 @@ namespace RavenDevOps.Fishing.Fishing
                         _demoLevel5ReelTargetDepthMeters,
                         0f,
                         Mathf.Max(0f, _demoLevel5CastDepthMeters));
-                    MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, _demoDeepReelSpeedMultiplier);
+                    var level5ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel5ReelSpeedMultiplier);
+                    MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, level5ReelSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
                     ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
-                    UpdateDemoHookedFishFade(_demoLevel5ReelStartDepthMeters, level5ReelUpTargetDepth, _demoDeepReelSpeedMultiplier);
+                    UpdateDemoHookedFishFade(_demoLevel5ReelStartDepthMeters, level5ReelUpTargetDepth, level5ReelSpeedMultiplier);
                     if (Mathf.Abs(ResolveDemoHookDepthMeters() - level5ReelUpTargetDepth) <= 0.08f
-                        || IsDemoPhaseElapsed(7f))
+                        || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel5ReelMaxPhaseSeconds)))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.FinishInfo, _demoSceneEndPauseSeconds))
                         {
@@ -1388,13 +1400,92 @@ namespace RavenDevOps.Fishing.Fishing
 
             _demoHookDepthOverrideApplied = true;
             _demoHookPreviousMaxDepthMeters = Mathf.Max(0.5f, _hookMovement.MaxDepth);
-            var requiredMaxDepth = Mathf.Max(
-                Mathf.Max(_demoLevel4CastDepthMeters, _demoLevel5CastDepthMeters),
-                Mathf.Max(_demoLevel4DarknessPreviewDepthMeters, _demoLevel5DeepDarkPreviewDepthMeters));
-            requiredMaxDepth = Mathf.Max(requiredMaxDepth, _demoHookPreviousMaxDepthMeters);
-            _hookMovement.MaxDepth = Mathf.Clamp(requiredMaxDepth, 0.5f, 5000f);
+            EnsureDemoHookDepthOverrideActive();
+        }
+
+        private bool EnsureDemoHookDepthOverrideActive()
+        {
+            if (_hookMovement == null || !_demoHookDepthOverrideApplied)
+            {
+                return false;
+            }
+
+            var overrideReapplied = false;
+            var requiredMaxDepth = Mathf.Clamp(
+                Mathf.Max(
+                    Mathf.Max(_demoLevel4CastDepthMeters, _demoLevel5CastDepthMeters),
+                    Mathf.Max(_demoLevel4DarknessPreviewDepthMeters, _demoLevel5DeepDarkPreviewDepthMeters)),
+                0.5f,
+                5000f);
+            if (Mathf.Abs(_hookMovement.MaxDepth - requiredMaxDepth) > 0.05f)
+            {
+                _hookMovement.MaxDepth = requiredMaxDepth;
+                overrideReapplied = true;
+            }
+
             // Demo drives hook movement directly; disable player input/clamping side-effects.
             _hookMovement.SetMovementEnabled(false);
+            return overrideReapplied;
+        }
+
+        private void RecoverDemoHookDepthAfterOverrideReset()
+        {
+            if (_demoHookTransform == null || _demoShipTransform == null)
+            {
+                return;
+            }
+
+            var recoveryDepth = ResolveDemoRecoveryDepthMeters(_demoPhase);
+            if (recoveryDepth <= 0f)
+            {
+                return;
+            }
+
+            var currentDepth = ResolveDemoHookDepthMeters();
+            if (currentDepth + 0.5f >= recoveryDepth)
+            {
+                return;
+            }
+
+            SnapDemoHookToDepth(recoveryDepth, clampToWorldBounds: false);
+            ApplyTutorialDepthPreview(enabled: true, recoveryDepth);
+        }
+
+        private float ResolveDemoRecoveryDepthMeters(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.Level4DarknessInfo:
+                case DemoAutoplayPhase.Level4CastDrop:
+                case DemoAutoplayPhase.Level4FishHook:
+                case DemoAutoplayPhase.Level4ReelInfo:
+                    return Mathf.Max(1f, _demoLevel4CastDepthMeters);
+                case DemoAutoplayPhase.Level4ReelUp:
+                    return Mathf.Max(
+                        Mathf.Max(1f, _demoLevel4CastDepthMeters),
+                        Mathf.Max(_demoLevel4ReelStartDepthMeters, _demoLevel4ReelTargetDepthMeters + 20f));
+                case DemoAutoplayPhase.Level5DeepDarkInfo:
+                case DemoAutoplayPhase.Level5CastDrop:
+                case DemoAutoplayPhase.Level5FishHook:
+                case DemoAutoplayPhase.Level5ReelInfo:
+                    return Mathf.Max(1f, _demoLevel5CastDepthMeters);
+                case DemoAutoplayPhase.Level5ReelUp:
+                    return Mathf.Max(
+                        Mathf.Max(1f, _demoLevel5CastDepthMeters),
+                        Mathf.Max(_demoLevel5ReelStartDepthMeters, _demoLevel5ReelTargetDepthMeters + 20f));
+                default:
+                    return 0f;
+            }
+        }
+
+        private float ResolveDeepReelSpeedMultiplier(float sceneReelSpeedMultiplier)
+        {
+            if (sceneReelSpeedMultiplier > 0.01f)
+            {
+                return Mathf.Max(0.1f, sceneReelSpeedMultiplier);
+            }
+
+            return Mathf.Max(0.1f, _demoDeepReelSpeedMultiplier);
         }
 
         private void RestoreDemoHookDepthOverride()
