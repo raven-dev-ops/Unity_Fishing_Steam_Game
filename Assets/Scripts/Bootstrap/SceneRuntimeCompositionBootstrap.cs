@@ -82,10 +82,8 @@ namespace RavenDevOps.Fishing.Core
             CreatePanel(canvas.transform, "BootPanel", new Vector2(0f, 0f), new Vector2(860f, 360f), new Color(0.05f, 0.08f, 0.14f, 0.72f));
             CreateText(canvas.transform, "BootTitle", "Raven DevOps Fishing", 42, TextAnchor.MiddleCenter, new Vector2(0f, 82f), new Vector2(780f, 92f));
             var status = CreateText(canvas.transform, "BootStatus", "Boot: Press Enter to continue.", 24, TextAnchor.MiddleCenter, new Vector2(0f, -18f), new Vector2(760f, 72f));
-            var selectionAura = CreateSelectionAura(canvas.transform, "BootSelectionAura", new Vector2(248f, 64f));
             var continueButton = CreateButton(canvas.transform, "ContinueButton", "Continue", new Vector2(0f, -114f), new Vector2(220f, 56f));
             continueButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.Cinematic));
-            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(16f, 8f), 24f);
 
             var controller = GetOrAddComponent<BootSceneFlowController>(root);
             controller.Configure(status);
@@ -105,10 +103,8 @@ namespace RavenDevOps.Fishing.Core
             CreatePanel(canvas.transform, "CinematicPanel", new Vector2(0f, -180f), new Vector2(940f, 230f), new Color(0.04f, 0.07f, 0.16f, 0.68f));
             CreateText(canvas.transform, "CinematicTitle", "Opening Voyage", 34, TextAnchor.MiddleCenter, new Vector2(0f, -142f), new Vector2(840f, 68f));
             var status = CreateText(canvas.transform, "CinematicStatus", "Cinematic: Enter/Esc to skip.", 22, TextAnchor.MiddleCenter, new Vector2(0f, -196f), new Vector2(840f, 56f));
-            var selectionAura = CreateSelectionAura(canvas.transform, "CinematicSelectionAura", new Vector2(176f, 56f));
             var skipButton = CreateButton(canvas.transform, "SkipCinematicButton", "Skip", new Vector2(360f, -196f), new Vector2(150f, 48f));
             skipButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.MainMenu));
-            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(14f, 6f), 24f);
 
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
             controller.Configure(status);
@@ -134,7 +130,6 @@ namespace RavenDevOps.Fishing.Core
             var canvas = CreateCanvas(root.transform, "MainMenuCanvas", 260);
             CreatePanel(canvas.transform, "MainMenuPanel", new Vector2(0f, 0f), new Vector2(620f, 520f), new Color(0.05f, 0.11f, 0.18f, 0.74f));
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
-            var selectionAura = CreateSelectionAura(canvas.transform, "MainMenuSelectionAura", new Vector2(336f, 72f));
 
             var startButton = CreateButton(canvas.transform, "StartButton", "Start Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
             var profileButton = CreateButton(canvas.transform, "ProfileButton", "Profile", new Vector2(0f, 20f), new Vector2(300f, 56f));
@@ -368,8 +363,6 @@ namespace RavenDevOps.Fishing.Core
             resetRebindsButton.onClick.AddListener(settingsController.OnResetRebindsPressed);
             settingsBackButton.onClick.AddListener(controller.CloseSettingsPanel);
 
-            AttachSelectionAura(canvas.gameObject, selectionAura, new Vector2(20f, 10f), 26f);
-
             if (EventSystem.current != null)
             {
                 EventSystem.current.SetSelectedGameObject(startButton.gameObject);
@@ -541,16 +534,11 @@ namespace RavenDevOps.Fishing.Core
             var tutorialSkipButton = CreateButton(canvas.transform, "HarborTutorialSkipButton", "Skip Intro", new Vector2(492f, -260f), new Vector2(188f, 36f));
             tutorialSkipButton.gameObject.SetActive(false);
 
-            var actionSelectionAura = CreateSelectionAura(hudRoot.transform, "HarborActionSelectionAura", new Vector2(352f, 62f));
-            AttachSelectionAura(hudRoot, actionSelectionAura, new Vector2(16f, 8f), 24f);
-
             var pauseRoot = CreatePanel(canvas.transform, "HarborPausePanel", Vector2.zero, new Vector2(440f, 292f), new Color(0.04f, 0.09f, 0.15f, 0.86f));
             CreateText(pauseRoot.transform, "HarborPauseTitle", "Harbor Paused", 30, TextAnchor.MiddleCenter, new Vector2(0f, 96f), new Vector2(320f, 62f));
             var pauseResumeButton = CreateButton(pauseRoot.transform, "HarborPauseResumeButton", "Resume", new Vector2(0f, 34f), new Vector2(250f, 48f));
             var pauseMainMenuButton = CreateButton(pauseRoot.transform, "HarborPauseMainMenuButton", "Main Menu", new Vector2(0f, -24f), new Vector2(250f, 48f));
             var pauseExitButton = CreateButton(pauseRoot.transform, "HarborPauseExitButton", "Exit", new Vector2(0f, -82f), new Vector2(250f, 48f));
-            var pauseSelectionAura = CreateSelectionAura(pauseRoot.transform, "HarborPauseSelectionAura", new Vector2(284f, 56f));
-            AttachSelectionAura(pauseRoot, pauseSelectionAura, new Vector2(16f, 8f), 24f);
             pauseRoot.SetActive(false);
 
             var player = FindSceneObject(scene, "HarborShipMain");
@@ -567,15 +555,6 @@ namespace RavenDevOps.Fishing.Core
             }
 
             GetOrAddComponent<HarborPlayerController>(player);
-
-            var aura = new GameObject("HarborWorldAura");
-            SceneManager.MoveGameObjectToScene(aura, scene);
-            var auraRenderer = aura.AddComponent<SpriteRenderer>();
-            auraRenderer.sprite = GetSolidSprite();
-            auraRenderer.color = new Color(1f, 0.87f, 0.22f, 0.46f);
-            auraRenderer.sortingOrder = 60;
-            aura.transform.localScale = new Vector3(1.95f, 1.24f, 1f);
-            aura.SetActive(false);
 
             var sailObject = FindSceneObject(scene, "DockPlank_0");
             if (sailObject == null)
@@ -599,7 +578,7 @@ namespace RavenDevOps.Fishing.Core
             tutorialController.Configure(dialogueController, tutorialSkipButton);
 
             var interactionController = GetOrAddComponent<HarborInteractionController>(root);
-            interactionController.Configure(player.transform, aura.transform, interactables, tutorialController);
+            interactionController.Configure(player.transform, null, interactables, tutorialController);
 
             var hookShop = GetOrAddComponent<HookShopController>(root);
             hookShop.ConfigureItems(new List<ShopItem>
@@ -791,7 +770,6 @@ namespace RavenDevOps.Fishing.Core
             var uiScaleValueText = CreateText(pauseSettingsPanel.transform, "PauseSettingUiScaleValueText", "UI Scale: 1.00x", 17, TextAnchor.MiddleCenter, new Vector2(0f, -82f), new Vector2(164f, 34f));
             var backSettingsButton = CreateButton(pauseSettingsPanel.transform, "PauseSettingsBackButton", "Back", new Vector2(0f, -124f), new Vector2(220f, 36f));
             pauseSettingsPanel.SetActive(false);
-            var pauseSelectionAura = CreateSelectionAura(pauseRoot.transform, "PauseSelectionAura", new Vector2(284f, 56f));
 
             var resumeButton = CreateButton(pauseRoot.transform, "ResumeButton", "Resume", new Vector2(0f, 40f), new Vector2(250f, 48f));
             var harborButton = CreateButton(pauseRoot.transform, "HarborButton", "Return Harbor", new Vector2(0f, -16f), new Vector2(250f, 48f));
@@ -985,7 +963,6 @@ namespace RavenDevOps.Fishing.Core
             harborButton.onClick.AddListener(pauseMenu.OnTownHarborPressed);
             settingsButton.onClick.AddListener(pauseMenu.OnSettingsPressed);
             exitButton.onClick.AddListener(pauseMenu.OnExitGamePressed);
-            AttachSelectionAura(canvas.gameObject, pauseSelectionAura, new Vector2(16f, 8f), 24f);
             EnsurePerfSanityRunner(root, canvas.transform, "FishingPerfLabel");
         }
 
@@ -1057,41 +1034,6 @@ namespace RavenDevOps.Fishing.Core
             var image = panel.AddComponent<Image>();
             image.color = color;
             return panel;
-        }
-
-        private static RectTransform CreateSelectionAura(Transform parent, string name, Vector2 size)
-        {
-            var aura = new GameObject(name);
-            aura.transform.SetParent(parent, worldPositionStays: false);
-
-            var rect = aura.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = size;
-
-            var image = aura.AddComponent<Image>();
-            image.color = new Color(1f, 0.84f, 0.26f, 0.14f);
-            image.raycastTarget = false;
-
-            var outline = aura.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.90f, 0.45f, 0.90f);
-            outline.effectDistance = new Vector2(3f, 3f);
-            outline.useGraphicAlpha = true;
-
-            aura.SetActive(false);
-            return rect;
-        }
-
-        private static void AttachSelectionAura(GameObject host, RectTransform auraTransform, Vector2 padding, float followSpeed)
-        {
-            if (host == null || auraTransform == null)
-            {
-                return;
-            }
-
-            var follower = GetOrAddComponent<SelectionAuraFollower>(host);
-            follower.Configure(auraTransform, padding, followSpeed);
         }
 
         private static Text CreateText(
@@ -1513,41 +1455,18 @@ namespace RavenDevOps.Fishing.Core
                 return null;
             }
 
-            var highlight = target.transform.Find(highlightName);
-            if (highlight == null)
+            if (!string.IsNullOrWhiteSpace(highlightName))
             {
-                var highlightGo = new GameObject(highlightName);
-                highlightGo.transform.SetParent(target.transform, worldPositionStays: false);
-                highlightGo.transform.localPosition = Vector3.zero;
-                highlightGo.transform.localScale = new Vector3(1.40f, 1.40f, 1f);
-                var renderer = highlightGo.AddComponent<SpriteRenderer>();
-                renderer.sprite = ResolveHighlightSprite(target);
-                renderer.color = new Color(1f, 0.88f, 0.26f, 0.70f);
-                var targetRenderer = target.GetComponent<SpriteRenderer>();
-                renderer.sortingOrder = targetRenderer != null ? targetRenderer.sortingOrder + 1 : 90;
-                highlight = highlightGo.transform;
+                var existingHighlight = target.transform.Find(highlightName);
+                if (existingHighlight != null)
+                {
+                    existingHighlight.gameObject.SetActive(false);
+                }
             }
 
-            highlight.gameObject.SetActive(false);
             var interactable = GetOrAddComponent<WorldInteractable>(target);
-            interactable.Configure(type, target.transform, highlight.gameObject);
+            interactable.Configure(type, target.transform, null);
             return interactable;
-        }
-
-        private static Sprite ResolveHighlightSprite(GameObject target)
-        {
-            if (target == null)
-            {
-                return GetSolidSprite();
-            }
-
-            var targetRenderer = target.GetComponent<SpriteRenderer>();
-            if (targetRenderer != null && targetRenderer.sprite != null)
-            {
-                return targetRenderer.sprite;
-            }
-
-            return GetSolidSprite();
         }
 
         private static GameObject FindSceneObject(Scene scene, string objectName)

@@ -32,9 +32,9 @@ namespace RavenDevOps.Fishing.Harbor
 
         public void SetHighlighted(bool highlighted)
         {
-            if (_highlightVisual != null)
+            if (_highlightVisual != null && _highlightVisual.activeSelf)
             {
-                _highlightVisual.SetActive(highlighted);
+                _highlightVisual.SetActive(false);
             }
         }
 

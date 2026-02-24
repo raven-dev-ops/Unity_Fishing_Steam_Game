@@ -32,6 +32,10 @@ namespace RavenDevOps.Fishing.Harbor
             _worldAura = worldAura;
             _tutorial = tutorial;
             _interactables = interactables ?? new List<WorldInteractable>();
+            if (_worldAura != null)
+            {
+                _worldAura.gameObject.SetActive(false);
+            }
         }
 
         private void Awake()
@@ -41,6 +45,11 @@ namespace RavenDevOps.Fishing.Harbor
             if (_interactables.Count == 0)
             {
                 _interactables.AddRange(FindObjectsByType<WorldInteractable>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+            }
+
+            if (_worldAura != null)
+            {
+                _worldAura.gameObject.SetActive(false);
             }
         }
 
@@ -109,13 +118,9 @@ namespace RavenDevOps.Fishing.Harbor
 
             ActiveInteractableChanged?.Invoke(_active);
 
-            if (_worldAura != null)
+            if (_worldAura != null && _worldAura.gameObject.activeSelf)
             {
-                _worldAura.gameObject.SetActive(_active != null);
-                if (_active != null)
-                {
-                    _worldAura.position = _active.AuraAnchor.position;
-                }
+                _worldAura.gameObject.SetActive(false);
             }
         }
 
