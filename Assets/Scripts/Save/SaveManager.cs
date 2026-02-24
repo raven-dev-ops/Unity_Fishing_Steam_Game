@@ -29,6 +29,7 @@ namespace RavenDevOps.Fishing.Save
         private const string TempFileSuffix = ".tmp";
         private const string BackupFileSuffix = ".bak";
         private const int MaxCatchLogEntries = 200;
+        private const int MaxFishSaleHistoryEntries = 160;
 
         private static SaveManager _instance;
 
@@ -375,7 +376,7 @@ namespace RavenDevOps.Fishing.Save
             }
         }
 
-        public void RecordCatch(string fishId, int distanceTier, float weightKg = 0f, int valueCopecs = 0)
+        public void RecordCatch(string fishId, int distanceTier, float weightKg = 0f, int valueCopecs = 0, float depthMeters = 0f)
         {
             if (string.IsNullOrWhiteSpace(fishId))
             {
@@ -412,7 +413,14 @@ namespace RavenDevOps.Fishing.Save
             var xpEarned = ProgressionRules.CalculateCatchXp(clampedDistanceTier, weightKg, valueCopecs);
             var didLevelUp = ApplyProgressionXp(xpEarned, out var previousLevel, out var newLevel);
 
-            var entry = AppendCatchLog(fishId, clampedDistanceTier, landed: true, weightKg, valueCopecs, failReason: string.Empty);
+            var entry = AppendCatchLog(
+                fishId,
+                clampedDistanceTier,
+                landed: true,
+                depthMeters,
+                weightKg,
+                valueCopecs,
+                failReason: string.Empty);
             Save();
 
             if (didLevelUp)
@@ -443,7 +451,7 @@ namespace RavenDevOps.Fishing.Save
         public void RecordCatchFailure(string fishId, int distanceTier, string failReason)
         {
             var clampedDistanceTier = Mathf.Max(1, distanceTier);
-            AppendCatchLog(fishId, clampedDistanceTier, landed: false, 0f, 0, failReason ?? string.Empty);
+            AppendCatchLog(fishId, clampedDistanceTier, landed: false, 0f, 0f, 0, failReason ?? string.Empty);
             Save();
         }
 
@@ -620,7 +628,10 @@ namespace RavenDevOps.Fishing.Save
             _current.ownedHooks ??= new List<string>();
             _current.fishInventory ??= new List<FishInventoryEntry>();
             _current.catchLog ??= new List<CatchLogEntry>();
+            _current.fishSaleHistory ??= new List<FishSaleHistoryEntry>();
             _current.tutorialFlags ??= new TutorialFlags();
+            _current.dailyFishBonus ??= new DailyFishBonusState();
+            _current.fishingMarketQuest ??= new FishingMarketQuestState();
             _current.stats ??= new SaveStats();
             _current.progression ??= new ProgressionData();
             _current.progression.unlockedContentIds ??= new List<string>();
@@ -658,6 +669,7 @@ namespace RavenDevOps.Fishing.Save
             }
 
             TrimCatchLog(_current.catchLog);
+            TrimFishSaleHistory(_current.fishSaleHistory);
             NormalizeProgressionData();
         }
 
@@ -892,13 +904,14 @@ namespace RavenDevOps.Fishing.Save
             return TimeProvider.LocalNow.ToString("yyyy-MM-dd");
         }
 
-        private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float weightKg, int valueCopecs, string failReason)
+        private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float depthMeters, float weightKg, int valueCopecs, string failReason)
         {
             _current.catchLog ??= new List<CatchLogEntry>();
             var entry = new CatchLogEntry
             {
                 fishId = fishId ?? string.Empty,
                 distanceTier = Mathf.Max(1, distanceTier),
+                depthMeters = Mathf.Max(0f, depthMeters),
                 weightKg = Mathf.Max(0f, weightKg),
                 valueCopecs = Mathf.Max(0, valueCopecs),
                 timestampUtc = TimeProvider.UtcNow.ToString("O"),
@@ -926,6 +939,22 @@ namespace RavenDevOps.Fishing.Save
 
             var removeCount = log.Count - MaxCatchLogEntries;
             log.RemoveRange(0, removeCount);
+        }
+
+        private static void TrimFishSaleHistory(List<FishSaleHistoryEntry> history)
+        {
+            if (history == null)
+            {
+                return;
+            }
+
+            if (history.Count <= MaxFishSaleHistoryEntries)
+            {
+                return;
+            }
+
+            var removeCount = history.Count - MaxFishSaleHistoryEntries;
+            history.RemoveRange(0, removeCount);
         }
 
         private static int CountFishInventory(List<FishInventoryEntry> fishInventory)

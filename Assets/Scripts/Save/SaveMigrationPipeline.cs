@@ -155,7 +155,10 @@ namespace RavenDevOps.Fishing.Save
                 migrated.ownedHooks ??= new List<string>();
                 migrated.fishInventory ??= new List<FishInventoryEntry>();
                 migrated.catchLog ??= new List<CatchLogEntry>();
+                migrated.fishSaleHistory ??= new List<FishSaleHistoryEntry>();
                 migrated.tutorialFlags ??= new TutorialFlags();
+                migrated.dailyFishBonus ??= new DailyFishBonusState();
+                migrated.fishingMarketQuest ??= new FishingMarketQuestState();
                 migrated.stats ??= new SaveStats();
                 migrated.progression ??= new ProgressionData();
                 migrated.progression.unlockedContentIds ??= new List<string>();

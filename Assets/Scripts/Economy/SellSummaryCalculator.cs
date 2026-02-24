@@ -48,6 +48,11 @@ namespace RavenDevOps.Fishing.Economy
 
             foreach (var stack in inventory)
             {
+                if (stack == null || string.IsNullOrWhiteSpace(stack.fishId) || stack.count <= 0)
+                {
+                    continue;
+                }
+
                 var baseValue = 10;
                 if (_catalogService != null && _catalogService.TryGetFish(stack.fishId, out var fishDef))
                 {
@@ -68,9 +73,19 @@ namespace RavenDevOps.Fishing.Economy
                         out _);
                 }
 
-                var stackValue = Mathf.RoundToInt(baseValue * multiplier * demandMultiplier * synergyMultiplier) * Mathf.Max(0, stack.count);
+                var unitEarned = Mathf.RoundToInt(baseValue * multiplier * demandMultiplier * synergyMultiplier);
+                var normalizedCount = Mathf.Max(0, stack.count);
+                var stackValue = Mathf.Max(0, unitEarned) * normalizedCount;
                 summary.totalEarned += stackValue;
-                summary.itemCount += Mathf.Max(0, stack.count);
+                summary.itemCount += normalizedCount;
+                summary.lines.Add(new SellSummaryLine
+                {
+                    fishId = stack.fishId,
+                    distanceTier = Mathf.Max(1, stack.distanceTier),
+                    count = normalizedCount,
+                    unitEarned = Mathf.Max(0, unitEarned),
+                    totalEarned = stackValue
+                });
             }
 
             return summary;

@@ -93,6 +93,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasRecordedHookPositionForStationaryCheck;
         private float _inWaterElapsedSeconds;
         private float _hookedElapsedSeconds;
+        private float _hookDepthAtHookMeters;
         private bool _catchSucceeded;
         private FishingFailReason _pendingFailReason = FishingFailReason.None;
         private FishingTensionState _lastTensionState = FishingTensionState.None;
@@ -282,6 +283,7 @@ namespace RavenDevOps.Fishing.Fishing
             _pendingFailReason = FishingFailReason.None;
             _inWaterElapsedSeconds = 0f;
             _hookedElapsedSeconds = 0f;
+            _hookDepthAtHookMeters = 0f;
             _biteTimerSeconds = 0f;
             _lastTensionState = FishingTensionState.None;
             _activeHookReactionWindowSeconds = _hookReactionWindowSeconds;
@@ -350,6 +352,7 @@ namespace RavenDevOps.Fishing.Fishing
             _pendingCollisionFishId = _hookedFish != null ? _hookedFish.id : string.Empty;
             _hasPendingCollisionHookCandidate = false;
             _hookedElapsedSeconds = 0f;
+            _hookDepthAtHookMeters = _hook != null ? Mathf.Max(0f, _hook.CurrentDepth) : 0f;
             _lastHookedUpPressTime = -10f;
             _levelOneReelPulseTimeRemaining = 0f;
             _upAxisHeldLastFrameForPress = false;
@@ -640,7 +643,12 @@ namespace RavenDevOps.Fishing.Fishing
                 var weightKg = reward.WeightKg;
                 var valueCopecs = reward.ValueCopecs;
 
-                _saveManager?.RecordCatch(_hookedFish.id, _currentDistanceTier, weightKg, valueCopecs);
+                _saveManager?.RecordCatch(
+                    _hookedFish.id,
+                    _currentDistanceTier,
+                    weightKg,
+                    valueCopecs,
+                    depthMeters: _hookDepthAtHookMeters);
                 _audioManager?.PlaySfx(_catchSfx);
                 _hudOverlay?.SetFishingFailure(string.Empty);
                 if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
@@ -682,6 +690,7 @@ namespace RavenDevOps.Fishing.Fishing
             _haulCatchInProgress = false;
             _catchSecuredAtThresholdDepth = false;
             _catchSucceeded = false;
+            _hookDepthAtHookMeters = 0f;
             _pendingFailReason = FishingFailReason.None;
             _lastTensionState = FishingTensionState.None;
             _reelEscapeTimeRemaining = 0f;

@@ -17,8 +17,11 @@ namespace RavenDevOps.Fishing.Save
 
         public List<FishInventoryEntry> fishInventory = new List<FishInventoryEntry>();
         public List<CatchLogEntry> catchLog = new List<CatchLogEntry>();
+        public List<FishSaleHistoryEntry> fishSaleHistory = new List<FishSaleHistoryEntry>();
 
         public TutorialFlags tutorialFlags = new TutorialFlags();
+        public DailyFishBonusState dailyFishBonus = new DailyFishBonusState();
+        public FishingMarketQuestState fishingMarketQuest = new FishingMarketQuestState();
 
         public string careerStartLocalDate = string.Empty;
         public string lastLoginLocalDate = string.Empty;
@@ -41,12 +44,49 @@ namespace RavenDevOps.Fishing.Save
     {
         public string fishId;
         public int distanceTier;
+        public float depthMeters;
         public float weightKg;
         public int valueCopecs;
         public string timestampUtc;
         public string sessionId;
         public bool landed;
         public string failReason;
+    }
+
+    [Serializable]
+    public sealed class FishSaleHistoryEntry
+    {
+        public string fishId;
+        public int distanceTier;
+        public int count;
+        public int earnedCopecs;
+        public string timestampUtc;
+        public bool dailyFishTarget;
+    }
+
+    [Serializable]
+    public sealed class DailyFishBonusState
+    {
+        public string localDate = string.Empty;
+        public string fishId = string.Empty;
+        public int requiredCount = 5;
+        public int progressCount;
+        public int bonusCopecs = 90;
+        public bool completed;
+        public bool rewardGranted;
+    }
+
+    [Serializable]
+    public sealed class FishingMarketQuestState
+    {
+        public string questDateLocal = string.Empty;
+        public string fishId = string.Empty;
+        public int requiredCount = 5;
+        public int progressCount;
+        public int rewardCopecs = 140;
+        public bool accepted;
+        public bool completed;
+        public bool claimed;
     }
 
     [Serializable]

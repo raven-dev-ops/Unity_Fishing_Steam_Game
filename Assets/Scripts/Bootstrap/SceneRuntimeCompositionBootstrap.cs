@@ -34,6 +34,7 @@ namespace RavenDevOps.Fishing.Core
             "HarborHookShopPanel",
             "HarborBoatShopPanel",
             "HarborFishShopPanel",
+            "HarborFisheryPanel",
             "HarborPausePanel",
             "HarborTutorialDialoguePanel",
             "MainMenuPanel",
@@ -724,21 +725,46 @@ namespace RavenDevOps.Fishing.Core
                 hudRoot.transform,
                 "HarborFishShopPanel",
                 new Vector2(0f, 6f),
-                new Vector2(640f, 560f),
+                new Vector2(700f, 720f),
                 new Color(0.04f, 0.12f, 0.21f, 0.94f));
-            CreateText(fishShopPanel.transform, "HarborFishShopTitle", "Fish Market", 30, TextAnchor.MiddleCenter, new Vector2(0f, 224f), new Vector2(560f, 56f));
-            CreateText(fishShopPanel.transform, "HarborFishShopHint", "Review current cargo and sell your catch.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 184f), new Vector2(560f, 34f));
+            CreateText(fishShopPanel.transform, "HarborFishShopTitle", "Fish Market", 30, TextAnchor.MiddleCenter, new Vector2(0f, 300f), new Vector2(620f, 56f));
+            CreateText(fishShopPanel.transform, "HarborFishShopHint", "Sell cargo, track the daily fish bonus, and manage the Fishing Charter.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 260f), new Vector2(620f, 34f));
             var fishShopInfo = CreateTopLeftText(
                 fishShopPanel.transform,
                 "HarborFishShopInfo",
                 "Loading fish market summary...",
                 17,
                 TextAnchor.UpperLeft,
-                new Vector2(36f, 126f),
-                new Vector2(568f, 198f));
-            var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell All Cargo", new Vector2(0f, -108f), new Vector2(344f, 54f));
-            var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -186f), new Vector2(318f, 44f));
+                new Vector2(40f, 116f),
+                new Vector2(620f, 340f));
+            var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell All Cargo", new Vector2(0f, -112f), new Vector2(350f, 52f));
+            var fisheryButton = CreateButton(fishShopPanel.transform, "HarborFisheryButton", "Fishery", new Vector2(0f, -176f), new Vector2(350f, 48f));
+            var fishQuestAcceptButton = CreateButton(fishShopPanel.transform, "HarborFishQuestAcceptButton", "Accept Charter", new Vector2(-180f, -244f), new Vector2(304f, 44f));
+            var fishQuestFulfillButton = CreateButton(fishShopPanel.transform, "HarborFishQuestFulfillButton", "Fulfill Charter", new Vector2(180f, -244f), new Vector2(304f, 44f));
+            var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -306f), new Vector2(350f, 42f));
             fishShopPanel.SetActive(false);
+
+            var fisheryPanel = CreatePanel(
+                hudRoot.transform,
+                "HarborFisheryPanel",
+                new Vector2(0f, 6f),
+                new Vector2(980f, 760f),
+                new Color(0.04f, 0.11f, 0.20f, 0.95f));
+            CreateText(fisheryPanel.transform, "HarborFisheryTitle", "Fishery Capture Cards", 32, TextAnchor.MiddleCenter, new Vector2(0f, 322f), new Vector2(900f, 58f));
+            CreateText(fisheryPanel.transform, "HarborFisheryHint", "Browse fish records, catch stats, and latest capture details.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 280f), new Vector2(900f, 36f));
+            var fisheryCardIcon = CreateImageElement(fisheryPanel.transform, "HarborFisheryCardIcon", new Vector2(-308f, 56f), new Vector2(210f, 210f), new Color(1f, 1f, 1f, 0.94f));
+            var fisheryCardText = CreateTopLeftText(
+                fisheryPanel.transform,
+                "HarborFisheryCardText",
+                "Loading fishery records...",
+                18,
+                TextAnchor.UpperLeft,
+                new Vector2(262f, 128f),
+                new Vector2(686f, 452f));
+            var fisheryPreviousButton = CreateButton(fisheryPanel.transform, "HarborFisheryPreviousButton", "Previous", new Vector2(-230f, -304f), new Vector2(210f, 46f));
+            var fisheryNextButton = CreateButton(fisheryPanel.transform, "HarborFisheryNextButton", "Next", new Vector2(0f, -304f), new Vector2(210f, 46f));
+            var fisheryBackButton = CreateButton(fisheryPanel.transform, "HarborFisheryBackButton", "Back to Market", new Vector2(230f, -304f), new Vector2(270f, 46f));
+            fisheryPanel.SetActive(false);
 
             var shipyardPanel = CreatePanel(
                 hudRoot.transform,
@@ -933,22 +959,28 @@ namespace RavenDevOps.Fishing.Core
                 hookShopPanel,
                 boatShopPanel,
                 fishShopPanel,
+                fisheryPanel,
                 harborProfilePanel,
                 shipyardPanel,
                 harborMainMenuConfirmPanel,
                 hookShopInfo,
                 boatShopInfo,
                 fishShopInfo,
+                fisheryCardText,
+                fisheryCardIcon,
                 shipyardInfoText,
                 shipyardCargoText,
                 profileButton.gameObject,
                 hookLv1Button.gameObject,
                 boatLv1Button.gameObject,
                 fishSellButton.gameObject,
+                fisheryPreviousButton.gameObject,
                 harborProfileBackButton.gameObject,
                 shipyardShipLv1Button.gameObject,
                 harborMainMenuConfirmNoButton.gameObject,
                 setSailButton,
+                fishQuestAcceptButton,
+                fishQuestFulfillButton,
                 new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
                 new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
                 new List<Button> { shipyardHookLv1Button, shipyardHookLv2Button, shipyardHookLv3Button, shipyardHookLv4Button, shipyardHookLv5Button },
@@ -976,7 +1008,13 @@ namespace RavenDevOps.Fishing.Core
             boatLv5Button.onClick.AddListener(() => router.OnBoatShopItemRequested("ship_lv5"));
             boatBackButton.onClick.AddListener(router.OnShopBackRequested);
             fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
+            fisheryButton.onClick.AddListener(router.OnFisheryRequested);
+            fishQuestAcceptButton.onClick.AddListener(router.OnFishShopQuestAcceptRequested);
+            fishQuestFulfillButton.onClick.AddListener(router.OnFishShopQuestClaimRequested);
             fishBackButton.onClick.AddListener(router.OnShopBackRequested);
+            fisheryPreviousButton.onClick.AddListener(router.OnFisheryPreviousRequested);
+            fisheryNextButton.onClick.AddListener(router.OnFisheryNextRequested);
+            fisheryBackButton.onClick.AddListener(router.OnFisheryBackRequested);
             harborProfileBackButton.onClick.AddListener(router.OnShopBackRequested);
             shipyardShipLv1Button.onClick.AddListener(() => router.OnShipyardShipRequested("ship_lv1"));
             shipyardShipLv2Button.onClick.AddListener(() => router.OnShipyardShipRequested("ship_lv2"));

@@ -6,6 +6,8 @@ namespace RavenDevOps.Fishing.Data
     public sealed class FishDefinitionSO : ScriptableObject
     {
         public string id;
+        [TextArea(2, 4)]
+        public string description;
         public Sprite icon;
         public int minDistanceTier;
         public int maxDistanceTier = 1;
