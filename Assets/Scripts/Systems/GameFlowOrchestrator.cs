@@ -21,7 +21,8 @@ namespace RavenDevOps.Fishing.Core
         {
             None = 0,
             Harbor = 1,
-            MainMenuProfile = 2
+            MainMenuProfile = 2,
+            MainMenu = 3
         }
 
         private static GameFlowOrchestrator _instance;
@@ -300,6 +301,12 @@ namespace RavenDevOps.Fishing.Core
             _gameFlowManager?.SetState(GameFlowState.Fishing);
         }
 
+        public void RequestOpenFishingTutorialReplayFromMainMenu()
+        {
+            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.MainMenu;
+            _gameFlowManager?.SetState(GameFlowState.Fishing);
+        }
+
         public void RequestOpenFishingTutorialFromCinematicFirstTime()
         {
             _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.Harbor;
@@ -316,6 +323,11 @@ namespace RavenDevOps.Fishing.Core
                 case FishingTutorialExitRoute.MainMenuProfile:
                     _openSettingsAfterMainMenuLoad = false;
                     _openProfileAfterMainMenuLoad = true;
+                    _gameFlowManager?.SetState(GameFlowState.MainMenu);
+                    return;
+                case FishingTutorialExitRoute.MainMenu:
+                    _openSettingsAfterMainMenuLoad = false;
+                    _openProfileAfterMainMenuLoad = false;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
                 case FishingTutorialExitRoute.Harbor:
