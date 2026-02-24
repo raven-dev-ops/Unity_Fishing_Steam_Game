@@ -694,30 +694,30 @@ namespace RavenDevOps.Fishing.Core
             var boatShopPanel = CreatePanel(
                 hudRoot.transform,
                 "HarborBoatShopPanel",
-                new Vector2(0f, -8f),
-                new Vector2(580f, 602f),
-                new Color(0.05f, 0.13f, 0.22f, 0.93f));
-            CreateText(boatShopPanel.transform, "HarborBoatShopTitle", "Dockyard", 30, TextAnchor.MiddleCenter, new Vector2(0f, 252f), new Vector2(520f, 56f));
-            CreateText(boatShopPanel.transform, "HarborBoatShopHint", "Purchase ships and send them to Shipyard inventory.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 212f), new Vector2(520f, 38f));
+                new Vector2(0f, 6f),
+                new Vector2(640f, 680f),
+                new Color(0.04f, 0.12f, 0.21f, 0.94f));
+            CreateText(boatShopPanel.transform, "HarborBoatShopTitle", "Dockyard", 30, TextAnchor.MiddleCenter, new Vector2(0f, 294f), new Vector2(560f, 56f));
+            CreateText(boatShopPanel.transform, "HarborBoatShopHint", "Purchase ships and send them to Shipyard inventory.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 252f), new Vector2(560f, 38f));
             var boatShopInfo = CreateTopLeftText(
                 boatShopPanel.transform,
                 "HarborBoatShopInfo",
                 "Loading dockyard inventory...",
                 16,
                 TextAnchor.UpperLeft,
-                new Vector2(30f, 132f),
-                new Vector2(520f, 110f));
-            var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 18f), new Vector2(372f, 44f));
-            var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -38f), new Vector2(372f, 44f));
-            var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -94f), new Vector2(372f, 44f));
-            var boatLv4Button = CreateButton(boatShopPanel.transform, "HarborBoatLv4Button", "Ship Lv4", new Vector2(0f, -150f), new Vector2(372f, 44f));
-            var boatLv5Button = CreateButton(boatShopPanel.transform, "HarborBoatLv5Button", "Ship Lv5", new Vector2(0f, -206f), new Vector2(372f, 44f));
-            var boatLv1Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv1Icon", new Vector2(-228f, 18f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv2Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv2Icon", new Vector2(-228f, -38f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv3Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv3Icon", new Vector2(-228f, -94f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv4Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv4Icon", new Vector2(-228f, -150f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var boatLv5Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv5Icon", new Vector2(-228f, -206f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
-            var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -240f), new Vector2(290f, 42f));
+                new Vector2(36f, 154f),
+                new Vector2(568f, 118f));
+            var boatLv1Button = CreateButton(boatShopPanel.transform, "HarborBoatLv1Button", "Ship Lv1", new Vector2(0f, 28f), new Vector2(400f, 46f));
+            var boatLv2Button = CreateButton(boatShopPanel.transform, "HarborBoatLv2Button", "Ship Lv2", new Vector2(0f, -32f), new Vector2(400f, 46f));
+            var boatLv3Button = CreateButton(boatShopPanel.transform, "HarborBoatLv3Button", "Ship Lv3", new Vector2(0f, -92f), new Vector2(400f, 46f));
+            var boatLv4Button = CreateButton(boatShopPanel.transform, "HarborBoatLv4Button", "Ship Lv4", new Vector2(0f, -152f), new Vector2(400f, 46f));
+            var boatLv5Button = CreateButton(boatShopPanel.transform, "HarborBoatLv5Button", "Ship Lv5", new Vector2(0f, -212f), new Vector2(400f, 46f));
+            var boatLv1Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv1Icon", new Vector2(-246f, 28f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv2Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv2Icon", new Vector2(-246f, -32f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv3Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv3Icon", new Vector2(-246f, -92f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv4Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv4Icon", new Vector2(-246f, -152f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatLv5Icon = CreateImageElement(boatShopPanel.transform, "HarborBoatLv5Icon", new Vector2(-246f, -212f), new Vector2(40f, 40f), new Color(1f, 1f, 1f, 0.98f));
+            var boatBackButton = CreateButton(boatShopPanel.transform, "HarborBoatShopBackButton", "Back", new Vector2(0f, -274f), new Vector2(318f, 44f));
             boatShopPanel.SetActive(false);
 
             var fishShopPanel = CreatePanel(
@@ -743,27 +743,27 @@ namespace RavenDevOps.Fishing.Core
             var shipyardPanel = CreatePanel(
                 hudRoot.transform,
                 "HarborShipyardPanel",
-                new Vector2(0f, -8f),
-                new Vector2(880f, 700f),
-                new Color(0.05f, 0.13f, 0.21f, 0.94f));
-            CreateText(shipyardPanel.transform, "HarborShipyardTitle", "Shipyard", 32, TextAnchor.MiddleCenter, new Vector2(0f, 296f), new Vector2(820f, 56f));
-            CreateText(shipyardPanel.transform, "HarborShipyardHint", "Equip owned hooks, select ship, and review cargo hold before departure.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 254f), new Vector2(820f, 34f));
-            var shipyardInfoText = CreateTopLeftText(shipyardPanel.transform, "HarborShipyardInfoText", "Loading Shipyard inventory...", 17, TextAnchor.UpperLeft, new Vector2(24f, 94f), new Vector2(832f, 108f));
-            var shipyardCargoText = CreateTopLeftText(shipyardPanel.transform, "HarborShipyardCargoText", "Cargo hold loading...", 16, TextAnchor.UpperLeft, new Vector2(24f, 206f), new Vector2(832f, 138f));
-            CreateTopLeftText(shipyardPanel.transform, "HarborShipyardShipLabel", "Ships", 20, TextAnchor.UpperLeft, new Vector2(24f, 352f), new Vector2(160f, 30f));
-            var shipyardShipLv1Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv1Button", "Ship Lv1", new Vector2(24f, 388f), new Vector2(400f, 40f));
-            var shipyardShipLv2Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv2Button", "Ship Lv2", new Vector2(24f, 432f), new Vector2(400f, 40f));
-            var shipyardShipLv3Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv3Button", "Ship Lv3", new Vector2(24f, 476f), new Vector2(400f, 40f));
-            var shipyardShipLv4Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv4Button", "Ship Lv4", new Vector2(24f, 520f), new Vector2(400f, 40f));
-            var shipyardShipLv5Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv5Button", "Ship Lv5", new Vector2(24f, 564f), new Vector2(400f, 40f));
-            CreateTopLeftText(shipyardPanel.transform, "HarborShipyardHookLabel", "Hooks", 20, TextAnchor.UpperLeft, new Vector2(452f, 352f), new Vector2(160f, 30f));
-            var shipyardHookLv1Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv1Button", "Hook Lv1", new Vector2(452f, 388f), new Vector2(400f, 40f));
-            var shipyardHookLv2Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv2Button", "Hook Lv2", new Vector2(452f, 432f), new Vector2(400f, 40f));
-            var shipyardHookLv3Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv3Button", "Hook Lv3", new Vector2(452f, 476f), new Vector2(400f, 40f));
-            var shipyardHookLv4Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv4Button", "Hook Lv4", new Vector2(452f, 520f), new Vector2(400f, 40f));
-            var shipyardHookLv5Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv5Button", "Hook Lv5", new Vector2(452f, 564f), new Vector2(400f, 40f));
-            var setSailButton = CreateButton(shipyardPanel.transform, "HarborSetSailButton", "Set Sail", new Vector2(-144f, -288f), new Vector2(280f, 48f));
-            var shipyardBackButton = CreateButton(shipyardPanel.transform, "HarborShipyardBackButton", "Back", new Vector2(144f, -288f), new Vector2(280f, 48f));
+                new Vector2(0f, 10f),
+                new Vector2(960f, 800f),
+                new Color(0.04f, 0.12f, 0.20f, 0.95f));
+            CreateText(shipyardPanel.transform, "HarborShipyardTitle", "Shipyard", 32, TextAnchor.MiddleCenter, new Vector2(0f, 344f), new Vector2(900f, 56f));
+            CreateText(shipyardPanel.transform, "HarborShipyardHint", "Equip owned hooks, select ship, and review cargo hold before departure.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 300f), new Vector2(900f, 34f));
+            var shipyardInfoText = CreateTopLeftText(shipyardPanel.transform, "HarborShipyardInfoText", "Loading Shipyard inventory...", 17, TextAnchor.UpperLeft, new Vector2(28f, 108f), new Vector2(904f, 124f));
+            var shipyardCargoText = CreateTopLeftText(shipyardPanel.transform, "HarborShipyardCargoText", "Cargo hold loading...", 16, TextAnchor.UpperLeft, new Vector2(28f, 236f), new Vector2(904f, 152f));
+            CreateTopLeftText(shipyardPanel.transform, "HarborShipyardShipLabel", "Ships", 20, TextAnchor.UpperLeft, new Vector2(28f, 406f), new Vector2(170f, 32f));
+            var shipyardShipLv1Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv1Button", "Ship Lv1", new Vector2(28f, 444f), new Vector2(420f, 42f));
+            var shipyardShipLv2Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv2Button", "Ship Lv2", new Vector2(28f, 490f), new Vector2(420f, 42f));
+            var shipyardShipLv3Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv3Button", "Ship Lv3", new Vector2(28f, 536f), new Vector2(420f, 42f));
+            var shipyardShipLv4Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv4Button", "Ship Lv4", new Vector2(28f, 582f), new Vector2(420f, 42f));
+            var shipyardShipLv5Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardShipLv5Button", "Ship Lv5", new Vector2(28f, 628f), new Vector2(420f, 42f));
+            CreateTopLeftText(shipyardPanel.transform, "HarborShipyardHookLabel", "Hooks", 20, TextAnchor.UpperLeft, new Vector2(492f, 406f), new Vector2(170f, 32f));
+            var shipyardHookLv1Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv1Button", "Hook Lv1", new Vector2(492f, 444f), new Vector2(420f, 42f));
+            var shipyardHookLv2Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv2Button", "Hook Lv2", new Vector2(492f, 490f), new Vector2(420f, 42f));
+            var shipyardHookLv3Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv3Button", "Hook Lv3", new Vector2(492f, 536f), new Vector2(420f, 42f));
+            var shipyardHookLv4Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv4Button", "Hook Lv4", new Vector2(492f, 582f), new Vector2(420f, 42f));
+            var shipyardHookLv5Button = CreateTopLeftButton(shipyardPanel.transform, "HarborShipyardHookLv5Button", "Hook Lv5", new Vector2(492f, 628f), new Vector2(420f, 42f));
+            var setSailButton = CreateButton(shipyardPanel.transform, "HarborSetSailButton", "Set Sail", new Vector2(-150f, -318f), new Vector2(292f, 50f));
+            var shipyardBackButton = CreateButton(shipyardPanel.transform, "HarborShipyardBackButton", "Back", new Vector2(150f, -318f), new Vector2(292f, 50f));
             shipyardPanel.SetActive(false);
 
             var harborProfilePanel = CreatePanel(hudRoot.transform, "HarborProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.07f, 0.15f, 0.24f, 0.94f));
