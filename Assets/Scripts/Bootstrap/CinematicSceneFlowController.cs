@@ -1,5 +1,5 @@
+using System.Collections;
 using RavenDevOps.Fishing.Input;
-using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -8,40 +8,60 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class CinematicSceneFlowController : MonoBehaviour
     {
-        [SerializeField, Min(0.5f)] private float _autoAdvanceSeconds = 5.5f;
-        [SerializeField] private Text _statusText;
         [SerializeField] private GameFlowManager _gameFlowManager;
-        [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private InputContextRouter _inputContextRouter;
-        [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private Button _skipIntroButton;
+        [SerializeField] private CanvasGroup _titleCardOverlay;
+        [SerializeField] private Text _titleCardText;
+        [SerializeField] private string _titleCardLabel = "Raven DevOps Fishing";
+        [SerializeField, Min(0.05f)] private float _titleFadeToBlackSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float _titleHoldSeconds = 1.35f;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
-        private float _startedAtTime;
+        private Coroutine _transitionRoutine;
         private bool _advanced;
 
-        public void Configure(Text statusText)
+        public void Configure(
+            Button skipIntroButton,
+            CanvasGroup titleCardOverlay,
+            Text titleCardText)
         {
-            _statusText = statusText;
+            ConfigureSkipButton(skipIntroButton);
+            _titleCardOverlay = titleCardOverlay;
+            _titleCardText = titleCardText;
+            ResetTitleCardOverlayVisual();
         }
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputContextRouter, this, warnIfMissing: false);
-            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
         }
 
         private void OnEnable()
         {
             _advanced = false;
-            _startedAtTime = Time.unscaledTime;
             _inputContextRouter?.SetContext(InputContext.UI);
             _inputMapController?.ApplyContext(InputContext.UI);
-            SetStatus("Cinematic: Enter/Esc to skip.");
+            ResetTitleCardOverlayVisual();
+            SetSkipButtonVisible(true);
+        }
+
+        private void OnDisable()
+        {
+            if (_transitionRoutine != null)
+            {
+                StopCoroutine(_transitionRoutine);
+                _transitionRoutine = null;
+            }
+
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.RemoveListener(OnSkipIntroPressed);
+            }
         }
 
         private void Update()
@@ -51,17 +71,9 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            RefreshActionsIfNeeded();
-            if ((_submitAction != null && _submitAction.WasPressedThisFrame())
-                || (_cancelAction != null && _cancelAction.WasPressedThisFrame()))
+            if (IsAnyIntroInputPressed())
             {
-                AdvanceFromCinematic();
-                return;
-            }
-
-            if (Time.unscaledTime - _startedAtTime >= _autoAdvanceSeconds)
-            {
-                AdvanceFromCinematic();
+                BeginTransitionToMainMenu();
             }
         }
 
@@ -82,7 +94,51 @@ namespace RavenDevOps.Fishing.Core
             }
         }
 
-        private void AdvanceFromCinematic()
+        private bool IsAnyIntroInputPressed()
+        {
+            RefreshActionsIfNeeded();
+            if ((_submitAction != null && _submitAction.WasPressedThisFrame())
+                || (_cancelAction != null && _cancelAction.WasPressedThisFrame()))
+            {
+                return true;
+            }
+
+            if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            if (Mouse.current != null
+                && (Mouse.current.leftButton.wasPressedThisFrame
+                    || Mouse.current.rightButton.wasPressedThisFrame
+                    || Mouse.current.middleButton.wasPressedThisFrame))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ConfigureSkipButton(Button skipIntroButton)
+        {
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.RemoveListener(OnSkipIntroPressed);
+            }
+
+            _skipIntroButton = skipIntroButton;
+            if (_skipIntroButton != null)
+            {
+                _skipIntroButton.onClick.AddListener(OnSkipIntroPressed);
+            }
+        }
+
+        private void OnSkipIntroPressed()
+        {
+            BeginTransitionToMainMenu();
+        }
+
+        private void BeginTransitionToMainMenu()
         {
             if (_advanced)
             {
@@ -90,43 +146,78 @@ namespace RavenDevOps.Fishing.Core
             }
 
             _advanced = true;
-            if (ShouldRunFirstTimeFishingLoopTutorial())
+            SetSkipButtonVisible(false);
+
+            if (_transitionRoutine != null)
             {
-                SetStatus("Opening fishing tutorial...");
-                if (_orchestrator != null)
+                StopCoroutine(_transitionRoutine);
+            }
+
+            _transitionRoutine = StartCoroutine(RunTitleCardTransition());
+        }
+
+        private IEnumerator RunTitleCardTransition()
+        {
+            if (_titleCardOverlay != null)
+            {
+                _titleCardOverlay.gameObject.SetActive(true);
+                _titleCardOverlay.blocksRaycasts = true;
+                _titleCardOverlay.interactable = false;
+                _titleCardOverlay.alpha = 0f;
+
+                if (_titleCardText != null)
                 {
-                    _orchestrator.RequestOpenFishingTutorialFromCinematicFirstTime();
-                }
-                else
-                {
-                    _gameFlowManager?.SetState(GameFlowState.Fishing);
+                    _titleCardText.text = _titleCardLabel ?? string.Empty;
                 }
 
+                var fadeDuration = Mathf.Max(0.05f, _titleFadeToBlackSeconds);
+                var elapsed = 0f;
+                while (elapsed < fadeDuration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    _titleCardOverlay.alpha = Mathf.Clamp01(elapsed / fadeDuration);
+                    yield return null;
+                }
+
+                _titleCardOverlay.alpha = 1f;
+
+                var holdSeconds = Mathf.Max(0f, _titleHoldSeconds);
+                if (holdSeconds > 0f)
+                {
+                    yield return new WaitForSecondsRealtime(holdSeconds);
+                }
+            }
+
+            _gameFlowManager?.SetState(GameFlowState.MainMenu);
+            _transitionRoutine = null;
+        }
+
+        private void ResetTitleCardOverlayVisual()
+        {
+            if (_titleCardText != null)
+            {
+                _titleCardText.text = string.Empty;
+            }
+
+            if (_titleCardOverlay == null)
+            {
                 return;
             }
 
-            SetStatus("Opening main menu...");
-            _gameFlowManager?.SetState(GameFlowState.MainMenu);
+            _titleCardOverlay.alpha = 0f;
+            _titleCardOverlay.blocksRaycasts = false;
+            _titleCardOverlay.interactable = false;
+            _titleCardOverlay.gameObject.SetActive(false);
         }
 
-        private bool ShouldRunFirstTimeFishingLoopTutorial()
+        private void SetSkipButtonVisible(bool visible)
         {
-            if (_saveManager == null || _saveManager.Current == null)
+            if (_skipIntroButton == null)
             {
-                return false;
+                return;
             }
 
-            var flags = _saveManager.Current.tutorialFlags ?? new TutorialFlags();
-            var isFirstTimeUser = !flags.tutorialSeen && !flags.introTutorialReplayRequested;
-            return isFirstTimeUser && _saveManager.ShouldRunFishingLoopTutorial();
-        }
-
-        private void SetStatus(string text)
-        {
-            if (_statusText != null)
-            {
-                _statusText.text = text ?? string.Empty;
-            }
+            _skipIntroButton.gameObject.SetActive(visible);
         }
     }
 }

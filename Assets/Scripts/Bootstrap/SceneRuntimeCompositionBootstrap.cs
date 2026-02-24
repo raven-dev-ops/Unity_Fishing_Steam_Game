@@ -126,14 +126,45 @@ namespace RavenDevOps.Fishing.Core
             HideHarborVisualArtifactsFromCinematic(scene);
             NormalizeCinematicBackdrop(scene);
             var canvas = CreateCanvas(root.transform, "CinematicCanvas", 250);
-            CreatePanel(canvas.transform, "CinematicPanel", new Vector2(0f, -180f), new Vector2(940f, 230f), new Color(0.04f, 0.07f, 0.16f, 0.68f));
-            CreateText(canvas.transform, "CinematicTitle", "Opening Voyage", 34, TextAnchor.MiddleCenter, new Vector2(0f, -142f), new Vector2(840f, 68f));
-            var status = CreateText(canvas.transform, "CinematicStatus", "Cinematic: Enter/Esc to skip.", 22, TextAnchor.MiddleCenter, new Vector2(0f, -196f), new Vector2(840f, 56f));
-            var skipButton = CreateButton(canvas.transform, "SkipCinematicButton", "Skip", new Vector2(360f, -196f), new Vector2(150f, 48f));
-            skipButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.MainMenu));
+            var skipButton = CreateBottomRightButton(
+                canvas.transform,
+                "SkipCinematicButton",
+                "Skip Intro",
+                new Vector2(24f, 24f),
+                new Vector2(188f, 44f));
+
+            var titleOverlay = new GameObject("CinematicTitleOverlay");
+            titleOverlay.transform.SetParent(canvas.transform, worldPositionStays: false);
+            var titleOverlayRect = titleOverlay.AddComponent<RectTransform>();
+            titleOverlayRect.anchorMin = Vector2.zero;
+            titleOverlayRect.anchorMax = Vector2.one;
+            titleOverlayRect.offsetMin = Vector2.zero;
+            titleOverlayRect.offsetMax = Vector2.zero;
+            var titleOverlayImage = titleOverlay.AddComponent<Image>();
+            titleOverlayImage.color = Color.black;
+            var titleOverlayGroup = titleOverlay.AddComponent<CanvasGroup>();
+            titleOverlayGroup.alpha = 0f;
+            titleOverlayGroup.blocksRaycasts = false;
+            titleOverlayGroup.interactable = false;
+            titleOverlay.SetActive(false);
+
+            var titleText = CreateText(
+                titleOverlay.transform,
+                "CinematicGameTitle",
+                string.Empty,
+                64,
+                TextAnchor.MiddleCenter,
+                Vector2.zero,
+                new Vector2(1560f, 180f));
+            titleText.color = new Color(0.96f, 0.98f, 1f, 1f);
 
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
-            controller.Configure(status);
+            controller.Configure(skipButton, titleOverlayGroup, titleText);
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(skipButton.gameObject);
+            }
+
             EnsurePerfSanityRunner(root, canvas.transform, "CinematicPerfLabel");
         }
 
@@ -709,7 +740,12 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(22f, 18f),
                 new Vector2(1168f, 132f));
             tutorialDialoguePanel.SetActive(false);
-            var tutorialSkipButton = CreateButton(canvas.transform, "HarborTutorialSkipButton", "Skip Intro", new Vector2(492f, -260f), new Vector2(188f, 36f));
+            var tutorialSkipButton = CreateBottomRightButton(
+                canvas.transform,
+                "HarborTutorialSkipButton",
+                "Skip Intro",
+                new Vector2(24f, 24f),
+                new Vector2(188f, 36f));
             tutorialSkipButton.gameObject.SetActive(false);
 
             var pauseRoot = CreatePanel(canvas.transform, "HarborPausePanel", Vector2.zero, new Vector2(440f, 292f), new Color(0.04f, 0.09f, 0.15f, 0.86f));
@@ -1397,6 +1433,28 @@ namespace RavenDevOps.Fishing.Core
                 rect.anchorMax = new Vector2(0f, 1f);
                 rect.pivot = new Vector2(0f, 1f);
                 rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
+            }
+
+            return button;
+        }
+
+        private static Button CreateBottomRightButton(
+            Transform parent,
+            string name,
+            string label,
+            Vector2 marginFromBottomRight,
+            Vector2 size)
+        {
+            var button = CreateButton(parent, name, label, Vector2.zero, size);
+            var rect = button.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(1f, 0f);
+                rect.anchoredPosition = new Vector2(
+                    -Mathf.Abs(marginFromBottomRight.x),
+                    Mathf.Abs(marginFromBottomRight.y));
             }
 
             return button;

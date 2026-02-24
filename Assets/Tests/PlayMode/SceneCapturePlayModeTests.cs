@@ -155,10 +155,24 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var cinematicCanvas = FindSceneObject("CinematicCanvas");
             Assert.That(cinematicCanvas, Is.Not.Null, "Expected cinematic canvas.");
+            Assert.That(FindSceneObject("CinematicPanel"), Is.Null, "Cinematic intro should not show a boxed panel.");
+            Assert.That(FindSceneObject("CinematicTitle"), Is.Null, "Cinematic intro should not show legacy title text.");
+            Assert.That(FindSceneObject("CinematicStatus"), Is.Null, "Cinematic intro should not show status text.");
             Assert.That(FindSceneObject("HarborCanvas"), Is.Null, "Cinematic scene should not compose harbor HUD.");
             Assert.That(GameObject.Find("MainMenuCanvas"), Is.Null, "Cinematic scene should not display main-menu UI.");
             Assert.That(GameObject.Find("BootCanvas"), Is.Null, "Cinematic scene should not display boot UI.");
             Assert.That(GameObject.Find("FishingCanvas"), Is.Null, "Cinematic scene should not display fishing HUD.");
+            Assert.That(FindSceneObject("CinematicTitleOverlay"), Is.Not.Null, "Expected cinematic title overlay object.");
+
+            var skipButtonGo = FindSceneObject("SkipCinematicButton");
+            Assert.That(skipButtonGo, Is.Not.Null, "Expected skip-intro button in cinematic.");
+            var skipButtonRect = skipButtonGo.GetComponent<RectTransform>();
+            Assert.That(skipButtonRect, Is.Not.Null, "Expected RectTransform on skip-intro button.");
+            if (skipButtonRect != null)
+            {
+                Assert.That(skipButtonRect.anchorMin, Is.EqualTo(new Vector2(1f, 0f)));
+                Assert.That(skipButtonRect.anchorMax, Is.EqualTo(new Vector2(1f, 0f)));
+            }
 
             var backdropFar = FindSceneObject("BackdropFar");
             var backdropVeil = FindSceneObject("BackdropVeil");
