@@ -63,6 +63,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private Button _skipTutorialButton;
+        [SerializeField] private Button _skipAllTutorialButton;
         [SerializeField] private GameObject _tutorialMessageBox;
         [SerializeField] private Text _tutorialMessageText;
         [SerializeField] private GameObject _tutorialTransitionOverlay;
@@ -71,6 +72,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Text _tutorialTransitionSubtitleText;
         [SerializeField] private string _skipTutorialButtonText = "Skip Tutorial";
         [SerializeField] private string _skipSceneButtonText = "Next Scene";
+        [SerializeField] private string _skipAllButtonText = "Skip All";
         [SerializeField] private int _maxRecoveryFailures = 3;
         [SerializeField] private float _promptRefreshIntervalSeconds = 0.85f;
         [SerializeField] private bool _showPromptCardDuringHandsOnTutorial = true;
@@ -164,6 +166,22 @@ namespace RavenDevOps.Fishing.Fishing
             UpdateSkipButtonVisibility();
         }
 
+        public void ConfigureSkipAllButton(Button skipAllTutorialButton)
+        {
+            if (_skipAllTutorialButton != null)
+            {
+                _skipAllTutorialButton.onClick.RemoveListener(SkipAllTutorial);
+            }
+
+            _skipAllTutorialButton = skipAllTutorialButton;
+            if (_skipAllTutorialButton != null)
+            {
+                _skipAllTutorialButton.onClick.AddListener(SkipAllTutorial);
+            }
+
+            UpdateSkipButtonVisibility();
+        }
+
         public void ConfigureTutorialMessageBox(GameObject tutorialMessageBox, Text tutorialMessageText)
         {
             _tutorialMessageBox = tutorialMessageBox;
@@ -200,6 +218,12 @@ namespace RavenDevOps.Fishing.Fishing
                 _skipTutorialButton.onClick.AddListener(SkipActiveTutorial);
             }
 
+            if (_skipAllTutorialButton != null)
+            {
+                _skipAllTutorialButton.onClick.RemoveListener(SkipAllTutorial);
+                _skipAllTutorialButton.onClick.AddListener(SkipAllTutorial);
+            }
+
             EvaluateActivation();
         }
 
@@ -218,6 +242,11 @@ namespace RavenDevOps.Fishing.Fishing
             if (_skipTutorialButton != null)
             {
                 _skipTutorialButton.onClick.RemoveListener(SkipActiveTutorial);
+            }
+
+            if (_skipAllTutorialButton != null)
+            {
+                _skipAllTutorialButton.onClick.RemoveListener(SkipAllTutorial);
             }
         }
 
@@ -271,6 +300,18 @@ namespace RavenDevOps.Fishing.Fishing
             CompleteTutorial(
                 skipped: true,
                 completionMessage: "Fishing tutorial skipped.");
+        }
+
+        public void SkipAllTutorial()
+        {
+            if (!_isActive)
+            {
+                return;
+            }
+
+            CompleteTutorial(
+                skipped: true,
+                completionMessage: "All fishing tutorial scenes skipped.");
         }
 
         private void EvaluateActivation()
@@ -1977,6 +2018,11 @@ namespace RavenDevOps.Fishing.Fishing
         {
             if (_skipTutorialButton == null)
             {
+                if (_skipAllTutorialButton != null)
+                {
+                    _skipAllTutorialButton.gameObject.SetActive(_isActive);
+                }
+
                 return;
             }
 
@@ -1985,6 +2031,18 @@ namespace RavenDevOps.Fishing.Fishing
             if (skipButtonLabel != null)
             {
                 skipButtonLabel.text = _demoActive ? _skipSceneButtonText : _skipTutorialButtonText;
+            }
+
+            if (_skipAllTutorialButton == null)
+            {
+                return;
+            }
+
+            _skipAllTutorialButton.gameObject.SetActive(_isActive);
+            var skipAllLabel = _skipAllTutorialButton.GetComponentInChildren<Text>();
+            if (skipAllLabel != null)
+            {
+                skipAllLabel.text = _skipAllButtonText;
             }
         }
 

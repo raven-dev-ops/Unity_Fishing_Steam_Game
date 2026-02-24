@@ -18,7 +18,8 @@ namespace RavenDevOps.Fishing.Core
             None = 0,
             Hook = 1,
             Boat = 2,
-            Fish = 3
+            Fish = 3,
+            Profile = 4
         }
 
         private const int MaxActivityLines = 4;
@@ -43,6 +44,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameObject _hookShopPanel;
         [SerializeField] private GameObject _boatShopPanel;
         [SerializeField] private GameObject _fishShopPanel;
+        [SerializeField] private GameObject _profilePanel;
         [SerializeField] private Text _hookShopInfoText;
         [SerializeField] private Text _boatShopInfoText;
         [SerializeField] private Text _fishShopInfoText;
@@ -50,6 +52,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameObject _hookShopDefaultSelection;
         [SerializeField] private GameObject _boatShopDefaultSelection;
         [SerializeField] private GameObject _fishShopDefaultSelection;
+        [SerializeField] private GameObject _profileDefaultSelection;
         [SerializeField] private Button _sailButton;
         [SerializeField] private int _fallbackCargoCapacityTier1 = 12;
         [SerializeField] private int _fallbackCargoCapacityTier2 = 20;
@@ -82,6 +85,7 @@ namespace RavenDevOps.Fishing.Core
             GameObject hookShopPanel = null,
             GameObject boatShopPanel = null,
             GameObject fishShopPanel = null,
+            GameObject profilePanel = null,
             Text hookShopInfoText = null,
             Text boatShopInfoText = null,
             Text fishShopInfoText = null,
@@ -89,6 +93,7 @@ namespace RavenDevOps.Fishing.Core
             GameObject hookShopDefaultSelection = null,
             GameObject boatShopDefaultSelection = null,
             GameObject fishShopDefaultSelection = null,
+            GameObject profileDefaultSelection = null,
             Button sailButton = null,
             List<Button> hookShopButtons = null,
             List<Button> boatShopButtons = null,
@@ -110,6 +115,7 @@ namespace RavenDevOps.Fishing.Core
             _hookShopPanel = hookShopPanel;
             _boatShopPanel = boatShopPanel;
             _fishShopPanel = fishShopPanel;
+            _profilePanel = profilePanel;
             _hookShopInfoText = hookShopInfoText;
             _boatShopInfoText = boatShopInfoText;
             _fishShopInfoText = fishShopInfoText;
@@ -117,6 +123,7 @@ namespace RavenDevOps.Fishing.Core
             _hookShopDefaultSelection = hookShopDefaultSelection;
             _boatShopDefaultSelection = boatShopDefaultSelection;
             _fishShopDefaultSelection = fishShopDefaultSelection;
+            _profileDefaultSelection = profileDefaultSelection;
             _sailButton = sailButton;
             AssignUiList(_hookShopButtons, hookShopButtons);
             AssignUiList(_boatShopButtons, boatShopButtons);
@@ -163,6 +170,11 @@ namespace RavenDevOps.Fishing.Core
         public void OnFishShopRequested()
         {
             OpenFishShopMenu();
+        }
+
+        public void OnProfileRequested()
+        {
+            OpenProfileMenu();
         }
 
         public void OnHookShopItemRequested(string hookId)
@@ -349,6 +361,17 @@ namespace RavenDevOps.Fishing.Core
             RefreshFishShopDetails();
         }
 
+        private void OpenProfileMenu()
+        {
+            OpenShopMenu(
+                ShopMenuType.Profile,
+                _profilePanel,
+                _profileDefaultSelection,
+                "Profile menu open. Review progression and catches.");
+            PlaySfx(SfxEvent.UiSelect);
+            PushActivity("Opened profile menu.");
+        }
+
         private void OpenShopMenu(ShopMenuType menuType, GameObject menuPanel, GameObject defaultSelection, string statusMessage)
         {
             _activeMenu = menuType;
@@ -356,6 +379,7 @@ namespace RavenDevOps.Fishing.Core
             SetPanel(_hookShopPanel, menuType == ShopMenuType.Hook);
             SetPanel(_boatShopPanel, menuType == ShopMenuType.Boat);
             SetPanel(_fishShopPanel, menuType == ShopMenuType.Fish);
+            SetPanel(_profilePanel, menuType == ShopMenuType.Profile);
             if (menuPanel != null)
             {
                 menuPanel.transform.SetAsLastSibling();
@@ -586,6 +610,7 @@ namespace RavenDevOps.Fishing.Core
             SetPanel(_hookShopPanel, false);
             SetPanel(_boatShopPanel, false);
             SetPanel(_fishShopPanel, false);
+            SetPanel(_profilePanel, false);
             if (selectMainAction)
             {
                 SetSelected(_mainMenuDefaultSelection);

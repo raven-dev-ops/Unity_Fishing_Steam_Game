@@ -344,16 +344,16 @@ namespace RavenDevOps.Fishing.Core
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
 
             var startButton = CreateButton(canvas.transform, "StartButton", "Start Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
-            var profileButton = CreateButton(canvas.transform, "ProfileButton", "Profile", new Vector2(0f, 20f), new Vector2(300f, 56f));
+            var profileButton = CreateButton(canvas.transform, "ProfileButton", "Tutorial", new Vector2(0f, 20f), new Vector2(300f, 56f));
             var settingsButton = CreateButton(canvas.transform, "SettingsButton", "Settings", new Vector2(0f, -48f), new Vector2(300f, 56f));
             var exitButton = CreateButton(canvas.transform, "ExitButton", "Exit", new Vector2(0f, -116f), new Vector2(300f, 56f));
 
             var profilePanel = CreatePanel(canvas.transform, "ProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.08f, 0.14f, 0.22f, 0.92f));
-            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Captain Profile", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
+            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Tutorial Center", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
             CreateTopLeftTmpText(
                 profilePanel.transform,
                 "ProfileHintText",
-                "View progression, objective status, and recent catches. Use Esc or Back to return.",
+                "Replay or skip tutorial flows. Use Esc or Back to return.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(24f, 62f),
@@ -372,14 +372,27 @@ namespace RavenDevOps.Fishing.Core
             var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 440f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
             var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 400f));
 
-            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 552f), new Vector2(1274f, 72f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
-            var tutorialStatusText = CreateTopLeftTmpText(tutorialPanel.transform, "ProfileTutorialStatusText", "Tutorial flags: initializing...", 14, TextAlignmentOptions.TopLeft, new Vector2(18f, 8f), new Vector2(1238f, 22f));
-            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Tutorial", new Vector2(18f, 36f), new Vector2(300f, 30f));
-            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tutorial", new Vector2(332f, 36f), new Vector2(320f, 30f));
+            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 104f), new Vector2(1274f, 520f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
+            var tutorialStatusText = CreateTopLeftTmpText(
+                tutorialPanel.transform,
+                "ProfileTutorialStatusText",
+                "Tutorial flags: initializing...",
+                17,
+                TextAlignmentOptions.TopLeft,
+                new Vector2(18f, 16f),
+                new Vector2(1238f, 76f));
+            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Tutorial", new Vector2(18f, 108f), new Vector2(300f, 42f));
+            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tutorial", new Vector2(332f, 108f), new Vector2(320f, 42f));
+            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro Tutorial", new Vector2(18f, 160f), new Vector2(300f, 42f));
+            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tutorial", new Vector2(332f, 160f), new Vector2(320f, 42f));
 
             var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -320f), new Vector2(240f, 52f));
             var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -320f), new Vector2(240f, 52f));
             var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -320f), new Vector2(240f, 52f));
+            profileStatsPanel.SetActive(false);
+            profileCatchLogPanel.SetActive(false);
+            profileResetButton.gameObject.SetActive(false);
+            profileResetObjectivesButton.gameObject.SetActive(false);
             profilePanel.SetActive(false);
 
             var settingsPanel = CreatePanel(canvas.transform, "SettingsPanel", new Vector2(0f, -8f), new Vector2(1480f, 840f), new Color(0.10f, 0.16f, 0.23f, 0.94f));
@@ -543,6 +556,8 @@ namespace RavenDevOps.Fishing.Core
             exitCancelButton.onClick.AddListener(controller.CancelExit);
             profileResetButton.onClick.AddListener(profileController.ResetProfile);
             profileResetObjectivesButton.onClick.AddListener(profileController.ResetObjectivesForQa);
+            skipIntroTutorialButton.onClick.AddListener(tutorialControlPanel.SkipTutorial);
+            skipFishingTutorialButton.onClick.AddListener(tutorialControlPanel.SkipFishingTutorial);
             replayIntroTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayTutorial);
             replayFishingTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayFishingTutorial);
             profileBackButton.onClick.AddListener(controller.CloseProfilePanel);
@@ -615,15 +630,16 @@ namespace RavenDevOps.Fishing.Core
                 hudRoot.transform,
                 "HarborActionPanel",
                 new Vector2(0f, -8f),
-                new Vector2(430f, 430f),
+                new Vector2(430f, 520f),
                 new Color(0.05f, 0.10f, 0.18f, 0.82f));
-            CreateText(actionPanel.transform, "HarborActionTitle", "Harbor Operations", 30, TextAnchor.MiddleCenter, new Vector2(0f, 164f), new Vector2(376f, 64f));
-            CreateText(actionPanel.transform, "HarborActionHint", "Select an action from this menu. Shops and travel are managed from these buttons.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 120f), new Vector2(376f, 48f));
-            var hookButton = CreateButton(actionPanel.transform, "HarborHookShopButton", "Hook Shop", new Vector2(0f, 64f), new Vector2(320f, 52f));
-            var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 2f), new Vector2(320f, 52f));
-            var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -60f), new Vector2(320f, 52f));
-            var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -122f), new Vector2(320f, 52f));
-            var exitButton = CreateButton(actionPanel.transform, "HarborExitButton", "Exit", new Vector2(0f, -184f), new Vector2(320f, 50f));
+            CreateText(actionPanel.transform, "HarborActionTitle", "Harbor Operations", 30, TextAnchor.MiddleCenter, new Vector2(0f, 212f), new Vector2(376f, 64f));
+            CreateText(actionPanel.transform, "HarborActionHint", "Select an action from this menu. Shops, profile, and travel are managed from these buttons.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 162f), new Vector2(376f, 48f));
+            var hookButton = CreateButton(actionPanel.transform, "HarborHookShopButton", "Hook Shop", new Vector2(0f, 108f), new Vector2(320f, 52f));
+            var boatButton = CreateButton(actionPanel.transform, "HarborBoatShopButton", "Boat Shop", new Vector2(0f, 46f), new Vector2(320f, 52f));
+            var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -16f), new Vector2(320f, 52f));
+            var profileButton = CreateButton(actionPanel.transform, "HarborProfileButton", "Profile", new Vector2(0f, -78f), new Vector2(320f, 52f));
+            var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -140f), new Vector2(320f, 52f));
+            var exitButton = CreateButton(actionPanel.transform, "HarborExitButton", "Exit", new Vector2(0f, -202f), new Vector2(320f, 50f));
 
             var infoPanel = CreateTopRightPanel(
                 hudRoot.transform,
@@ -723,6 +739,30 @@ namespace RavenDevOps.Fishing.Core
             var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell Cargo", new Vector2(0f, -62f), new Vector2(318f, 52f));
             var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -128f), new Vector2(240f, 46f));
             fishShopPanel.SetActive(false);
+
+            var harborProfilePanel = CreatePanel(hudRoot.transform, "HarborProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.08f, 0.14f, 0.22f, 0.92f));
+            CreateTopLeftTmpText(harborProfilePanel.transform, "HarborProfileTitleText", "Captain Profile", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
+            CreateTopLeftTmpText(
+                harborProfilePanel.transform,
+                "HarborProfileHintText",
+                "View progression, objective status, and recent catches. Use Esc or Back to return.",
+                16,
+                TextAlignmentOptions.TopLeft,
+                new Vector2(24f, 62f),
+                new Vector2(820f, 38f));
+            var harborProfileStatsPanel = CreateTopLeftPanel(harborProfilePanel.transform, "HarborProfileStatsPanel", new Vector2(22f, 104f), new Vector2(620f, 440f), new Color(0.09f, 0.16f, 0.25f, 0.92f));
+            var harborProfileDayText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileDayText", "Day -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(576f, 32f));
+            var harborProfileCopecsText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileCopecsText", "Copecs: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 56f), new Vector2(576f, 32f));
+            var harborProfileTotalFishText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileTotalFishText", "Total Fish Caught: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 94f), new Vector2(576f, 32f));
+            var harborProfileFarthestDistanceText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileFarthestDistanceText", "Farthest Distance Tier: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 132f), new Vector2(576f, 32f));
+            var harborProfileLevelText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileLevelText", "Level: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 170f), new Vector2(576f, 32f));
+            var harborProfileXpProgressText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileXpProgressText", "XP: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 208f), new Vector2(576f, 32f));
+            var harborProfileNextUnlockText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileNextUnlockText", "Next Unlock: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 246f), new Vector2(576f, 32f));
+            var harborProfileObjectiveText = CreateTopLeftTmpText(harborProfileStatsPanel.transform, "HarborProfileObjectiveText", "Objective: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 286f), new Vector2(576f, 150f));
+            var harborProfileCatchLogPanel = CreateTopLeftPanel(harborProfilePanel.transform, "HarborProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 440f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
+            var harborProfileCatchLogText = CreateTopLeftTmpText(harborProfileCatchLogPanel.transform, "HarborProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 400f));
+            var harborProfileBackButton = CreateButton(harborProfilePanel.transform, "HarborProfileBackButton", "Back", new Vector2(280f, -320f), new Vector2(240f, 52f));
+            harborProfilePanel.SetActive(false);
 
             var tutorialDialoguePanel = CreatePanel(
                 canvas.transform,
@@ -831,6 +871,18 @@ namespace RavenDevOps.Fishing.Core
             boatShop.SetUnlockAllItemsForQa(true);
 
             var fishShop = GetOrAddComponent<FishShopController>(root);
+            var harborProfileController = GetOrAddComponent<ProfileMenuController>(root);
+            harborProfileController.Configure(
+                harborProfileDayText,
+                harborProfileCopecsText,
+                harborProfileTotalFishText,
+                harborProfileFarthestDistanceText,
+                harborProfileLevelText,
+                harborProfileXpProgressText,
+                harborProfileNextUnlockText,
+                harborProfileObjectiveText,
+                harborProfileCatchLogText,
+                10);
             var router = GetOrAddComponent<HarborSceneInteractionRouter>(root);
             router.Configure(
                 interactables,
@@ -848,6 +900,7 @@ namespace RavenDevOps.Fishing.Core
                 hookShopPanel,
                 boatShopPanel,
                 fishShopPanel,
+                harborProfilePanel,
                 hookShopInfo,
                 boatShopInfo,
                 fishShopInfo,
@@ -855,6 +908,7 @@ namespace RavenDevOps.Fishing.Core
                 hookLv1Button.gameObject,
                 boatLv1Button.gameObject,
                 fishSellButton.gameObject,
+                harborProfileBackButton.gameObject,
                 sailButton,
                 new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
                 new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
@@ -865,6 +919,7 @@ namespace RavenDevOps.Fishing.Core
             hookButton.onClick.AddListener(router.OnHookShopRequested);
             boatButton.onClick.AddListener(router.OnBoatShopRequested);
             fishButton.onClick.AddListener(router.OnFishShopRequested);
+            profileButton.onClick.AddListener(router.OnProfileRequested);
             sailButton.onClick.AddListener(router.OnSailRequested);
             hookLv1Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv1"));
             hookLv2Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv2"));
@@ -880,6 +935,7 @@ namespace RavenDevOps.Fishing.Core
             boatBackButton.onClick.AddListener(router.OnShopBackRequested);
             fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
             fishBackButton.onClick.AddListener(router.OnShopBackRequested);
+            harborProfileBackButton.onClick.AddListener(router.OnShopBackRequested);
 
             var pauseController = GetOrAddComponent<HarborPauseMenuController>(root);
             pauseController.Configure(
@@ -929,6 +985,8 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(844f, 46f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
             menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
+            var fishingTutorialSkipAllButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipAllButton", "Skip All", new Vector2(532f, 12f), new Vector2(156f, 28f));
+            fishingTutorialSkipAllButton.gameObject.SetActive(false);
             var fishingTutorialSkipButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipButton", "Skip Tutorial", new Vector2(694f, 12f), new Vector2(160f, 28f));
             fishingTutorialSkipButton.gameObject.SetActive(false);
             var fishingTutorialMessagePanel = CreatePanel(
@@ -1165,6 +1223,7 @@ namespace RavenDevOps.Fishing.Core
             var fishingTutorialController = GetOrAddComponent<FishingLoopTutorialController>(root);
             fishingTutorialTransitionPanel.transform.SetAsLastSibling();
             fishingTutorialController.ConfigureSkipButton(fishingTutorialSkipButton);
+            fishingTutorialController.ConfigureSkipAllButton(fishingTutorialSkipAllButton);
             fishingTutorialController.ConfigureTutorialMessageBox(fishingTutorialMessagePanel, fishingTutorialMessageText);
             fishingTutorialController.ConfigureTutorialTransitionOverlay(
                 fishingTutorialTransitionPanel,

@@ -136,7 +136,9 @@ namespace RavenDevOps.Fishing.Harbor
                 return;
             }
 
-            var shouldRunTutorial = _saveManager.ShouldRunIntroTutorial();
+            var tutorialFlags = _saveManager.Current.tutorialFlags;
+            var replayRequested = tutorialFlags != null && tutorialFlags.introTutorialReplayRequested;
+            var shouldRunTutorial = _isBlockingInteractions || replayRequested;
             if (!shouldRunTutorial)
             {
                 _isBlockingInteractions = false;
