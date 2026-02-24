@@ -98,12 +98,13 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
         [SerializeField] private float _demoLevel4ReelSpeedMultiplier = 1f;
-        [SerializeField] private float _demoLevel5ReelSpeedMultiplier = 15f;
+        [SerializeField] private float _demoLevel5ReelSpeedMultiplier = 1f;
         [SerializeField] private float _demoLevel4ReelDistanceBeforeTransitionMeters = 20f;
+        [SerializeField] private float _demoLevel5ReelDistanceBeforeTransitionMeters = 30f;
         [SerializeField] private float _demoLevel4ReelMaxPhaseSeconds = 4.5f;
         [SerializeField] private float _demoLevel4ReelCameraFollowLerpScale = 1.35f;
         [SerializeField] private float _demoLevel4ReelCameraHookViewportY = 0.3f;
-        [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 5.2f;
+        [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 6.5f;
         [SerializeField] private float _demoReelTransitionLeadSeconds = 0.05f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
@@ -763,7 +764,6 @@ namespace RavenDevOps.Fishing.Fishing
                     if (level4ReeledDistance >= Mathf.Max(0f, level4ReelDistanceBeforeTransition - level4TransitionLeadMeters)
                         || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds)))
                     {
-                        ResolveDemoFish(caught: true);
                         StartDemoPhase(DemoAutoplayPhase.Level5DeepDarkInfo);
                     }
                     break;
@@ -815,22 +815,26 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
                     EnsureDemoFishHookedVisual();
+                    var level5ReelDistanceBeforeTransition = Mathf.Max(1f, _demoLevel5ReelDistanceBeforeTransitionMeters);
+                    var level5ReelStartDepth = Mathf.Max(
+                        level5ReelDistanceBeforeTransition + 0.1f,
+                        _demoLevel5ReelStartDepthMeters);
                     var level5ReelUpTargetDepth = Mathf.Clamp(
-                        _demoLevel5ReelTargetDepthMeters,
+                        level5ReelStartDepth - level5ReelDistanceBeforeTransition,
                         0f,
                         Mathf.Max(0f, _demoLevel5CastDepthMeters));
                     var level5ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel5ReelSpeedMultiplier);
                     MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, level5ReelSpeedMultiplier);
+                    ApplyScene8CameraFollowOverride(active: true);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
                     var level5CurrentDepth = ResolveDemoHookDepthMeters();
                     ApplyTutorialDepthPreview(enabled: true, level5CurrentDepth);
-                    UpdateDemoHookedFishFade(_demoLevel5ReelStartDepthMeters, level5ReelUpTargetDepth, level5ReelSpeedMultiplier);
-                    var level5RemainingDepthMeters = Mathf.Max(0f, level5CurrentDepth - level5ReelUpTargetDepth);
+                    UpdateDemoHookedFishFade(level5ReelStartDepth, level5ReelUpTargetDepth, level5ReelSpeedMultiplier);
+                    var level5ReeledDistance = Mathf.Max(0f, level5ReelStartDepth - level5CurrentDepth);
                     var level5TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level5ReelSpeedMultiplier);
-                    if (level5RemainingDepthMeters <= level5TransitionLeadMeters
+                    if (level5ReeledDistance >= Mathf.Max(0f, level5ReelDistanceBeforeTransition - level5TransitionLeadMeters)
                         || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel5ReelMaxPhaseSeconds)))
                     {
-                        ResolveDemoFish(caught: true);
                         StartDemoPhase(DemoAutoplayPhase.FinishInfo);
                     }
                     break;
@@ -870,13 +874,20 @@ namespace RavenDevOps.Fishing.Fishing
             _demoPhase = phase;
             _demoPhaseStartedAt = Time.unscaledTime;
             _demoFishHookVisualReady = false;
-            ApplyScene8CameraFollowOverride(active: phase == DemoAutoplayPhase.Level4ReelUp);
+            ApplyScene8CameraFollowOverride(active: phase == DemoAutoplayPhase.Level4ReelUp || phase == DemoAutoplayPhase.Level5ReelUp);
 
             if (phase == DemoAutoplayPhase.FishHook
                 || phase == DemoAutoplayPhase.Level4FishHook
                 || phase == DemoAutoplayPhase.Level5FishHook)
             {
                 ResetDemoFishVisualState();
+            }
+            else if (phase == DemoAutoplayPhase.Level5DeepDarkInfo
+                || phase == DemoAutoplayPhase.FinishInfo)
+            {
+                // Resolve previous scene's hooked fish once the next scene has been
+                // prepared under transition so it does not visibly pop off-hook.
+                ResolveDemoFish(caught: true);
             }
 
             if (phase == DemoAutoplayPhase.Level4DarknessInfo)
@@ -1155,7 +1166,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
                     return $"Level 5 hook demo: scene starts in deep-dark at {_demoLevel5CastDepthMeters:0,0}m. Lv5 light radius is {_demoLevel5LightRadiiMeters.x:0.#}m in darkness and {_demoLevel5LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
-                    return $"Level 5 deep-dark catch: hook and reel toward the Lv5 ship line at {_demoLevel5ReelTargetDepthMeters:0,0}m.";
+                    return $"Level 5 deep-dark catch: fish stays hooked while reeling up about {_demoLevel5ReelDistanceBeforeTransitionMeters:0.#}m, then transitions before the hook fully stops.";
                 case DemoAutoplayPhase.FinishInfo:
                     return "Demo complete. Your turn next: steer, cast, hook on collision, then reel your fish in.";
                 default:
