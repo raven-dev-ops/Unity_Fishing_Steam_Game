@@ -758,7 +758,6 @@ namespace RavenDevOps.Fishing.Fishing
                     ApplyTutorialLightPreview(enabled: true, ResolveScene8LightRadiiMeters());
                     var level4CurrentDepth = ResolveDemoHookDepthMeters();
                     ApplyTutorialDepthPreview(enabled: true, level4CurrentDepth);
-                    UpdateDemoHookedFishFade(level4ReelStartDepth, level4ReelUpTargetDepth, level4ReelSpeedMultiplier);
                     var level4ReeledDistance = Mathf.Max(0f, level4ReelStartDepth - level4CurrentDepth);
                     var level4TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level4ReelSpeedMultiplier);
                     if (level4ReeledDistance >= Mathf.Max(0f, level4ReelDistanceBeforeTransition - level4TransitionLeadMeters)
