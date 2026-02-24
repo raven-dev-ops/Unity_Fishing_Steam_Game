@@ -18,11 +18,13 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField, Min(0.05f)] private float _titleFadeToBlackSeconds = 0.35f;
         [SerializeField, Min(0f)] private float _titleHoldSeconds = 1.35f;
         [SerializeField, Min(0f)] private float _inputDebounceSeconds = 0.3f;
+        [SerializeField, Min(0f)] private float _batchModeAutoAdvanceSeconds = 2.25f;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
         private Coroutine _transitionRoutine;
         private float _inputEnabledAt;
+        private float _sceneEnabledAt;
         private bool _awaitingInitialInputRelease;
         private bool _advanced;
 
@@ -47,6 +49,7 @@ namespace RavenDevOps.Fishing.Core
         private void OnEnable()
         {
             _advanced = false;
+            _sceneEnabledAt = Time.unscaledTime;
             _inputEnabledAt = Time.unscaledTime + Mathf.Max(0f, _inputDebounceSeconds);
             _awaitingInitialInputRelease = true;
             _inputContextRouter?.SetContext(InputContext.UI);
@@ -73,6 +76,13 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_advanced)
             {
+                return;
+            }
+
+            if (Application.isBatchMode
+                && Time.unscaledTime >= _sceneEnabledAt + Mathf.Max(0f, _batchModeAutoAdvanceSeconds))
+            {
+                BeginTransitionToMainMenu();
                 return;
             }
 
