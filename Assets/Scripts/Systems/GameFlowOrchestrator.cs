@@ -39,7 +39,7 @@ namespace RavenDevOps.Fishing.Core
         private FishingTutorialExitRoute _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.None;
         private bool _openSettingsAfterMainMenuLoad;
         private bool _openProfileAfterMainMenuLoad;
-        private const float HarborDepartureTitleHoldSeconds = 1.15f;
+        private const float HarborDepartureTitleHoldSeconds = 2.15f;
 
         public static GameFlowOrchestrator Instance => _instance;
 

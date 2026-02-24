@@ -198,11 +198,11 @@ namespace RavenDevOps.Fishing.UI
             {
                 new DialogueLine
                 {
-                    text = "Welcome to harbor command. Choose Profile, Hook Shop, Boat Shop, Fish Market, or Shipyard."
+                    text = "Welcome to harbor command. Choose Profile, Shipyard, Dockyard, Warehouse, or Fish Market."
                 },
                 new DialogueLine
                 {
-                    text = "Buy ships and hooks in order, equip them in Shipyard, then set sail for deeper waters."
+                    text = "Buy ships in Dockyard and hooks in Warehouse, equip in Shipyard, then set sail for deeper waters."
                 },
                 new DialogueLine
                 {
