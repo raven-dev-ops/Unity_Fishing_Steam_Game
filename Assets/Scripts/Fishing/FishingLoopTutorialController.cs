@@ -59,6 +59,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingHookCastDropController _hookCastDropController;
         [SerializeField] private FishingDepthDarknessController _depthDarknessController;
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
+        [SerializeField] private FishingCameraController _fishingCameraController;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private Button _skipTutorialButton;
@@ -96,9 +97,12 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel5DeepDarkPreviewDepthMeters = 3300f;
         [SerializeField] private float _demoDeepCastSpeedMultiplier = 85f;
         [SerializeField] private float _demoDeepReelSpeedMultiplier = 110f;
-        [SerializeField] private float _demoLevel4ReelSpeedMultiplier = 55f;
+        [SerializeField] private float _demoLevel4ReelSpeedMultiplier = 1f;
         [SerializeField] private float _demoLevel5ReelSpeedMultiplier = 15f;
-        [SerializeField] private float _demoLevel4ReelMaxPhaseSeconds = 8.4f;
+        [SerializeField] private float _demoLevel4ReelDistanceBeforeTransitionMeters = 20f;
+        [SerializeField] private float _demoLevel4ReelMaxPhaseSeconds = 4.5f;
+        [SerializeField] private float _demoLevel4ReelCameraFollowLerpScale = 1.35f;
+        [SerializeField] private float _demoLevel4ReelCameraHookViewportY = 0.3f;
         [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 5.2f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
@@ -738,16 +742,23 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(true);
                     EnsureDemoFishHookedVisual();
+                    var level4ReelDistanceBeforeTransition = Mathf.Max(1f, _demoLevel4ReelDistanceBeforeTransitionMeters);
+                    var level4ReelStartDepth = Mathf.Max(
+                        level4ReelDistanceBeforeTransition + 0.1f,
+                        _demoLevel4ReelStartDepthMeters);
                     var level4ReelUpTargetDepth = Mathf.Clamp(
-                        _demoLevel4ReelTargetDepthMeters,
+                        level4ReelStartDepth - level4ReelDistanceBeforeTransition,
                         0f,
                         Mathf.Max(0f, _demoLevel4CastDepthMeters));
                     var level4ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel4ReelSpeedMultiplier);
                     MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, level4ReelSpeedMultiplier);
+                    ApplyScene8CameraFollowOverride(active: true);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel4LightRadiiMeters);
-                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
-                    UpdateDemoHookedFishFade(_demoLevel4ReelStartDepthMeters, level4ReelUpTargetDepth, level4ReelSpeedMultiplier);
-                    if (Mathf.Abs(ResolveDemoHookDepthMeters() - level4ReelUpTargetDepth) <= 0.08f
+                    var level4CurrentDepth = ResolveDemoHookDepthMeters();
+                    ApplyTutorialDepthPreview(enabled: true, level4CurrentDepth);
+                    UpdateDemoHookedFishFade(level4ReelStartDepth, level4ReelUpTargetDepth, level4ReelSpeedMultiplier);
+                    var level4ReeledDistance = Mathf.Max(0f, level4ReelStartDepth - level4CurrentDepth);
+                    if (level4ReeledDistance >= level4ReelDistanceBeforeTransition - 0.05f
                         || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds)))
                     {
                         if (QueueDemoPhaseTransition(DemoAutoplayPhase.Level5DeepDarkInfo, _demoSceneEndPauseSeconds))
@@ -758,6 +769,7 @@ namespace RavenDevOps.Fishing.Fishing
                     break;
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
                     MoveShipTowardX(_demoShipStartX);
+                    ApplyScene8CameraFollowOverride(active: false);
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
@@ -857,6 +869,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoPhase = phase;
             _demoPhaseStartedAt = Time.unscaledTime;
             _demoFishHookVisualReady = false;
+            ApplyScene8CameraFollowOverride(active: phase == DemoAutoplayPhase.Level4ReelUp);
 
             if (phase == DemoAutoplayPhase.FishHook
                 || phase == DemoAutoplayPhase.Level4FishHook
@@ -1137,7 +1150,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level4DarknessInfo:
                     return $"Level 4 darkness tutorial: scene starts at {_demoLevel4CastDepthMeters:0,0}m for a full low-visibility pass. Lv4 light radius is {_demoLevel4LightRadiiMeters.x:0.#}m in darkness and {_demoLevel4LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level4ReelInfo:
-                    return $"Level 4 darkness catch: fish is hooked, then reels from {_demoLevel4CastDepthMeters:0,0}m toward the {_demoLevel4ReelTargetDepthMeters:0,0}m line while fading out.";
+                    return $"Level 4 darkness catch: fish is hooked, then reels up about {_demoLevel4ReelDistanceBeforeTransitionMeters:0.#}m with camera follow before transitioning.";
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
                     return $"Level 5 hook demo: scene starts in deep-dark at {_demoLevel5CastDepthMeters:0,0}m. Lv5 light radius is {_demoLevel5LightRadiiMeters.x:0.#}m in darkness and {_demoLevel5LightRadiiMeters.y:0.#}m in deep-dark.";
                 case DemoAutoplayPhase.Level5ReelInfo:
@@ -1329,6 +1342,7 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveDemoFish(caught: false);
             RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
+            ApplyScene8CameraFollowOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
@@ -1347,6 +1361,7 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveDemoFish(caught: false);
             RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
+            ApplyScene8CameraFollowOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
@@ -1388,6 +1403,17 @@ namespace RavenDevOps.Fishing.Fishing
             if (_demoHookRenderer == null && _demoHookTransform != null)
             {
                 _demoHookRenderer = _demoHookTransform.GetComponent<SpriteRenderer>();
+            }
+
+            if (_fishingCameraController == null)
+            {
+                var mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
+                }
+
+                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
             }
         }
 
@@ -1486,6 +1512,33 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(0.1f, _demoDeepReelSpeedMultiplier);
+        }
+
+        private void ApplyScene8CameraFollowOverride(bool active)
+        {
+            if (_fishingCameraController == null)
+            {
+                var mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
+                }
+
+                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
+            }
+
+            if (_fishingCameraController == null)
+            {
+                return;
+            }
+
+            var followLerpScale = active
+                ? Mathf.Max(0.1f, _demoLevel4ReelCameraFollowLerpScale)
+                : 1f;
+            var hookViewportY = active
+                ? Mathf.Clamp01(_demoLevel4ReelCameraHookViewportY)
+                : -1f;
+            _fishingCameraController.SetTutorialHookFollowOverride(active, followLerpScale, hookViewportY);
         }
 
         private void RestoreDemoHookDepthOverride()
@@ -1796,6 +1849,17 @@ namespace RavenDevOps.Fishing.Fishing
 
             _inputMapController ??= GetComponent<InputActionMapController>();
             _inputMapController ??= FindAnyObjectByType<InputActionMapController>(FindObjectsInactive.Include);
+
+            if (_fishingCameraController == null)
+            {
+                var mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
+                }
+
+                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
+            }
 
             if (_hudOverlay == null)
             {

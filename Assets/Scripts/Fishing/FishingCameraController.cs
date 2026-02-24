@@ -29,6 +29,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _reducedMotionSizeLerpScale = 0.4f;
 
         private Camera _camera;
+        private bool _tutorialHookFollowOverrideActive;
+        private float _tutorialFollowLerpScale = 1f;
+        private float _tutorialHookViewportYOverride = -1f;
 
         private void Awake()
         {
@@ -52,6 +55,10 @@ namespace RavenDevOps.Fishing.Fishing
             var followLerp = reducedMotion
                 ? Mathf.Max(0.01f, _followLerp * Mathf.Clamp(_reducedMotionFollowScale, 0.1f, 1f))
                 : Mathf.Max(0.01f, _followLerp);
+            if (_tutorialHookFollowOverrideActive)
+            {
+                followLerp *= Mathf.Max(0.1f, _tutorialFollowLerpScale);
+            }
             var desired = transform.position;
             var targetSize = _camera.orthographic ? ResolveTargetOrthoSize() : _camera.orthographicSize;
             if (_camera.orthographic)
@@ -89,6 +96,15 @@ namespace RavenDevOps.Fishing.Fishing
             _shipViewportY = 0.5f;
         }
 
+        public void SetTutorialHookFollowOverride(bool enabled, float followLerpScale = 1f, float hookViewportY = -1f)
+        {
+            _tutorialHookFollowOverrideActive = enabled;
+            _tutorialFollowLerpScale = Mathf.Max(0.1f, followLerpScale);
+            _tutorialHookViewportYOverride = enabled
+                ? Mathf.Clamp01(hookViewportY)
+                : -1f;
+        }
+
         private float ResolveTargetOrthoSize()
         {
             var depthFromShip = Mathf.Max(0f, _ship.position.y - _hook.position.y);
@@ -109,7 +125,9 @@ namespace RavenDevOps.Fishing.Fishing
         {
             var shipViewportY = Mathf.Clamp(_shipViewportY, 0.5f, 0.95f);
             var hookViewportMinY = Mathf.Clamp(_hookViewportMinY, 0.01f, shipViewportY - 0.1f);
-            var deepFollowHookViewportY = Mathf.Clamp(_deepFollowHookViewportY, hookViewportMinY, shipViewportY - 0.08f);
+            var deepFollowHookViewportY = _tutorialHookFollowOverrideActive && _tutorialHookViewportYOverride >= 0f
+                ? Mathf.Clamp(_tutorialHookViewportYOverride, hookViewportMinY, shipViewportY - 0.08f)
+                : Mathf.Clamp(_deepFollowHookViewportY, hookViewportMinY, shipViewportY - 0.08f);
             var depthFromShip = Mathf.Max(0f, _ship.position.y - _hook.position.y);
             var depthRatio = Mathf.Clamp01(depthFromShip / Mathf.Max(0.1f, _maxTrackedDepth));
             var baseBlend = Mathf.Clamp01(_hookFollowBlend) * depthRatio;
@@ -123,7 +141,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             var anchorY = _ship.position.y - ((shipViewportY - 0.5f) * 2f * orthoSize);
             hookAlignedY = _hook.position.y + ((0.5f - targetHookViewportY) * 2f * orthoSize);
-            var blend = Mathf.Clamp01(baseBlend + ((1f - baseBlend) * deepFollowRatio));
+            var blend = _tutorialHookFollowOverrideActive
+                ? 1f
+                : Mathf.Clamp01(baseBlend + ((1f - baseBlend) * deepFollowRatio));
             return Mathf.Lerp(anchorY, hookAlignedY, blend);
         }
     }
