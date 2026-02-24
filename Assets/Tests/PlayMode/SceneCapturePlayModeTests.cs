@@ -156,6 +156,9 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var cinematicCanvas = FindSceneObject("CinematicCanvas");
             Assert.That(cinematicCanvas, Is.Not.Null, "Expected cinematic canvas.");
             Assert.That(FindSceneObject("HarborCanvas"), Is.Null, "Cinematic scene should not compose harbor HUD.");
+            Assert.That(GameObject.Find("MainMenuCanvas"), Is.Null, "Cinematic scene should not display main-menu UI.");
+            Assert.That(GameObject.Find("BootCanvas"), Is.Null, "Cinematic scene should not display boot UI.");
+            Assert.That(GameObject.Find("FishingCanvas"), Is.Null, "Cinematic scene should not display fishing HUD.");
 
             var backdropFar = FindSceneObject("BackdropFar");
             var backdropVeil = FindSceneObject("BackdropVeil");

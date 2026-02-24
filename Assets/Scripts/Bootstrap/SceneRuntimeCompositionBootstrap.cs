@@ -18,6 +18,13 @@ namespace RavenDevOps.Fishing.Core
     public static class SceneRuntimeCompositionBootstrap
     {
         private const string RuntimeRootName = "__SceneRuntime";
+        private static readonly string[] NonCinematicCanvasNames =
+        {
+            "BootCanvas",
+            "MainMenuCanvas",
+            "HarborCanvas",
+            "FishingCanvas"
+        };
         private static bool _initialized;
         private static Font _defaultFont;
         private static TMP_FontAsset _defaultTmpFontAsset;
@@ -99,6 +106,7 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            SuppressLeakedNonCinematicUi();
             HideHarborVisualArtifactsFromCinematic(scene);
             NormalizeCinematicBackdrop(scene);
             var canvas = CreateCanvas(root.transform, "CinematicCanvas", 250);
@@ -111,6 +119,47 @@ namespace RavenDevOps.Fishing.Core
             var controller = GetOrAddComponent<CinematicSceneFlowController>(root);
             controller.Configure(status);
             EnsurePerfSanityRunner(root, canvas.transform, "CinematicPerfLabel");
+        }
+
+        private static void SuppressLeakedNonCinematicUi()
+        {
+            var canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < canvases.Length; i++)
+            {
+                var canvas = canvases[i];
+                if (canvas == null || canvas.gameObject == null)
+                {
+                    continue;
+                }
+
+                if (!IsNonCinematicCanvasName(canvas.gameObject.name))
+                {
+                    continue;
+                }
+
+                if (canvas.gameObject.activeSelf)
+                {
+                    canvas.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private static bool IsNonCinematicCanvasName(string canvasName)
+        {
+            if (string.IsNullOrWhiteSpace(canvasName))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < NonCinematicCanvasNames.Length; i++)
+            {
+                if (string.Equals(canvasName, NonCinematicCanvasNames[i], System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void HideHarborVisualArtifactsFromCinematic(Scene scene)
