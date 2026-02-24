@@ -104,6 +104,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel4ReelCameraFollowLerpScale = 1.35f;
         [SerializeField] private float _demoLevel4ReelCameraHookViewportY = 0.3f;
         [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 5.2f;
+        [SerializeField] private float _demoReelTransitionLeadSeconds = 0.05f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
         [SerializeField] private Vector2 _demoLevel5LightRadiiMeters = new Vector2(30f, 15f);
         [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
@@ -758,13 +759,12 @@ namespace RavenDevOps.Fishing.Fishing
                     ApplyTutorialDepthPreview(enabled: true, level4CurrentDepth);
                     UpdateDemoHookedFishFade(level4ReelStartDepth, level4ReelUpTargetDepth, level4ReelSpeedMultiplier);
                     var level4ReeledDistance = Mathf.Max(0f, level4ReelStartDepth - level4CurrentDepth);
-                    if (level4ReeledDistance >= level4ReelDistanceBeforeTransition - 0.05f
+                    var level4TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level4ReelSpeedMultiplier);
+                    if (level4ReeledDistance >= Mathf.Max(0f, level4ReelDistanceBeforeTransition - level4TransitionLeadMeters)
                         || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds)))
                     {
-                        if (QueueDemoPhaseTransition(DemoAutoplayPhase.Level5DeepDarkInfo, _demoSceneEndPauseSeconds))
-                        {
-                            ResolveDemoFish(caught: true);
-                        }
+                        ResolveDemoFish(caught: true);
+                        StartDemoPhase(DemoAutoplayPhase.Level5DeepDarkInfo);
                     }
                     break;
                 case DemoAutoplayPhase.Level5DeepDarkInfo:
@@ -822,15 +822,16 @@ namespace RavenDevOps.Fishing.Fishing
                     var level5ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel5ReelSpeedMultiplier);
                     MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, level5ReelSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, _demoLevel5LightRadiiMeters);
-                    ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+                    var level5CurrentDepth = ResolveDemoHookDepthMeters();
+                    ApplyTutorialDepthPreview(enabled: true, level5CurrentDepth);
                     UpdateDemoHookedFishFade(_demoLevel5ReelStartDepthMeters, level5ReelUpTargetDepth, level5ReelSpeedMultiplier);
-                    if (Mathf.Abs(ResolveDemoHookDepthMeters() - level5ReelUpTargetDepth) <= 0.08f
+                    var level5RemainingDepthMeters = Mathf.Max(0f, level5CurrentDepth - level5ReelUpTargetDepth);
+                    var level5TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level5ReelSpeedMultiplier);
+                    if (level5RemainingDepthMeters <= level5TransitionLeadMeters
                         || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel5ReelMaxPhaseSeconds)))
                     {
-                        if (QueueDemoPhaseTransition(DemoAutoplayPhase.FinishInfo, _demoSceneEndPauseSeconds))
-                        {
-                            ResolveDemoFish(caught: true);
-                        }
+                        ResolveDemoFish(caught: true);
+                        StartDemoPhase(DemoAutoplayPhase.FinishInfo);
                     }
                     break;
                 case DemoAutoplayPhase.FinishInfo:
@@ -1512,6 +1513,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(0.1f, _demoDeepReelSpeedMultiplier);
+        }
+
+        private float ResolveDemoReelTransitionLeadMeters(float reelSpeedMultiplier)
+        {
+            var reelSpeedMetersPerSecond = Mathf.Max(0.1f, _demoHookMoveSpeed * Mathf.Max(0.1f, reelSpeedMultiplier));
+            var leadBySpeed = reelSpeedMetersPerSecond * Mathf.Max(0f, _demoReelTransitionLeadSeconds);
+            return Mathf.Max(0.35f, leadBySpeed);
         }
 
         private void ApplyScene8CameraFollowOverride(bool active)
