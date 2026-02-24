@@ -54,7 +54,7 @@ namespace RavenDevOps.Fishing.UI
         {
             EnsureSaveManager();
             _saveManager?.RequestIntroTutorialReplay();
-            _orchestrator?.RequestReturnToHarbor();
+            _orchestrator?.RequestOpenIntroReplayFromSettings();
             RefreshStatus();
         }
 

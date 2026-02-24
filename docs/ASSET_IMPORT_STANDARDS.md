@@ -28,6 +28,22 @@ Define stable texture/audio import defaults to reduce memory and performance reg
 - `Filter Mode`: `Bilinear`
 - Atlas target max size baseline: `4096`
 
+### Gameplay Animation Sprite Sheets (Fish/Ship/Hook)
+- Standard reference: `docs/SPRITE_SHEET_STANDARD.md`
+- Recommended path scope: `Assets/Art/Sheets/Fishing/*.png`
+- `Texture Type`: `Sprite (2D and UI)`
+- `Sprite Mode`: `Multiple`
+- `sRGB`: enabled
+- `Alpha Is Transparency`: enabled
+- `Mip Maps`: disabled
+- `Read/Write`: disabled
+- `Wrap Mode`: `Clamp`
+- `Filter Mode`: `Bilinear`
+- Max size guidance:
+  - fish/hook sheets: up to `2048`
+  - ship sheets: up to `4096`
+  - shop icon sheets: up to `1024`
+
 ### SpriteAtlas Assets
 - Path scope: `Assets/Art/Atlases/Icons/*.spriteatlas`
 - `Enable Rotation`: false

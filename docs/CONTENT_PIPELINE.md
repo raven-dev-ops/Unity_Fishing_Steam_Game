@@ -5,6 +5,7 @@
 - Use stable string IDs (never display names) for save compatibility.
 - Content drops should avoid code changes whenever possible.
 - Follow import optimization baseline in `docs/ASSET_IMPORT_STANDARDS.md`.
+- Follow gameplay sprite-sheet baseline in `docs/SPRITE_SHEET_STANDARD.md`.
 
 ## Primary Assets
 - Config root: `GameConfigSO`
@@ -31,6 +32,35 @@
   - Sheets: `Assets/Art/Sheets/Icons/icons_<category>_sheet_v01.png`
   - Atlases: `Assets/Art/Atlases/Icons/icons_<category>.spriteatlas`
 - Rebuild is deterministic from `Assets/Art/Source/art_manifest.json` and cleans stale generated sheet/atlas assets.
+
+## Gameplay Animation Sprite Sheet Workflow
+- Standard reference: `docs/SPRITE_SHEET_STANDARD.md`
+- Source bundle:
+  - `fishing_sprite_assets_placeholders_and_tools/tools/spritesheet_packer.py`
+  - `fishing_sprite_assets_placeholders_and_tools/placeholders/`
+- Recommended wrapper:
+  - `.\scripts\sprite-sheet-packer.ps1`
+- Recommended output target for gameplay sheets:
+  - `Assets/Art/Sheets/Fishing/`
+- Keep JSON sidecar metadata next to each sheet (`<sheet>.json`) when frame maps are needed by runtime or tooling.
+- Example (single folder):
+```powershell
+.\scripts\sprite-sheet-packer.ps1 `
+  -Command pack `
+  -InputPath .\frames\hook\idle `
+  -Output .\Assets\Art\Sheets\Fishing\hook_basic_idle.png `
+  -Json .\Assets\Art\Sheets\Fishing\hook_basic_idle.json `
+  -Columns 8
+```
+- Example (rows for fish states):
+```powershell
+.\scripts\sprite-sheet-packer.ps1 `
+  -Command pack-rows `
+  -Rows swim=.\frames\fish\cod\swim,caught=.\frames\fish\cod\caught,escape=.\frames\fish\cod\escape `
+  -Output .\Assets\Art\Sheets\Fishing\fish_cod.png `
+  -Json .\Assets\Art\Sheets\Fishing\fish_cod.json `
+  -Columns 8
+```
 
 ## Validation Gate
 1. Add new definitions to `GameConfigSO`.

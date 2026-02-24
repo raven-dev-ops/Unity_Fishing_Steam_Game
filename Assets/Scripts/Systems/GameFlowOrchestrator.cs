@@ -9,6 +9,13 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class GameFlowOrchestrator : MonoBehaviour
     {
+        private enum IntroReplayExitRoute
+        {
+            None = 0,
+            MainMenu = 1,
+            MainMenuSettings = 2
+        }
+
         private enum FishingTutorialExitRoute
         {
             None = 0,
@@ -26,7 +33,9 @@ namespace RavenDevOps.Fishing.Core
 
         private Coroutine _activeLoadRoutine;
         private bool _eventsBound;
+        private IntroReplayExitRoute _pendingIntroReplayExitRoute = IntroReplayExitRoute.None;
         private FishingTutorialExitRoute _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.None;
+        private bool _openSettingsAfterMainMenuLoad;
         private bool _openProfileAfterMainMenuLoad;
 
         public static GameFlowOrchestrator Instance => _instance;
@@ -190,6 +199,12 @@ namespace RavenDevOps.Fishing.Core
             }
 
             SetInputContext(postLoadContext);
+            if (_openSettingsAfterMainMenuLoad && _gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.MainMenu)
+            {
+                yield return null;
+                TryOpenMainMenuSettingsPanel();
+            }
+
             if (_openProfileAfterMainMenuLoad && _gameFlowManager != null && _gameFlowManager.CurrentState == GameFlowState.MainMenu)
             {
                 yield return null;
@@ -235,7 +250,34 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestOpenCinematic()
         {
+            _pendingIntroReplayExitRoute = IntroReplayExitRoute.MainMenu;
             _gameFlowManager?.SetState(GameFlowState.Cinematic);
+        }
+
+        public void RequestOpenIntroReplayFromSettings()
+        {
+            _pendingIntroReplayExitRoute = IntroReplayExitRoute.MainMenuSettings;
+            _gameFlowManager?.SetState(GameFlowState.Cinematic);
+        }
+
+        public void RequestCompleteIntroFlow()
+        {
+            var exitRoute = _pendingIntroReplayExitRoute;
+            _pendingIntroReplayExitRoute = IntroReplayExitRoute.None;
+
+            switch (exitRoute)
+            {
+                case IntroReplayExitRoute.MainMenuSettings:
+                    _openProfileAfterMainMenuLoad = false;
+                    _openSettingsAfterMainMenuLoad = true;
+                    _gameFlowManager?.SetState(GameFlowState.MainMenu);
+                    return;
+                case IntroReplayExitRoute.MainMenu:
+                case IntroReplayExitRoute.None:
+                default:
+                    _gameFlowManager?.SetState(GameFlowState.MainMenu);
+                    return;
+            }
         }
 
         public void RequestOpenFishing()
@@ -263,6 +305,7 @@ namespace RavenDevOps.Fishing.Core
             switch (exitRoute)
             {
                 case FishingTutorialExitRoute.MainMenuProfile:
+                    _openSettingsAfterMainMenuLoad = false;
                     _openProfileAfterMainMenuLoad = true;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
@@ -349,6 +392,42 @@ namespace RavenDevOps.Fishing.Core
             }
 
             _openProfileAfterMainMenuLoad = false;
+        }
+
+        private void TryOpenMainMenuSettingsPanel()
+        {
+            if (!_openSettingsAfterMainMenuLoad)
+            {
+                return;
+            }
+
+            var openedSettings = false;
+            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                var candidate = candidates[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                var candidateType = candidate.GetType();
+                if (!string.Equals(candidateType.FullName, "RavenDevOps.Fishing.UI.MainMenuController", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                candidate.SendMessage("OpenSettings", SendMessageOptions.DontRequireReceiver);
+                openedSettings = true;
+                break;
+            }
+
+            if (!openedSettings)
+            {
+                Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Settings panel after intro replay return.");
+            }
+
+            _openSettingsAfterMainMenuLoad = false;
         }
     }
 }

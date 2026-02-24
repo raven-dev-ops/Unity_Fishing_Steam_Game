@@ -31,6 +31,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - Batch asset import audit: `RavenDevOps.Fishing.EditorTools.AssetImportComplianceRunner.ValidateAssetImportsBatchMode`
 - Batch sprite sheet/atlas rebuild: `RavenDevOps.Fishing.EditorTools.SpriteSheetAtlasWorkflow.RebuildSheetsAndAtlasesBatchMode`
 - Project CLI wrapper: `scripts/unity-cli.ps1` (`build`, `validate`, `rebuild-sheets`, `test-edit`, `test-play`) with `-BuildProfile Dev|QA|Release`
+- Gameplay sprite-sheet packer wrapper: `scripts/sprite-sheet-packer.ps1`
 - CI workflows are defined under `.github/workflows/`.
 - Perf budget parser workflow: `.github/workflows/ci-perf-budget.yml` (auto-ingests captured logs from `PerfLogs/**` and supports manual `explicit_log_file` override).
 - Memory + Addressables duplication gates: `.github/workflows/ci-memory-duplication.yml`.
@@ -90,6 +91,7 @@ If Unity is installed in a custom path, set `UNITY_EDITOR_PATH` to `Unity.exe` b
 - Catch log baseline: `docs/CATCH_LOG.md`
 - Crash diagnostics/privacy: `docs/CRASH_REPORTING.md`
 - Content pipeline: `docs/CONTENT_PIPELINE.md`
+- Gameplay sprite-sheet standard: `docs/SPRITE_SHEET_STANDARD.md`
 - Content lock checklist: `docs/CONTENT_LOCK_CHECKLIST.md`
 - Content lock audit report (2026-02-21): `docs/CONTENT_LOCK_AUDIT_REPORT_2026-02-21.md`
 - Save migration rehearsal: `docs/SAVE_MIGRATION_REHEARSAL.md`

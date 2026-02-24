@@ -1,0 +1,30 @@
+{
+  "cell": {
+    "w": 512,
+    "h": 512
+  },
+  "columns": 2,
+  "rows": 1,
+  "frames": [
+    {
+      "name": "ship_basic",
+      "index": 0,
+      "cell": {
+        "x": 0,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "name": "ship_fast",
+      "index": 1,
+      "cell": {
+        "x": 512,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    }
+  ]
+}

@@ -9,6 +9,7 @@ namespace RavenDevOps.Fishing.Core
     public sealed class CinematicSceneFlowController : MonoBehaviour
     {
         [SerializeField] private GameFlowManager _gameFlowManager;
+        [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private InputContextRouter _inputContextRouter;
         [SerializeField] private Button _skipIntroButton;
@@ -42,6 +43,7 @@ namespace RavenDevOps.Fishing.Core
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputContextRouter, this, warnIfMissing: false);
         }
@@ -243,7 +245,15 @@ namespace RavenDevOps.Fishing.Core
                 }
             }
 
-            _gameFlowManager?.SetState(GameFlowState.MainMenu);
+            if (_orchestrator != null)
+            {
+                _orchestrator.RequestCompleteIntroFlow();
+            }
+            else
+            {
+                _gameFlowManager?.SetState(GameFlowState.MainMenu);
+            }
+
             _transitionRoutine = null;
         }
 

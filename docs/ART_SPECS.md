@@ -32,6 +32,22 @@
   - `Assets/Art/Sheets/Icons/`
   - `Assets/Art/Atlases/Icons/`
 
+## Gameplay Sprite Sheet Standard
+- Use `docs/SPRITE_SHEET_STANDARD.md` as the baseline for fish/ship/hook animation sheets and shop icon sheets.
+- Canonical bundle location:
+  - `fishing_sprite_assets_placeholders_and_tools/`
+- Placeholder references:
+  - `fishing_sprite_assets_placeholders_and_tools/placeholders/`
+- Tooling:
+  - wrapper: `.\scripts\sprite-sheet-packer.ps1`
+  - direct: `python .\fishing_sprite_assets_placeholders_and_tools\tools\spritesheet_packer.py`
+
+Naming baseline:
+- fish: `fish_<id>.png`
+- ship: `ship_<id>_idle.png`
+- hook: `hook_<id>_idle.png`
+- shop icons: `shop_icons_<category>.png`
+
 ## Import Baseline
 - Follow import policy in `docs/ASSET_IMPORT_STANDARDS.md`.
 - UI sprites/icons:

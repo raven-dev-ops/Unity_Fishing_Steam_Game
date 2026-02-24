@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "image": "ship_source_icons_sheet_v01.png",
+    "size": {
+      "w": 4096,
+      "h": 512
+    },
+    "cell": {
+      "w": 512,
+      "h": 512
+    },
+    "columns": 8,
+    "rows": 1,
+    "margin": 0,
+    "spacing": 0,
+    "source": "Assets\\Art\\Source\\Icons\\Ships"
+  },
+  "animations": {
+    "default": {
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    }
+  },
+  "frames": [
+    {
+      "index": 0,
+      "filename": "ship_coastal_runner_v01.png",
+      "cell": {
+        "x": 0,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 1,
+      "filename": "ship_icon_coastal_v01.png",
+      "cell": {
+        "x": 512,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 512,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 2,
+      "filename": "ship_lv1_v01.png",
+      "cell": {
+        "x": 1024,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 1024,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 3,
+      "filename": "ship_lv2_v01.png",
+      "cell": {
+        "x": 1536,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 1536,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 4,
+      "filename": "ship_lv3_v01.png",
+      "cell": {
+        "x": 2048,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 2048,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 5,
+      "filename": "ship_lvl1_basic_v01.png",
+      "cell": {
+        "x": 2560,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 2560,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    },
+    {
+      "index": 6,
+      "filename": "ship_valid_v01.png",
+      "cell": {
+        "x": 3072,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      },
+      "frame": {
+        "x": 3072,
+        "y": 0,
+        "w": 512,
+        "h": 512
+      }
+    }
+  ]
+}
