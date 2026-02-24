@@ -17,10 +17,13 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private string _titleCardLabel = "Raven DevOps Fishing";
         [SerializeField, Min(0.05f)] private float _titleFadeToBlackSeconds = 0.35f;
         [SerializeField, Min(0f)] private float _titleHoldSeconds = 1.35f;
+        [SerializeField, Min(0f)] private float _inputDebounceSeconds = 0.3f;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
         private Coroutine _transitionRoutine;
+        private float _inputEnabledAt;
+        private bool _awaitingInitialInputRelease;
         private bool _advanced;
 
         public void Configure(
@@ -44,6 +47,8 @@ namespace RavenDevOps.Fishing.Core
         private void OnEnable()
         {
             _advanced = false;
+            _inputEnabledAt = Time.unscaledTime + Mathf.Max(0f, _inputDebounceSeconds);
+            _awaitingInitialInputRelease = true;
             _inputContextRouter?.SetContext(InputContext.UI);
             _inputMapController?.ApplyContext(InputContext.UI);
             ResetTitleCardOverlayVisual();
@@ -67,6 +72,21 @@ namespace RavenDevOps.Fishing.Core
         private void Update()
         {
             if (_advanced)
+            {
+                return;
+            }
+
+            if (_awaitingInitialInputRelease)
+            {
+                if (AreAnyIntroInputsHeld())
+                {
+                    return;
+                }
+
+                _awaitingInitialInputRelease = false;
+            }
+
+            if (Time.unscaledTime < _inputEnabledAt)
             {
                 return;
             }
@@ -112,6 +132,31 @@ namespace RavenDevOps.Fishing.Core
                 && (Mouse.current.leftButton.wasPressedThisFrame
                     || Mouse.current.rightButton.wasPressedThisFrame
                     || Mouse.current.middleButton.wasPressedThisFrame))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool AreAnyIntroInputsHeld()
+        {
+            RefreshActionsIfNeeded();
+            if ((_submitAction != null && _submitAction.IsPressed())
+                || (_cancelAction != null && _cancelAction.IsPressed()))
+            {
+                return true;
+            }
+
+            if (Keyboard.current != null && Keyboard.current.anyKey.isPressed)
+            {
+                return true;
+            }
+
+            if (Mouse.current != null
+                && (Mouse.current.leftButton.isPressed
+                    || Mouse.current.rightButton.isPressed
+                    || Mouse.current.middleButton.isPressed))
             {
                 return true;
             }
