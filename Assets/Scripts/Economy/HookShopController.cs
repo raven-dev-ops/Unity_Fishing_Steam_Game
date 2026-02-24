@@ -59,28 +59,25 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var wasOwned = save.ownedHooks.Contains(hookId);
+            if (wasOwned)
+            {
+                return true;
+            }
+
             if (!wasOwned && !_unlockAllItemsForQa && !HasRequiredPreviousTierOwnership(hookId, save, out var requiredHookId))
             {
                 Debug.Log($"HookShopController: '{hookId}' requires prior tier '{requiredHookId}' ownership.");
                 return false;
             }
 
-            if (!wasOwned)
+            if (save.copecs < price)
             {
-                if (save.copecs < price)
-                {
-                    return false;
-                }
-
-                save.copecs -= price;
-                save.ownedHooks.Add(hookId);
+                return false;
             }
 
-            save.equippedHookId = hookId;
-            if (!wasOwned)
-            {
-                _saveManager.RecordPurchase(hookId, price, saveAfterRecord: false);
-            }
+            save.copecs -= price;
+            save.ownedHooks.Add(hookId);
+            _saveManager.RecordPurchase(hookId, price, saveAfterRecord: false);
 
             _saveManager.Save();
             return true;
