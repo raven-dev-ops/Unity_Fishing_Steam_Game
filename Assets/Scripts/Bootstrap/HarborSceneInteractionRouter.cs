@@ -1246,11 +1246,12 @@ namespace RavenDevOps.Fishing.Core
             }
 
             _fisheryCardFishIds.Clear();
+            var seenFishIds = new HashSet<string>(StringComparer.Ordinal);
             if (_catalogService != null && _catalogService.FishById != null)
             {
                 foreach (var pair in _catalogService.FishById)
                 {
-                    if (string.IsNullOrWhiteSpace(pair.Key) || _fisheryCardFishIds.Contains(pair.Key))
+                    if (string.IsNullOrWhiteSpace(pair.Key) || !seenFishIds.Add(pair.Key))
                     {
                         continue;
                     }
@@ -1265,7 +1266,7 @@ namespace RavenDevOps.Fishing.Core
                 for (var i = 0; i < catchLog.Count; i++)
                 {
                     var entry = catchLog[i];
-                    if (entry == null || string.IsNullOrWhiteSpace(entry.fishId) || _fisheryCardFishIds.Contains(entry.fishId))
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.fishId) || !seenFishIds.Add(entry.fishId))
                     {
                         continue;
                     }
@@ -2041,9 +2042,9 @@ namespace RavenDevOps.Fishing.Core
 
         private static string FormatUtcTimestampToLocalTime(string timestampUtc)
         {
-            if (DateTime.TryParse(timestampUtc, out var parsed))
+            if (DateTimeUtility.TryParseUtcTimestampToLocal(timestampUtc, out var parsedLocal))
             {
-                return parsed.ToLocalTime().ToString("HH:mm");
+                return parsedLocal.ToString("HH:mm");
             }
 
             return "--:--";
@@ -2051,9 +2052,9 @@ namespace RavenDevOps.Fishing.Core
 
         private static string FormatUtcTimestampToLocalDate(string timestampUtc)
         {
-            if (DateTime.TryParse(timestampUtc, out var parsed))
+            if (DateTimeUtility.TryParseUtcTimestampToLocal(timestampUtc, out var parsedLocal))
             {
-                return parsed.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+                return parsedLocal.ToString("yyyy-MM-dd HH:mm");
             }
 
             return "Unknown";

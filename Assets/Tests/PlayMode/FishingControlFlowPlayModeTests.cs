@@ -15,14 +15,17 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var root = new GameObject("FishingControlFlow_AutoCast");
             var stateMachine = root.AddComponent<FishingActionStateMachine>();
             var castController = root.AddComponent<FishingHookCastDropController>();
+            Object.DontDestroyOnLoad(root);
 
             var ship = new GameObject("FishingControlFlow_Ship").transform;
             ship.position = Vector3.zero;
+            Object.DontDestroyOnLoad(ship.gameObject);
 
             var hookGo = new GameObject("FishingControlFlow_Hook");
             hookGo.transform.position = new Vector3(0f, -0.8f, 0f);
             var hookController = hookGo.AddComponent<HookMovementController>();
             hookController.ConfigureShipTransform(ship);
+            Object.DontDestroyOnLoad(hookGo);
 
             SetPrivateField(castController, "_autoDropSpeed", 80f);
             SetPrivateField(castController, "_initialAutoCastDepth", 25f);

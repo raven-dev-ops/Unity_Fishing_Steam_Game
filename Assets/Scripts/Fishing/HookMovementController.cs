@@ -46,8 +46,19 @@ namespace RavenDevOps.Fishing.Fishing
         {
             get
             {
-                var surfaceY = ResolveSurfaceY();
-                return Mathf.Max(0f, surfaceY - transform.position.y);
+                if (!this)
+                {
+                    return 0f;
+                }
+
+                var thisTransform = transform;
+                if (thisTransform == null)
+                {
+                    return 0f;
+                }
+
+                var surfaceY = ResolveSurfaceY(thisTransform);
+                return Mathf.Max(0f, surfaceY - thisTransform.position.y);
             }
         }
         public Transform ShipTransform => _shipTransform;
@@ -297,14 +308,28 @@ namespace RavenDevOps.Fishing.Fishing
             return Mathf.Clamp(axis, -1f, 1f);
         }
 
-        private float ResolveSurfaceY()
+        private float ResolveSurfaceY(Transform fallbackTransform = null)
         {
             if (_shipTransform != null)
             {
                 return _shipTransform.position.y;
             }
 
-            return transform.position.y + Mathf.Max(0.1f, _minDepthBelowSurface);
+            if (fallbackTransform == null)
+            {
+                if (!this)
+                {
+                    return Mathf.Max(0.1f, _minDepthBelowSurface);
+                }
+
+                fallbackTransform = transform;
+                if (fallbackTransform == null)
+                {
+                    return Mathf.Max(0.1f, _minDepthBelowSurface);
+                }
+            }
+
+            return fallbackTransform.position.y + Mathf.Max(0.1f, _minDepthBelowSurface);
         }
 
         private void ApplyDepthBoundsFromTier()

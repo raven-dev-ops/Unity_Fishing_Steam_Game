@@ -901,7 +901,7 @@ namespace RavenDevOps.Fishing.Save
 
         private string CurrentLocalDate()
         {
-            return TimeProvider.LocalNow.ToString("yyyy-MM-dd");
+            return DateTimeUtility.ToLocalDateString(TimeProvider.LocalNow);
         }
 
         private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float depthMeters, float weightKg, int valueCopecs, string failReason)

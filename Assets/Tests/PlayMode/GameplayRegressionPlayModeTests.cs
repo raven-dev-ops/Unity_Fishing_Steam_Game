@@ -78,7 +78,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator PurchaseOwnershipEquipFlow_DeductsCurrencyOnceAndKeepsEquippedState()
+        public IEnumerator PurchaseOwnershipFlow_DeductsCurrencyOnce_AndDefersEquipToShipyard()
         {
             var saveManager = CreateComponent<SaveManager>("SaveManager_PurchaseEquip");
             yield return null;
@@ -93,6 +93,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             yield return null;
 
             var initialCopecs = saveManager.Current.copecs;
+            var initialEquippedHookId = saveManager.Current.equippedHookId;
+            var initialEquippedShipId = saveManager.Current.equippedShipId;
             var hookPurchased = hookShop.BuyOrEquip("hook_test");
             var shipPurchased = boatShop.BuyOrEquip("ship_test");
 
@@ -100,8 +102,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(shipPurchased, Is.True);
             Assert.That(saveManager.Current.ownedHooks, Contains.Item("hook_test"));
             Assert.That(saveManager.Current.ownedShips, Contains.Item("ship_test"));
-            Assert.That(saveManager.Current.equippedHookId, Is.EqualTo("hook_test"));
-            Assert.That(saveManager.Current.equippedShipId, Is.EqualTo("ship_test"));
+            Assert.That(saveManager.Current.equippedHookId, Is.EqualTo(initialEquippedHookId));
+            Assert.That(saveManager.Current.equippedShipId, Is.EqualTo(initialEquippedShipId));
             Assert.That(saveManager.Current.copecs, Is.EqualTo(initialCopecs - 340));
             Assert.That(saveManager.Current.stats.totalPurchases, Is.EqualTo(2));
 
@@ -440,7 +442,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(true);
             yield return null;
 
-            Assert.That(hookLv1Button.interactable, Is.True);
+            Assert.That(hookLv1Button.interactable, Is.False, "Owned tier should not be purchasable.");
             Assert.That(hookLv2Button.interactable, Is.False, "Expected Lv2 to remain locked before unlock conditions are met.");
             Assert.That(hookLv3Button.interactable, Is.False, "Expected Lv3 to remain locked before unlock conditions are met.");
 

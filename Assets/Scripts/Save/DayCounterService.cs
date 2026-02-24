@@ -6,12 +6,17 @@ namespace RavenDevOps.Fishing.Save
     {
         public static int ComputeDayNumber(string careerStartLocalDate)
         {
-            if (!DateTime.TryParse(careerStartLocalDate, out var startDate))
+            return ComputeDayNumber(careerStartLocalDate, DateTime.Now);
+        }
+
+        public static int ComputeDayNumber(string careerStartLocalDate, DateTime localNow)
+        {
+            if (!DateTimeUtility.TryParseLocalDate(careerStartLocalDate, out var startDate))
             {
                 return 1;
             }
 
-            var days = (DateTime.Now.Date - startDate.Date).Days;
+            var days = (localNow.Date - startDate.Date).Days;
             return Math.Max(1, days + 1);
         }
     }

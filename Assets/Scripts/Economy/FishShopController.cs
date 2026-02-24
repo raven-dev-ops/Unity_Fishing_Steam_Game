@@ -46,12 +46,20 @@ namespace RavenDevOps.Fishing.Economy
         [SerializeField] private int _questRequiredCount = 5;
         [SerializeField] private int _questRewardCopecs = 140;
         [SerializeField] private int _maxSaleHistoryEntries = 160;
+        [NonSerialized] private ITimeProvider _timeProvider;
+
+        private ITimeProvider TimeProvider => _timeProvider ??= new UnityTimeProvider();
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _sellSummaryCalculator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+        }
+
+        internal void ConfigureRuntimeDependencies(ITimeProvider timeProvider)
+        {
+            _timeProvider = timeProvider ?? new UnityTimeProvider();
         }
 
         public int SellAll()
@@ -86,7 +94,7 @@ namespace RavenDevOps.Fishing.Economy
             }
 
             var dailyBonusAwarded = 0;
-            var soldAtUtc = DateTime.UtcNow.ToString("O");
+            var soldAtUtc = TimeProvider.UtcNow.ToString("O");
             AppendSaleHistoryAndProgress(save, summary, soldAtUtc, ref dailyBonusAwarded);
 
             result.dailyBonusEarnedCopecs = Mathf.Max(0, dailyBonusAwarded);
@@ -102,6 +110,11 @@ namespace RavenDevOps.Fishing.Economy
         public SellSummary PreviewSellAll()
         {
             if (_saveManager == null)
+            {
+                return new SellSummary();
+            }
+
+            if (_saveManager.Current == null)
             {
                 return new SellSummary();
             }
@@ -362,7 +375,7 @@ namespace RavenDevOps.Fishing.Economy
                 fishIds.Add("fish_cod");
             }
 
-            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var today = DateTimeUtility.ToLocalDateString(TimeProvider.LocalNow);
 
             var daily = save.dailyFishBonus;
             if (!string.Equals(daily.localDate, today, StringComparison.Ordinal))
@@ -473,11 +486,12 @@ namespace RavenDevOps.Fishing.Economy
         private List<string> ResolveOrderedFishIds(SaveDataV1 save)
         {
             var ids = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
             if (_catalogService != null && _catalogService.FishById != null)
             {
                 foreach (var pair in _catalogService.FishById)
                 {
-                    if (string.IsNullOrWhiteSpace(pair.Key) || ids.Contains(pair.Key))
+                    if (string.IsNullOrWhiteSpace(pair.Key) || !seen.Add(pair.Key))
                     {
                         continue;
                     }
@@ -491,7 +505,7 @@ namespace RavenDevOps.Fishing.Economy
                 for (var i = 0; i < save.catchLog.Count; i++)
                 {
                     var entry = save.catchLog[i];
-                    if (entry == null || string.IsNullOrWhiteSpace(entry.fishId) || ids.Contains(entry.fishId))
+                    if (entry == null || string.IsNullOrWhiteSpace(entry.fishId) || !seen.Add(entry.fishId))
                     {
                         continue;
                     }

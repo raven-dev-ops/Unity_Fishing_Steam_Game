@@ -234,9 +234,9 @@ namespace RavenDevOps.Fishing.UI
 
         private static string FormatTime(string timestampUtc)
         {
-            if (DateTime.TryParse(timestampUtc, out var parsed))
+            if (DateTimeUtility.TryParseUtcTimestampToLocal(timestampUtc, out var parsedLocal))
             {
-                return parsed.ToLocalTime().ToString("HH:mm");
+                return parsedLocal.ToString("HH:mm");
             }
 
             return "--:--";
