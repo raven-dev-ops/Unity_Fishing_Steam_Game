@@ -639,7 +639,7 @@ namespace RavenDevOps.Fishing.Core
             var fishButton = CreateButton(actionPanel.transform, "HarborFishShopButton", "Fish Market", new Vector2(0f, -16f), new Vector2(320f, 52f));
             var profileButton = CreateButton(actionPanel.transform, "HarborProfileButton", "Profile", new Vector2(0f, -78f), new Vector2(320f, 52f));
             var sailButton = CreateButton(actionPanel.transform, "HarborSailButton", "Sail Out", new Vector2(0f, -140f), new Vector2(320f, 52f));
-            var exitButton = CreateButton(actionPanel.transform, "HarborExitButton", "Exit", new Vector2(0f, -202f), new Vector2(320f, 50f));
+            var exitButton = CreateButton(actionPanel.transform, "HarborExitButton", "Main Menu", new Vector2(0f, -202f), new Vector2(320f, 50f));
 
             var infoPanel = CreateTopRightPanel(
                 hudRoot.transform,
@@ -763,6 +763,13 @@ namespace RavenDevOps.Fishing.Core
             var harborProfileCatchLogText = CreateTopLeftTmpText(harborProfileCatchLogPanel.transform, "HarborProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 400f));
             var harborProfileBackButton = CreateButton(harborProfilePanel.transform, "HarborProfileBackButton", "Back", new Vector2(280f, -320f), new Vector2(240f, 52f));
             harborProfilePanel.SetActive(false);
+
+            var harborMainMenuConfirmPanel = CreatePanel(hudRoot.transform, "HarborMainMenuConfirmPanel", new Vector2(0f, -8f), new Vector2(560f, 220f), new Color(0.09f, 0.10f, 0.16f, 0.94f));
+            CreateText(harborMainMenuConfirmPanel.transform, "HarborMainMenuConfirmTitle", "Return to Main Menu?", 28, TextAnchor.MiddleCenter, new Vector2(0f, 64f), new Vector2(500f, 56f));
+            CreateText(harborMainMenuConfirmPanel.transform, "HarborMainMenuConfirmHint", "Are you sure you want to leave harbor operations?", 16, TextAnchor.MiddleCenter, new Vector2(0f, 20f), new Vector2(500f, 38f));
+            var harborMainMenuConfirmYesButton = CreateButton(harborMainMenuConfirmPanel.transform, "HarborMainMenuConfirmYesButton", "Yes", new Vector2(-112f, -62f), new Vector2(200f, 46f));
+            var harborMainMenuConfirmNoButton = CreateButton(harborMainMenuConfirmPanel.transform, "HarborMainMenuConfirmNoButton", "No", new Vector2(112f, -62f), new Vector2(200f, 46f));
+            harborMainMenuConfirmPanel.SetActive(false);
 
             var tutorialDialoguePanel = CreatePanel(
                 canvas.transform,
@@ -901,6 +908,7 @@ namespace RavenDevOps.Fishing.Core
                 boatShopPanel,
                 fishShopPanel,
                 harborProfilePanel,
+                harborMainMenuConfirmPanel,
                 hookShopInfo,
                 boatShopInfo,
                 fishShopInfo,
@@ -909,6 +917,7 @@ namespace RavenDevOps.Fishing.Core
                 boatLv1Button.gameObject,
                 fishSellButton.gameObject,
                 harborProfileBackButton.gameObject,
+                harborMainMenuConfirmNoButton.gameObject,
                 sailButton,
                 new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
                 new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
@@ -921,6 +930,7 @@ namespace RavenDevOps.Fishing.Core
             fishButton.onClick.AddListener(router.OnFishShopRequested);
             profileButton.onClick.AddListener(router.OnProfileRequested);
             sailButton.onClick.AddListener(router.OnSailRequested);
+            exitButton.onClick.AddListener(router.OnMainMenuRequested);
             hookLv1Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv1"));
             hookLv2Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv2"));
             hookLv3Button.onClick.AddListener(() => router.OnHookShopItemRequested("hook_lv3"));
@@ -936,13 +946,14 @@ namespace RavenDevOps.Fishing.Core
             fishSellButton.onClick.AddListener(router.OnFishShopSellRequested);
             fishBackButton.onClick.AddListener(router.OnShopBackRequested);
             harborProfileBackButton.onClick.AddListener(router.OnShopBackRequested);
+            harborMainMenuConfirmYesButton.onClick.AddListener(router.OnMainMenuConfirmAccepted);
+            harborMainMenuConfirmNoButton.onClick.AddListener(router.OnMainMenuConfirmDeclined);
 
             var pauseController = GetOrAddComponent<HarborPauseMenuController>(root);
             pauseController.Configure(
                 pauseRoot,
                 hudRoot,
                 pauseResumeButton.gameObject);
-            exitButton.onClick.AddListener(pauseController.OnExitGamePressed);
             pauseResumeButton.onClick.AddListener(pauseController.OnResumePressed);
             pauseMainMenuButton.onClick.AddListener(pauseController.OnMainMenuPressed);
             pauseExitButton.onClick.AddListener(pauseController.OnExitGamePressed);

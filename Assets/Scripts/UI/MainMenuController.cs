@@ -140,8 +140,9 @@ namespace RavenDevOps.Fishing.UI
         public void StartTutorialFromMenu()
         {
             PlaySfx(SfxEvent.UiSelect);
-            _saveManager?.RequestIntroTutorialReplay();
-            _orchestrator?.RequestStartGame();
+            _saveManager?.SetTutorialSeen(true);
+            _saveManager?.RequestFishingLoopTutorialReplay();
+            _orchestrator?.RequestOpenFishingTutorialReplayFromProfile();
         }
 
         public void OpenSettings()
