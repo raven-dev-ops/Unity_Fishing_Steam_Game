@@ -25,6 +25,22 @@ namespace RavenDevOps.Fishing.Core
             "HarborCanvas",
             "FishingCanvas"
         };
+        private static readonly string[] NonCinematicUiMarkerNames =
+        {
+            "HarborHudRoot",
+            "HarborActionPanel",
+            "HarborInfoPanel",
+            "HarborHookShopPanel",
+            "HarborBoatShopPanel",
+            "HarborFishShopPanel",
+            "HarborPausePanel",
+            "HarborTutorialDialoguePanel",
+            "MainMenuPanel",
+            "ProfilePanel",
+            "SettingsPanel",
+            "FishingInfoPanel",
+            "PausePanel"
+        };
         private static bool _initialized;
         private static Font _defaultFont;
         private static TMP_FontAsset _defaultTmpFontAsset;
@@ -132,7 +148,8 @@ namespace RavenDevOps.Fishing.Core
                     continue;
                 }
 
-                if (!IsNonCinematicCanvasName(canvas.gameObject.name))
+                if (!IsNonCinematicCanvasName(canvas.gameObject.name)
+                    && !ContainsSuppressedUiMarker(canvas.transform))
                 {
                     continue;
                 }
@@ -154,6 +171,49 @@ namespace RavenDevOps.Fishing.Core
             for (var i = 0; i < NonCinematicCanvasNames.Length; i++)
             {
                 if (string.Equals(canvasName, NonCinematicCanvasNames[i], System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsSuppressedUiMarker(Transform root)
+        {
+            if (root == null)
+            {
+                return false;
+            }
+
+            if (IsSuppressedUiMarkerName(root.name))
+            {
+                return true;
+            }
+
+            var childCount = root.childCount;
+            for (var i = 0; i < childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (ContainsSuppressedUiMarker(child))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSuppressedUiMarkerName(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < NonCinematicUiMarkerNames.Length; i++)
+            {
+                if (string.Equals(objectName, NonCinematicUiMarkerNames[i], System.StringComparison.Ordinal))
                 {
                     return true;
                 }
@@ -693,7 +753,7 @@ namespace RavenDevOps.Fishing.Core
                 CreateHarborTutorialDialogueLines(),
                 tutorialDialogueBackground);
             var tutorialController = GetOrAddComponent<MermaidTutorialController>(root);
-            tutorialController.Configure(dialogueController, tutorialSkipButton);
+            tutorialController.Configure(dialogueController, tutorialSkipButton, hudRoot);
 
             var interactionController = GetOrAddComponent<HarborInteractionController>(root);
             interactionController.Configure(player.transform, null, interactables, tutorialController);

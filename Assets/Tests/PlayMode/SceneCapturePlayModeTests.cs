@@ -197,6 +197,13 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(harborCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on harbor canvas.");
 
             Assert.That(FindSceneObject("HarborHudRoot"), Is.Not.Null, "Expected harbor HUD root.");
+            var harborHudRoot = FindSceneObject("HarborHudRoot");
+            var harborTutorialController = runtimeRoot.GetComponent<MermaidTutorialController>();
+            if (harborHudRoot != null && harborTutorialController != null && harborTutorialController.IsBlockingInteractions)
+            {
+                Assert.That(harborHudRoot.activeSelf, Is.False, "Harbor operations HUD should stay hidden while intro tutorial is blocking.");
+            }
+
             Assert.That(FindSceneObject("HarborActionPanel"), Is.Not.Null, "Expected harbor action panel.");
             Assert.That(FindSceneObject("HarborHookShopButton"), Is.Not.Null, "Expected harbor hook shop button.");
             Assert.That(FindSceneObject("HarborBoatShopButton"), Is.Not.Null, "Expected harbor boat shop button.");

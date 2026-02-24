@@ -14,6 +14,7 @@ namespace RavenDevOps.Fishing.Harbor
         [SerializeField] private DialogueBubbleController _dialogue;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private Button _skipIntroButton;
+        [SerializeField] private GameObject _blockedUiRoot;
 
         [SerializeField] private bool _isBlockingInteractions;
         private bool _isConfigured;
@@ -21,9 +22,13 @@ namespace RavenDevOps.Fishing.Harbor
 
         public bool IsBlockingInteractions => _isBlockingInteractions;
 
-        public void Configure(DialogueBubbleController dialogue, Button skipIntroButton = null)
+        public void Configure(
+            DialogueBubbleController dialogue,
+            Button skipIntroButton = null,
+            GameObject blockedUiRoot = null)
         {
             _dialogue = dialogue;
+            _blockedUiRoot = blockedUiRoot;
             ConfigureSkipButton(skipIntroButton);
             _isConfigured = _dialogue != null;
             EvaluateTutorialState();
@@ -115,6 +120,7 @@ namespace RavenDevOps.Fishing.Harbor
             _isBlockingInteractions = false;
             _dialogue?.Stop();
             UpdateSkipButtonVisibility();
+            UpdateBlockedUiVisibility();
         }
 
         private void OnSaveDataChanged(SaveDataV1 _)
@@ -135,6 +141,7 @@ namespace RavenDevOps.Fishing.Harbor
             {
                 _isBlockingInteractions = false;
                 UpdateSkipButtonVisibility();
+                UpdateBlockedUiVisibility();
                 return;
             }
 
@@ -158,6 +165,7 @@ namespace RavenDevOps.Fishing.Harbor
             }
 
             UpdateSkipButtonVisibility();
+            UpdateBlockedUiVisibility();
         }
 
         private void RefreshActionsIfNeeded()
@@ -186,6 +194,16 @@ namespace RavenDevOps.Fishing.Harbor
             }
 
             _skipIntroButton.gameObject.SetActive(_isBlockingInteractions);
+        }
+
+        private void UpdateBlockedUiVisibility()
+        {
+            if (_blockedUiRoot == null)
+            {
+                return;
+            }
+
+            _blockedUiRoot.SetActive(!_isBlockingInteractions);
         }
     }
 }
