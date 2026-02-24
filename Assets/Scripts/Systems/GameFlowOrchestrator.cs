@@ -13,7 +13,8 @@ namespace RavenDevOps.Fishing.Core
         {
             None = 0,
             MainMenu = 1,
-            MainMenuSettings = 2
+            MainMenuSettings = 2,
+            MainMenuProfile = 3
         }
 
         private enum FishingTutorialExitRoute
@@ -260,6 +261,12 @@ namespace RavenDevOps.Fishing.Core
             _gameFlowManager?.SetState(GameFlowState.Cinematic);
         }
 
+        public void RequestOpenIntroReplayFromProfile()
+        {
+            _pendingIntroReplayExitRoute = IntroReplayExitRoute.MainMenuProfile;
+            _gameFlowManager?.SetState(GameFlowState.Cinematic);
+        }
+
         public void RequestCompleteIntroFlow()
         {
             var exitRoute = _pendingIntroReplayExitRoute;
@@ -268,8 +275,10 @@ namespace RavenDevOps.Fishing.Core
             switch (exitRoute)
             {
                 case IntroReplayExitRoute.MainMenuSettings:
+                case IntroReplayExitRoute.MainMenuProfile:
+                    _openSettingsAfterMainMenuLoad = false;
                     _openProfileAfterMainMenuLoad = false;
-                    _openSettingsAfterMainMenuLoad = true;
+                    _openProfileAfterMainMenuLoad = true;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
                 case IntroReplayExitRoute.MainMenu:
@@ -388,7 +397,7 @@ namespace RavenDevOps.Fishing.Core
 
             if (!openedProfile)
             {
-                Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Profile panel after fishing tutorial return.");
+                Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Profile panel after flow return.");
             }
 
             _openProfileAfterMainMenuLoad = false;

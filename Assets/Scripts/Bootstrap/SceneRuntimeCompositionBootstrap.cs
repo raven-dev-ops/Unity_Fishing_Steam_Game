@@ -334,6 +334,7 @@ namespace RavenDevOps.Fishing.Core
             HideSceneObjects(
                 scene,
                 "TopBadge",
+                "MenuHeroShip",
                 "MenuHookL1",
                 "MenuHookL2",
                 "MenuFishR1",

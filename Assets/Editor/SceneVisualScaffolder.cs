@@ -302,8 +302,6 @@ namespace RavenDevOps.Fishing.EditorTools
 
         private static void BuildMainMenuScene(Transform root, ref int sorting)
         {
-            CreateSprite("MenuHeroShip", ResolveSprite("ship_lv2", "ship_lv1", "ship_icon_coastal"), new Vector3(0f, -0.95f, 0f), new Vector2(1.65f, 1.65f), sorting++, Color.white, root, 0f, false);
-
             CreateSprite("MenuHookL1", ResolveSprite("hook_lv1", "hook_icon_coastal"), new Vector3(-5.0f, 1.25f, 0f), new Vector2(0.78f, 0.78f), sorting++, new Color(0.88f, 0.97f, 1f, 0.95f), root, 0f, false);
             CreateSprite("MenuHookL2", ResolveSprite("hook_lv2", "hook_lv1"), new Vector3(-5.0f, -0.25f, 0f), new Vector2(0.78f, 0.78f), sorting++, new Color(0.88f, 0.97f, 1f, 0.95f), root, 0f, false);
 
