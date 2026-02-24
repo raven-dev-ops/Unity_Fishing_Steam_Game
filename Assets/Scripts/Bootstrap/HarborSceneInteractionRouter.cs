@@ -861,27 +861,33 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            if (_fishShop == null || _saveManager == null || _saveManager.Current == null)
+            var save = _saveManager != null ? _saveManager.Current : null;
+            if (_fishShop == null || save == null)
             {
                 _fishShopInfoText.text = "Fish market summary unavailable.";
                 return;
             }
 
             var summary = _fishShop.PreviewSellAll();
-            var pendingCount = Mathf.Max(0, summary.itemCount);
             var pendingValue = Mathf.Max(0, summary.totalEarned);
-            if (pendingCount <= 0)
+            var fishCount = CountCargoFish(save);
+            var cargoCapacity = ResolveCargoCapacity(save.equippedShipId);
+            var balance = Mathf.Max(0, save.copecs);
+            if (fishCount <= 0)
             {
                 _fishShopInfoText.text =
-                    $"Balance: {Mathf.Max(0, _saveManager.Current.copecs)} copecs\n" +
+                    $"Balance: {balance} copecs\n" +
+                    $"Cargo hold: 0/{cargoCapacity}\n" +
                     "Cargo is empty. Catch fish before selling.";
                 return;
             }
 
+            var projectedBalance = balance + pendingValue;
             _fishShopInfoText.text =
-                $"Balance: {Mathf.Max(0, _saveManager.Current.copecs)} copecs\n" +
-                $"Cargo ready: {pendingCount} fish\n" +
-                $"Projected payout: {pendingValue} copecs";
+                $"Balance: {balance} copecs\n" +
+                $"Cargo hold: {fishCount}/{cargoCapacity}\n" +
+                $"Projected payout: {pendingValue} copecs\n" +
+                $"Balance after sale: {projectedBalance} copecs";
         }
 
         private void RefreshShipyardDetails()

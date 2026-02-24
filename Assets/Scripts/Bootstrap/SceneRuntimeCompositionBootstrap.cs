@@ -723,21 +723,21 @@ namespace RavenDevOps.Fishing.Core
             var fishShopPanel = CreatePanel(
                 hudRoot.transform,
                 "HarborFishShopPanel",
-                new Vector2(0f, -8f),
-                new Vector2(520f, 430f),
-                new Color(0.05f, 0.12f, 0.21f, 0.90f));
-            CreateText(fishShopPanel.transform, "HarborFishShopTitle", "Fish Market", 30, TextAnchor.MiddleCenter, new Vector2(0f, 156f), new Vector2(448f, 56f));
-            CreateText(fishShopPanel.transform, "HarborFishShopHint", "Review current cargo and sell your catch.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 118f), new Vector2(448f, 34f));
+                new Vector2(0f, 6f),
+                new Vector2(640f, 560f),
+                new Color(0.04f, 0.12f, 0.21f, 0.94f));
+            CreateText(fishShopPanel.transform, "HarborFishShopTitle", "Fish Market", 30, TextAnchor.MiddleCenter, new Vector2(0f, 224f), new Vector2(560f, 56f));
+            CreateText(fishShopPanel.transform, "HarborFishShopHint", "Review current cargo and sell your catch.", 16, TextAnchor.MiddleCenter, new Vector2(0f, 184f), new Vector2(560f, 34f));
             var fishShopInfo = CreateTopLeftText(
                 fishShopPanel.transform,
                 "HarborFishShopInfo",
                 "Loading fish market summary...",
                 17,
                 TextAnchor.UpperLeft,
-                new Vector2(26f, 98f),
-                new Vector2(448f, 126f));
-            var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell Cargo", new Vector2(0f, -62f), new Vector2(318f, 52f));
-            var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -128f), new Vector2(240f, 46f));
+                new Vector2(36f, 126f),
+                new Vector2(568f, 198f));
+            var fishSellButton = CreateButton(fishShopPanel.transform, "HarborFishShopSellButton", "Sell All Cargo", new Vector2(0f, -108f), new Vector2(344f, 54f));
+            var fishBackButton = CreateButton(fishShopPanel.transform, "HarborFishShopBackButton", "Back", new Vector2(0f, -186f), new Vector2(318f, 44f));
             fishShopPanel.SetActive(false);
 
             var shipyardPanel = CreatePanel(
