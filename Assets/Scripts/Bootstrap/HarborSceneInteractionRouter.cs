@@ -192,7 +192,7 @@ namespace RavenDevOps.Fishing.Core
             BindInteractables();
             BindRuntimeEvents();
             CloseShopMenus(selectMainAction: false);
-            SetStatus("Harbor ready. Use the center menu for Profile, Shipyard, Dockyard, Warehouse, and market access.");
+            SetStatus("Harbor ready. Use the center menu for Profile, Shipyard, Dockyard, Warehouse, and Fishery access.");
             PushActivity("Harbor systems online.");
             RefreshSaveSnapshot();
             RefreshShopMenuDetails();
@@ -461,8 +461,8 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_fishShop == null)
             {
-                SetStatus("Fish market is unavailable.");
-                PushActivity("Fish market unavailable.");
+                SetStatus("Fishery is unavailable.");
+                PushActivity("Fishery unavailable.");
                 return;
             }
 
@@ -470,9 +470,9 @@ namespace RavenDevOps.Fishing.Core
                 ShopMenuType.Fish,
                 _fishShopPanel,
                 _fishShopDefaultSelection,
-                "Fish market open. Sell cargo, track daily fish, and manage the Fishing Charter.");
+                "Fishery open. Sell cargo, track daily fish, and manage the Fishing Charter.");
             PlaySfx(SfxEvent.UiSelect);
-            PushActivity("Opened fish market.");
+            PushActivity("Opened fishery.");
             RefreshFishShopDetails();
             SetSelected(_fishShopDefaultSelection);
         }
@@ -705,8 +705,8 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_fishShop == null)
             {
-                SetStatus("Fish market is unavailable.");
-                PushActivity("Fish market unavailable.");
+                SetStatus("Fishery is unavailable.");
+                PushActivity("Fishery unavailable.");
                 return;
             }
 
@@ -715,7 +715,7 @@ namespace RavenDevOps.Fishing.Core
             if (pendingCount <= 0)
             {
                 SetStatus("No fish in cargo to sell.");
-                PushActivity("Fish market: cargo already empty.");
+                PushActivity("Fishery: cargo already empty.");
                 RefreshShopMenuDetails();
                 return;
             }
@@ -726,12 +726,12 @@ namespace RavenDevOps.Fishing.Core
             if (dailyBonus > 0)
             {
                 SetStatus($"Sold {pendingCount} fish for {result.baseEarnedCopecs} copecs + daily bonus {dailyBonus}c. Balance: {CurrentCopecs()} copecs.");
-                PushActivity($"Fish market: sold {pendingCount} fish for {earned} copecs (daily bonus +{dailyBonus}c).");
+                PushActivity($"Fishery: sold {pendingCount} fish for {earned} copecs (daily bonus +{dailyBonus}c).");
             }
             else
             {
                 SetStatus($"Sold {pendingCount} fish for {earned} copecs. Balance: {CurrentCopecs()} copecs.");
-                PushActivity($"Fish market: sold {pendingCount} fish for {earned} copecs.");
+                PushActivity($"Fishery: sold {pendingCount} fish for {earned} copecs.");
             }
 
             PlaySfx(SfxEvent.Sell);
@@ -743,8 +743,8 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_fishShop == null)
             {
-                SetStatus("Fish market is unavailable.");
-                PushActivity("Fish market unavailable.");
+                SetStatus("Fishery is unavailable.");
+                PushActivity("Fishery unavailable.");
                 return;
             }
 
@@ -769,8 +769,8 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_fishShop == null)
             {
-                SetStatus("Fish market is unavailable.");
-                PushActivity("Fish market unavailable.");
+                SetStatus("Fishery is unavailable.");
+                PushActivity("Fishery unavailable.");
                 return;
             }
 
@@ -865,7 +865,7 @@ namespace RavenDevOps.Fishing.Core
         {
             if (_saveManager != null && _saveManager.Current != null && IsCargoFull(_saveManager.Current, out var fishCount, out var cargoCapacity))
             {
-                SetStatus($"Cargo full ({fishCount}/{cargoCapacity}). Sell fish at the market before sailing.");
+                SetStatus($"Cargo full ({fishCount}/{cargoCapacity}). Sell fish at the Fishery before sailing.");
                 PushActivity("Departure blocked: cargo is full.");
                 PlaySfx(SfxEvent.UiCancel);
                 RefreshSaveSnapshot();
@@ -996,7 +996,7 @@ namespace RavenDevOps.Fishing.Core
             var save = _saveManager != null ? _saveManager.Current : null;
             if (_fishShop == null || save == null)
             {
-                _fishShopInfoText.text = "Fish market summary unavailable.";
+                _fishShopInfoText.text = "Fishery summary unavailable.";
                 return;
             }
 
@@ -1045,7 +1045,7 @@ namespace RavenDevOps.Fishing.Core
             }
             else if (marketSnapshot.questAccepted)
             {
-                infoBuilder.AppendLine("Fishing Charter accepted. Sell matching fish in this market.");
+                infoBuilder.AppendLine("Fishing Charter accepted. Sell matching fish in this Fishery.");
             }
             else
             {
@@ -1215,6 +1215,19 @@ namespace RavenDevOps.Fishing.Core
                 cardBuilder.AppendLine($"- Value: {Mathf.Max(0, latestCatch.valueCopecs)} copecs");
             }
 
+            cardBuilder.AppendLine(string.Empty);
+            cardBuilder.AppendLine("Lifetime Records:");
+            if (!TryGetFisheryLifetimeStats(fishId, out var landedCount, out var bestWeightKg, out var bestValueCopecs))
+            {
+                cardBuilder.AppendLine("- No landed records yet.");
+            }
+            else
+            {
+                cardBuilder.AppendLine($"- Landed: {landedCount}");
+                cardBuilder.AppendLine($"- Best Weight: {Mathf.Max(0f, bestWeightKg):0.0} kg");
+                cardBuilder.AppendLine($"- Best Value: {Mathf.Max(0, bestValueCopecs)} copecs");
+            }
+
             _fisheryCardText.text = cardBuilder.ToString().TrimEnd();
             if (_fisheryCardIcon != null)
             {
@@ -1297,6 +1310,34 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return false;
+        }
+
+        private bool TryGetFisheryLifetimeStats(string fishId, out int landedCount, out float bestWeightKg, out int bestValueCopecs)
+        {
+            landedCount = 0;
+            bestWeightKg = 0f;
+            bestValueCopecs = 0;
+
+            var save = _saveManager != null ? _saveManager.Current : null;
+            if (save == null || save.catchLog == null || save.catchLog.Count == 0 || string.IsNullOrWhiteSpace(fishId))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < save.catchLog.Count; i++)
+            {
+                var entry = save.catchLog[i];
+                if (entry == null || !entry.landed || !string.Equals(entry.fishId, fishId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                landedCount++;
+                bestWeightKg = Mathf.Max(bestWeightKg, Mathf.Max(0f, entry.weightKg));
+                bestValueCopecs = Mathf.Max(bestValueCopecs, Mathf.Max(0, entry.valueCopecs));
+            }
+
+            return landedCount > 0;
         }
 
         private static string BuildFallbackFishDescription(FishDefinitionSO fishDefinition)
@@ -1946,7 +1987,7 @@ namespace RavenDevOps.Fishing.Core
             {
                 InteractableType.HookShop => "Nearby target: Warehouse. Press Enter to buy hooks for Shipyard inventory.",
                 InteractableType.BoatShop => "Nearby target: Dockyard. Press Enter to buy ships for Shipyard inventory.",
-                InteractableType.FishShop => "Nearby target: Fish Market. Press Enter to sell all fish cargo.",
+                InteractableType.FishShop => "Nearby target: Fishery. Press Enter to sell all fish cargo.",
                 InteractableType.Sail => "Nearby target: Dock. Press Enter to set sail or use Shipyard in the menu.",
                 _ => "Nearby target: Interaction available. Press Enter."
             };

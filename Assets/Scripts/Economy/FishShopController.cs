@@ -113,7 +113,7 @@ namespace RavenDevOps.Fishing.Economy
 
         public bool AcceptQuest(out string statusMessage)
         {
-            statusMessage = "Fish market unavailable.";
+            statusMessage = "Fishery unavailable.";
             var save = _saveManager != null ? _saveManager.Current : null;
             if (save == null)
             {
@@ -154,7 +154,7 @@ namespace RavenDevOps.Fishing.Economy
         public bool ClaimQuestReward(out int rewardCopecs, out string statusMessage)
         {
             rewardCopecs = 0;
-            statusMessage = "Fish market unavailable.";
+            statusMessage = "Fishery unavailable.";
             var save = _saveManager != null ? _saveManager.Current : null;
             if (save == null)
             {
@@ -166,7 +166,7 @@ namespace RavenDevOps.Fishing.Economy
             var quest = save.fishingMarketQuest;
             if (!quest.accepted && !quest.completed)
             {
-                statusMessage = "Accept today's Fishing Charter in the fish market first.";
+                statusMessage = "Accept today's Fishing Charter in the Fishery first.";
                 if (changed)
                 {
                     _saveManager.Save();

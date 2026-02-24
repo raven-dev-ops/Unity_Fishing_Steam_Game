@@ -198,7 +198,7 @@ namespace RavenDevOps.Fishing.UI
             {
                 new DialogueLine
                 {
-                    text = "Welcome to harbor command. Choose Profile, Shipyard, Dockyard, Warehouse, or Fish Market."
+                    text = "Welcome to harbor command. Choose Profile, Shipyard, Dockyard, Warehouse, or Fishery."
                 },
                 new DialogueLine
                 {
