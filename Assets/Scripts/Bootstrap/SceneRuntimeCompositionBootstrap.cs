@@ -549,7 +549,7 @@ namespace RavenDevOps.Fishing.Core
                 returnHarborBindingText);
 
             startButton.onClick.AddListener(controller.StartGame);
-            profileButton.onClick.AddListener(controller.OpenProfile);
+            profileButton.onClick.AddListener(controller.StartTutorialFromMenu);
             settingsButton.onClick.AddListener(controller.OpenSettings);
             exitButton.onClick.AddListener(controller.OpenExitPanel);
             exitConfirmButton.onClick.AddListener(controller.ConfirmExit);

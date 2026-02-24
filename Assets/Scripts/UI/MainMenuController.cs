@@ -1,6 +1,7 @@
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
+using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -23,6 +24,7 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameObject _settingsDefaultSelection;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private SaveManager _saveManager;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
@@ -57,6 +59,7 @@ namespace RavenDevOps.Fishing.UI
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
         }
 
         private void OnEnable()
@@ -93,7 +96,7 @@ namespace RavenDevOps.Fishing.UI
 
             if (selected == _profileButton)
             {
-                OpenProfile();
+                StartTutorialFromMenu();
                 return;
             }
 
@@ -132,6 +135,13 @@ namespace RavenDevOps.Fishing.UI
             PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_profilePanel);
             SetSelected(_profileDefaultSelection != null ? _profileDefaultSelection : _profileButton);
+        }
+
+        public void StartTutorialFromMenu()
+        {
+            PlaySfx(SfxEvent.UiSelect);
+            _saveManager?.RequestIntroTutorialReplay();
+            _orchestrator?.RequestOpenIntroReplayFromProfile();
         }
 
         public void OpenSettings()
