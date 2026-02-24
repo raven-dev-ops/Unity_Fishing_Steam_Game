@@ -18,6 +18,7 @@ namespace RavenDevOps.Fishing.Core
     public static class SceneRuntimeCompositionBootstrap
     {
         private const string RuntimeRootName = "__SceneRuntime";
+        private const string TutorialSpriteLibraryResourcePath = "Pilot/Tutorial/SO_TutorialSpriteLibrary";
         private static readonly string[] NonCinematicCanvasNames =
         {
             "BootCanvas",
@@ -46,6 +47,7 @@ namespace RavenDevOps.Fishing.Core
         private static TMP_FontAsset _defaultTmpFontAsset;
         private static Material _lineMaterial;
         private static Sprite _solidSprite;
+        private static TutorialSpriteLibrary _tutorialSpriteLibrary;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Initialize()
@@ -755,17 +757,28 @@ namespace RavenDevOps.Fishing.Core
             var pauseExitButton = CreateButton(pauseRoot.transform, "HarborPauseExitButton", "Exit", new Vector2(0f, -82f), new Vector2(250f, 48f));
             pauseRoot.SetActive(false);
 
+            var tutorialHarborShipSprite = ResolveTutorialHarborShipSprite();
             var player = FindSceneObject(scene, "HarborShipMain");
+            SpriteRenderer playerRenderer = null;
             if (player == null)
             {
                 player = new GameObject("HarborPlayer");
                 SceneManager.MoveGameObjectToScene(player, scene);
                 player.transform.position = new Vector3(0f, 0.6f, 0f);
-                var playerRenderer = player.AddComponent<SpriteRenderer>();
-                playerRenderer.sprite = GetSolidSprite();
+                playerRenderer = player.AddComponent<SpriteRenderer>();
+                playerRenderer.sprite = tutorialHarborShipSprite != null ? tutorialHarborShipSprite : GetSolidSprite();
                 playerRenderer.color = new Color(0.94f, 0.97f, 1f, 0.95f);
                 player.transform.localScale = new Vector3(1.4f, 1.0f, 1f);
                 playerRenderer.sortingOrder = 40;
+            }
+            else
+            {
+                playerRenderer = player.GetComponent<SpriteRenderer>();
+            }
+
+            if (playerRenderer != null && tutorialHarborShipSprite != null)
+            {
+                playerRenderer.sprite = tutorialHarborShipSprite;
             }
 
             GetOrAddComponent<HarborPlayerController>(player);
@@ -991,26 +1004,28 @@ namespace RavenDevOps.Fishing.Core
             var exitButton = CreateButton(pauseRoot.transform, "PauseExitButton", "Exit", new Vector2(0f, -128f), new Vector2(250f, 48f));
             pauseRoot.SetActive(false);
 
+            var tutorialFishingShipSprite = ResolveTutorialFishingShipSprite();
             var shipObject = FindSceneObject(scene, "FishingShip");
             if (shipObject == null)
             {
                 shipObject = new GameObject("FishingShip");
                 SceneManager.MoveGameObjectToScene(shipObject, scene);
                 var renderer = shipObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = GetSolidSprite();
+                renderer.sprite = tutorialFishingShipSprite != null ? tutorialFishingShipSprite : GetSolidSprite();
                 renderer.color = new Color(0.95f, 0.99f, 1f, 0.95f);
                 renderer.sortingOrder = 20;
                 shipObject.transform.localScale = new Vector3(1.15f, 0.72f, 1f);
                 shipObject.transform.position = new Vector3(0f, 2.4f, 0f);
             }
 
+            var tutorialHookSprite = ResolveTutorialHookSprite();
             var hookObject = FindSceneObject(scene, "FishingHook");
             if (hookObject == null)
             {
                 hookObject = new GameObject("FishingHook");
                 SceneManager.MoveGameObjectToScene(hookObject, scene);
                 var renderer = hookObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = GetSolidSprite();
+                renderer.sprite = tutorialHookSprite != null ? tutorialHookSprite : GetSolidSprite();
                 renderer.color = new Color(0.88f, 0.95f, 1f, 0.95f);
                 renderer.sortingOrder = 20;
                 hookObject.transform.localScale = new Vector3(0.55f, 0.55f, 1f);
@@ -1031,6 +1046,19 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var shipSpriteRenderer = shipObject.GetComponent<SpriteRenderer>();
+            if (shipSpriteRenderer != null && tutorialFishingShipSprite != null)
+            {
+                shipSpriteRenderer.sprite = tutorialFishingShipSprite;
+            }
+
+            var hookSpriteRenderer = hookObject.GetComponent<SpriteRenderer>();
+            if (hookSpriteRenderer != null && tutorialHookSprite != null)
+            {
+                hookSpriteRenderer.sprite = tutorialHookSprite;
+            }
+
+            ApplyTutorialFishSprites(scene, ResolveTutorialFishSprite());
+
             var legacyDynamicLineRenderer = dynamicLineObject.GetComponent<SpriteRenderer>();
             if (legacyDynamicLineRenderer != null)
             {
@@ -1658,6 +1686,82 @@ namespace RavenDevOps.Fishing.Core
                 hideFlags = HideFlags.HideAndDontSave
             };
             return _lineMaterial;
+        }
+
+        private static TutorialSpriteLibrary GetTutorialSpriteLibrary()
+        {
+            if (_tutorialSpriteLibrary != null)
+            {
+                return _tutorialSpriteLibrary;
+            }
+
+            _tutorialSpriteLibrary = Resources.Load<TutorialSpriteLibrary>(TutorialSpriteLibraryResourcePath);
+            return _tutorialSpriteLibrary;
+        }
+
+        private static Sprite ResolveTutorialHarborShipSprite()
+        {
+            var library = GetTutorialSpriteLibrary();
+            if (library == null)
+            {
+                return null;
+            }
+
+            return library.HarborShipSprite != null
+                ? library.HarborShipSprite
+                : library.FishingShipSprite;
+        }
+
+        private static Sprite ResolveTutorialFishingShipSprite()
+        {
+            var library = GetTutorialSpriteLibrary();
+            if (library == null)
+            {
+                return null;
+            }
+
+            return library.FishingShipSprite != null
+                ? library.FishingShipSprite
+                : library.HarborShipSprite;
+        }
+
+        private static Sprite ResolveTutorialHookSprite()
+        {
+            var library = GetTutorialSpriteLibrary();
+            return library != null ? library.HookSprite : null;
+        }
+
+        private static Sprite ResolveTutorialFishSprite()
+        {
+            var library = GetTutorialSpriteLibrary();
+            return library != null ? library.FishSprite : null;
+        }
+
+        private static void ApplyTutorialFishSprites(Scene scene, Sprite tutorialFishSprite)
+        {
+            if (!scene.IsValid() || tutorialFishSprite == null)
+            {
+                return;
+            }
+
+            var renderers = Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null || renderer.gameObject.scene != scene)
+                {
+                    continue;
+                }
+
+                var objectName = renderer.gameObject.name;
+                if (string.IsNullOrWhiteSpace(objectName)
+                    || objectName.IndexOf("FishingFish", System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                renderer.sprite = tutorialFishSprite;
+            }
         }
 
         private static Sprite GetSolidSprite()

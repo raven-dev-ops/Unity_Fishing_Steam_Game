@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c09173a4fa83f2478822c4cb2c1dd94, type: 3}
+  m_Name: SO_TutorialSpriteLibrary
+  m_EditorClassIdentifier: RavenDevOps.Fishing.Core::RavenDevOps.Fishing.Core.TutorialSpriteLibrary
+  _harborShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
+  _fishingShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
+  _hookSprite: {fileID: 5660389902983393525, guid: 8a76c6389af2eb547b4945dc23fa9b72, type: 3}
+  _fishSprite: {fileID: -107375438153438620, guid: 5ec2e5bf54f18f9438a69d9ea9c4c450, type: 3}
