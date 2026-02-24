@@ -39,6 +39,7 @@ namespace RavenDevOps.Fishing.Core
         private FishingTutorialExitRoute _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.None;
         private bool _openSettingsAfterMainMenuLoad;
         private bool _openProfileAfterMainMenuLoad;
+        private const float HarborDepartureTitleHoldSeconds = 1.15f;
 
         public static GameFlowOrchestrator Instance => _instance;
 
@@ -292,6 +293,7 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestOpenFishing()
         {
+            QueueFishingDepartureTitleCard();
             _gameFlowManager?.SetState(GameFlowState.Fishing);
         }
 
@@ -379,6 +381,66 @@ namespace RavenDevOps.Fishing.Core
             AppExitUtility.QuitGame();
         }
 
+        private void QueueFishingDepartureTitleCard()
+        {
+            if (_sceneLoader == null || _gameFlowManager == null || _gameFlowManager.CurrentState != GameFlowState.Harbor)
+            {
+                return;
+            }
+
+            var tierCap = ResolveDepartureDistanceTierCap();
+            _sceneLoader.QueueTransitionTitleCard($"Distance Tier {Mathf.Max(1, tierCap)}", HarborDepartureTitleHoldSeconds);
+        }
+
+        private int ResolveDepartureDistanceTierCap()
+        {
+            if (_saveManager == null || _saveManager.Current == null)
+            {
+                return 1;
+            }
+
+            var shipId = _saveManager.Current.equippedShipId;
+            var parsedFromId = ParseTierFromId(shipId);
+            return Mathf.Max(1, parsedFromId);
+        }
+
+        private static int ParseTierFromId(string itemId)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                return 0;
+            }
+
+            var normalized = itemId.Trim().ToLowerInvariant();
+            var lvIndex = normalized.IndexOf("lv", StringComparison.Ordinal);
+            if (lvIndex < 0)
+            {
+                return 0;
+            }
+
+            var digitsStart = lvIndex + 2;
+            var value = 0;
+            var foundDigit = false;
+            for (var i = digitsStart; i < normalized.Length; i++)
+            {
+                var ch = normalized[i];
+                if (ch < '0' || ch > '9')
+                {
+                    if (foundDigit)
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                foundDigit = true;
+                value = (value * 10) + (ch - '0');
+            }
+
+            return foundDigit ? value : 0;
+        }
+
         private void TryOpenMainMenuProfilePanel()
         {
             if (!_openProfileAfterMainMenuLoad)
@@ -452,3 +514,4 @@ namespace RavenDevOps.Fishing.Core
         }
     }
 }
+
