@@ -16,15 +16,19 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private CanvasGroup _titleCardOverlay;
         [SerializeField] private Text _titleCardText;
         [SerializeField] private string _titleCardLabel = "Raven DevOps Fishing";
-        [SerializeField, Min(0.05f)] private float _titleFadeToBlackSeconds = 0.35f;
-        [SerializeField, Min(0f)] private float _titleHoldSeconds = 1.35f;
-        [SerializeField, Min(0f)] private float _inputDebounceSeconds = 0.3f;
-        [SerializeField, Min(0f)] private float _batchModeAutoAdvanceSeconds = 2.25f;
+        [SerializeField, Min(0f)] private float _minimumIntroWatchSeconds = 3.5f;
+        [SerializeField, Min(0f)] private float _introAutoAdvanceSeconds = 6.5f;
+        [SerializeField, Min(0.05f)] private float _titleFadeToBlackSeconds = 0.8f;
+        [SerializeField, Min(0f)] private float _titleHoldSeconds = 1.75f;
+        [SerializeField, Min(0f)] private float _inputDebounceSeconds = 0.25f;
+        [SerializeField, Min(0f)] private float _batchModeAutoAdvanceSeconds = 3f;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
         private Coroutine _transitionRoutine;
         private float _inputEnabledAt;
+        private float _skipEnabledAt;
+        private float _autoAdvanceAt;
         private float _sceneEnabledAt;
         private bool _awaitingInitialInputRelease;
         private bool _advanced;
@@ -52,12 +56,18 @@ namespace RavenDevOps.Fishing.Core
         {
             _advanced = false;
             _sceneEnabledAt = Time.unscaledTime;
-            _inputEnabledAt = Time.unscaledTime + Mathf.Max(0f, _inputDebounceSeconds);
+            _inputEnabledAt = _sceneEnabledAt + Mathf.Max(0f, _inputDebounceSeconds);
+            _skipEnabledAt = _sceneEnabledAt + Mathf.Max(0f, _minimumIntroWatchSeconds);
+            var requestedAutoAdvance = Mathf.Max(0f, _introAutoAdvanceSeconds);
+            _autoAdvanceAt = requestedAutoAdvance > 0f
+                ? _sceneEnabledAt + Mathf.Max(requestedAutoAdvance, Mathf.Max(0f, _minimumIntroWatchSeconds))
+                : -1f;
             _awaitingInitialInputRelease = true;
             _inputContextRouter?.SetContext(InputContext.UI);
             _inputMapController?.ApplyContext(InputContext.UI);
             ResetTitleCardOverlayVisual();
             SetSkipButtonVisible(true);
+            SetSkipButtonInteractable(false);
         }
 
         private void OnDisable()
@@ -88,6 +98,15 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
+            var skipEnabled = Time.unscaledTime >= _skipEnabledAt;
+            SetSkipButtonInteractable(skipEnabled);
+
+            if (_autoAdvanceAt >= 0f && Time.unscaledTime >= _autoAdvanceAt)
+            {
+                BeginTransitionToMainMenu();
+                return;
+            }
+
             if (_awaitingInitialInputRelease)
             {
                 if (AreAnyIntroInputsHeld())
@@ -99,6 +118,11 @@ namespace RavenDevOps.Fishing.Core
             }
 
             if (Time.unscaledTime < _inputEnabledAt)
+            {
+                return;
+            }
+
+            if (!skipEnabled)
             {
                 return;
             }
@@ -192,6 +216,11 @@ namespace RavenDevOps.Fishing.Core
 
         private void OnSkipIntroPressed()
         {
+            if (Time.unscaledTime < _skipEnabledAt)
+            {
+                return;
+            }
+
             BeginTransitionToMainMenu();
         }
 
@@ -283,6 +312,21 @@ namespace RavenDevOps.Fishing.Core
             }
 
             _skipIntroButton.gameObject.SetActive(visible);
+        }
+
+        private void SetSkipButtonInteractable(bool interactable)
+        {
+            if (_skipIntroButton == null)
+            {
+                return;
+            }
+
+            if (_skipIntroButton.interactable == interactable)
+            {
+                return;
+            }
+
+            _skipIntroButton.interactable = interactable;
         }
     }
 }

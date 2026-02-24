@@ -7,9 +7,11 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class BootSceneFlowController : MonoBehaviour
     {
-        [SerializeField, Min(0.25f)] private float _autoAdvanceSeconds = 2.25f;
+        [SerializeField, Min(0.05f)] private float _autoAdvanceSeconds = 0.05f;
+        [SerializeField, Min(0.05f)] private float _bootToIntroFadeInSeconds = 2f;
         [SerializeField] private Text _statusText;
         [SerializeField] private GameFlowManager _gameFlowManager;
+        [SerializeField] private SceneLoader _sceneLoader;
         [SerializeField] private InputContextRouter _inputContextRouter;
         [SerializeField] private InputActionMapController _inputMapController;
 
@@ -25,6 +27,7 @@ namespace RavenDevOps.Fishing.Core
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _sceneLoader, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputContextRouter, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
         }
@@ -33,10 +36,15 @@ namespace RavenDevOps.Fishing.Core
         {
             _advanced = false;
             _startedAtTime = Time.unscaledTime;
+            if (_sceneLoader != null)
+            {
+                _sceneLoader.SetOverlayAlphaImmediate(1f);
+                _sceneLoader.QueueTransitionFromBlack(_bootToIntroFadeInSeconds);
+            }
 
             _inputContextRouter?.SetContext(InputContext.UI);
             _inputMapController?.ApplyContext(InputContext.UI);
-            SetStatus("Boot: Press Enter to continue.");
+            SetStatus("Boot: Loading intro...");
         }
 
         private void Update()
