@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "title": "Steam Achievements and Stats Backend Contract",
+  "app_mapping": {
+    "release_workflow": ".github/workflows/release-steampipe.yml",
+    "steam_app_id": {
+      "source": "github_secret",
+      "secret_name": "STEAM_APP_ID",
+      "value": null
+    },
+    "windows_depot_id": {
+      "source": "github_secret",
+      "secret_name": "STEAM_DEPOT_WINDOWS_ID",
+      "value": null
+    },
+    "bootstrap_default_app_id": 480
+  },
+  "stats": [
+    {
+      "key": "STAT_TOTAL_CATCHES",
+      "type": "INT",
+      "runtime_field": "_statTotalCatches",
+      "save_source": "SaveDataV1.stats.totalFishCaught"
+    },
+    {
+      "key": "STAT_TOTAL_PURCHASES",
+      "type": "INT",
+      "runtime_field": "_statTotalPurchases",
+      "save_source": "SaveDataV1.stats.totalPurchases"
+    },
+    {
+      "key": "STAT_TOTAL_TRIPS",
+      "type": "INT",
+      "runtime_field": "_statTotalTrips",
+      "save_source": "SaveDataV1.stats.totalTrips"
+    },
+    {
+      "key": "STAT_CATCH_VALUE_COPECS",
+      "type": "INT",
+      "runtime_field": "_statCatchValueCopecs",
+      "save_source": "SaveDataV1.stats.totalCatchValueCopecs"
+    }
+  ],
+  "achievements": [
+    {
+      "key": "ACH_FIRST_CATCH",
+      "runtime_field": "_achievementFirstCatch",
+      "unlock_condition": "totalFishCaught > 0"
+    },
+    {
+      "key": "ACH_FIRST_PURCHASE",
+      "runtime_field": "_achievementFirstPurchase",
+      "unlock_condition": "totalPurchases > 0"
+    },
+    {
+      "key": "ACH_TRIP_5",
+      "runtime_field": "_achievementTripMilestone",
+      "unlock_condition": "totalTrips >= _tripMilestoneTarget"
+    }
+  ],
+  "backend_publish": {
+    "steamworks_change_number": "",
+    "published_at_utc": "",
+    "verified_by": "",
+    "verification_artifacts": [],
+    "notes": "Populate from Steamworks Partner publish history and screenshots."
+  }
+}
