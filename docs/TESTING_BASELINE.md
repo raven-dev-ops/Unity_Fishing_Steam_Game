@@ -104,6 +104,7 @@ Unity.exe -batchmode -nographics -quit `
   - Pause-to-harbor transition behavior
   - Intro replay exit-route regression coverage for Settings/Profile/default MainMenu follow-up behavior
   - Catch -> inventory -> sell regression path
+  - CatchResolver explicit dependency-bundle catch-flow checks without auto-attached setup dependencies
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions
   - Non-Steam fallback guard-path checks

@@ -22,6 +22,7 @@
   - `TutorialControlPanel.SkipTutorial()/ReplayTutorial()` -> `SaveManager.SetTutorialSeen(bool)` + `GameFlowOrchestrator` replay route from profile context
 - Catch persistence:
   - `CatchResolver.ResolveCatch()` -> `SaveManager.RecordCatch(fishId, distanceTier)`
+  - `CatchResolver` receives HUD/runtime collaborators through explicit composition-time seams (`Configure` + `ConfigureDependencies`) instead of scene-wide fallback scans.
 
 ## Current Event Pathways
 - Save data refresh:

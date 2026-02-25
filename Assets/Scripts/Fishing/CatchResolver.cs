@@ -128,8 +128,62 @@ namespace RavenDevOps.Fishing.Fishing
         private InputAction _moveHookAction;
         private bool _stateMachineSubscribed;
         private ShipMovementController _shipMovement;
+        private bool _dependenciesInitialized;
+        private bool _dependencyErrorLogged;
+
+        public sealed class DependencyBundle
+        {
+            public SaveManager SaveManager { get; set; }
+            public AudioManager AudioManager { get; set; }
+            public InputActionMapController InputMapController { get; set; }
+            public InputRebindingService InputRebindingService { get; set; }
+            public UserSettingsService SettingsService { get; set; }
+            public MetaLoopRuntimeService MetaLoopService { get; set; }
+            public FishingAmbientFishSwimController AmbientFishController { get; set; }
+            public IFishingHudOverlay HudOverlay { get; set; }
+            public ShipMovementController ShipMovement { get; set; }
+            public FishingCameraController FishingCameraController { get; set; }
+            public FishingLoopTutorialController TutorialController { get; set; }
+            public FishingEnvironmentSliceController EnvironmentSliceController { get; set; }
+            public FishingConditionController ConditionController { get; set; }
+        }
 
         public event System.Action<bool, FishingFailReason, string> CatchResolved;
+
+        public void ConfigureDependencies(DependencyBundle dependencies)
+        {
+            if (dependencies == null)
+            {
+                return;
+            }
+
+            _saveManager = dependencies.SaveManager ?? _saveManager;
+            _audioManager = dependencies.AudioManager ?? _audioManager;
+            _inputMapController = dependencies.InputMapController ?? _inputMapController;
+            _inputRebindingService = dependencies.InputRebindingService ?? _inputRebindingService;
+            _settingsService = dependencies.SettingsService ?? _settingsService;
+            _metaLoopService = dependencies.MetaLoopService ?? _metaLoopService;
+            _ambientFishController = dependencies.AmbientFishController ?? _ambientFishController;
+            _shipMovement = dependencies.ShipMovement ?? _shipMovement;
+
+            if (dependencies.HudOverlay != null)
+            {
+                _hudOverlay = dependencies.HudOverlay;
+                if (dependencies.HudOverlay is MonoBehaviour hudOverlayBehaviour)
+                {
+                    _hudOverlayBehaviour = hudOverlayBehaviour;
+                }
+            }
+
+            _dependenciesInitialized = false;
+            _dependencyErrorLogged = false;
+            TryInitializeDependencies(emitError: true);
+            ApplyAutoSetupIfEnabled(
+                dependencies.FishingCameraController,
+                dependencies.TutorialController,
+                dependencies.EnvironmentSliceController,
+                dependencies.ConditionController);
+        }
 
         public void Configure(
             FishingActionStateMachine stateMachine,
@@ -148,12 +202,10 @@ namespace RavenDevOps.Fishing.Fishing
             _hook = hook;
             _hudOverlayBehaviour = hudOverlayBehaviour;
             _hudOverlay = hudOverlayBehaviour as IFishingHudOverlay;
-            if (_hudOverlay == null)
-            {
-                _hudOverlay = FindFishingHudOverlay();
-            }
-
-            EnsureAmbientFishControllerReference();
+            _dependenciesInitialized = false;
+            _dependencyErrorLogged = false;
+            TryInitializeDependencies();
+            ApplyAutoSetupIfEnabled();
         }
 
         private void Awake()
@@ -164,16 +216,12 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
-            EnsureAmbientFishControllerReference();
-
             _randomSource ??= new UnityFishingRandomSource();
             _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
-            if (_hudOverlay == null)
-            {
-                _hudOverlay = FindFishingHudOverlay();
-            }
-
             ConfigureAssistService();
+            _dependenciesInitialized = false;
+            _dependencyErrorLogged = false;
+            TryInitializeDependencies();
         }
 
         private void OnValidate()
@@ -193,13 +241,12 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 return;
             }
-
-            _ambientFishController = FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
         }
 
         private void OnEnable()
         {
             SubscribeToStateMachine();
+            TryInitializeDependencies();
         }
 
         private void OnDisable()
@@ -207,16 +254,150 @@ namespace RavenDevOps.Fishing.Fishing
             UnsubscribeFromStateMachine();
         }
 
+        private bool TryInitializeDependencies(bool emitError = false)
+        {
+            if (_dependenciesInitialized)
+            {
+                return true;
+            }
+
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
+
+            EnsureAmbientFishControllerReference();
+            ResolveShipMovementReference();
+            _hudOverlay ??= _hudOverlayBehaviour as IFishingHudOverlay;
+            RefreshInputActions();
+
+            if (!ValidateRequiredDependencies(out var missingDependencies))
+            {
+                if (emitError && !_dependencyErrorLogged)
+                {
+                    _dependencyErrorLogged = true;
+                    Debug.LogError(
+                        $"CatchResolver missing required dependencies: {missingDependencies}. Configure dependencies from scene composition before gameplay update.");
+                }
+
+                _dependenciesInitialized = false;
+                return false;
+            }
+
+            _dependencyErrorLogged = false;
+            _dependenciesInitialized = true;
+            return true;
+        }
+
+        private bool ValidateRequiredDependencies(out string missingDependencies)
+        {
+            var missing = new System.Collections.Generic.List<string>(2);
+            if (_stateMachine == null)
+            {
+                missing.Add(nameof(_stateMachine));
+            }
+
+            if (_hook == null)
+            {
+                missing.Add(nameof(_hook));
+            }
+
+            missingDependencies = string.Join(", ", missing);
+            return missing.Count == 0;
+        }
+
+        private void ResolveShipMovementReference()
+        {
+            if (_shipMovement != null || _hook == null)
+            {
+                return;
+            }
+
+            var shipTransform = _hook.ShipTransform;
+            if (shipTransform != null)
+            {
+                _shipMovement = shipTransform.GetComponent<ShipMovementController>();
+            }
+
+            if (_shipMovement == null)
+            {
+                RuntimeServiceRegistry.TryGet(out _shipMovement);
+            }
+        }
+
+        private void ApplyAutoSetupIfEnabled(
+            FishingCameraController cameraController = null,
+            FishingLoopTutorialController tutorialController = null,
+            FishingEnvironmentSliceController environmentController = null,
+            FishingConditionController conditionController = null)
+        {
+            if (_autoAttachFishingCameraController && !_cameraConfigured)
+            {
+                if (cameraController != null && _hook != null)
+                {
+                    cameraController.Configure(_hook.ShipTransform, _hook.transform);
+                    _cameraConfigured = true;
+                }
+                else
+                {
+                    EnsureCameraController();
+                }
+            }
+
+            if (_autoAttachFishingTutorialController && !_tutorialConfigured)
+            {
+                if (tutorialController != null)
+                {
+                    _tutorialConfigured = true;
+                }
+                else
+                {
+                    EnsureTutorialController();
+                }
+            }
+
+            if (_autoAttachEnvironmentSliceController && !_environmentConfigured)
+            {
+                if (environmentController != null)
+                {
+                    if (_hook != null)
+                    {
+                        environmentController.Configure(_hook.ShipTransform, _hook.transform);
+                    }
+
+                    _environmentConfigured = true;
+                }
+                else
+                {
+                    EnsureEnvironmentController();
+                }
+            }
+
+            if (_autoAttachConditionController && !_conditionConfigured)
+            {
+                if (conditionController != null && _spawner != null)
+                {
+                    _spawner.SetConditionController(conditionController);
+                    _conditionConfigured = true;
+                }
+                else
+                {
+                    EnsureConditionController();
+                }
+            }
+        }
+
         private void Update()
         {
-            EnsureAmbientFishControllerReference();
+            if (!_dependenciesInitialized)
+            {
+                return;
+            }
+
             RefreshDistanceTier();
             UpdateHudTelemetry();
-            EnsureCameraController();
-            EnsureTutorialController();
-            EnsureEnvironmentController();
-            EnsureConditionController();
-            RefreshInputActions();
 
             if (_stateMachine == null)
             {
@@ -239,6 +420,11 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void OnStateChanged(FishingActionState previous, FishingActionState next)
         {
+            if (!TryInitializeDependencies(emitError: true))
+            {
+                return;
+            }
+
             switch (next)
             {
                 case FishingActionState.InWater:
@@ -835,11 +1021,6 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     _shipMovement = shipTransform.GetComponent<ShipMovementController>();
                 }
-
-                if (_shipMovement == null)
-                {
-                    RuntimeServiceRegistry.TryGet(out _shipMovement);
-                }
             }
 
             var resolvedTier = _shipMovement != null
@@ -939,20 +1120,6 @@ namespace RavenDevOps.Fishing.Fishing
                 AdaptiveHookWindowBonusSeconds = Mathf.Clamp(_adaptiveHookWindowBonusSeconds, 0f, 0.75f),
                 AssistCooldownCatches = Mathf.Max(0, _assistCooldownCatches)
             });
-        }
-
-        private static IFishingHudOverlay FindFishingHudOverlay()
-        {
-            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                if (candidates[i] is IFishingHudOverlay overlay)
-                {
-                    return overlay;
-                }
-            }
-
-            return null;
         }
 
         private bool TryResolveTargetFishForCurrentDepth()

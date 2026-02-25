@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
@@ -105,6 +106,8 @@ namespace RavenDevOps.Fishing.Core
                 GameFlowManager gameFlowManager,
                 GameFlowOrchestrator gameFlowOrchestrator,
                 SaveManager saveManager,
+                AudioManager audioManager,
+                MetaLoopRuntimeService metaLoopRuntimeService,
                 ObjectivesService objectivesService,
                 UserSettingsService userSettingsService,
                 SellSummaryCalculator sellSummaryCalculator,
@@ -114,6 +117,8 @@ namespace RavenDevOps.Fishing.Core
                 GameFlowManager = gameFlowManager;
                 GameFlowOrchestrator = gameFlowOrchestrator;
                 SaveManager = saveManager;
+                AudioManager = audioManager;
+                MetaLoopRuntimeService = metaLoopRuntimeService;
                 ObjectivesService = objectivesService;
                 UserSettingsService = userSettingsService;
                 SellSummaryCalculator = sellSummaryCalculator;
@@ -124,6 +129,8 @@ namespace RavenDevOps.Fishing.Core
             public GameFlowManager GameFlowManager { get; }
             public GameFlowOrchestrator GameFlowOrchestrator { get; }
             public SaveManager SaveManager { get; }
+            public AudioManager AudioManager { get; }
+            public MetaLoopRuntimeService MetaLoopRuntimeService { get; }
             public ObjectivesService ObjectivesService { get; }
             public UserSettingsService UserSettingsService { get; }
             public SellSummaryCalculator SellSummaryCalculator { get; }
@@ -1476,6 +1483,38 @@ namespace RavenDevOps.Fishing.Core
             var fishingCameraController = Camera.main != null
                 ? Camera.main.GetComponent<FishingCameraController>()
                 : null;
+            if (fishingCameraController == null && Camera.main != null)
+            {
+                fishingCameraController = Camera.main.gameObject.AddComponent<FishingCameraController>();
+            }
+
+            if (fishingCameraController != null)
+            {
+                fishingCameraController.Configure(shipObject.transform, hookObject.transform);
+            }
+
+            var environmentSliceController = GetOrAddComponent<FishingEnvironmentSliceController>(root);
+            environmentSliceController.Configure(shipObject.transform, hookObject.transform);
+            var conditionController = GetOrAddComponent<FishingConditionController>(root);
+            spawner.SetConditionController(conditionController);
+
+            resolver.ConfigureDependencies(
+                new CatchResolver.DependencyBundle
+                {
+                    SaveManager = services.SaveManager,
+                    AudioManager = services.AudioManager,
+                    InputMapController = services.InputMapController,
+                    InputRebindingService = services.InputRebindingService,
+                    SettingsService = services.UserSettingsService,
+                    MetaLoopService = services.MetaLoopRuntimeService,
+                    AmbientFishController = ambientFishController,
+                    HudOverlay = hud,
+                    ShipMovement = shipMovement,
+                    FishingCameraController = fishingCameraController,
+                    TutorialController = fishingTutorialController,
+                    EnvironmentSliceController = environmentSliceController,
+                    ConditionController = conditionController
+                });
             fishingTutorialController.ConfigureDependencies(
                 new FishingLoopTutorialController.DependencyBundle
                 {
@@ -1546,6 +1585,8 @@ namespace RavenDevOps.Fishing.Core
                 RuntimeServiceRegistry.Get<GameFlowManager>(),
                 RuntimeServiceRegistry.Get<GameFlowOrchestrator>(),
                 RuntimeServiceRegistry.Get<SaveManager>(),
+                RuntimeServiceRegistry.Get<AudioManager>(),
+                RuntimeServiceRegistry.Get<MetaLoopRuntimeService>(),
                 RuntimeServiceRegistry.Get<ObjectivesService>(),
                 RuntimeServiceRegistry.Get<UserSettingsService>(),
                 RuntimeServiceRegistry.Get<SellSummaryCalculator>(),
