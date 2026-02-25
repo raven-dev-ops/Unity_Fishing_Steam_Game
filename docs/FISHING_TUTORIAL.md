@@ -26,6 +26,8 @@
   - adaptive hook-window bonus `+0.40s`.
 
 ## Skip and Replay
+- Main menu entry point:
+  - Open `Profile` from main menu, then use tutorial controls inside the profile panel.
 - Skip entry point:
   - `TutorialControlPanel.SkipFishingTutorial()`
 - Replay entry point:

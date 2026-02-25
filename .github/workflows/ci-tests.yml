@@ -88,7 +88,7 @@ jobs:
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
             if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
-              echo "::warning::UNITY_LICENSE secret is not set in trusted context. Skipping Unity test steps."
+              echo "::warning::UNITY_LICENSE secret is not set in trusted context. Unity execution is required and this workflow will fail."
             else
               echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping Unity test steps."
             fi
@@ -108,15 +108,13 @@ jobs:
             echo "Unity execution status: skipped (UNITY_LICENSE unavailable). Remediation owner: repository administrators managing UNITY_LICENSE." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_execution.outputs.executed }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled (UNITY_EXECUTION_ENFORCE=true) and Unity steps were skipped."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_execution.outputs.executed }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 
@@ -149,12 +147,44 @@ jobs:
           testMode: ${{ matrix.testMode }}
           artifactsPath: artifacts/${{ matrix.testMode }}
 
+      - name: Run PlayMode launch regression suite (publish check run)
+        if: matrix.testMode == 'playmode' && steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          githubToken: ${{ steps.automation_token.outputs.token }}
+          checkName: Unity PlayMode Launch Regression Tests
+          testMode: playmode
+          customParameters: >-
+            -testCategory LaunchRegression
+          artifactsPath: artifacts/playmode-launch-regression
+
+      - name: Run PlayMode launch regression suite (artifact-only fallback)
+        if: matrix.testMode == 'playmode' && steps.unity_license.outputs.available == 'true' && steps.automation_token.outputs.write_enabled != 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          testMode: playmode
+          customParameters: >-
+            -testCategory LaunchRegression
+          artifactsPath: artifacts/playmode-launch-regression
+
       - name: Upload test artifacts
         if: steps.unity_license.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: unity-test-results-${{ matrix.testMode }}-${{ github.sha }}
           path: artifacts/${{ matrix.testMode }}/**
+          if-no-files-found: warn
+
+      - name: Upload launch regression artifacts
+        if: matrix.testMode == 'playmode' && steps.unity_license.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results-playmode-launch-regression-${{ github.sha }}
+          path: artifacts/playmode-launch-regression/**
           if-no-files-found: warn
 
       - name: Report skipped test mode

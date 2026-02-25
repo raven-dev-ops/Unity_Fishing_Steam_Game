@@ -3,7 +3,7 @@
 ## Scope
 - Issue: `#208`
 - Manifest: `Assets/Tests/EditMode/Fixtures/Rehearsal/save_rehearsal_manifest.json`
-- Constraint: Unity execution enforcement deferred (`UNITY_EXECUTION_ENFORCE=false`).
+- Historical note: this report predates trusted-context Unity enforcement rollout (effective 2026-02-24).
 
 ## Case Outcomes
 
@@ -23,12 +23,12 @@
   - load path fails safely without destructive overwrite.
 - Result: PASS in deterministic rehearsal harness.
 
-## Deferred Unity-Gated Evidence
-- Unity EditMode execution run URL/artifacts are deferred under current repo mode.
-- Required follow-up when Unity execution is re-enabled:
+## Unity-Gated Evidence Follow-Up
+- Original report did not include trusted-context Unity CI evidence.
+- Required follow-up under current policy:
   - run `SaveMigrationRehearsalTests` in Unity-enabled CI context,
   - append run URL and artifacts to this report.
 
 ## Signoff
 - Engineering: GO (migration safety rehearsal corpus and rollback drill complete in deterministic harness).
-- QA: GO (Unity-backed execution evidence deferred and tracked, non-blocking under current mode).
+- QA: GO (legacy rehearsal accepted; trusted-context Unity CI evidence follow-up required for RC bundle completeness).

@@ -20,17 +20,20 @@
 6. Push tag:
    - `git push origin v1.0.0`
 7. Trigger guarded Steam release workflow (`.github/workflows/release-steampipe.yml`) using tag push or manual dispatch.
-8. Confirm workflow artifact handoff:
+8. Confirm release gates pass before build/upload:
+   - `RC validation bundle gate` job succeeds and uploads `rc-validation-bundle-<tag>-<sha>`.
+   - `UNITY_LICENSE` validation passes (missing or malformed license is blocking in release context).
+9. Confirm workflow artifact handoff:
    - `Build Windows release artifact` creates `windows-release-<tag>-<sha>`.
    - `SteamPipe upload` downloads artifact to `Artifacts/ReleaseBuild/Windows`.
-9. Review release build-size report (`Artifacts/BuildSize/build_size_report.md`) and confirm threshold status.
-10. Confirm tiered perf budget compliance from latest perf ingestion summary:
+10. Review release build-size report (`Artifacts/BuildSize/build_size_report.md`) and confirm threshold status.
+11. Confirm tiered perf budget compliance from latest perf ingestion summary:
    - `Artifacts/Perf/perf_ingestion_summary.json`
    - Ensure no `failed` tier status and any `warning` tier has approved waiver note.
-11. Review provenance evidence:
+12. Review provenance evidence:
    - SBOM artifact: `provenance-release-<tag>-<sha>/release_windows_sbom.spdx.json`
    - Build attestation: verify with `gh attestation verify --repo raven-dev-ops/Unity_Fishing_Steam_Game Artifacts/ReleaseBuild/Windows/**`
-12. Attach build metadata/checksums to release notes.
+13. Attach build metadata/checksums to release notes.
 
 ## Optional Local Rehearsal
 - Local release build is still useful for QA rehearsal:

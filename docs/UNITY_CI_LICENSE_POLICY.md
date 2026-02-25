@@ -8,25 +8,28 @@
   - `.github/workflows/ci-tests.yml`
   - `.github/workflows/ci-content-validator.yml`
   - `.github/workflows/ci-scene-capture.yml`
+  - `.github/workflows/nightly-full-regression.yml`
   - `.github/workflows/release-steampipe.yml`
 
 ## Activation Strategy
 - Unity jobs use `UNITY_LICENSE` secret for GameCI build/test actions.
 - Unity workflows classify execution context as:
-  - `trusted`: protected refs (`github.ref_protected == true`) or `workflow_dispatch`.
+  - `trusted`: protected refs (`github.ref_protected == true`), `workflow_dispatch`, and nightly `schedule` triggers.
   - `untrusted`: all other contexts.
 - Policy outcome:
-  - missing `UNITY_LICENSE` in any context: warn and skip Unity-dependent steps.
-  - if repository variable `UNITY_EXECUTION_ENFORCE=true`, trusted contexts fail when Unity execution is skipped.
-  - release build/upload workflow still fails when required release secrets are missing.
+  - trusted contexts: Unity execution is required; missing/invalid `UNITY_LICENSE` fails the workflow.
+  - untrusted contexts: workflows warn and skip Unity-dependent steps.
+  - release workflow additionally enforces RC validation bundle evidence and required Steam release secrets.
 
-## Current Enforcement Posture (2026-02-21)
-- Repository variable `UNITY_EXECUTION_ENFORCE` is set to `false`.
-- Effect in protected/trusted contexts:
-  - Missing/invalid Unity license emits warning and skips Unity-dependent steps.
-  - Unity execution is non-blocking until enforcement is re-enabled.
-- Re-enable path:
-  - Set `UNITY_EXECUTION_ENFORCE=true` once Unity license and trusted-context execution are ready to be hard-required.
+## Current Enforcement Posture (2026-02-24)
+- Trusted-context Unity execution is enforced by workflow logic (not a repository toggle) across:
+  - `ci-build`
+  - `ci-tests`
+  - `ci-content-validator`
+  - `ci-scene-capture`
+  - `nightly-full-regression`
+  - `release-steampipe`
+- Defer/skip behavior is scoped to untrusted contexts only.
 
 ## Required Secrets
 - Repository secret:
@@ -36,20 +39,18 @@
 ## Context Matrix
 | Context | Trusted? | Expected behavior with `UNITY_LICENSE` present | Expected behavior without `UNITY_LICENSE` |
 |---|---|---|---|
-| `push` to protected `main` | Yes | Unity jobs run | Unity jobs fail when enforcement is enabled |
+| `push` to protected `main` | Yes | Unity jobs run | Unity jobs fail |
 | Protected tag push (`v*`) release flow | Yes (release policy) | Release build + upload path runs | Release build fails on missing license |
-| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Unity jobs fail when enforcement is enabled |
+| Manual dispatch (`workflow_dispatch`) | Yes | Unity jobs run | Unity jobs fail |
+| Nightly schedule (`schedule`) | Yes | Nightly Unity jobs run | Nightly Unity jobs fail |
 | Internal PR (same repo) | Usually No | Unity jobs run if secret is exposed to PR context | Unity jobs warn+skip |
 | Fork PR | No | Secrets typically unavailable; Unity jobs generally cannot run | Unity jobs warn+skip |
 | Dependabot PR | No | If secrets unavailable, Unity jobs skip | Unity jobs warn+skip |
 
-## Execution Enforcement Toggle
-- Repository variable: `UNITY_EXECUTION_ENFORCE`.
-- Default behavior (unset/false):
-  - Unity workflows warn+skip when `UNITY_LICENSE` is missing.
-- Enforcement behavior (`true`):
-  - In trusted contexts, workflows fail if Unity execution is skipped.
-  - In untrusted contexts, warn+skip behavior remains.
+## Execution Enforcement Rule
+- There is no trusted-context runtime toggle for Unity execution enforcement.
+- Any trusted-context relaxation requires workflow changes and an explicit approved waiver.
+- `UNITY_LICENSE` remains optional only for untrusted contexts.
 
 ## Why Write-Capable Steps Are Gated
 - Unity license and release credentials are sensitive.
@@ -58,13 +59,14 @@
 
 ## Troubleshooting
 1. Unity steps skipped due missing license:
-   - Check workflow logs for missing `UNITY_LICENSE` warning.
+   - In trusted contexts this is a workflow failure by design.
+   - Check workflow logs for missing/invalid `UNITY_LICENSE` diagnostics.
    - Add/update repository `UNITY_LICENSE` to re-enable Unity-dependent steps.
-   - If trusted-context failures are expected, confirm `UNITY_EXECUTION_ENFORCE` value.
 2. Unity steps skipped in PR:
    - For forks/dependabot, this is expected when secrets are unavailable.
 3. Release workflow fails before Steam upload:
    - Confirm `UNITY_LICENSE` exists and release environment secrets are configured.
+   - Confirm `RC validation bundle gate` reports success for required workflows.
    - Confirm release was triggered by protected tag or approved manual dispatch.
 4. Unexpected trusted/untrusted classification:
    - Verify `github.ref_protected` and event type in workflow run metadata.

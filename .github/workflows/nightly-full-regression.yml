@@ -72,20 +72,22 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE is not configured for this run context."
+            if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+              echo "::warning::UNITY_LICENSE is not configured in trusted context. Unity execution is required and this workflow will fail."
+            else
+              echo "::warning::UNITY_LICENSE is not configured for this run context."
+            fi
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 
@@ -163,20 +165,22 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE is not configured for this run context."
+            if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+              echo "::warning::UNITY_LICENSE is not configured in trusted context. Unity execution is required and this workflow will fail."
+            else
+              echo "::warning::UNITY_LICENSE is not configured for this run context."
+            fi
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 
@@ -198,12 +202,25 @@ jobs:
           testMode: playmode
           artifactsPath: artifacts/playmode
 
+      - name: Run PlayMode launch regression suite
+        if: steps.unity_license.outputs.available == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          testMode: playmode
+          customParameters: >-
+            -testCategory LaunchRegression
+          artifactsPath: artifacts/playmode-launch-regression
+
       - name: Upload PlayMode artifacts
         if: always() && steps.unity_license.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nightly-playmode-${{ github.sha }}
-          path: artifacts/playmode/**
+          path: |
+            artifacts/playmode/**
+            artifacts/playmode-launch-regression/**
           if-no-files-found: warn
 
       - name: Report skipped PlayMode
@@ -254,20 +271,22 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE is not configured for this run context."
+            if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+              echo "::warning::UNITY_LICENSE is not configured in trusted context. Unity execution is required and this workflow will fail."
+            else
+              echo "::warning::UNITY_LICENSE is not configured for this run context."
+            fi
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 
@@ -360,20 +379,22 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::UNITY_LICENSE is not configured for this run context."
+            if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
+              echo "::warning::UNITY_LICENSE is not configured in trusted context. Unity execution is required and this workflow will fail."
+            else
+              echo "::warning::UNITY_LICENSE is not configured for this run context."
+            fi
           fi
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled and UNITY_LICENSE is unavailable."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_license.outputs.available }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 

@@ -9,6 +9,7 @@
 ## Coverage
 - Unity EditMode tests
 - Unity PlayMode tests
+- Unity PlayMode launch-path regression subset (`-testCategory LaunchRegression`)
 - Content validator + asset import compliance audit
 - Headless scene capture + baseline diff
 - Perf log ingestion and budget parse
@@ -23,6 +24,7 @@
 ## Artifacts
 - `nightly-editmode-<sha>`
 - `nightly-playmode-<sha>`
+  - Includes full PlayMode and `playmode-launch-regression` artifact folders.
 - `nightly-content-validator-<sha>`
 - `nightly-scene-capture-<sha>`
 - `nightly-perf-<sha>`

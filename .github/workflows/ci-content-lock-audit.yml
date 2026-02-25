@@ -2,12 +2,6 @@ name: CI Content Lock Audit
 
 on:
   workflow_dispatch:
-    inputs:
-      fail_on_findings:
-        description: "Fail workflow on unresolved source-art findings"
-        required: true
-        default: false
-        type: boolean
   push:
     branches:
       - main
@@ -48,16 +42,11 @@ jobs:
       - name: Run content lock audit
         shell: pwsh
         run: |
-          $failOnFindings = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.fail_on_findings || 'false' }}"
-          $failSwitch = $false
-          if ($failOnFindings -eq "true") {
-            $failSwitch = $true
-          }
-
           ./scripts/ci/content-lock-audit.ps1 `
             -ArtManifestPath "Assets/Art/Source/art_manifest.json" `
             -ReplacementPlanPath "ci/content-lock-replacements.json" `
-            -FailOnFindings:$failSwitch `
+            -FailOnFindings `
+            -FailOnActiveWaivers `
             -SummaryJsonPath "Artifacts/ContentLock/content_lock_summary.json" `
             -SummaryMarkdownPath "Artifacts/ContentLock/content_lock_summary.md"
 

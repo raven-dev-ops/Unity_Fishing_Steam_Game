@@ -10,12 +10,12 @@ namespace RavenDevOps.Fishing.EditorTools
     public static class TutorialSpriteLibraryBootstrapper
     {
         private const string LibraryAssetPath = "Assets/Resources/Pilot/Tutorial/SO_TutorialSpriteLibrary.asset";
-        private const string ShipSheetPath = "Assets/Art/Sheets/Fishing/Placeholders/ship_placeholder_idle.png";
-        private const string HookSheetPath = "Assets/Art/Sheets/Fishing/Placeholders/hook_placeholder_idle.png";
-        private const string FishSheetPath = "Assets/Art/Sheets/Fishing/Placeholders/fish_placeholder.png";
-        private const string ShipFrameName = "ship_placeholder_idle_0";
-        private const string HookFrameName = "hook_placeholder_idle_0";
-        private const string FishFrameName = "fish_placeholder_0";
+        private const string ShipSheetPath = "Assets/Art/Sheets/Fishing/ship_source_icons_sheet_v01.png";
+        private const string HookSheetPath = "Assets/Art/Sheets/Fishing/hook_source_icons_sheet_v01.png";
+        private const string FishSheetPath = "Assets/Art/Sheets/Fishing/fish_source_icons_sheet_v01.png";
+        private const string ShipFrameName = "ship_source_icons_sheet_v01_0";
+        private const string HookFrameName = "hook_source_icons_sheet_v01_0";
+        private const string FishFrameName = "fish_source_icons_sheet_v01_0";
 
         [MenuItem("Raven/Art/Refresh Tutorial Sprite Library")]
         public static void RefreshFromMenu()

@@ -32,8 +32,13 @@
 
 ## Runtime Behavior Baseline
 - Audio settings are loaded from user settings on boot.
+- Fresh profiles initialize non-zero audio defaults (`master 0.85`, `music 0.75`, `sfx 0.85`, `vo 0.85`) before first playback.
+- Persisted user values are authoritative on subsequent boots, including explicit muted (`0`) channels.
 - Music ducks to a reduced multiplier while VO source is playing.
 - In the absence of a mixer, source-volume fallback is applied directly.
+- Phase-two audio key contract uses required keys from `PhaseTwoAudioContract`.
+- Dev/QA profiles may synthesize temporary phase-two fallback tones for missing required keys.
+- Release profile disables synthesized phase-two fallback generation and relies on explicit release-audio validation (`ReleaseAudioContentValidator`) to fail fast on missing or non-release-qualified critical keys.
 - Fishing runtime can map dedicated clips to:
   - tension warning
   - tension critical

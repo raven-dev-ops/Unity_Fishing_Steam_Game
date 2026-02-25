@@ -78,6 +78,10 @@
 - Automated audit:
   - script: `scripts/ci/content-lock-audit.ps1`
   - workflow: `.github/workflows/ci-content-lock-audit.yml`
+  - strict mode for release readiness: `-FailOnFindings -FailOnActiveWaivers`
+- Release path requirement:
+  - zero active content-lock waivers
+  - zero runtime/player-facing references to `Assets/Art/Sheets/Fishing/Placeholders/*`
 
 ## Headless Validation (CI)
 Run catalog validation in Unity batch mode:

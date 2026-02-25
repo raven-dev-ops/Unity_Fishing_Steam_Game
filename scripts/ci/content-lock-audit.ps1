@@ -2,6 +2,8 @@ param(
     [string]$ArtManifestPath = "Assets/Art/Source/art_manifest.json",
     [string]$ReplacementPlanPath = "ci/content-lock-replacements.json",
     [switch]$FailOnFindings,
+    [switch]$FailOnActiveWaivers,
+    [string]$PlaceholderAssetRoot = "Assets/Art/Sheets/Fishing/Placeholders",
     [string]$SummaryJsonPath = "Artifacts/ContentLock/content_lock_summary.json",
     [string]$SummaryMarkdownPath = "Artifacts/ContentLock/content_lock_summary.md"
 )
@@ -137,7 +139,7 @@ if ($null -eq $plan) {
 }
 
 $waiverRequiredFields = @("id", "owner", "reason", "expires_on", "ticket")
-$maxWaiverDays = 30
+$maxWaiverDays = 14
 if ($null -ne $plan.waiver_policy) {
     if ($null -ne $plan.waiver_policy.required_fields) {
         $waiverRequiredFields = @($plan.waiver_policy.required_fields | ForEach-Object { [string]$_ })
@@ -161,6 +163,7 @@ $nowUtc = (Get-Date).ToUniversalTime()
 $entries = New-Object System.Collections.Generic.List[object]
 $warnings = New-Object System.Collections.Generic.List[object]
 $failures = New-Object System.Collections.Generic.List[object]
+$activeWaiverIds = New-Object System.Collections.Generic.List[string]
 
 # Validate waiver definitions first.
 foreach ($waiver in $waivers) {
@@ -210,6 +213,24 @@ foreach ($waiver in $waivers) {
                 days_until_expiry = $daysUntilExpiry
             })
         }
+
+        if ($expiryUtc -ge $nowUtc.Date) {
+            $waiverId = [string]$waiver.id
+            if (-not [string]::IsNullOrWhiteSpace($waiverId)) {
+                $activeWaiverIds.Add($waiverId)
+            }
+        }
+    }
+}
+
+if ($FailOnActiveWaivers -and $activeWaiverIds.Count -gt 0) {
+    $distinctActiveWaiverIds = @($activeWaiverIds | Sort-Object -Unique)
+    foreach ($activeWaiverId in $distinctActiveWaiverIds) {
+        $failures.Add([ordered]@{
+            scope = "waiver"
+            id = $activeWaiverId
+            reason = "active_waiver_not_allowed"
+        })
     }
 }
 
@@ -309,6 +330,71 @@ foreach ($manifestEntry in $manifest.entries) {
     })
 }
 
+$placeholderAssetCount = 0
+$placeholderReferenceFiles = @()
+$placeholderEditorReferenceFiles = @()
+$placeholderRuntimeReferenceFiles = @()
+
+if (-not [string]::IsNullOrWhiteSpace($PlaceholderAssetRoot) -and (Test-Path -LiteralPath $PlaceholderAssetRoot -PathType Container)) {
+    $placeholderAssets = Get-ChildItem -Path $PlaceholderAssetRoot -Recurse -File | Where-Object {
+        -not $_.Name.EndsWith(".meta", [StringComparison]::OrdinalIgnoreCase)
+    }
+
+    $placeholderAssetCount = @($placeholderAssets).Count
+    foreach ($placeholderAsset in $placeholderAssets) {
+        $normalizedPath = $placeholderAsset.FullName.Replace('\', '/')
+        $assetRelativePath = $normalizedPath
+        $assetsIndex = $normalizedPath.LastIndexOf('/Assets/')
+        if ($assetsIndex -ge 0) {
+            $assetRelativePath = $normalizedPath.Substring($assetsIndex + 1)
+        }
+
+        $placeholderGuid = Get-MetaGuid -AssetPath $assetRelativePath
+        if ([string]::IsNullOrWhiteSpace($placeholderGuid)) {
+            $failures.Add([ordered]@{
+                scope = "placeholder_asset"
+                id = $assetRelativePath
+                reason = "meta_guid_missing"
+            })
+            continue
+        }
+
+        $references = Get-ExternalReferences -GuidValue $placeholderGuid -SourceRoot $PlaceholderAssetRoot
+        foreach ($reference in $references) {
+            if ([string]::IsNullOrWhiteSpace($reference)) {
+                continue
+            }
+
+            $normalizedReference = ([string]$reference).Replace('\', '/')
+            $relativeReference = $normalizedReference
+            $referenceAssetsIndex = $normalizedReference.LastIndexOf('/Assets/')
+            if ($referenceAssetsIndex -ge 0) {
+                $relativeReference = $normalizedReference.Substring($referenceAssetsIndex + 1)
+            }
+
+            $placeholderReferenceFiles += $relativeReference
+        }
+    }
+
+    $placeholderReferenceFiles = @($placeholderReferenceFiles | Sort-Object -Unique)
+    $placeholderEditorReferenceFiles = @($placeholderReferenceFiles | Where-Object {
+        ([string]$_).StartsWith("Assets/Editor/", [StringComparison]::OrdinalIgnoreCase)
+    })
+    $placeholderRuntimeReferenceFiles = @($placeholderReferenceFiles | Where-Object {
+        -not ([string]$_).StartsWith("Assets/Editor/", [StringComparison]::OrdinalIgnoreCase)
+    })
+
+    if ($placeholderRuntimeReferenceFiles.Count -gt 0) {
+        foreach ($runtimeReference in $placeholderRuntimeReferenceFiles) {
+            $failures.Add([ordered]@{
+                scope = "placeholder_reference"
+                id = [string]$runtimeReference
+                reason = "placeholder_sheet_runtime_reference_detected"
+            })
+        }
+    }
+}
+
 $summary = [ordered]@{
     status = "passed"
     reason = "ok"
@@ -318,8 +404,15 @@ $summary = [ordered]@{
     source_asset_count = $entries.Count
     warning_count = $warnings.Count
     failure_count = $failures.Count
+    active_waiver_count = @($activeWaiverIds | Sort-Object -Unique).Count
     replacements_complete_count = @($entries | Where-Object { $_.replacement_status -eq "complete" }).Count
     referenced_source_asset_count = @($entries | Where-Object { $_.reference_count -gt 0 }).Count
+    placeholder_asset_count = $placeholderAssetCount
+    placeholder_reference_file_count = $placeholderReferenceFiles.Count
+    placeholder_editor_reference_file_count = $placeholderEditorReferenceFiles.Count
+    placeholder_runtime_reference_file_count = $placeholderRuntimeReferenceFiles.Count
+    placeholder_reference_files = $placeholderReferenceFiles
+    placeholder_runtime_reference_files = $placeholderRuntimeReferenceFiles
     entries = $entries
     warnings = $warnings
     failures = $failures
@@ -350,6 +443,10 @@ $md.Add(("Reason: {0}" -f $summary.reason))
 $md.Add(("Source art entries: {0}" -f $summary.source_asset_count))
 $md.Add(("Referenced source assets: {0}" -f $summary.referenced_source_asset_count))
 $md.Add(("Replacements complete: {0}" -f $summary.replacements_complete_count))
+$md.Add(("Active waivers: {0}" -f $summary.active_waiver_count))
+$md.Add(("Placeholder sheet assets scanned: {0}" -f $summary.placeholder_asset_count))
+$md.Add(("Placeholder reference files: {0}" -f $summary.placeholder_reference_file_count))
+$md.Add(("Placeholder runtime reference files: {0}" -f $summary.placeholder_runtime_reference_file_count))
 $md.Add("")
 $md.Add("| ID | Category | Replacement Status | References | Waiver | Status |")
 $md.Add("|---|---|---|---:|---|---|")
@@ -385,6 +482,24 @@ if ($warnings.Count -gt 0) {
 }
 else {
     $md.Add("## Warnings")
+    $md.Add("- none")
+}
+
+$md.Add("")
+$md.Add("## Placeholder References")
+if ($placeholderRuntimeReferenceFiles.Count -gt 0) {
+    $md.Add("- Runtime references (not allowed):")
+    foreach ($runtimeReference in $placeholderRuntimeReferenceFiles) {
+        $md.Add(("  - {0}" -f $runtimeReference))
+    }
+}
+elseif ($placeholderEditorReferenceFiles.Count -gt 0) {
+    $md.Add("- Editor-only references:")
+    foreach ($editorReference in $placeholderEditorReferenceFiles) {
+        $md.Add(("  - {0}" -f $editorReference))
+    }
+}
+else {
     $md.Add("- none")
 }
 

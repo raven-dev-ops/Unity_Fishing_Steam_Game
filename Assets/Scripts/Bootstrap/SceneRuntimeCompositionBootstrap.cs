@@ -345,16 +345,16 @@ namespace RavenDevOps.Fishing.Core
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
 
             var startButton = CreateButton(canvas.transform, "StartButton", "Start Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
-            var profileButton = CreateButton(canvas.transform, "ProfileButton", "Tutorial", new Vector2(0f, 20f), new Vector2(300f, 56f));
+            var profileButton = CreateButton(canvas.transform, "ProfileButton", "Profile", new Vector2(0f, 20f), new Vector2(300f, 56f));
             var settingsButton = CreateButton(canvas.transform, "SettingsButton", "Settings", new Vector2(0f, -48f), new Vector2(300f, 56f));
             var exitButton = CreateButton(canvas.transform, "ExitButton", "Exit", new Vector2(0f, -116f), new Vector2(300f, 56f));
 
             var profilePanel = CreatePanel(canvas.transform, "ProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.08f, 0.14f, 0.22f, 0.92f));
-            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Tutorial Center", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
+            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Captain Profile", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
             CreateTopLeftTmpText(
                 profilePanel.transform,
                 "ProfileHintText",
-                "Replay or skip tutorial flows. Use Esc or Back to return.",
+                "Review profile progress and manage tutorial replay/skip flags. Use Esc or Back to return.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(24f, 62f),
@@ -550,7 +550,7 @@ namespace RavenDevOps.Fishing.Core
                 returnHarborBindingText);
 
             startButton.onClick.AddListener(controller.StartGame);
-            profileButton.onClick.AddListener(controller.StartTutorialFromMenu);
+            profileButton.onClick.AddListener(controller.OpenProfile);
             settingsButton.onClick.AddListener(controller.OpenSettings);
             exitButton.onClick.AddListener(controller.OpenExitPanel);
             exitConfirmButton.onClick.AddListener(controller.ConfirmExit);

@@ -8,6 +8,10 @@ namespace RavenDevOps.Fishing.Core
         private const int DefaultResolutionWidth = 1920;
         private const int DefaultResolutionHeight = 1080;
         private const int DefaultResolutionRefreshHz = 60;
+        private const float DefaultMasterVolume = 0.85f;
+        private const float DefaultMusicVolume = 0.75f;
+        private const float DefaultSfxVolume = 0.85f;
+        private const float DefaultVoVolume = 0.85f;
 
         private const string KeyMasterVolume = "settings.masterVolume";
         private const string KeyMusicVolume = "settings.musicVolume";
@@ -30,10 +34,10 @@ namespace RavenDevOps.Fishing.Core
 
         private static UserSettingsService _instance;
 
-        [SerializeField] private float _masterVolume = 0f;
-        [SerializeField] private float _musicVolume = 0f;
-        [SerializeField] private float _sfxVolume = 0f;
-        [SerializeField] private float _voVolume = 0f;
+        [SerializeField] private float _masterVolume = DefaultMasterVolume;
+        [SerializeField] private float _musicVolume = DefaultMusicVolume;
+        [SerializeField] private float _sfxVolume = DefaultSfxVolume;
+        [SerializeField] private float _voVolume = DefaultVoVolume;
         [SerializeField] private float _inputSensitivity = 1f;
         [SerializeField] private bool _fullscreen = true;
         [SerializeField] private int _resolutionWidth;
@@ -255,10 +259,10 @@ namespace RavenDevOps.Fishing.Core
 
         private void LoadFromPrefs()
         {
-            _masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMasterVolume, 0f));
-            _musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, 0f));
-            _sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, 0f));
-            _voVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyVoVolume, 0f));
+            _masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMasterVolume, DefaultMasterVolume));
+            _musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyMusicVolume, DefaultMusicVolume));
+            _sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeySfxVolume, DefaultSfxVolume));
+            _voVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(KeyVoVolume, DefaultVoVolume));
             _inputSensitivity = Mathf.Clamp(PlayerPrefs.GetFloat(KeyInputSensitivity, 1f), 0.5f, 2f);
             _fullscreen = PlayerPrefs.GetInt(KeyFullscreen, 1) == 1;
             _subtitlesEnabled = PlayerPrefs.GetInt(KeySubtitlesEnabled, 1) == 1;

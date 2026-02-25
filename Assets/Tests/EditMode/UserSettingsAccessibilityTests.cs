@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
 using UnityEngine;
 using System.Reflection;
@@ -10,6 +11,11 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
+            if (AudioManager.Instance != null)
+            {
+                Object.DestroyImmediate(AudioManager.Instance.gameObject);
+            }
+
             if (UserSettingsService.Instance != null)
             {
                 Object.DestroyImmediate(UserSettingsService.Instance.gameObject);
@@ -85,8 +91,54 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(settings.ReelInputToggle, Is.False);
             Assert.That(settings.ResolutionWidth, Is.EqualTo(1920));
             Assert.That(settings.ResolutionHeight, Is.EqualTo(1080));
+            Assert.That(settings.MasterVolume, Is.EqualTo(0.85f).Within(0.001f));
+            Assert.That(settings.MusicVolume, Is.EqualTo(0.75f).Within(0.001f));
+            Assert.That(settings.SfxVolume, Is.EqualTo(0.85f).Within(0.001f));
+            Assert.That(settings.VoVolume, Is.EqualTo(0.85f).Within(0.001f));
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void AudioDefaults_FreshProfile_AreAppliedBeforeFirstPlayback()
+        {
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
+
+            var settingsGo = new GameObject("UserSettings_Audio_FreshProfile");
+            var settings = settingsGo.AddComponent<UserSettingsService>();
+            InvokePrivateMethod(settings, "Awake");
+
+            var audioGo = new GameObject("AudioManager_Audio_FreshProfile");
+            var audio = audioGo.AddComponent<AudioManager>();
+            InvokePrivateMethod(audio, "Awake");
+
+            var audioSources = audio.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            Assert.That(audioSources, Has.Length.EqualTo(3), "Expected default music/sfx/vo sources to be created.");
+            for (var i = 0; i < audioSources.Length; i++)
+            {
+                Assert.That(audioSources[i].volume, Is.GreaterThan(0f), $"Expected source '{audioSources[i].name}' volume to be non-zero.");
+            }
+        }
+
+        [Test]
+        public void AudioDefaults_ExistingSavedValues_ArePreserved()
+        {
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.SetFloat("settings.masterVolume", 0f);
+            PlayerPrefs.SetFloat("settings.musicVolume", 0.2f);
+            PlayerPrefs.SetFloat("settings.sfxVolume", 0.3f);
+            PlayerPrefs.SetFloat("settings.voVolume", 0.4f);
+            PlayerPrefs.Save();
+
+            var go = new GameObject("UserSettings_Audio_ExistingValues");
+            var settings = go.AddComponent<UserSettingsService>();
+            InvokePrivateMethod(settings, "Awake");
+
+            Assert.That(settings.MasterVolume, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(settings.MusicVolume, Is.EqualTo(0.2f).Within(0.001f));
+            Assert.That(settings.SfxVolume, Is.EqualTo(0.3f).Within(0.001f));
+            Assert.That(settings.VoVolume, Is.EqualTo(0.4f).Within(0.001f));
         }
 
         private static void InvokePrivateMethod(object target, string methodName)

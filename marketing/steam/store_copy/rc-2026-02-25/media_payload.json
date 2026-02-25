@@ -1,0 +1,12 @@
+{
+  "asset_package_root": "release/steam_store_assets/rc-2026-02-25",
+  "screenshots": [
+    "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_01_00_boot_v01_1920x1080.png",
+    "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_02_01_cinematic_v01_1920x1080.png",
+    "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_03_02_mainmenu_v01_1920x1080.png",
+    "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_04_03_harbor_v01_1920x1080.png",
+    "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_05_04_fishing_v01_1920x1080.png"
+  ],
+  "has_trailer": false,
+  "has_gif_media": false
+}

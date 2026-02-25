@@ -83,6 +83,12 @@ namespace RavenDevOps.Fishing.EditorTools
                 return fail($"BuildCommandLine: invalid -buildProfile value '{profileArgument}'. Supported values: Dev, QA, Release.");
             }
 
+            if (buildProfile == BuildProfile.Release &&
+                !ReleaseAudioContentValidator.ValidateRequiredReleaseAudio(out var releaseAudioFailure))
+            {
+                return fail(releaseAudioFailure);
+            }
+
             Directory.CreateDirectory(outputDirectory);
 
             var locationPathName = Path.Combine(outputDirectory, executableName);

@@ -63,7 +63,7 @@ jobs:
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
             if [ "${{ steps.trust.outputs.trusted }}" = "true" ]; then
-              echo "::warning::UNITY_LICENSE secret is not set in trusted context. Skipping Unity build steps."
+              echo "::warning::UNITY_LICENSE secret is not set in trusted context. Unity execution is required and this workflow will fail."
             else
               echo "::warning::UNITY_LICENSE secret is not set in untrusted context. Skipping Unity build steps."
             fi
@@ -83,15 +83,13 @@ jobs:
             echo "Unity execution status: skipped (UNITY_LICENSE unavailable). Remediation owner: repository administrators managing UNITY_LICENSE." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Enforce Unity execution policy
+      - name: Enforce Unity execution in trusted context
         shell: bash
         env:
           TRUSTED_CONTEXT: ${{ steps.trust.outputs.trusted }}
-          UNITY_EXECUTION_ENFORCE: ${{ vars.UNITY_EXECUTION_ENFORCE }}
         run: |
-          enforce="$(echo "${UNITY_EXECUTION_ENFORCE:-false}" | tr '[:upper:]' '[:lower:]')"
-          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${enforce}" = "true" ] && [ "${{ steps.unity_execution.outputs.executed }}" != "true" ]; then
-            echo "::error::Unity execution enforcement is enabled (UNITY_EXECUTION_ENFORCE=true) and Unity steps were skipped."
+          if [ "${TRUSTED_CONTEXT}" = "true" ] && [ "${{ steps.unity_execution.outputs.executed }}" != "true" ]; then
+            echo "::error::Unity execution is required in trusted context; UNITY_LICENSE is missing or invalid."
             exit 1
           fi
 

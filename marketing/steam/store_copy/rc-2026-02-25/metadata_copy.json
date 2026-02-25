@@ -1,0 +1,26 @@
+{
+  "rc_id": "rc-2026-02-25",
+  "language_scope": "english_only",
+  "steam_language_metadata": {
+    "interface": [
+      "English"
+    ],
+    "full_audio": [],
+    "subtitles": [
+      "English"
+    ]
+  },
+  "genre_tags": [
+    "Fishing",
+    "Simulation",
+    "Casual"
+  ],
+  "feature_metadata": {
+    "single_player": true,
+    "controller_support": "Full",
+    "cloud_support": "Conditional (Steam only)"
+  },
+  "copy_owner": "Product",
+  "reviewer": "raven-dev-ops",
+  "reviewed_utc": "2026-02-25T00:00:00Z"
+}

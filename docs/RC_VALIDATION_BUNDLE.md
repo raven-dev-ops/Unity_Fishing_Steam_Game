@@ -5,34 +5,36 @@
 - Standardize required workflow evidence, ownership, and blocker triage.
 
 ## Scope and Constraints
-- Scope: non-Unity-license-policy work required for 1.0 readiness.
-- Current constraint: `UNITY_EXECUTION_ENFORCE=false` (Unity execution enforcement is intentionally deferred for now).
+- Scope: 1.0 readiness evidence, including trusted-context Unity execution gates.
+- Constraint: none for trusted contexts; Unity execution is enforced in trusted CI/release flows.
 
 ## Required Workflow Matrix
 
 | Area | Workflow | Trigger | Required Result | Required Artifacts |
 |---|---|---|---|---|
 | Build | `.github/workflows/ci-build.yml` | push/manual | Success | Build logs, build-size summary |
-| Tests | `.github/workflows/ci-tests.yml` | push/manual | Success | EditMode/PlayMode artifacts or documented skip reason |
+| Tests | `.github/workflows/ci-tests.yml` | push/manual | Success | EditMode/PlayMode artifacts |
 | UX/accessibility signoff | `docs/UX_ACCESSIBILITY_SIGNOFF.md` | release prep | Completed checklist with known exceptions | Signoff doc revision + linked QA notes |
 | Content | `.github/workflows/ci-content-validator.yml` | push/manual | Success | Validator/audit logs |
 | Secret scan | `.github/workflows/secret-scan.yml` | push | Success | Scan summary |
 | Perf budget | `.github/workflows/ci-perf-budget.yml` | push/manual | Success | `Artifacts/Perf` summary |
 | Memory + duplication | `.github/workflows/ci-memory-duplication.yml` | push/manual | Success | `Artifacts/Memory`, `Artifacts/Addressables` summaries |
-| Content lock audit | `.github/workflows/ci-content-lock-audit.yml` | push/manual | Success or approved waiver path | `Artifacts/ContentLock/content_lock_summary.*` |
+| Content lock audit | `.github/workflows/ci-content-lock-audit.yml` | push/manual | Success (zero active waivers) | `Artifacts/ContentLock/content_lock_summary.*` |
 | Hardware baseline lock | `.github/workflows/ci-hardware-baseline-lock.yml` | push/manual | Success or approved waiver path | `Artifacts/Hardware/hardware_baseline_lock_summary.*` |
 | Balance simulation | `.github/workflows/ci-balance-simulation.yml` | push/manual | Success | `Artifacts/BalanceSim` report |
-| Scene capture diff | `.github/workflows/ci-scene-capture.yml` | manual | Success (or approved waiver) | scene captures + diff summary |
+| Scene capture diff | `.github/workflows/ci-scene-capture.yml` | manual | Success | scene captures + diff summary |
 | Nightly regression | `.github/workflows/nightly-full-regression.yml` | schedule/manual | Success and consolidated summary | nightly summary artifact |
+| RC validation bundle gate | `.github/workflows/release-steampipe.yml` (`rc_validation_bundle`) | tag/manual | Success | `rc-validation-bundle-<tag>-<sha>` artifact (`rc_validation_bundle.md/json`) |
 | Release provenance | `.github/workflows/release-steampipe.yml` | tag/manual | Success | release artifact, SBOM, provenance/attestation, SteamPipe logs |
 | Release ops dry run + hotfix drill | `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md` | release prep | Completed drill report with follow-ups | Drill report revision + run URLs/evidence |
 
 ## RC Execution Procedure
 1. Freeze candidate commit SHA and create RC tracking note.
 2. Run/pin required workflows for that SHA (or attached tag where applicable).
-3. Collect artifact URLs and paste into the signoff template below.
-4. Mark each area `PASS`, `WAIVER`, or `BLOCKER`.
-5. Resolve all blockers or defer with explicit owner/date before go/no-go.
+3. Trigger release workflow preflight (`release-steampipe`) and confirm `rc_validation_bundle` gate passes.
+4. Collect artifact URLs and paste into the signoff template below.
+5. Mark each area `PASS`, `WAIVER`, or `BLOCKER`.
+6. Resolve all blockers or defer with explicit owner/date before go/no-go.
 
 ## Artifact Inventory Template
 
@@ -50,6 +52,7 @@
 | Balance simulation |  |  |  |  |  |
 | Scene capture diff |  |  |  |  |  |
 | Nightly regression |  |  |  |  |  |
+| RC validation bundle gate |  |  |  |  |  |
 | Release provenance |  |  |  |  |  |
 | Release ops dry run + hotfix drill |  |  |  |  |  |
 

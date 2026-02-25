@@ -12,6 +12,8 @@ Use this standard unless a runtime system is explicitly hard-coded to different 
 - Reference spec: `fishing_sprite_assets_placeholders_and_tools/docs/sprite_sheet_spec.md`
 
 ## Baseline Layouts
+Baseline placeholders in this document are tooling references only.
+Runtime/player-facing content must not depend on `Assets/Art/Sheets/Fishing/Placeholders/*`.
 
 ### Fish
 - Sheet: `2048x384`

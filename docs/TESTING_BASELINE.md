@@ -20,10 +20,10 @@
 
 ## Headless CI Run
 The CI workflow `.github/workflows/ci-tests.yml` runs both test modes using GameCI.
-Unity steps run when `UNITY_LICENSE` is available.
-When `UNITY_LICENSE` is missing, workflows emit warnings and skip Unity test execution.
-If repository variable `UNITY_EXECUTION_ENFORCE=true`, trusted contexts fail when Unity execution is skipped.
+Trusted contexts require `UNITY_LICENSE`; missing or invalid license fails Unity workflows.
+Untrusted contexts emit warnings and can skip Unity test execution when `UNITY_LICENSE` is unavailable.
 Check-run publication in trusted contexts uses `AUTOMATION_WRITE_TOKEN`; without it, tests still run and artifacts are uploaded (no check-run write).
+The same workflow also runs a deterministic PlayMode launch-path subset with `-testCategory LaunchRegression`.
 
 Headless scene screenshots:
 - Workflow: `.github/workflows/ci-scene-capture.yml`
@@ -46,6 +46,7 @@ Nightly full regression:
 - Includes:
   - EditMode tests
   - PlayMode tests
+  - PlayMode launch-path regression subset (`-testCategory LaunchRegression`)
   - content validator + asset import audit
   - headless scene capture + diff
   - perf parsing summary
@@ -63,6 +64,7 @@ Project wrapper (recommended):
 ```powershell
 .\scripts\unity-cli.ps1 -Task test-edit -LogFile editmode_tests.log
 .\scripts\unity-cli.ps1 -Task test-play -LogFile playmode_tests.log
+.\scripts\unity-cli.ps1 -Task test-play -LogFile playmode_launch_regression.log -ExtraArgs @('-testCategory','LaunchRegression')
 ```
 
 Equivalent command pattern (Unity batch mode):
@@ -92,8 +94,14 @@ Unity.exe -batchmode -nographics -quit `
   - Accessibility default/persistence guardrails (subtitles, readability options)
   - Fishing assist anti-frustration default settings guardrails
 - PlayMode:
+  - Deterministic launch-path regression suite (`Assets/Tests/PlayMode/LaunchPathRegressionPlayModeTests.cs`, category `LaunchRegression`) covering:
+    - Boot -> Cinematic -> MainMenu transition path
+    - Main-menu selection and intro-replay return routing (including #216 profile/settings intent)
+    - Save startup behavior for clean and existing profiles
+    - Steam-disabled startup/runtime fallback path
   - Game flow pause/resume transitions
   - Pause-to-harbor transition behavior
+  - Intro replay exit-route regression coverage for Settings/Profile/default MainMenu follow-up behavior
   - Catch -> inventory -> sell regression path
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions

@@ -4,12 +4,15 @@
 - Keep UI display updates event-driven where practical.
 - Route gameplay state mutation through explicit services/commands.
 - Ensure listeners are always detached on screen disable/destroy.
+- Maintain English-only launch copy consistency (see `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`).
 
 ## Current Command Pathways
+- Main menu profile entry:
+  - `MainMenuController.OpenProfile()` -> opens `ProfilePanel` (stats + tutorial controls surface)
 - Profile reset:
   - `ProfileMenuController.ResetProfile()` -> `SaveManager.ResetProfileStats()`
 - Tutorial controls:
-  - `TutorialControlPanel.SkipTutorial()/ReplayTutorial()` -> `SaveManager.SetTutorialSeen(bool)`
+  - `TutorialControlPanel.SkipTutorial()/ReplayTutorial()` -> `SaveManager.SetTutorialSeen(bool)` + `GameFlowOrchestrator` replay route from profile context
 - Catch persistence:
   - `CatchResolver.ResolveCatch()` -> `SaveManager.RecordCatch(fishId, distanceTier)`
 

@@ -3,16 +3,18 @@
 ## Scope
 - Issue: `#211`
 - Goal: finalize store/compliance readiness and release metadata ownership for `v1.0.0`.
+- Launch localization stance: English-only (`docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`).
+- Store language metadata target: Interface=English, Subtitles=English, Full Audio=not claimed.
 
 ## Store Asset and Copy Status
 
 | Area | Requirement | Status | Owner | Notes |
 |---|---|---|---|---|
-| Capsule images | Main/header/small capsule set prepared | PASS | Product | Tracked via `docs/STORE_ASSETS_CHECKLIST.md` |
+| Capsule images | Main/header/small/vertical capsule set prepared | PASS | Product | Tracked via `docs/STORE_ASSETS_CHECKLIST.md`; package: `release/steam_store_assets/rc-2026-02-25/` |
 | Store screenshots | Current gameplay screenshots available | PASS | Product | Scene capture baseline + curated store set |
 | Trailer | Launch trailer optional but recommended | READY | Product | Optional for first publish, non-blocking |
-| Library assets | Library hero/logo assets prepared | PASS | Product | Matches current visual baseline |
-| Copy | Short + long description reviewed | PASS | Product | Copy consistency check completed |
+| Library assets | Library capsule/header/hero/logo prepared | PASS | Product | Package lock: `release/steam_store_assets/rc-2026-02-25/export_manifest.lock.json` (`package_sha256=40767fe901c37514d723ec118c63e930251b80a3cbfcac7bc857d4def725346d`) |
+| Copy | Short + long description reviewed | PASS | Product | Versioned package: `marketing/steam/store_copy/rc-2026-02-25/`; report: `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md` |
 | Metadata | Genre/tags/controller support reviewed | PASS | Product | Matches current feature set |
 | System requirements | Minimum/recommended requirements reviewed | PASS | Engineering | Aligned to hardware baseline lock doc |
 
@@ -55,6 +57,9 @@
 
 ## Evidence Links
 - `docs/STORE_ASSETS_CHECKLIST.md`
+- `docs/STORE_ASSET_VALIDATION_REPORT_2026-02-25.md`
+- `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md`
+- `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`
 - `docs/RELEASE_TAGGING.md`
 - `docs/STEAMPIPE_UPLOAD_TEST.md`
 - `docs/SECURITY_RELEASE_WORKFLOW.md`

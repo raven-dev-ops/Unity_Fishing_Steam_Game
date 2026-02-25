@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using RavenDevOps.Fishing.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ namespace RavenDevOps.Fishing.EditorTools
         private const string EnvironmentMaterialsAssetPath = EnvironmentFolderAssetPath + "/Materials";
         private const string SkyboxMaterialName = "fishing_skybox";
         private const string SkyboxMaterialAssetPath = EnvironmentMaterialsAssetPath + "/" + SkyboxMaterialName + ".mat";
-        private const string AudioResourcesPath = "Pilot/Audio";
+        private const string AudioResourcesPath = PhaseTwoAudioContract.ResourcesAudioPath;
         private const string SkyboxResourcesPath = "Pilot/Environment/Materials/fishing_skybox";
         private const int SampleRateHz = 44100;
 
@@ -78,6 +79,7 @@ namespace RavenDevOps.Fishing.EditorTools
                 EnsureFolder(EnvironmentFolderAssetPath);
                 EnsureFolder(EnvironmentMaterialsAssetPath);
 
+                ValidateAudioSeedCoverage();
                 for (var i = 0; i < AudioSeeds.Length; i++)
                 {
                     WriteWaveAsset(AudioSeeds[i]);
@@ -143,6 +145,12 @@ namespace RavenDevOps.Fishing.EditorTools
 
             File.WriteAllBytes(absoluteFilePath, bytes);
             AssetDatabase.ImportAsset(relativeAssetPath, ImportAssetOptions.ForceUpdate);
+            var importer = AssetImporter.GetAtPath(relativeAssetPath);
+            if (importer != null)
+            {
+                importer.userData = PhaseTwoAudioContract.GeneratedFallbackUserDataMarker;
+                importer.SaveAndReimport();
+            }
         }
 
         private static byte[] BuildWaveBytes(PhaseTwoAudioSeed seed)
@@ -301,6 +309,42 @@ namespace RavenDevOps.Fishing.EditorTools
             }
 
             return Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        private static void ValidateAudioSeedCoverage()
+        {
+            var requiredKeys = new HashSet<string>(PhaseTwoAudioContract.RequiredAudioKeys, StringComparer.OrdinalIgnoreCase);
+            var seedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < AudioSeeds.Length; i++)
+            {
+                seedKeys.Add(AudioSeeds[i].Key);
+            }
+
+            var missing = new List<string>();
+            foreach (var requiredKey in requiredKeys)
+            {
+                if (!seedKeys.Contains(requiredKey))
+                {
+                    missing.Add(requiredKey);
+                }
+            }
+
+            var extras = new List<string>();
+            foreach (var seedKey in seedKeys)
+            {
+                if (!requiredKeys.Contains(seedKey))
+                {
+                    extras.Add(seedKey);
+                }
+            }
+
+            if (missing.Count == 0 && extras.Count == 0)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Phase-two audio seed coverage mismatch. missing=[{string.Join(", ", missing)}], extra=[{string.Join(", ", extras)}].");
         }
     }
 }

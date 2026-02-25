@@ -2,21 +2,21 @@
 
 ## Purpose
 - Enforce a repeatable final pass for source-art readiness before 1.0.
-- Track replacement ownership, waiver scope, and validation evidence.
+- Track replacement ownership, scope exceptions, and validation evidence.
 
 ## Source Files
 - Art inventory: `Assets/Art/Source/art_manifest.json`
 - Replacement/waiver plan: `ci/content-lock-replacements.json`
 - Audit script: `scripts/ci/content-lock-audit.ps1`
 - CI workflow: `.github/workflows/ci-content-lock-audit.yml`
-- Latest report: `docs/CONTENT_LOCK_AUDIT_REPORT_2026-02-21.md`
+- Latest report: `docs/CONTENT_LOCK_AUDIT_REPORT_2026-02-24.md`
 
 ## Operator Checklist
 1. Run content lock audit:
-   - `scripts/ci/content-lock-audit.ps1`
+   - `scripts/ci/content-lock-audit.ps1 -FailOnFindings -FailOnActiveWaivers`
 2. Confirm unresolved source-art findings are either:
    - replaced and marked complete in `ci/content-lock-replacements.json`, or
-   - covered by active waiver entries with owner/reason/ticket/expiry.
+   - explicitly scoped out as non-shipping with approval and linked issue evidence.
 3. Validate replacement assets follow naming/import standards:
    - `docs/CONTENT_PIPELINE.md`
    - `docs/ASSET_IMPORT_STANDARDS.md`
@@ -33,10 +33,12 @@
   - `reason`
   - `expires_on`
   - `ticket`
+- Waiver policy window is capped at `14` days (`ci/content-lock-replacements.json`).
 - Waivers exceeding policy window are warnings.
 - Expired or malformed waivers are failures.
-- For final release lock, run strict mode:
-  - `scripts/ci/content-lock-audit.ps1 -FailOnFindings`
+- Release path must have zero active content-lock waivers.
+- Strict release lock command:
+  - `scripts/ci/content-lock-audit.ps1 -FailOnFindings -FailOnActiveWaivers`
 
 ## Signoff Fields
 | Area | Owner | Status (`PASS`/`WAIVER`/`BLOCKER`) | Evidence Link | Notes |
@@ -46,7 +48,8 @@
 | Asset import audit |  |  |  |  |
 | Exception review |  |  |  |  |
 
-## Current State (2026-02-21)
+## Current State (2026-02-24)
 - Source art inventory is present and tracked in source control.
 - Replacement plan includes per-item `complete` entries with concrete replacement paths for all tracked assets.
-- Active waiver list is empty for content lock.
+- Active waiver list is empty for content lock, with strict CI enforcement enabled.
+- Placeholder sheet runtime references are `0` (editor/runtime dependency removed from tutorial sprite library asset).

@@ -1,0 +1,80 @@
+{
+  "spec_version": 1,
+  "rc_id": "rc-2026-02-25",
+  "output_directory": "release/steam_store_assets/rc-2026-02-25",
+  "steam_rules_checked_utc": "2026-02-25T00:00:00Z",
+  "steam_rules_sources": [
+    "https://partner.steamgames.com/doc/store/assets/standard",
+    "https://partner.steamgames.com/doc/store/assets/libraryassets",
+    "https://partner.steamgames.com/doc/store/assets/rules"
+  ],
+  "source": {
+    "keyart": "Assets/Art/Source/Scenes/02_mainmenu_v01.png",
+    "logo_text": "Raven DevOps Fishing",
+    "screenshots": [
+      "Assets/Art/Source/Scenes/00_boot_v01.png",
+      "Assets/Art/Source/Scenes/01_cinematic_v01.png",
+      "Assets/Art/Source/Scenes/02_mainmenu_v01.png",
+      "Assets/Art/Source/Scenes/03_harbor_v01.png",
+      "Assets/Art/Source/Scenes/04_fishing_v01.png"
+    ]
+  },
+  "exports": [
+    {
+      "id": "store_capsule_main",
+      "path": "store_capsule_main_1232x706.png",
+      "width": 1232,
+      "height": 706,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "store_capsule_header",
+      "path": "store_capsule_header_920x430.png",
+      "width": 920,
+      "height": 430,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "store_capsule_small",
+      "path": "store_capsule_small_462x174.png",
+      "width": 462,
+      "height": 174,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "store_capsule_vertical",
+      "path": "store_capsule_vertical_748x896.png",
+      "width": 748,
+      "height": 896,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "library_capsule",
+      "path": "library_capsule_600x900.png",
+      "width": 600,
+      "height": 900,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "library_header",
+      "path": "library_header_920x430.png",
+      "width": 920,
+      "height": 430,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "library_hero",
+      "path": "library_hero_3840x1240.png",
+      "width": 3840,
+      "height": 1240,
+      "mode": "cover_from_keyart"
+    },
+    {
+      "id": "library_logo",
+      "path": "library_logo_1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "mode": "transparent_logo"
+    }
+  ]
+}

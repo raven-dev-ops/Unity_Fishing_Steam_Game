@@ -47,6 +47,12 @@ Persisted keys:
 
 ## Audio Controls
 - Master/music/sfx/vo controls are applied immediately and persisted.
+- First launch defaults are non-zero to avoid silent startup:
+  - Master: `0.85`
+  - Music: `0.75`
+  - SFX: `0.85`
+  - VO: `0.85`
+- Existing saved audio values are preserved as-is, including explicit `0` values from prior user choices.
 - VO playback applies ducking to music lane for intelligibility.
 
 ## Validation Checklist

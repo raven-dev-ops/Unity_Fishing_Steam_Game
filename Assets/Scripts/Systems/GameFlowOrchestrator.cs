@@ -277,15 +277,20 @@ namespace RavenDevOps.Fishing.Core
             switch (exitRoute)
             {
                 case IntroReplayExitRoute.MainMenuSettings:
+                    _openSettingsAfterMainMenuLoad = true;
+                    _openProfileAfterMainMenuLoad = false;
+                    _gameFlowManager?.SetState(GameFlowState.MainMenu);
+                    return;
                 case IntroReplayExitRoute.MainMenuProfile:
                     _openSettingsAfterMainMenuLoad = false;
-                    _openProfileAfterMainMenuLoad = false;
                     _openProfileAfterMainMenuLoad = true;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
                 case IntroReplayExitRoute.MainMenu:
                 case IntroReplayExitRoute.None:
                 default:
+                    _openSettingsAfterMainMenuLoad = false;
+                    _openProfileAfterMainMenuLoad = false;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
             }

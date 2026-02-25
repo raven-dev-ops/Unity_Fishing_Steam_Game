@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   attestations: write
   id-token: write
 
@@ -88,11 +89,135 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
 
+  rc_validation_bundle:
+    name: RC validation bundle gate
+    needs:
+      - preflight
+      - secret_scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Collect RC workflow evidence for release SHA
+        id: bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ needs.preflight.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p Artifacts/RCValidation
+          generated_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          summary_md="Artifacts/RCValidation/rc_validation_bundle.md"
+          summary_json="Artifacts/RCValidation/rc_validation_bundle.json"
+          requirements_tmp="Artifacts/RCValidation/requirements.tmp.json"
+          echo "[]" > "$requirements_tmp"
+
+          bundle_pass=true
+          required_workflows=(
+            "ci-build.yml"
+            "ci-tests.yml"
+            "ci-content-validator.yml"
+            "ci-scene-capture.yml"
+            "nightly-full-regression.yml"
+          )
+
+          for workflow in "${required_workflows[@]}"; do
+            api_url="https://api.github.com/repos/${REPO}/actions/workflows/${workflow}/runs?head_sha=${HEAD_SHA}&status=completed&per_page=50"
+            response="$(curl -fsSL \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${api_url}")"
+
+            run="$(echo "${response}" | jq --arg head_sha "${HEAD_SHA}" '[.workflow_runs[] | select(.head_sha == $head_sha)] | sort_by(.run_started_at) | last')"
+
+            if [ "${run}" = "null" ]; then
+              conclusion="missing"
+              run_url=""
+              run_number=""
+              run_started_at=""
+              run_name="${workflow}"
+              bundle_pass=false
+            else
+              conclusion="$(echo "${run}" | jq -r '.conclusion // "unknown"')"
+              run_url="$(echo "${run}" | jq -r '.html_url // ""')"
+              run_number="$(echo "${run}" | jq -r '.run_number // ""')"
+              run_started_at="$(echo "${run}" | jq -r '.run_started_at // ""')"
+              run_name="$(echo "${run}" | jq -r --arg workflow "${workflow}" '.name // $workflow')"
+              if [ "${conclusion}" != "success" ]; then
+                bundle_pass=false
+              fi
+            fi
+
+            next_tmp="${requirements_tmp}.next"
+            jq \
+              --arg workflow "${workflow}" \
+              --arg run_name "${run_name}" \
+              --arg conclusion "${conclusion}" \
+              --arg run_url "${run_url}" \
+              --arg run_number "${run_number}" \
+              --arg run_started_at "${run_started_at}" \
+              '. + [{"workflow":$workflow,"run_name":$run_name,"conclusion":$conclusion,"run_url":$run_url,"run_number":$run_number,"run_started_at":$run_started_at}]' \
+              "${requirements_tmp}" > "${next_tmp}"
+            mv "${next_tmp}" "${requirements_tmp}"
+          done
+
+          jq -n \
+            --arg generated_utc "${generated_utc}" \
+            --arg release_tag "${RELEASE_TAG}" \
+            --arg head_sha "${HEAD_SHA}" \
+            --arg bundle_pass "${bundle_pass}" \
+            --argjson requirements "$(cat "${requirements_tmp}")" \
+            '{generated_utc:$generated_utc, release_tag:$release_tag, head_sha:$head_sha, bundle_pass:($bundle_pass == "true"), requirements:$requirements}' \
+            > "${summary_json}"
+
+          {
+            echo "# RC Validation Bundle"
+            echo
+            echo "- Release tag: \`${RELEASE_TAG}\`"
+            echo "- Head SHA: \`${HEAD_SHA}\`"
+            echo "- Generated UTC: \`${generated_utc}\`"
+            echo "- Bundle pass: \`${bundle_pass}\`"
+            echo
+            echo "| Workflow file | Workflow name | Conclusion | Run |"
+            echo "|---|---|---|---|"
+            jq -r '.requirements[] | "| `\(.workflow)` | \(.run_name) | \(.conclusion) | " + (if .run_url == "" then "_missing_" else "[#\(.run_number)](\(.run_url))" end) + " |"' "${summary_json}"
+          } > "${summary_md}"
+
+          echo "bundle_pass=${bundle_pass}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish RC bundle summary
+        shell: bash
+        run: |
+          if [ -f "Artifacts/RCValidation/rc_validation_bundle.md" ]; then
+            cat "Artifacts/RCValidation/rc_validation_bundle.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload RC validation bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-validation-bundle-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: Artifacts/RCValidation/**
+          if-no-files-found: error
+
+      - name: Enforce RC validation bundle gate
+        shell: bash
+        run: |
+          if [ "${{ steps.bundle.outputs.bundle_pass }}" != "true" ]; then
+            echo "::error::RC validation bundle gate failed. Required workflow evidence is missing or non-successful for HEAD SHA."
+            exit 1
+          fi
+
   build_windows_release:
     name: Build Windows release artifact
     needs:
       - preflight
       - secret_scan
+      - rc_validation_bundle
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -125,6 +250,25 @@ jobs:
             echo "::error::UNITY_LICENSE secret is required for release build artifact generation."
             exit 1
           fi
+
+          normalized_license="$(printf '%s' "$UNITY_LICENSE" | tr -d '\r\n[:space:]')"
+          if [ ${#normalized_license} -lt 40 ]; then
+            echo "::error::UNITY_LICENSE appears malformed (payload too short)."
+            exit 1
+          fi
+
+          if printf '%s' "$UNITY_LICENSE" | grep -Eq '<(License|Unity|root|DeveloperData)'; then
+            echo "UNITY_LICENSE payload format: xml-like."
+            exit 0
+          fi
+
+          if printf '%s' "$normalized_license" | grep -Eq '^[A-Za-z0-9+/=]+$' && [ ${#normalized_license} -ge 120 ]; then
+            echo "UNITY_LICENSE payload format: encoded text."
+            exit 0
+          fi
+
+          echo "::error::UNITY_LICENSE secret does not match expected Unity license payload patterns."
+          exit 1
 
       - name: Cache Library
         uses: actions/cache@v4

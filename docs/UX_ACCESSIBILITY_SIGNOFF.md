@@ -6,7 +6,7 @@
   - tutorial clarity and anti-frustration behavior,
   - readability/accessibility defaults and persistence,
   - final QA gates for 1.0 readiness.
-- Current operating constraint: Unity execution enforcement is intentionally deferred (`UNITY_EXECUTION_ENFORCE=false`).
+- Trusted-context CI evidence is required for Unity-backed UX/accessibility validation.
 
 ## Focused Findings and Tuning
 
@@ -54,7 +54,7 @@
 ## Known Non-Blocking Exceptions
 - No external third-party accessibility certification has been performed.
 - Platform-level text-to-speech/speech-to-text integration is not implemented in current baseline.
-- Unity execution-backed test evidence is deferred under current repository execution mode; deterministic non-Unity checks remain in place.
+- Unity-backed test evidence availability depends on trusted-context CI runs and configured `UNITY_LICENSE`.
 
 ## Evidence
 - Runtime defaults:

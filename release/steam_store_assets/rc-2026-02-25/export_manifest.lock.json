@@ -1,0 +1,136 @@
+{
+  "lock_version": 1,
+  "generated_utc": "2026-02-25T00:05:03+00:00",
+  "rc_id": "rc-2026-02-25",
+  "spec_path": "marketing/steam/store_assets/store_asset_spec.json",
+  "source_revision": "0fffdacf0d672e1e8b1f6b614db2e2e31e4f7367",
+  "steam_rules_checked_utc": "2026-02-25T00:00:00Z",
+  "steam_rules_sources": [
+    "https://partner.steamgames.com/doc/store/assets/standard",
+    "https://partner.steamgames.com/doc/store/assets/libraryassets",
+    "https://partner.steamgames.com/doc/store/assets/rules"
+  ],
+  "assets": [
+    {
+      "id": "store_capsule_main",
+      "path": "release/steam_store_assets/rc-2026-02-25/store_capsule_main_1232x706.png",
+      "width": 1232,
+      "height": 706,
+      "mode": "cover_from_keyart",
+      "sha256": "8d041ba03a65a9072a3bf9ff78c9a3151897efe0220fa4d140a0c4f0964d8335",
+      "bytes": 132345
+    },
+    {
+      "id": "store_capsule_header",
+      "path": "release/steam_store_assets/rc-2026-02-25/store_capsule_header_920x430.png",
+      "width": 920,
+      "height": 430,
+      "mode": "cover_from_keyart",
+      "sha256": "9583d8f77f26e9854cda1231b679a1264548b15f32b83e80e17518ec6e176897",
+      "bytes": 80814
+    },
+    {
+      "id": "store_capsule_small",
+      "path": "release/steam_store_assets/rc-2026-02-25/store_capsule_small_462x174.png",
+      "width": 462,
+      "height": 174,
+      "mode": "cover_from_keyart",
+      "sha256": "1c381ceef34f91c84960b453247ac13ad7012e98fae4bd2dcf26b4a484578e3c",
+      "bytes": 29229
+    },
+    {
+      "id": "store_capsule_vertical",
+      "path": "release/steam_store_assets/rc-2026-02-25/store_capsule_vertical_748x896.png",
+      "width": 748,
+      "height": 896,
+      "mode": "cover_from_keyart",
+      "sha256": "7de8d18bbbfca80da751f1199eef349e6ebf8e18e5ab048a51871bfa21d4bd44",
+      "bytes": 88085
+    },
+    {
+      "id": "library_capsule",
+      "path": "release/steam_store_assets/rc-2026-02-25/library_capsule_600x900.png",
+      "width": 600,
+      "height": 900,
+      "mode": "cover_from_keyart",
+      "sha256": "0119215848d23dcaf3873a458c95fd7d7b078111b1ba18ca5392d5b1400fa440",
+      "bytes": 69601
+    },
+    {
+      "id": "library_header",
+      "path": "release/steam_store_assets/rc-2026-02-25/library_header_920x430.png",
+      "width": 920,
+      "height": 430,
+      "mode": "cover_from_keyart",
+      "sha256": "9583d8f77f26e9854cda1231b679a1264548b15f32b83e80e17518ec6e176897",
+      "bytes": 80814
+    },
+    {
+      "id": "library_hero",
+      "path": "release/steam_store_assets/rc-2026-02-25/library_hero_3840x1240.png",
+      "width": 3840,
+      "height": 1240,
+      "mode": "cover_from_keyart",
+      "sha256": "49cd73295ce3cc34f27bd97654dda5c82e742a09dbc115fb37777fff09d94e14",
+      "bytes": 240412
+    },
+    {
+      "id": "library_logo",
+      "path": "release/steam_store_assets/rc-2026-02-25/library_logo_1280x720.png",
+      "width": 1280,
+      "height": 720,
+      "mode": "transparent_logo",
+      "sha256": "fd8db51960aa0439a026346fc92c674ba41fbafdcc149f1eb990ecbd7bc75d8d",
+      "bytes": 45688
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "screenshot_01",
+      "source": "Assets/Art/Source/Scenes/00_boot_v01.png",
+      "path": "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_01_00_boot_v01_1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "50ab8ba2ed88d2934e08af3fae03b80a54263c5af919c839e5ef0800bb61dedd",
+      "bytes": 66732
+    },
+    {
+      "id": "screenshot_02",
+      "source": "Assets/Art/Source/Scenes/01_cinematic_v01.png",
+      "path": "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_02_01_cinematic_v01_1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "cba1ca2a71b9cbb6ca9dfc6a7041bee722e2bd415724040a738a2908dca76e57",
+      "bytes": 125281
+    },
+    {
+      "id": "screenshot_03",
+      "source": "Assets/Art/Source/Scenes/02_mainmenu_v01.png",
+      "path": "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_03_02_mainmenu_v01_1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "2329020a11abe068fdeb213bcc89b60e5ecd6af8a366a4debb4148b4c12ba87c",
+      "bytes": 96702
+    },
+    {
+      "id": "screenshot_04",
+      "source": "Assets/Art/Source/Scenes/03_harbor_v01.png",
+      "path": "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_04_03_harbor_v01_1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "70c313c8667557670ccc525ec4bcf759d9a2dfae83ef1bba855144a833342523",
+      "bytes": 130376
+    },
+    {
+      "id": "screenshot_05",
+      "source": "Assets/Art/Source/Scenes/04_fishing_v01.png",
+      "path": "release/steam_store_assets/rc-2026-02-25/screenshots/screenshot_05_04_fishing_v01_1920x1080.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "dc55a35a8c723d96e431f54f8ef88013227b7d12e6491bf358ef52d9c386efa4",
+      "bytes": 121400
+    }
+  ],
+  "package_sha256": "40767fe901c37514d723ec118c63e930251b80a3cbfcac7bc857d4def725346d",
+  "export_command": "python scripts/ci/export-steam-store-assets.py --spec marketing/steam/store_assets/store_asset_spec.json"
+}

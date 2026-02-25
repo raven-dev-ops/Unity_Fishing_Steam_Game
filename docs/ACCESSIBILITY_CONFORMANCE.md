@@ -34,4 +34,4 @@
 ## Known Exceptions
 - No external third-party accessibility certification has been performed.
 - Platform-level text-to-speech/speech-to-text integration is not implemented in current baseline.
-- Unity execution-backed evidence is deferred while `UNITY_EXECUTION_ENFORCE=false`.
+- Unity-backed accessibility evidence must come from trusted CI contexts (see `docs/TESTING_BASELINE.md` and `docs/UNITY_CI_LICENSE_POLICY.md`).

@@ -6,7 +6,7 @@
   - rehearse release execution path,
   - rehearse rollback/hotfix incident flow,
   - confirm runbooks are actionable and internally consistent.
-- Constraint: Unity execution remains deferred (`UNITY_EXECUTION_ENFORCE=false`), so this drill validates non-Unity operational steps and documented operator flow.
+- Trusted release contexts now enforce Unity execution; future drills must include workflow-backed Unity evidence.
 
 ## Dry-Run Release Checklist
 
@@ -42,7 +42,7 @@
 3. Added this dry-run/hotfix report artifact as RC evidence input.
 
 ## Remaining Unity-Gated Exercise
-- When Unity execution is re-enabled, execute one full workflow-backed drill and append run URL + artifact URLs here:
+- Execute one full workflow-backed drill and append run URL + artifact URLs here:
   - release dry-run workflow run URL,
   - hotfix drill branch/tag evidence,
   - smoke/regression result links.
@@ -52,5 +52,5 @@
 | Role | Decision | Notes |
 |---|---|---|
 | Release Ops | GO | Non-Unity release operations path is internally consistent and actionable. |
-| Engineering | GO | Runbooks and evidence requirements are clear; Unity-gated drill deferred. |
+| Engineering | GO | Runbooks and evidence requirements are clear; Unity-backed drill rerun pending evidence link. |
 | QA | GO | Smoke/regression expectations are explicit and linked. |

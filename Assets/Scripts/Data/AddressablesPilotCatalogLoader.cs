@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using RavenDevOps.Fishing.Core;
 using UnityEngine;
 
 #if ENABLE_ADDRESSABLES
@@ -12,25 +13,13 @@ namespace RavenDevOps.Fishing.Data
 {
     public sealed class AddressablesPilotCatalogLoader : MonoBehaviour
     {
-        private static readonly string[] RequiredPhaseTwoAudioKeys =
-        {
-            "menu_music_loop",
-            "harbor_music_loop",
-            "fishing_music_loop",
-            "sfx_ui_navigate",
-            "sfx_ui_select",
-            "sfx_ui_cancel",
-            "sfx_cast",
-            "sfx_hooked",
-            "sfx_catch",
-            "sfx_sell",
-            "sfx_purchase",
-            "sfx_depart",
-            "sfx_return"
-        };
-
         private const string RequiredPhaseTwoSkyboxKey = "fishing_skybox";
         private const int GeneratedAudioSampleRate = 22050;
+#if RAVEN_BUILD_PROFILE_RELEASE
+        private const bool AllowGeneratedPhaseTwoAudioFallback = false;
+#else
+        private const bool AllowGeneratedPhaseTwoAudioFallback = true;
+#endif
 
         [SerializeField] private bool _useAddressablesWhenAvailable = true;
         [SerializeField] private string _fishDefinitionsLabel = "pilot/fish-definitions";
@@ -40,7 +29,7 @@ namespace RavenDevOps.Fishing.Data
         [SerializeField] private bool _enablePhaseTwoEnvironment = true;
         [SerializeField] private string _phaseTwoAudioLabel = "pilot/audio-packs";
         [SerializeField] private string _phaseTwoEnvironmentLabel = "pilot/environment-bundles";
-        [SerializeField] private string _phaseTwoAudioFallbackPath = "Pilot/Audio";
+        [SerializeField] private string _phaseTwoAudioFallbackPath = PhaseTwoAudioContract.ResourcesAudioPath;
         [SerializeField] private string _phaseTwoEnvironmentFallbackPath = "Pilot/Environment/Materials";
         [SerializeField] private bool _verboseLogs;
 
@@ -264,8 +253,14 @@ namespace RavenDevOps.Fishing.Data
                         }
                     }
 
-                    var generatedFallback = EnsurePhaseTwoAudioFallbackCoverage(results);
-                    if (generatedFallback && string.IsNullOrWhiteSpace(loadError))
+                    var generatedFallback = EnsurePhaseTwoAudioFallbackCoverage(results, out var missingRequiredAudioKeys);
+                    if (missingRequiredAudioKeys.Count > 0)
+                    {
+                        loadError = $"missing_required_audio_keys:{string.Join(",", missingRequiredAudioKeys)}";
+                        Debug.LogError(
+                            $"AddressablesPilotCatalogLoader: missing required phase-two audio keys and generated fallback is disabled for this build profile ({string.Join(", ", missingRequiredAudioKeys)}).");
+                    }
+                    else if (generatedFallback && string.IsNullOrWhiteSpace(loadError))
                     {
                         loadError = "fallback_generated";
                     }
@@ -492,8 +487,9 @@ namespace RavenDevOps.Fishing.Data
             return snapshot;
         }
 
-        private bool EnsurePhaseTwoAudioFallbackCoverage(List<AudioClip> clips)
+        private bool EnsurePhaseTwoAudioFallbackCoverage(List<AudioClip> clips, out List<string> missingRequiredKeys)
         {
+            missingRequiredKeys = new List<string>();
             if (clips == null)
             {
                 return false;
@@ -510,17 +506,24 @@ namespace RavenDevOps.Fishing.Data
                 }
             }
 
-            for (var i = 0; i < RequiredPhaseTwoAudioKeys.Length; i++)
+            for (var i = 0; i < PhaseTwoAudioContract.RequiredAudioKeys.Length; i++)
             {
-                var key = RequiredPhaseTwoAudioKeys[i];
+                var key = PhaseTwoAudioContract.RequiredAudioKeys[i];
                 if (present.Contains(NormalizeLookupKey(key)))
                 {
+                    continue;
+                }
+
+                if (!AllowGeneratedPhaseTwoAudioFallback)
+                {
+                    missingRequiredKeys.Add(key);
                     continue;
                 }
 
                 var generatedClip = CreateGeneratedPhaseTwoAudioClip(key, i);
                 if (generatedClip == null)
                 {
+                    missingRequiredKeys.Add(key);
                     continue;
                 }
 

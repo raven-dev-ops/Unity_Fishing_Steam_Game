@@ -61,6 +61,7 @@ flowchart LR
 - `RuntimeServiceRegistry` provides explicit runtime dependency wiring and replaces scene-search based lookups.
 - `GameFlowManager` owns flow state and pause transitions.
 - `GameFlowOrchestrator` maps states to scenes and input contexts.
+- Intro replay return routing keeps `MainMenuSettings` and `MainMenuProfile` follow-up intents distinct, and clears follow-up panel flags for default MainMenu exits.
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
