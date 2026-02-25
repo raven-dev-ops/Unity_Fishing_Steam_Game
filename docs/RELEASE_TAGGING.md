@@ -21,8 +21,12 @@
    - `git push origin v1.0.0`
 7. Trigger guarded Steam release workflow (`.github/workflows/release-steampipe.yml`) using tag push or manual dispatch.
 8. Confirm release gates pass before build/upload:
+   - `RC blocker issue gate` succeeds in release preflight (no open `P0-blocker` + `scope:1.0` issues in milestone `M9.1 - 1.0 Launch Remediation`).
    - `RC validation bundle gate` job succeeds and uploads `rc-validation-bundle-<tag>-<sha>`.
    - `UNITY_LICENSE` validation passes (missing or malformed license is blocking in release context).
+   - Emergency override is manual-dispatch only and requires:
+     - `rc_blocker_override=true`
+     - non-empty `rc_blocker_override_reason` (approval ticket + approver + reason)
 9. Confirm workflow artifact handoff:
    - `Build Windows release artifact` creates `windows-release-<tag>-<sha>`.
    - `SteamPipe upload` downloads artifact to `Artifacts/ReleaseBuild/Windows`.

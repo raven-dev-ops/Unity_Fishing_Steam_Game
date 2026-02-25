@@ -18,6 +18,9 @@
 
 ## Protected Release Path
 - Use `.github/workflows/release-steampipe.yml` for release uploads.
+- Release preflight enforces RC blocker issue gate:
+  - blocks release when open `P0-blocker` + `scope:1.0` issues exist in milestone `M9.1 - 1.0 Launch Remediation`.
+  - records blocker list in workflow summary + `rc-blocker-gate-<tag>-<sha>` artifact.
 - Workflow builds Windows release artifact and hands it off to upload job (`Artifacts/ReleaseBuild/Windows`).
 - Workflow generates provenance evidence in `build_windows_release`:
   - SBOM: `Artifacts/Provenance/release_windows_sbom.spdx.json`
@@ -25,6 +28,8 @@
 - Release job is bound to `environment: steam-release`.
 - Configure environment reviewers for manual approval before upload.
 - Trigger from protected semver tags (`v*`) or manual dispatch with approval.
+- Emergency override path is manual-dispatch only and auditable:
+  - requires `rc_blocker_override=true` and non-empty `rc_blocker_override_reason`.
 
 ## Branch Protection Baseline
 Configure in GitHub repository settings:

@@ -24,6 +24,7 @@
 | Balance simulation | `.github/workflows/ci-balance-simulation.yml` | push/manual | Success | `Artifacts/BalanceSim` report |
 | Scene capture diff | `.github/workflows/ci-scene-capture.yml` | manual | Success | scene captures + diff summary |
 | Nightly regression | `.github/workflows/nightly-full-regression.yml` | schedule/manual | Success and consolidated summary | nightly summary artifact |
+| RC blocker issue gate | `.github/workflows/release-steampipe.yml` (`preflight`) | tag/manual | Success (no open `P0-blocker` + `scope:1.0` issues in `M9.1 - 1.0 Launch Remediation`) or explicit emergency override with reason | `rc-blocker-gate-<tag>-<sha>` artifact (`rc_blocker_gate_summary.md/json`) |
 | RC validation bundle gate | `.github/workflows/release-steampipe.yml` (`rc_validation_bundle`) | tag/manual | Success | `rc-validation-bundle-<tag>-<sha>` artifact (`rc_validation_bundle.md/json`) |
 | Release provenance | `.github/workflows/release-steampipe.yml` | tag/manual | Success | release artifact, SBOM, provenance/attestation, SteamPipe logs |
 | Release ops dry run + hotfix drill | `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md` | release prep | Completed drill report with follow-ups | Drill report revision + run URLs/evidence |
@@ -31,7 +32,9 @@
 ## RC Execution Procedure
 1. Freeze candidate commit SHA and create RC tracking note.
 2. Run/pin required workflows for that SHA (or attached tag where applicable).
-3. Trigger release workflow preflight (`release-steampipe`) and confirm `rc_validation_bundle` gate passes.
+3. Trigger release workflow preflight (`release-steampipe`) and confirm both gates pass:
+   - `preflight` RC blocker issue gate
+   - `rc_validation_bundle` gate
 4. Collect artifact URLs and paste into the signoff template below.
 5. Mark each area `PASS`, `WAIVER`, or `BLOCKER`.
 6. Resolve all blockers or defer with explicit owner/date before go/no-go.
@@ -52,6 +55,7 @@
 | Balance simulation |  |  |  |  |  |
 | Scene capture diff |  |  |  |  |  |
 | Nightly regression |  |  |  |  |  |
+| RC blocker issue gate |  |  |  |  |  |
 | RC validation bundle gate |  |  |  |  |  |
 | Release provenance |  |  |  |  |  |
 | Release ops dry run + hotfix drill |  |  |  |  |  |

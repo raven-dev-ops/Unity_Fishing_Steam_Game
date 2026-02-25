@@ -12,6 +12,16 @@ on:
         required: true
         default: true
         type: boolean
+      rc_blocker_override:
+        description: "Emergency-only override for open RC blocker issues"
+        required: false
+        default: false
+        type: boolean
+      rc_blocker_override_reason:
+        description: "Required when rc_blocker_override=true (approval ticket + approver + reason)"
+        required: false
+        default: ""
+        type: string
   push:
     tags:
       - "v*"
@@ -19,11 +29,15 @@ on:
 permissions:
   contents: read
   actions: read
+  issues: read
   attestations: write
   id-token: write
 
 env:
   EXPECTED_UNITY_VERSION: 6000.3.9f1
+  RC_BLOCKER_LABEL: P0-blocker
+  RC_SCOPE_LABEL: scope:1.0
+  RC_BLOCKER_MILESTONE: M9.1 - 1.0 Launch Remediation
 
 concurrency:
   group: release-steampipe-${{ github.ref }}
@@ -37,6 +51,9 @@ jobs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
       dry_run: ${{ steps.mode.outputs.dry_run }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - id: tag
         name: Resolve and validate release tag
         shell: bash
@@ -71,6 +88,38 @@ jobs:
             echo "::error::Release tag pushes must originate from protected refs."
             exit 1
           fi
+
+      - id: rc_blocker_gate
+        name: Enforce RC blocker issue gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RC_BLOCKER_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.rc_blocker_override || 'false' }}
+          RC_BLOCKER_OVERRIDE_REASON: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.rc_blocker_override_reason || '' }}
+          RC_BLOCKER_SUMMARY_JSON: Artifacts/RCValidation/rc_blocker_gate_summary.json
+          RC_BLOCKER_SUMMARY_MD: Artifacts/RCValidation/rc_blocker_gate_summary.md
+        run: |
+          chmod +x scripts/ci/rc-blocker-gate-check.sh
+          scripts/ci/rc-blocker-gate-check.sh
+
+      - name: Publish RC blocker summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "Artifacts/RCValidation/rc_blocker_gate_summary.md" ]; then
+            cat "Artifacts/RCValidation/rc_blocker_gate_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload RC blocker summary artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-blocker-gate-${{ steps.tag.outputs.release_tag }}-${{ github.sha }}
+          path: |
+            Artifacts/RCValidation/rc_blocker_gate_summary.json
+            Artifacts/RCValidation/rc_blocker_gate_summary.md
+          if-no-files-found: warn
 
   secret_scan:
     name: Secret scan
