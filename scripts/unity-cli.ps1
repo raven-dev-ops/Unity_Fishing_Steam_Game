@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('custom', 'build', 'validate', 'rebuild-sheets', 'test-edit', 'test-play')]
+    [ValidateSet('custom', 'build', 'validate', 'validate-bootstrap', 'rebuild-sheets', 'test-edit', 'test-play')]
     [string]$Task = 'custom',
     [ValidateSet('Dev', 'QA', 'Release')]
     [string]$BuildProfile = 'QA',
@@ -808,6 +808,10 @@ switch ($Task) {
     'validate' {
         $args.Add('-executeMethod')
         $args.Add('RavenDevOps.Fishing.EditorTools.ContentValidatorRunner.ValidateCatalogBatchMode')
+    }
+    'validate-bootstrap' {
+        $args.Add('-executeMethod')
+        $args.Add('RavenDevOps.Fishing.EditorTools.BootstrapAssetContractValidatorRunner.ValidateBootstrapAssetsBatchMode')
     }
     'rebuild-sheets' {
         $args.Add('-executeMethod')

@@ -15,7 +15,7 @@ namespace RavenDevOps.Fishing.Core
     {
         private const string ServicesObjectName = "__GameServices";
         private const string FadeCanvasObjectName = "__GlobalFadeCanvas";
-        private const string InputActionsResourcePath = "InputActions_Gameplay";
+        public const string InputActionsResourcePath = "InputActions_Gameplay";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureBootstrap()
@@ -33,6 +33,16 @@ namespace RavenDevOps.Fishing.Core
             }
 
             Object.DontDestroyOnLoad(servicesGo);
+
+            var validationReport = BootstrapAssetContractValidator.ValidateRequiredAssets();
+            if (!validationReport.IsValid)
+            {
+                BootstrapAssetContractValidator.LogValidationReport(validationReport);
+                if (ShouldFailFastOnBootstrapValidationFailure())
+                {
+                    throw new global::System.InvalidOperationException(validationReport.BuildFailureMessage());
+                }
+            }
 
             var gameFlow = GetOrAddService<GameFlowManager>(servicesGo);
             var sceneLoader = GetOrAddService<SceneLoader>(servicesGo);
@@ -83,6 +93,15 @@ namespace RavenDevOps.Fishing.Core
 
             orchestrator.Initialize(gameFlow, sceneLoader, inputRouter, inputMapController, saveManager);
             inputDriver.Initialize(gameFlow, orchestrator);
+        }
+
+        private static bool ShouldFailFastOnBootstrapValidationFailure()
+        {
+#if !UNITY_EDITOR && RAVEN_BUILD_PROFILE_RELEASE
+            return true;
+#else
+            return false;
+#endif
         }
 
         private static CanvasGroup CreateGlobalFadeCanvas()

@@ -7,9 +7,11 @@ namespace RavenDevOps.Fishing.Data
 {
     public sealed class CatalogService : MonoBehaviour
     {
+        public const string DefaultConfigResourcePath = "Config/SO_GameConfig";
+
         [SerializeField] private GameConfigSO _gameConfig;
         [SerializeField] private AddressablesPilotCatalogLoader _addressablesPilotLoader;
-        [SerializeField] private string _defaultConfigResourcePath = "Config/SO_GameConfig";
+        [SerializeField] private string _defaultConfigResourcePath = DefaultConfigResourcePath;
         [SerializeField] private bool _verboseLogs;
 
         private readonly Dictionary<string, FishDefinitionSO> _fishById = new Dictionary<string, FishDefinitionSO>();

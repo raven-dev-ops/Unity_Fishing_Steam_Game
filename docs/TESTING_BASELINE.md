@@ -47,7 +47,7 @@ Nightly full regression:
   - EditMode tests
   - PlayMode tests
   - PlayMode launch-path regression subset (`-testCategory LaunchRegression`)
-  - content validator + asset import audit
+  - content validator + bootstrap asset contract validator + asset import audit
   - headless scene capture + diff
   - perf parsing summary
 - Consolidated runbook: `docs/NIGHTLY_FULL_REGRESSION.md`
@@ -65,6 +65,7 @@ Project wrapper (recommended):
 .\scripts\unity-cli.ps1 -Task test-edit -LogFile editmode_tests.log
 .\scripts\unity-cli.ps1 -Task test-play -LogFile playmode_tests.log
 .\scripts\unity-cli.ps1 -Task test-play -LogFile playmode_launch_regression.log -ExtraArgs @('-testCategory','LaunchRegression')
+.\scripts\unity-cli.ps1 -Task validate-bootstrap -LogFile validate_bootstrap_assets.log
 ```
 
 Equivalent command pattern (Unity batch mode):
@@ -94,6 +95,7 @@ Unity.exe -batchmode -nographics -quit `
   - Accessibility default/persistence guardrails (subtitles, readability options)
   - Fishing assist anti-frustration default settings guardrails
   - Scene contract resolver fallback and required-missing diagnostics checks
+  - Bootstrap asset contract validation seams (required resource path contract + missing-asset diagnostics)
   - Harbor presenter formatting seams (`HarborShopViewPresenter`, `HarborFisheryCardViewPresenter`)
 - PlayMode:
   - Deterministic launch-path regression suite (`Assets/Tests/PlayMode/LaunchPathRegressionPlayModeTests.cs`, category `LaunchRegression`) covering:

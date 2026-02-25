@@ -20,7 +20,8 @@ namespace RavenDevOps.Fishing.Core
     public static class SceneRuntimeCompositionBootstrap
     {
         private const string RuntimeRootName = "__SceneRuntime";
-        private const string TutorialSpriteLibraryResourcePath = "Pilot/Tutorial/SO_TutorialSpriteLibrary";
+        internal const string TuningConfigResourcePath = "Config/SO_TuningConfig";
+        internal const string TutorialSpriteLibraryResourcePath = "Pilot/Tutorial/SO_TutorialSpriteLibrary";
         private static readonly string[] NonCinematicCanvasNames =
         {
             "BootCanvas",
@@ -1557,7 +1558,7 @@ namespace RavenDevOps.Fishing.Core
                 fishingTutorialTransitionTitleText,
                 fishingTutorialTransitionSubtitleText);
 
-            var tuningConfig = Resources.Load<TuningConfigSO>("Config/SO_TuningConfig");
+            var tuningConfig = Resources.Load<TuningConfigSO>(TuningConfigResourcePath);
             var tuningConfigApplier = GetOrAddComponent<TuningConfigApplier>(root);
             tuningConfigApplier.Configure(
                 tuningConfig,

@@ -24,6 +24,8 @@
    - `RC blocker issue gate` succeeds in release preflight (no open `P0-blocker` + `scope:1.0` issues in milestone `M9.1 - 1.0 Launch Remediation`).
    - `RC validation bundle gate` job succeeds and uploads `rc-validation-bundle-<tag>-<sha>`.
    - `UNITY_LICENSE` validation passes (missing or malformed license is blocking in release context).
+   - Bootstrap asset contract validator passes:
+     - `scripts/unity-cli.ps1 -Task validate-bootstrap -LogFile validate_bootstrap_assets.log`
    - Emergency override is manual-dispatch only and requires:
      - `rc_blocker_override=true`
      - non-empty `rc_blocker_override_reason` (approval ticket + approver + reason)

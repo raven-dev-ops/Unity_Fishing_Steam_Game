@@ -59,6 +59,8 @@ flowchart LR
 ## Runtime Notes
 - `RuntimeServicesBootstrap` creates persistent services before scene load.
 - `RuntimeServiceRegistry` provides explicit runtime dependency wiring and replaces scene-search based lookups.
+- `BootstrapAssetContractValidator` defines required launch assets (`InputActions_Gameplay`, `Config/SO_GameConfig`, `Config/SO_TuningConfig`, `Pilot/Tutorial/SO_TutorialSpriteLibrary`) and emits structured startup diagnostics for missing contracts.
+- Missing required bootstrap assets now trigger fail-fast startup behavior in release profile runtime (`RAVEN_BUILD_PROFILE_RELEASE`), while non-release contexts keep explicit error diagnostics for remediation.
 - Scene runtime composition is module-based (`Boot`, `Cinematic`, `MainMenu`, `Harbor`, `Fishing`) behind a shared composer seam in `SceneRuntimeCompositionBootstrap`.
 - Scene object wiring is driven by explicit scene contracts (`CinematicSceneContract`, `HarborSceneContract`, `FishingSceneContract`), with temporary name-fallback resolution and warning logs during migration.
 - Scene modules consume runtime dependencies through a composition service resolver seam instead of ad hoc `RuntimeServiceRegistry.Get<T>()` calls.
