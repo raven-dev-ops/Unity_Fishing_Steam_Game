@@ -10,6 +10,7 @@
 - Unity EditMode tests
 - Unity PlayMode tests
 - Unity PlayMode launch-path regression subset (`-testCategory LaunchRegression`)
+- Internal seam-based controller regression checks (tutorial/catch/cast/runtime composition) without private reflection coupling
 - Content validator + asset import compliance audit
 - Headless scene capture + baseline diff
 - Perf log ingestion and budget parse

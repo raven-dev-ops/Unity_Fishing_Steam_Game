@@ -229,6 +229,11 @@ namespace RavenDevOps.Fishing.Core
             composer.Compose(scene);
         }
 
+        internal static void ComposeSceneForTests(Scene scene)
+        {
+            ComposeScene(scene);
+        }
+
         private static void ComposeBoot(Scene scene)
         {
             var root = GetOrCreateRuntimeRoot(scene);

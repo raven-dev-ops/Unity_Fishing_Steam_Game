@@ -208,6 +208,31 @@ namespace RavenDevOps.Fishing.Fishing
             ApplyAutoSetupIfEnabled();
         }
 
+        internal void ConfigureReelInputEvaluationForTests(SaveManager saveManager, float levelOneReelPulseDurationSeconds)
+        {
+            _saveManager = saveManager;
+            _levelOneReelPulseDurationSeconds = Mathf.Max(0.01f, levelOneReelPulseDurationSeconds);
+            _dependenciesInitialized = false;
+            _dependencyErrorLogged = false;
+            TryInitializeDependencies();
+        }
+
+        internal void PrimeUpPressForTests(bool pressedThisFrame)
+        {
+            _cachedUpPressFrame = Time.frameCount;
+            _cachedUpPressResult = pressedThisFrame;
+        }
+
+        internal bool IsReelEffortActiveForTests()
+        {
+            return IsReelEffortActive();
+        }
+
+        internal bool ShouldStartReelFromHookedInputForTests()
+        {
+            return ShouldStartReelFromHookedInput();
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);

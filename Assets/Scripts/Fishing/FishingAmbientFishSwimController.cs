@@ -286,6 +286,14 @@ namespace RavenDevOps.Fishing.Fishing
             _initialized = _tracks.Count > 0;
         }
 
+        internal void ConfigureAnchorsForTests(Transform ship, Transform hook)
+        {
+            _ship = ship;
+            _hook = hook;
+            _hasLastHookY = false;
+            _isHookDescending = false;
+        }
+
         public bool TryBindFish(string fishId, out Transform fishTransform)
         {
             fishTransform = null;

@@ -149,17 +149,12 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             yield return LoadScene(MainMenuScenePath);
             yield return null;
 
-            var composeSceneMethod = typeof(SceneRuntimeCompositionBootstrap).GetMethod(
-                "ComposeScene",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            Assert.That(composeSceneMethod, Is.Not.Null, "Expected private compose method for idempotence check.");
-
             var initialCanvasCount = CountObjectsWithNameInActiveScene("MainMenuCanvas");
             var initialControllerCount = CountComponentsInActiveScene<MainMenuController>();
             Assert.That(initialCanvasCount, Is.EqualTo(1), "Expected exactly one main-menu canvas before recompose.");
             Assert.That(initialControllerCount, Is.EqualTo(1), "Expected exactly one main-menu controller before recompose.");
 
-            composeSceneMethod.Invoke(null, new object[] { SceneManager.GetActiveScene() });
+            SceneRuntimeCompositionBootstrap.ComposeSceneForTests(SceneManager.GetActiveScene());
             yield return null;
 
             Assert.That(CountObjectsWithNameInActiveScene("MainMenuCanvas"), Is.EqualTo(initialCanvasCount));
@@ -402,8 +397,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var hookObject = FindSceneObject("FishingHook");
             Assert.That(hookObject, Is.Not.Null, "Expected fishing hook object.");
 
-            SetPrivateFieldValue(ambientController, "_ship", shipObject.transform);
-            SetPrivateFieldValue(ambientController, "_hook", hookObject.transform);
+            ambientController.ConfigureAnchorsForTests(shipObject.transform, hookObject.transform);
 
             var deadline = Time.realtimeSinceStartup + 1f;
             while (Time.realtimeSinceStartup < deadline)
@@ -521,22 +515,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             return count;
-        }
-
-        private static void SetPrivateFieldValue(object target, string fieldName, object value)
-        {
-            if (target == null || string.IsNullOrWhiteSpace(fieldName))
-            {
-                return;
-            }
-
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            if (field == null)
-            {
-                return;
-            }
-
-            field.SetValue(target, value);
         }
 
         private static bool IsSceneCaptureEnabled()

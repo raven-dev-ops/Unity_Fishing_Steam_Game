@@ -22,6 +22,7 @@ namespace RavenDevOps.Fishing.Core
             public BoatShopController BoatShop { get; set; }
             public FishShopController FishShop { get; set; }
             public HarborInteractionController InteractionController { get; set; }
+            public SaveManager SaveManager { get; set; }
         }
 
         public sealed class MenuDependencyBundle
@@ -166,6 +167,9 @@ namespace RavenDevOps.Fishing.Core
             _boatShop = runtime != null ? runtime.BoatShop : null;
             _fishShop = runtime != null ? runtime.FishShop : null;
             _interactionController = runtime != null ? runtime.InteractionController : null;
+            _saveManager = runtime != null && runtime.SaveManager != null
+                ? runtime.SaveManager
+                : _saveManager;
 
             _actionPanel = menu != null ? menu.ActionPanel : null;
             _hookShopPanel = menu != null ? menu.HookShopPanel : null;
@@ -254,7 +258,8 @@ namespace RavenDevOps.Fishing.Core
             List<Button> shipyardHookButtons = null,
             List<Button> shipyardShipButtons = null,
             List<Image> hookShopIcons = null,
-            List<Image> boatShopIcons = null)
+            List<Image> boatShopIcons = null,
+            SaveManager saveManager = null)
         {
             Configure(
                 new DependencyBundle
@@ -265,7 +270,8 @@ namespace RavenDevOps.Fishing.Core
                         HookShop = hookShop,
                         BoatShop = boatShop,
                         FishShop = fishShop,
-                        InteractionController = interactionController
+                        InteractionController = interactionController,
+                        SaveManager = saveManager
                     },
                     Menu = new MenuDependencyBundle
                     {

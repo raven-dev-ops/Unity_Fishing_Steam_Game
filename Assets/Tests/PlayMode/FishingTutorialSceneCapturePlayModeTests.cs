@@ -62,19 +62,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
-            var beginTutorialMethod = typeof(FishingLoopTutorialController).GetMethod("BeginTutorial", BindingFlags.Instance | BindingFlags.NonPublic);
-            var allowAutoplayInBatchModeField = typeof(FishingLoopTutorialController).GetField("_allowAutoplayInBatchMode", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            var phaseField = typeof(FishingLoopTutorialController).GetField("_demoPhase", BindingFlags.Instance | BindingFlags.NonPublic);
-            var transitionActiveField = typeof(FishingLoopTutorialController).GetField("_demoSceneTransitionActive", BindingFlags.Instance | BindingFlags.NonPublic);
-            var demoActiveField = typeof(FishingLoopTutorialController).GetField("_demoActive", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.That(beginTutorialMethod, Is.Not.Null, "Expected private method BeginTutorial.");
-            Assert.That(allowAutoplayInBatchModeField, Is.Not.Null, "Expected private field _allowAutoplayInBatchMode.");
-            Assert.That(phaseField, Is.Not.Null, "Expected private field _demoPhase.");
-            Assert.That(transitionActiveField, Is.Not.Null, "Expected private field _demoSceneTransitionActive.");
-            Assert.That(demoActiveField, Is.Not.Null, "Expected private field _demoActive.");
-            allowAutoplayInBatchModeField.SetValue(tutorial, true);
-            beginTutorialMethod.Invoke(tutorial, null);
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
             yield return null;
 
             var outputDirectory = ResolveOutputDirectory();
@@ -89,10 +78,9 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                     break;
                 }
 
-                var demoActive = demoActiveField.GetValue(tutorial) is bool active && active;
-                var transitionActive = transitionActiveField.GetValue(tutorial) is bool transitioning && transitioning;
-                var phaseValue = phaseField.GetValue(tutorial);
-                var phaseName = phaseValue != null ? phaseValue.ToString() : string.Empty;
+                var demoActive = tutorial.IsDemoActiveForTests();
+                var transitionActive = tutorial.IsDemoSceneTransitionActiveForTests();
+                var phaseName = tutorial.GetDemoPhaseNameForTests();
 
                 if (demoActive
                     && !transitionActive
@@ -134,25 +122,13 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
             ConfigureTutorialDependencies(tutorial);
 
-            var initializedField = typeof(FishingLoopTutorialController).GetField("_dependenciesInitialized", BindingFlags.Instance | BindingFlags.NonPublic);
-            var beginTutorialMethod = typeof(FishingLoopTutorialController).GetMethod("BeginTutorial", BindingFlags.Instance | BindingFlags.NonPublic);
-            var allowAutoplayInBatchModeField = typeof(FishingLoopTutorialController).GetField("_allowAutoplayInBatchMode", BindingFlags.Instance | BindingFlags.NonPublic);
-            var demoActiveField = typeof(FishingLoopTutorialController).GetField("_demoActive", BindingFlags.Instance | BindingFlags.NonPublic);
-            var phaseField = typeof(FishingLoopTutorialController).GetField("_demoPhase", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            Assert.That(initializedField, Is.Not.Null, "Expected _dependenciesInitialized field.");
-            Assert.That(beginTutorialMethod, Is.Not.Null, "Expected BeginTutorial method.");
-            Assert.That(allowAutoplayInBatchModeField, Is.Not.Null, "Expected _allowAutoplayInBatchMode field.");
-            Assert.That(demoActiveField, Is.Not.Null, "Expected _demoActive field.");
-            Assert.That(phaseField, Is.Not.Null, "Expected _demoPhase field.");
-
-            allowAutoplayInBatchModeField.SetValue(tutorial, true);
-            beginTutorialMethod.Invoke(tutorial, null);
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
             yield return null;
 
-            Assert.That(initializedField.GetValue(tutorial) is bool initialized && initialized, Is.True, "Dependencies should be initialized.");
-            Assert.That(demoActiveField.GetValue(tutorial) is bool demoActive && demoActive, Is.True, "Demo autoplay should be active after tutorial start.");
-            Assert.That(phaseField.GetValue(tutorial)?.ToString(), Is.EqualTo("IntroInfo"), "Demo should start at IntroInfo.");
+            Assert.That(tutorial.AreDependenciesInitializedForTests(), Is.True, "Dependencies should be initialized.");
+            Assert.That(tutorial.IsDemoActiveForTests(), Is.True, "Demo autoplay should be active after tutorial start.");
+            Assert.That(tutorial.GetDemoPhaseNameForTests(), Is.EqualTo("IntroInfo"), "Demo should start at IntroInfo.");
         }
 
         [UnityTest]
@@ -165,32 +141,18 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
             ConfigureTutorialDependencies(tutorial);
 
-            var beginTutorialMethod = typeof(FishingLoopTutorialController).GetMethod("BeginTutorial", BindingFlags.Instance | BindingFlags.NonPublic);
-            var onStateChangedMethod = typeof(FishingLoopTutorialController).GetMethod("OnFishingStateChanged", BindingFlags.Instance | BindingFlags.NonPublic);
-            var onCatchResolvedMethod = typeof(FishingLoopTutorialController).GetMethod("OnCatchResolved", BindingFlags.Instance | BindingFlags.NonPublic);
-            var demoActiveField = typeof(FishingLoopTutorialController).GetField("_demoActive", BindingFlags.Instance | BindingFlags.NonPublic);
-            var isActiveField = typeof(FishingLoopTutorialController).GetField("_isActive", BindingFlags.Instance | BindingFlags.NonPublic);
-            var stepField = typeof(FishingLoopTutorialController).GetField("_step", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            Assert.That(beginTutorialMethod, Is.Not.Null, "Expected BeginTutorial method.");
-            Assert.That(onStateChangedMethod, Is.Not.Null, "Expected OnFishingStateChanged method.");
-            Assert.That(onCatchResolvedMethod, Is.Not.Null, "Expected OnCatchResolved method.");
-            Assert.That(demoActiveField, Is.Not.Null, "Expected _demoActive field.");
-            Assert.That(isActiveField, Is.Not.Null, "Expected _isActive field.");
-            Assert.That(stepField, Is.Not.Null, "Expected _step field.");
-
-            beginTutorialMethod.Invoke(tutorial, null);
+            tutorial.BeginTutorialForTests();
             yield return null;
 
-            demoActiveField.SetValue(tutorial, false);
-            onStateChangedMethod.Invoke(tutorial, new object[] { FishingActionState.Cast, FishingActionState.InWater });
-            onStateChangedMethod.Invoke(tutorial, new object[] { FishingActionState.InWater, FishingActionState.Hooked });
-            onStateChangedMethod.Invoke(tutorial, new object[] { FishingActionState.Hooked, FishingActionState.Reel });
-            onCatchResolvedMethod.Invoke(tutorial, new object[] { true, FishingFailReason.None, "fish_cod" });
+            tutorial.SetDemoActiveForTests(false);
+            tutorial.SimulateFishingStateChangedForTests(FishingActionState.Cast, FishingActionState.InWater);
+            tutorial.SimulateFishingStateChangedForTests(FishingActionState.InWater, FishingActionState.Hooked);
+            tutorial.SimulateFishingStateChangedForTests(FishingActionState.Hooked, FishingActionState.Reel);
+            tutorial.SimulateCatchResolvedForTests(true, FishingFailReason.None, "fish_cod");
             yield return null;
 
-            Assert.That(isActiveField.GetValue(tutorial) is bool isActive && !isActive, Is.True, "Tutorial should complete and become inactive.");
-            Assert.That(stepField.GetValue(tutorial)?.ToString(), Is.EqualTo("Complete"), "Tutorial step should be Complete after success.");
+            Assert.That(tutorial.IsActiveForTests(), Is.False, "Tutorial should complete and become inactive.");
+            Assert.That(tutorial.GetStepNameForTests(), Is.EqualTo("Complete"), "Tutorial step should be Complete after success.");
         }
 
         private static string ResolveOutputDirectory()

@@ -380,6 +380,61 @@ namespace RavenDevOps.Fishing.Fishing
                 completionMessage: "All fishing tutorial scenes skipped.");
         }
 
+        internal void SetAutoplayInBatchModeForTests(bool enabled)
+        {
+            _allowAutoplayInBatchMode = enabled;
+        }
+
+        internal void BeginTutorialForTests()
+        {
+            BeginTutorial();
+        }
+
+        internal bool AreDependenciesInitializedForTests()
+        {
+            return _dependenciesInitialized;
+        }
+
+        internal bool IsDemoActiveForTests()
+        {
+            return _demoActive;
+        }
+
+        internal bool IsDemoSceneTransitionActiveForTests()
+        {
+            return _demoSceneTransitionActive;
+        }
+
+        internal string GetDemoPhaseNameForTests()
+        {
+            return _demoPhase.ToString();
+        }
+
+        internal void SetDemoActiveForTests(bool active)
+        {
+            _demoActive = active;
+        }
+
+        internal void SimulateFishingStateChangedForTests(FishingActionState previous, FishingActionState next)
+        {
+            OnFishingStateChanged(previous, next);
+        }
+
+        internal void SimulateCatchResolvedForTests(bool success, FishingFailReason failReason, string fishId)
+        {
+            OnCatchResolved(success, failReason, fishId);
+        }
+
+        internal bool IsActiveForTests()
+        {
+            return _isActive;
+        }
+
+        internal string GetStepNameForTests()
+        {
+            return _step.ToString();
+        }
+
         private void EvaluateActivation()
         {
             if (!TryInitializeDependencies(emitMissingDependencyError: true))

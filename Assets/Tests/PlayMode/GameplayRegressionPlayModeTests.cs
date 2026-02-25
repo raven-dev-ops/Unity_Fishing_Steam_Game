@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using NUnit.Framework;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Data;
@@ -89,8 +88,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var hookShop = CreateComponent<HookShopController>("HookShopController_PurchaseEquip");
             var boatShop = CreateComponent<BoatShopController>("BoatShopController_PurchaseEquip");
-            SetPrivateField(hookShop, "_items", new List<ShopItem> { new ShopItem { id = "hook_test", price = 120 } });
-            SetPrivateField(boatShop, "_items", new List<ShopItem> { new ShopItem { id = "ship_test", price = 220 } });
+            hookShop.ConfigureItems(new List<ShopItem> { new ShopItem { id = "hook_test", price = 120 } });
+            boatShop.ConfigureItems(new List<ShopItem> { new ShopItem { id = "ship_test", price = 220 } });
             yield return null;
 
             var initialCopecs = saveManager.Current.copecs;
@@ -126,18 +125,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var hookShop = CreateComponent<HookShopController>("HookShopController_UpgradeRules");
             var boatShop = CreateComponent<BoatShopController>("BoatShopController_UpgradeRules");
-            SetPrivateField(
-                hookShop,
-                "_items",
+            hookShop.ConfigureItems(
                 new List<ShopItem>
                 {
                     new ShopItem { id = "hook_t1", price = 40, valueTier = 1 },
                     new ShopItem { id = "hook_t2", price = 120, valueTier = 2 },
                     new ShopItem { id = "hook_t3", price = 300, valueTier = 3 }
                 });
-            SetPrivateField(
-                boatShop,
-                "_items",
+            boatShop.ConfigureItems(
                 new List<ShopItem>
                 {
                     new ShopItem { id = "boat_t1", price = 60, valueTier = 1 },
@@ -304,7 +299,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(false);
             _createdRoots.Add(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
-            SetPrivateField(router, "_saveManager", saveManager);
             router.Configure(
                 interactables: new List<WorldInteractable>(),
                 hookShop: null,
@@ -312,7 +306,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 fishShop: null,
                 statusText: statusText,
                 cargoText: cargoText,
-                sailButton: sailButton);
+                sailButton: sailButton,
+                saveManager: saveManager);
 
             routerRoot.SetActive(true);
             yield return null;
@@ -369,14 +364,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(false);
             _createdRoots.Add(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
-            SetPrivateField(router, "_saveManager", saveManager);
             router.Configure(
                 interactables: new List<WorldInteractable>(),
                 hookShop: null,
                 boatShop: null,
                 fishShop: fishShop,
                 statusText: statusText,
-                fishShopInfoText: fishInfoText);
+                fishShopInfoText: fishInfoText,
+                saveManager: saveManager);
 
             routerRoot.SetActive(true);
             yield return null;
@@ -403,9 +398,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             saveManager.Save(forceImmediate: true);
 
             var hookShop = CreateComponent<HookShopController>("HookShopController_HarborPurchaseEquip");
-            SetPrivateField(
-                hookShop,
-                "_items",
+            hookShop.ConfigureItems(
                 new List<ShopItem>
                 {
                     new ShopItem { id = "hook_lv1", price = 0, valueTier = 1 },
@@ -413,9 +406,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 });
             hookShop.SetUnlockAllItemsForQa(true);
             var boatShop = CreateComponent<BoatShopController>("BoatShopController_HarborPurchaseEquip");
-            SetPrivateField(
-                boatShop,
-                "_items",
+            boatShop.ConfigureItems(
                 new List<ShopItem>
                 {
                     new ShopItem { id = "ship_lv1", price = 0, valueTier = 1 },
@@ -432,7 +423,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(false);
             _createdRoots.Add(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
-            SetPrivateField(router, "_saveManager", saveManager);
             router.Configure(
                 new HarborSceneInteractionRouter.DependencyBundle
                 {
@@ -442,7 +432,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                         HookShop = hookShop,
                         BoatShop = boatShop,
                         FishShop = null,
-                        InteractionController = null
+                        InteractionController = null,
+                        SaveManager = saveManager
                     },
                     Text = new HarborSceneInteractionRouter.TextDependencyBundle
                     {
@@ -510,7 +501,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(false);
             _createdRoots.Add(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
-            SetPrivateField(router, "_saveManager", saveManager);
             router.Configure(
                 new HarborSceneInteractionRouter.DependencyBundle
                 {
@@ -520,7 +510,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                         HookShop = null,
                         BoatShop = null,
                         FishShop = fishShop,
-                        InteractionController = null
+                        InteractionController = null,
+                        SaveManager = saveManager
                     },
                     Text = new HarborSceneInteractionRouter.TextDependencyBundle
                     {
@@ -573,9 +564,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             saveManager.Save(forceImmediate: true);
 
             var hookShop = CreateComponent<HookShopController>("HookShopController_HarborHookButtons");
-            SetPrivateField(
-                hookShop,
-                "_items",
+            hookShop.ConfigureItems(
                 new List<ShopItem>
                 {
                     new ShopItem { id = "hook_lv1", price = 0, valueTier = 1 },
@@ -597,7 +586,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             routerRoot.SetActive(false);
             _createdRoots.Add(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
-            SetPrivateField(router, "_saveManager", saveManager);
             router.Configure(
                 interactables: new List<WorldInteractable>(),
                 hookShop: hookShop,
@@ -606,7 +594,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 statusText: statusText,
                 hookShopInfoText: hookInfoText,
                 hookShopButtons: new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button },
-                hookShopIcons: new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon });
+                hookShopIcons: new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon },
+                saveManager: saveManager);
 
             routerRoot.SetActive(true);
             yield return null;
@@ -792,22 +781,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             {
                 UnityEngine.Object.DestroyImmediate(UserSettingsService.Instance.gameObject);
             }
-        }
-
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            if (target == null || string.IsNullOrWhiteSpace(fieldName))
-            {
-                return;
-            }
-
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            if (field == null)
-            {
-                throw new MissingFieldException(target.GetType().FullName, fieldName);
-            }
-
-            field.SetValue(target, value);
         }
     }
 }

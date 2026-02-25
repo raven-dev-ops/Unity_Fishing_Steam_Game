@@ -71,6 +71,37 @@ namespace RavenDevOps.Fishing.Fishing
             ApplyStateImmediate();
         }
 
+        internal void ConfigureReelInputEvaluationForTests(
+            SaveManager saveManager,
+            FishingActionStateMachine stateMachine,
+            float levelTwoReelSpeedMultiplier)
+        {
+            if (_stateMachine != stateMachine)
+            {
+                UnsubscribeFromStateMachine();
+            }
+
+            _saveManager = saveManager;
+            _stateMachine = stateMachine;
+            _levelTwoReelSpeedMultiplier = Mathf.Max(1f, levelTwoReelSpeedMultiplier);
+            SubscribeToStateMachine();
+        }
+
+        internal bool ShouldApplyReelMotionForTests()
+        {
+            return ShouldApplyReelMotion();
+        }
+
+        internal float ResolveHookReelSpeedMultiplierForTests()
+        {
+            return ResolveHookReelSpeedMultiplier();
+        }
+
+        internal bool CanUseInWaterAutoRaiseDoubleTapForTests()
+        {
+            return CanUseInWaterAutoRaiseDoubleTap();
+        }
+
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);

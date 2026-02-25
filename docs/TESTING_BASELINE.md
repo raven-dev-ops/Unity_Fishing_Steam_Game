@@ -109,6 +109,7 @@ Unity.exe -batchmode -nographics -quit `
   - Catch -> inventory -> sell regression path
   - Harbor router transaction flow checks (purchase, equip, fish sale, charter accept/claim, sail guard/route)
   - CatchResolver explicit dependency-bundle catch-flow checks without auto-attached setup dependencies
+  - Internal seam-based controller checks for tutorial/catch/cast/runtime-composition paths (no private-member reflection in critical regression suites)
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions
   - Non-Steam fallback guard-path checks
