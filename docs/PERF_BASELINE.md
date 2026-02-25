@@ -44,6 +44,18 @@ Minimum tier defaults:
 | Harbor traversal + menu churn | 60 | 55 | 25 | 30 | 64 | 80 |
 | Fishing repeated cast/hook/reel | 60 | 55 | 25 | 30 | 64 | 80 |
 
+Recommended tier defaults:
+| Scenario | Warn min avg FPS | Fail min avg FPS | Warn max p95 frame ms | Fail max p95 frame ms | Warn max GC KB | Fail max GC KB |
+|---|---:|---:|---:|---:|---:|---:|
+| Harbor traversal + menu churn | 75 | 68 | 20 | 24 | 56 | 72 |
+| Fishing repeated cast/hook/reel | 75 | 68 | 20 | 24 | 56 | 72 |
+
+Reference tier defaults:
+| Scenario | Warn min avg FPS | Fail min avg FPS | Warn max p95 frame ms | Fail max p95 frame ms | Warn max GC KB | Fail max GC KB |
+|---|---:|---:|---:|---:|---:|---:|
+| Harbor traversal + menu churn | 90 | 80 | 16 | 20 | 48 | 64 |
+| Fishing repeated cast/hook/reel | 90 | 80 | 16 | 20 | 48 | 64 |
+
 ## Baseline Session Template
 Record one row per scenario and keep the latest approved run:
 
@@ -69,6 +81,7 @@ Hardware-tier waiver policy:
 - Trigger paths: `PerfLogs/**` (plus workflow/script/doc changes) and manual dispatch.
 - Manual dispatch input:
   - `explicit_log_file` (optional file or directory override)
+  - `release_context` (when true, missing perf evidence is a hard failure)
 - Behavior:
   - Workflow auto-discovers captured perf logs from:
     - `PerfLogs/**` with `perf*.log` / `*sanity*.log`
@@ -82,10 +95,16 @@ Hardware-tier waiver policy:
     - `PERF_SANITY ... tier=<tier>` log metadata
     - filename fallback (`minimum|recommended|reference`)
     - default fallback tier (`minimum`)
-  - If no matching logs are found, workflow is marked skipped (warning + summary artifact).
+  - If no matching logs are found:
+    - default CI path: status `skipped` with warning + summary artifact.
+    - release-context path (`release_context=true` or release workflow strict gate): status `failed`.
+  - Release workflow (`.github/workflows/release-steampipe.yml`) executes the same parser with `-FailOnNoLogs` so release runs cannot pass with missing perf evidence.
 
 ## Baseline Lock Verification
 - Run non-blocking matrix validation:
   - `scripts/ci/hardware-baseline-lock-check.ps1`
 - Run strict 1.0 validation (all tiers must have at least one validated capture):
   - `scripts/ci/hardware-baseline-lock-check.ps1 -RequireAllTiersValidated`
+- Current lock state (2026-02-25):
+  - `minimum` and `recommended` remain waiver-backed in `ci/hardware-baseline-matrix.json` with expiry `2026-03-06`.
+  - Any extension must be explicit, time-boxed, and approved before expiry; expired waivers fail the lock gate.

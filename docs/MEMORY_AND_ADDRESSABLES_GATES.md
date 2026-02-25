@@ -8,6 +8,7 @@
 - Triggers:
   - push/PR on gating scripts/config/docs and artifact paths
   - manual dispatch with explicit input path overrides
+  - manual `release_context` mode for strict no-missing-evidence enforcement
 
 ## Memory Budget Gate
 - Script: `scripts/ci/memory-budget-check.ps1`
@@ -19,6 +20,10 @@
 - Outputs:
   - `Artifacts/Memory/memory_budget_summary.json`
   - `Artifacts/Memory/memory_budget_summary.md`
+- Default thresholds (`ci/memory-budget-baseline.json`):
+  - Harbor: warn/fail `850/960` MB
+  - Fishing: warn/fail `900/1024` MB
+  - Default: warn/fail `900/1024` MB
 
 ## Addressables Duplication Gate
 - Script: `scripts/ci/addressables-duplication-check.ps1`
@@ -29,15 +34,23 @@
 - Outputs:
   - `Artifacts/Addressables/duplication_summary.json`
   - `Artifacts/Addressables/duplication_summary.md`
+- Default thresholds (`ci/addressables-duplication-baseline.json`):
+  - duplicate total MB warn/fail `64/96`
+  - duplicate asset count warn/fail `150/250`
 
 ## Status Semantics
 - `passed`: within warn thresholds.
 - `warning`: over warn threshold, under fail threshold.
 - `failed`: over fail threshold or malformed input.
+- `skipped`: no sample/report files discovered in non-release contexts.
 
 CI behavior:
 - Fail-level breaches are blocking.
 - Warn-level breaches are non-blocking by default and must follow waiver policy.
+- Missing evidence handling:
+  - default CI path: no samples/reports produce `skipped` summary artifacts.
+  - release-context path (`release_context=true`): no samples/reports are hard failures (`-FailOnNoSamples` / `-FailOnNoReports`).
+  - release workflow (`.github/workflows/release-steampipe.yml`) uses strict release-context flags so memory/duplication evidence cannot be skipped.
 
 ## Baseline and Waiver Governance
 - Baseline files:

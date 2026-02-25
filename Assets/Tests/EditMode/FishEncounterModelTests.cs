@@ -87,5 +87,41 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             Assert.That(FishEncounterModel.ResolveTensionState(0.6f), Is.EqualTo(FishingTensionState.Warning));
             Assert.That(FishEncounterModel.ResolveTensionState(0.9f), Is.EqualTo(FishingTensionState.Critical));
         }
+
+        [Test]
+        public void Step_DoesNotAllocateInSteadyState()
+        {
+            var model = new FishEncounterModel();
+            var fish = new FishDefinition
+            {
+                id = "fish_no_alloc",
+                fightStamina = 250f,
+                pullIntensity = 0.8f,
+                escapeSeconds = 250f
+            };
+
+            model.Begin(fish, initialTension: 0.15f);
+
+            var landed = false;
+            var failReason = FishingFailReason.None;
+            for (var i = 0; i < 128; i++)
+            {
+                model.Step(0.016f, isReeling: false, out landed, out failReason);
+            }
+
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+            System.GC.Collect();
+            var before = System.GC.GetTotalMemory(true);
+
+            for (var i = 0; i < 1024; i++)
+            {
+                model.Step(0.016f, isReeling: false, out landed, out failReason);
+            }
+
+            System.GC.Collect();
+            var after = System.GC.GetTotalMemory(true);
+            Assert.That(after - before, Is.LessThanOrEqualTo(1024L));
+        }
     }
 }

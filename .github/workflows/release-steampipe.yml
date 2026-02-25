@@ -229,6 +229,64 @@ jobs:
         with:
           lfs: true
 
+      - name: Run release-context perf evidence gate (strict)
+        shell: pwsh
+        run: |
+          ./scripts/perf-ingest-captured.ps1 `
+            -SummaryJsonPath "Artifacts/Perf/perf_ingestion_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Perf/perf_ingestion_summary.md" `
+            -PerLogOutputDirectory "Artifacts/Perf/Ingested" `
+            -FailOnNoLogs
+
+      - name: Run release-context memory gate (strict)
+        shell: pwsh
+        run: |
+          ./scripts/ci/memory-budget-check.ps1 `
+            -BaselineConfigPath "ci/memory-budget-baseline.json" `
+            -SummaryJsonPath "Artifacts/Memory/memory_budget_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Memory/memory_budget_summary.md" `
+            -FailOnNoSamples
+
+      - name: Run release-context Addressables duplication gate (strict)
+        shell: pwsh
+        run: |
+          ./scripts/ci/addressables-duplication-check.ps1 `
+            -BaselineConfigPath "ci/addressables-duplication-baseline.json" `
+            -SummaryJsonPath "Artifacts/Addressables/duplication_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Addressables/duplication_summary.md" `
+            -FailOnNoReports
+
+      - name: Publish release perf/memory/duplication summaries
+        if: always()
+        shell: bash
+        run: |
+          echo "## Release Perf/Memory/Addressables Evidence" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "Artifacts/Perf/perf_ingestion_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Perf/perf_ingestion_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f "Artifacts/Memory/memory_budget_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Memory/memory_budget_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f "Artifacts/Addressables/duplication_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Addressables/duplication_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload release perf/memory/duplication artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-memory-duplication-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: |
+            Artifacts/Perf/**
+            Artifacts/Memory/**
+            Artifacts/Addressables/**
+          if-no-files-found: warn
+
       - name: Validate Unity version contract
         shell: bash
         run: |
@@ -347,6 +405,7 @@ jobs:
           REPORT_JSON: Artifacts/BuildSize/build_size_report.json
           REPORT_MD: Artifacts/BuildSize/build_size_report.md
           ENFORCEMENT_MODE: fail
+          REQUIRE_BASELINE: "true"
           BUILD_SIZE_WARN_DELTA_PERCENT: "8"
           BUILD_SIZE_FAIL_DELTA_PERCENT: "15"
         run: |

@@ -2,7 +2,9 @@ param(
     [string]$ExplicitReportPath = "",
     [string[]]$SearchRoots = @("Artifacts/Addressables", "PerfLogs"),
     [string[]]$NamePatterns = @("*addressables*dup*.json", "*duplication*.json", "*buildlayout*.json"),
+    [string[]]$ExcludedNamePatterns = @("*summary*.json"),
     [string]$BaselineConfigPath = "ci/addressables-duplication-baseline.json",
+    [switch]$FailOnNoReports,
     [switch]$FailOnWarnings,
     [string]$SummaryJsonPath = "Artifacts/Addressables/duplication_summary.json",
     [string]$SummaryMarkdownPath = "Artifacts/Addressables/duplication_summary.md"
@@ -35,6 +37,17 @@ function Add-CandidateFile {
 
     if (-not (Test-Path -LiteralPath $CandidatePath -PathType Leaf)) {
         return
+    }
+
+    $fileName = [System.IO.Path]::GetFileName($CandidatePath)
+    foreach ($excludedPattern in $ExcludedNamePatterns) {
+        if ([string]::IsNullOrWhiteSpace($excludedPattern)) {
+            continue
+        }
+
+        if ($fileName -like $excludedPattern) {
+            return
+        }
     }
 
     $fullPath = [System.IO.Path]::GetFullPath($CandidatePath)
@@ -157,6 +170,10 @@ $summary = [ordered]@{
 }
 
 if ($files.Count -eq 0) {
+    $status = if ($FailOnNoReports) { "failed" } else { "skipped" }
+    $reason = if ($FailOnNoReports) { "no_duplication_reports_found_release_gate" } else { "no_duplication_reports_found" }
+    $summary.status = $status
+    $summary.reason = $reason
     Ensure-ParentDirectory -Path $SummaryJsonPath
     ($summary | ConvertTo-Json -Depth 8) | Set-Content -Path $SummaryJsonPath
 
@@ -164,11 +181,16 @@ if ($files.Count -eq 0) {
     @(
         "# Addressables Duplication Summary",
         "",
-        "Status: **SKIPPED**",
-        "Reason: no_duplication_reports_found",
+        ("Status: **{0}**" -f $status.ToUpperInvariant()),
+        ("Reason: {0}" -f $reason),
         "",
         "No duplication report files were discovered."
     ) | Set-Content -Path $SummaryMarkdownPath
+
+    if ($FailOnNoReports) {
+        Write-Error "Addressables duplication check failed: no reports discovered and FailOnNoReports is enabled."
+        exit 1
+    }
 
     Write-Warning "Addressables duplication check skipped: no report files discovered."
     exit 0

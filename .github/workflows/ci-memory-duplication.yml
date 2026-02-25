@@ -13,6 +13,11 @@ on:
         required: false
         default: ""
         type: string
+      release_context:
+        description: "When true, fail if memory/duplication evidence is missing (no skipped status allowed)"
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -57,21 +62,39 @@ jobs:
         shell: pwsh
         run: |
           $explicitPath = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_memory_path || '' }}"
-          ./scripts/ci/memory-budget-check.ps1 `
-            -ExplicitInputPath $explicitPath `
-            -BaselineConfigPath "ci/memory-budget-baseline.json" `
-            -SummaryJsonPath "Artifacts/Memory/memory_budget_summary.json" `
-            -SummaryMarkdownPath "Artifacts/Memory/memory_budget_summary.md"
+          $releaseContext = [System.Convert]::ToBoolean("${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_context || 'false' }}")
+
+          $args = @(
+            "-ExplicitInputPath", $explicitPath,
+            "-BaselineConfigPath", "ci/memory-budget-baseline.json",
+            "-SummaryJsonPath", "Artifacts/Memory/memory_budget_summary.json",
+            "-SummaryMarkdownPath", "Artifacts/Memory/memory_budget_summary.md"
+          )
+
+          if ($releaseContext) {
+            $args += "-FailOnNoSamples"
+          }
+
+          ./scripts/ci/memory-budget-check.ps1 @args
 
       - name: Run Addressables duplication gate
         shell: pwsh
         run: |
           $explicitPath = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_duplication_path || '' }}"
-          ./scripts/ci/addressables-duplication-check.ps1 `
-            -ExplicitReportPath $explicitPath `
-            -BaselineConfigPath "ci/addressables-duplication-baseline.json" `
-            -SummaryJsonPath "Artifacts/Addressables/duplication_summary.json" `
-            -SummaryMarkdownPath "Artifacts/Addressables/duplication_summary.md"
+          $releaseContext = [System.Convert]::ToBoolean("${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_context || 'false' }}")
+
+          $args = @(
+            "-ExplicitReportPath", $explicitPath,
+            "-BaselineConfigPath", "ci/addressables-duplication-baseline.json",
+            "-SummaryJsonPath", "Artifacts/Addressables/duplication_summary.json",
+            "-SummaryMarkdownPath", "Artifacts/Addressables/duplication_summary.md"
+          )
+
+          if ($releaseContext) {
+            $args += "-FailOnNoReports"
+          }
+
+          ./scripts/ci/addressables-duplication-check.ps1 @args
 
       - name: Publish combined summary
         if: always()

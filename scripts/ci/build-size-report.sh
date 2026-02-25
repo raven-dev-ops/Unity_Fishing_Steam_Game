@@ -8,6 +8,7 @@ REPORT_MD="${REPORT_MD:-Artifacts/BuildSize/build_size_report.md}"
 ENFORCEMENT_MODE="${ENFORCEMENT_MODE:-warn}" # off | warn | fail
 WARN_DELTA_PERCENT="${BUILD_SIZE_WARN_DELTA_PERCENT:-8}"
 FAIL_DELTA_PERCENT="${BUILD_SIZE_FAIL_DELTA_PERCENT:-15}"
+REQUIRE_BASELINE="${REQUIRE_BASELINE:-false}"
 
 if [[ ! -d "${BUILD_ROOT}" ]]; then
   echo "::error::Build size report failed: build root not found at '${BUILD_ROOT}'."
@@ -51,6 +52,7 @@ baseline_status="missing"
 delta_bytes=0
 delta_percent=0
 threshold_status="no_baseline"
+baseline_required_missing="0"
 
 if [[ -n "${baseline_total}" ]]; then
   baseline_status="present"
@@ -86,7 +88,12 @@ PY
   fi
 fi
 
-python3 - "${REPORT_JSON}" "${generated_utc}" "${BUILD_ROOT}" "${total_bytes}" "${file_count}" "${BASELINE_FILE}" "${baseline_status}" "${baseline_total}" "${delta_bytes}" "${delta_percent}" "${threshold_status}" "${WARN_DELTA_PERCENT}" "${FAIL_DELTA_PERCENT}" "${tmp_entries}" <<'PY'
+if [[ -z "${baseline_total}" && "${REQUIRE_BASELINE}" == "true" ]]; then
+  baseline_required_missing="1"
+  threshold_status="no_baseline_required"
+fi
+
+python3 - "${REPORT_JSON}" "${generated_utc}" "${BUILD_ROOT}" "${total_bytes}" "${file_count}" "${BASELINE_FILE}" "${baseline_status}" "${baseline_total}" "${delta_bytes}" "${delta_percent}" "${threshold_status}" "${WARN_DELTA_PERCENT}" "${FAIL_DELTA_PERCENT}" "${tmp_entries}" "${REQUIRE_BASELINE}" "${baseline_required_missing}" <<'PY'
 import json
 import os
 import sys
@@ -106,6 +113,8 @@ import sys
     warn_delta_percent,
     fail_delta_percent,
     entries_file,
+    require_baseline,
+    baseline_required_missing,
 ) = sys.argv[1:]
 
 entries = []
@@ -128,6 +137,8 @@ payload = {
         "file": baseline_file,
         "status": baseline_status,
         "total_bytes": int(baseline_total) if baseline_total else None,
+        "required": require_baseline.lower() == "true",
+        "required_missing": baseline_required_missing == "1",
     },
     "delta": {
         "bytes": int(delta_bytes),
@@ -157,6 +168,7 @@ PY
   echo "| Total bytes | ${total_bytes} |"
   echo "| File count | ${file_count} |"
   echo "| Baseline status | ${baseline_status} |"
+  echo "| Baseline required | ${REQUIRE_BASELINE} |"
   if [[ -n "${baseline_total}" ]]; then
     echo "| Baseline total bytes | ${baseline_total} |"
     echo "| Delta bytes | ${delta_bytes} |"
@@ -166,7 +178,7 @@ PY
     echo "| Fail threshold | ${FAIL_DELTA_PERCENT}% |"
   else
     echo "| Baseline file | \`${BASELINE_FILE}\` |"
-    echo "| Threshold status | no_baseline |"
+    echo "| Threshold status | ${threshold_status} |"
   fi
   echo
   echo "## Top-level entries"
@@ -185,6 +197,11 @@ PY
 if [[ "${ENFORCEMENT_MODE}" == "off" ]]; then
   echo "Build size report generated (enforcement disabled)."
   exit 0
+fi
+
+if [[ "${baseline_required_missing}" == "1" ]]; then
+  echo "::error::Build size baseline is required but missing/invalid in '${BASELINE_FILE}'."
+  exit 1
 fi
 
 if [[ "${threshold_status}" == "warn" ]]; then

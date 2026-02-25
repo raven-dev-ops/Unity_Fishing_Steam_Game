@@ -60,6 +60,17 @@ Each tier must define:
    - matrix updates in `ci/hardware-baseline-matrix.json`
 4. Re-run baseline checks after update and archive resulting summaries.
 
+## Baseline Lock Verification
+- Primary command:
+  - `scripts/ci/hardware-baseline-lock-check.ps1`
+- Strict release-readiness command:
+  - `scripts/ci/hardware-baseline-lock-check.ps1 -RequireAllTiersValidated`
+- Expected artifacts:
+  - `Artifacts/Hardware/hardware_baseline_lock_summary.json`
+  - `Artifacts/Hardware/hardware_baseline_lock_summary.md`
+- As of 2026-02-25, active waivers in `ci/hardware-baseline-matrix.json` for `minimum` and `recommended` expire on `2026-03-06`.
+- Any renewal must be explicitly approved and time-boxed before expiry; expired waivers are blocker-level failures.
+
 ## Current State (2026-02-21)
 - `reference` tier has a recorded local hardware fingerprint capture entry.
 - `minimum` and `recommended` are currently covered by time-boxed waivers pending physical capture runs.

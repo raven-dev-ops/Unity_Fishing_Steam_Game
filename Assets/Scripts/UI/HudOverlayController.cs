@@ -180,49 +180,89 @@ namespace RavenDevOps.Fishing.UI
         public void SetFishingTelemetry(int distanceTier, float depth)
         {
             var clampedTier = Mathf.Max(1, distanceTier);
-            if (CurrentDistanceTier == clampedTier && Mathf.Approximately(CurrentDepth, depth))
+            var clampedDepth = Mathf.Max(0f, depth);
+            if (CurrentDistanceTier == clampedTier && Mathf.Approximately(CurrentDepth, clampedDepth))
             {
                 return;
             }
 
             CurrentDistanceTier = clampedTier;
-            CurrentDepth = Mathf.Max(0f, depth);
+            CurrentDepth = clampedDepth;
             Refresh();
         }
 
         public void SetFishingTension(float normalizedTension, FishingTensionState tensionState)
         {
-            CurrentTensionNormalized = Mathf.Clamp01(normalizedTension);
+            var clampedTension = Mathf.Clamp01(normalizedTension);
+            if (CurrentTensionState == tensionState && Mathf.Approximately(CurrentTensionNormalized, clampedTension))
+            {
+                return;
+            }
+
+            CurrentTensionNormalized = clampedTension;
             CurrentTensionState = tensionState;
             Refresh();
         }
 
         public void SetFishingStatus(string status)
         {
-            CurrentFishingStatus = status ?? string.Empty;
+            var resolvedStatus = status ?? string.Empty;
+            if (CurrentFishingStatus == resolvedStatus)
+            {
+                return;
+            }
+
+            CurrentFishingStatus = resolvedStatus;
             Refresh();
         }
 
         public void SetFishingFailure(string failure)
         {
-            CurrentFishingFailure = failure ?? string.Empty;
+            var resolvedFailure = failure ?? string.Empty;
+            if (CurrentFishingFailure == resolvedFailure)
+            {
+                return;
+            }
+
+            CurrentFishingFailure = resolvedFailure;
             Refresh();
         }
 
         public void SetFishingConditions(string conditionLabel)
         {
-            CurrentConditionsLabel = conditionLabel ?? string.Empty;
+            var resolvedLabel = conditionLabel ?? string.Empty;
+            if (CurrentConditionsLabel == resolvedLabel)
+            {
+                return;
+            }
+
+            CurrentConditionsLabel = resolvedLabel;
             Refresh();
         }
 
         public void SetObjectiveStatus(string objectiveStatus)
         {
-            CurrentObjectiveStatus = objectiveStatus ?? string.Empty;
+            var resolvedStatus = objectiveStatus ?? string.Empty;
+            if (CurrentObjectiveStatus == resolvedStatus)
+            {
+                return;
+            }
+
+            CurrentObjectiveStatus = resolvedStatus;
             Refresh();
         }
 
         public void ClearFishingFeedback()
         {
+            if (Mathf.Approximately(CurrentTensionNormalized, 0f)
+                && CurrentTensionState == FishingTensionState.None
+                && string.IsNullOrEmpty(CurrentConditionsLabel)
+                && string.IsNullOrEmpty(CurrentFishingStatus)
+                && string.IsNullOrEmpty(CurrentFishingFailure))
+            {
+                return;
+            }
+
             CurrentTensionNormalized = 0f;
             CurrentTensionState = FishingTensionState.None;
             CurrentConditionsLabel = string.Empty;

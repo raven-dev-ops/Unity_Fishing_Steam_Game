@@ -10,7 +10,8 @@ param(
     [int]$MinSamples = 1,
     [string]$SummaryJsonPath = "Artifacts/Perf/perf_ingestion_summary.json",
     [string]$SummaryMarkdownPath = "Artifacts/Perf/perf_ingestion_summary.md",
-    [string]$PerLogOutputDirectory = "Artifacts/Perf/Ingested"
+    [string]$PerLogOutputDirectory = "Artifacts/Perf/Ingested",
+    [switch]$FailOnNoLogs
 )
 
 $ErrorActionPreference = "Stop"
@@ -150,9 +151,11 @@ if (-not (Test-Path -LiteralPath $parserScriptPath -PathType Leaf)) {
 
 $discoveredLogs = @(Discover-PerfLogs)
 if ($discoveredLogs.Count -eq 0) {
+    $status = if ($FailOnNoLogs) { "failed" } else { "skipped" }
+    $reason = if ($FailOnNoLogs) { "no_logs_found_release_gate" } else { "no_logs_found" }
     $summary = [ordered]@{
-        status = "skipped"
-        reason = "no_logs_found"
+        status = $status
+        reason = $reason
         generated_utc = (Get-Date).ToUniversalTime().ToString("o")
         explicit_log_file = $ExplicitLogFile
         default_tier = $DefaultTier
@@ -172,13 +175,18 @@ if ($discoveredLogs.Count -eq 0) {
     $markdown = @(
         "# Perf Ingestion Summary",
         "",
-        "Status: **SKIPPED**",
-        "Reason: no_logs_found",
+        ("Status: **{0}**" -f $status.ToUpperInvariant()),
+        ("Reason: {0}" -f $reason),
         "",
         "No matching perf logs were discovered."
     )
 
     Write-IngestionArtifacts -Summary $summary -MarkdownLines $markdown
+    if ($FailOnNoLogs) {
+        Write-Error "Perf ingestion failed: no matching logs discovered and FailOnNoLogs is enabled."
+        exit 1
+    }
+
     Write-Warning "Perf ingestion skipped: no matching logs discovered."
     exit 0
 }

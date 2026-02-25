@@ -8,6 +8,11 @@ on:
         required: false
         default: ""
         type: string
+      release_context:
+        description: "When true, fail if perf evidence is missing (no skipped status allowed)"
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -46,11 +51,20 @@ jobs:
         shell: pwsh
         run: |
           $explicitLogFile = "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.explicit_log_file || '' }}"
-          ./scripts/perf-ingest-captured.ps1 `
-            -ExplicitLogFile $explicitLogFile `
-            -SummaryJsonPath "Artifacts/Perf/perf_ingestion_summary.json" `
-            -SummaryMarkdownPath "Artifacts/Perf/perf_ingestion_summary.md" `
-            -PerLogOutputDirectory "Artifacts/Perf/Ingested"
+          $releaseContext = [System.Convert]::ToBoolean("${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_context || 'false' }}")
+
+          $args = @(
+            "-ExplicitLogFile", $explicitLogFile,
+            "-SummaryJsonPath", "Artifacts/Perf/perf_ingestion_summary.json",
+            "-SummaryMarkdownPath", "Artifacts/Perf/perf_ingestion_summary.md",
+            "-PerLogOutputDirectory", "Artifacts/Perf/Ingested"
+          )
+
+          if ($releaseContext) {
+            $args += "-FailOnNoLogs"
+          }
+
+          ./scripts/perf-ingest-captured.ps1 @args
 
       - name: Publish perf summary table
         if: always()

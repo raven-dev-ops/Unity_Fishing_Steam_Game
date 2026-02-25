@@ -2,7 +2,9 @@ param(
     [string]$ExplicitInputPath = "",
     [string[]]$SearchRoots = @("PerfLogs", "Artifacts/Memory"),
     [string[]]$NamePatterns = @("*memory*.json", "*mem*.json"),
+    [string[]]$ExcludedNamePatterns = @("*summary*.json"),
     [string]$BaselineConfigPath = "ci/memory-budget-baseline.json",
+    [switch]$FailOnNoSamples,
     [switch]$FailOnWarnings,
     [string]$SummaryJsonPath = "Artifacts/Memory/memory_budget_summary.json",
     [string]$SummaryMarkdownPath = "Artifacts/Memory/memory_budget_summary.md"
@@ -35,6 +37,17 @@ function Add-CandidateFile {
 
     if (-not (Test-Path -LiteralPath $CandidatePath -PathType Leaf)) {
         return
+    }
+
+    $fileName = [System.IO.Path]::GetFileName($CandidatePath)
+    foreach ($excludedPattern in $ExcludedNamePatterns) {
+        if ([string]::IsNullOrWhiteSpace($excludedPattern)) {
+            continue
+        }
+
+        if ($fileName -like $excludedPattern) {
+            return
+        }
     }
 
     $fullPath = [System.IO.Path]::GetFullPath($CandidatePath)
@@ -130,18 +143,27 @@ $summary = [ordered]@{
 }
 
 if ($files.Count -eq 0) {
+    $status = if ($FailOnNoSamples) { "failed" } else { "skipped" }
+    $reason = if ($FailOnNoSamples) { "no_memory_samples_found_release_gate" } else { "no_memory_samples_found" }
     Ensure-ParentDirectory -Path $SummaryJsonPath
+    $summary.status = $status
+    $summary.reason = $reason
     ($summary | ConvertTo-Json -Depth 8) | Set-Content -Path $SummaryJsonPath
 
     Ensure-ParentDirectory -Path $SummaryMarkdownPath
     @(
         "# Memory Budget Summary",
         "",
-        "Status: **SKIPPED**",
-        "Reason: no_memory_samples_found",
+        ("Status: **{0}**" -f $status.ToUpperInvariant()),
+        ("Reason: {0}" -f $reason),
         "",
         "No memory sample JSON files were discovered."
     ) | Set-Content -Path $SummaryMarkdownPath
+
+    if ($FailOnNoSamples) {
+        Write-Error "Memory budget check failed: no memory samples discovered and FailOnNoSamples is enabled."
+        exit 1
+    }
 
     Write-Warning "Memory budget check skipped: no memory samples discovered."
     exit 0

@@ -18,6 +18,9 @@
 - `gc_delta_kb` should remain within baseline budget.
 - Tier metadata (`tier=<minimum|recommended|reference>`) should be present in `PERF_SANITY` lines.
 - Fish roll hot path should show no avoidable per-roll managed allocations in steady state.
+- HUD/fishing hot-path steady-state allocation checks should pass:
+  - `Assets/Tests/EditMode/HudOverlayControllerTests.cs`
+  - `Assets/Tests/EditMode/FishEncounterModelTests.cs`
 - Ignore first sample window after scene load; use warmed windows for budget evidence.
 
 ## Failure Logging
@@ -29,6 +32,7 @@ Capture scene, timestamp, action sequence, and relevant `PERF_SANITY` / `PERF_SA
    - `PerfLogs/**/perf*.log`
    - `Artifacts/Perf/Captured/**/perf*.log`
 2. Trigger `.github/workflows/ci-perf-budget.yml` (automatically via `PerfLogs/**` change or manual dispatch).
+   - Use `release_context=true` for release-readiness runs so missing perf evidence is a hard failure.
 3. Review uploaded artifacts:
    - `Artifacts/Perf/perf_ingestion_summary.json`
    - `Artifacts/Perf/perf_ingestion_summary.md`

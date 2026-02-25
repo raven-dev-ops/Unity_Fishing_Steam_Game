@@ -118,6 +118,11 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _upAxisHeldLastFrameForPress;
         private int _cachedUpPressFrame = -1;
         private bool _cachedUpPressResult;
+        private string _cachedHudConditionBase = string.Empty;
+        private string _cachedHudConditionFishId = string.Empty;
+        private string _cachedHudConditionShipId = string.Empty;
+        private string _cachedHudConditionHookId = string.Empty;
+        private string _cachedHudConditionSummary = string.Empty;
 
         [NonSerialized] private IFishingRandomSource _randomSource;
         private InputAction _moveHookAction;
@@ -295,6 +300,7 @@ namespace RavenDevOps.Fishing.Fishing
             _targetFishBoundToAmbient = false;
             _pendingCollisionFishId = string.Empty;
             _hasPendingCollisionHookCandidate = false;
+            ClearHudConditionCache();
             ResetHookStationaryAttractionTimer(reseedDelay: true);
             _ambientFishController?.ResolveBoundFish(caught: false);
 
@@ -752,22 +758,54 @@ namespace RavenDevOps.Fishing.Fishing
             _hudOverlay.SetFishingTelemetry(_currentDistanceTier, _hook.CurrentDepth);
             if (_spawner != null)
             {
-                var conditionSummary = _spawner.GetActiveConditionSummary();
-                if (_metaLoopService != null && _saveManager != null && _saveManager.Current != null)
-                {
-                    var activeFishId = _hookedFish != null ? _hookedFish.id : (_targetFish != null ? _targetFish.id : string.Empty);
-                    if (!string.IsNullOrWhiteSpace(activeFishId))
-                    {
-                        var modifierLabel = _metaLoopService.BuildModifierLabel(
-                            activeFishId,
-                            _saveManager.Current.equippedShipId,
-                            _saveManager.Current.equippedHookId);
-                        conditionSummary = $"{conditionSummary} | {modifierLabel}";
-                    }
-                }
-
-                _hudOverlay.SetFishingConditions(conditionSummary);
+                var conditionSummary = _spawner.GetActiveConditionSummary() ?? string.Empty;
+                _hudOverlay.SetFishingConditions(BuildHudConditionSummary(conditionSummary));
             }
+        }
+
+        private void ClearHudConditionCache()
+        {
+            _cachedHudConditionBase = string.Empty;
+            _cachedHudConditionFishId = string.Empty;
+            _cachedHudConditionShipId = string.Empty;
+            _cachedHudConditionHookId = string.Empty;
+            _cachedHudConditionSummary = string.Empty;
+        }
+
+        private string BuildHudConditionSummary(string baseConditionSummary)
+        {
+            var resolvedBaseSummary = baseConditionSummary ?? string.Empty;
+            var activeFishId = _hookedFish != null ? _hookedFish.id : (_targetFish != null ? _targetFish.id : string.Empty);
+            var hasActiveFishId = !string.IsNullOrWhiteSpace(activeFishId);
+            var shipId = _saveManager != null && _saveManager.Current != null ? (_saveManager.Current.equippedShipId ?? string.Empty) : string.Empty;
+            var hookId = _saveManager != null && _saveManager.Current != null ? (_saveManager.Current.equippedHookId ?? string.Empty) : string.Empty;
+
+            if (_cachedHudConditionBase == resolvedBaseSummary
+                && _cachedHudConditionFishId == activeFishId
+                && _cachedHudConditionShipId == shipId
+                && _cachedHudConditionHookId == hookId)
+            {
+                return _cachedHudConditionSummary;
+            }
+
+            var resolvedSummary = resolvedBaseSummary;
+            if (_metaLoopService != null && hasActiveFishId)
+            {
+                var modifierLabel = _metaLoopService.BuildModifierLabel(activeFishId, shipId, hookId);
+                if (!string.IsNullOrWhiteSpace(modifierLabel))
+                {
+                    resolvedSummary = string.IsNullOrWhiteSpace(resolvedBaseSummary)
+                        ? modifierLabel
+                        : $"{resolvedBaseSummary} | {modifierLabel}";
+                }
+            }
+
+            _cachedHudConditionBase = resolvedBaseSummary;
+            _cachedHudConditionFishId = activeFishId;
+            _cachedHudConditionShipId = shipId;
+            _cachedHudConditionHookId = hookId;
+            _cachedHudConditionSummary = resolvedSummary ?? string.Empty;
+            return _cachedHudConditionSummary;
         }
 
         private void RefreshInputActions()

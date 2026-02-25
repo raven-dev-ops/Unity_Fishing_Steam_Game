@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using NUnit.Framework;
+using RavenDevOps.Fishing.Core;
+using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.UI;
 using TMPro;
@@ -71,6 +73,71 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             finally
             {
                 UnityEngine.Object.DestroyImmediate(copecsText.gameObject);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void SetFishingValues_WhenUnchanged_DoesNotAllocateInSteadyState()
+        {
+            var root = new GameObject("hud-root-no-alloc");
+            var controller = root.AddComponent<HudOverlayController>();
+            var depthText = new GameObject("depth-text").AddComponent<TextMeshProUGUI>();
+            var tensionText = new GameObject("tension-text").AddComponent<TextMeshProUGUI>();
+            var conditionsText = new GameObject("conditions-text").AddComponent<TextMeshProUGUI>();
+            var statusText = new GameObject("status-text").AddComponent<TextMeshProUGUI>();
+            var failureText = new GameObject("failure-text").AddComponent<TextMeshProUGUI>();
+            var gameFlowRoot = new GameObject("hud-flow");
+            var gameFlow = gameFlowRoot.AddComponent<GameFlowManager>();
+
+            try
+            {
+                SetPrivateField(controller, "_depthText", depthText);
+                SetPrivateField(controller, "_tensionStateText", tensionText);
+                SetPrivateField(controller, "_conditionsText", conditionsText);
+                SetPrivateField(controller, "_fishingStatusText", statusText);
+                SetPrivateField(controller, "_fishingFailureText", failureText);
+
+                var fakeSave = new FakeSaveDataView(new SaveDataV1
+                {
+                    copecs = 100,
+                    careerStartLocalDate = "2026-02-20"
+                });
+
+                gameFlow.SetState(GameFlowState.Fishing);
+                controller.ConfigureDependencies(fakeSave, gameFlow);
+                controller.SetFishingTelemetry(2, 42.5f);
+                controller.SetFishingTension(0.35f, FishingTensionState.Warning);
+                controller.SetFishingConditions("Storm | Night");
+                controller.SetFishingStatus("Holding depth.");
+                controller.SetFishingFailure("Line snapped.");
+
+                System.GC.Collect();
+                System.GC.WaitForPendingFinalizers();
+                System.GC.Collect();
+                var before = System.GC.GetTotalMemory(true);
+
+                for (var i = 0; i < 1024; i++)
+                {
+                    controller.SetFishingTelemetry(2, 42.5f);
+                    controller.SetFishingTension(0.35f, FishingTensionState.Warning);
+                    controller.SetFishingConditions("Storm | Night");
+                    controller.SetFishingStatus("Holding depth.");
+                    controller.SetFishingFailure("Line snapped.");
+                }
+
+                System.GC.Collect();
+                var after = System.GC.GetTotalMemory(true);
+                Assert.That(after - before, Is.LessThanOrEqualTo(1024L));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(depthText.gameObject);
+                UnityEngine.Object.DestroyImmediate(tensionText.gameObject);
+                UnityEngine.Object.DestroyImmediate(conditionsText.gameObject);
+                UnityEngine.Object.DestroyImmediate(statusText.gameObject);
+                UnityEngine.Object.DestroyImmediate(failureText.gameObject);
+                UnityEngine.Object.DestroyImmediate(gameFlowRoot);
                 UnityEngine.Object.DestroyImmediate(root);
             }
         }
