@@ -71,7 +71,8 @@ flowchart LR
 - Input is context-driven through action maps (`UI`, `Harbor`, `Fishing`).
 - Input rebinding overrides are persisted via `InputRebindingService`.
 - Save and audio services are global and survive scene changes.
-- Save load path is version-aware via `SaveMigrationPipeline` before runtime normalization.
+- Save runtime is decomposed into bounded collaborators under `Assets/Scripts/Save/`: `AtomicJsonSavePersistenceAdapter` (`ISavePersistenceAdapter`), `SaveMigrationLoadCoordinator` (`ISaveMigrationLoadCoordinator`), `SaveProgressionService`, and `SaveDomainMutationService`.
+- `SaveManager` remains the Unity-facing orchestration facade (lifecycle/events/throttle wiring), while persistence/migration/progression/tutorial-profile mutation rules execute through extracted save-domain services.
 - Meta-loop runtime service adds contracts, collections, demand modifiers, and gear synergies for retention depth.
 - Addressables pilot loader can asynchronously provide phase-one fish catalog overlays with resource fallback.
 - Objectives service tracks non-Steam gameplay goals and persists objective progress/rewards.

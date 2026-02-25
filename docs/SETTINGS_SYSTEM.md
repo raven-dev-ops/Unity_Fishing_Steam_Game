@@ -22,6 +22,15 @@ Persisted keys:
 - Steam Rich Presence enabled
 - Input binding overrides (`settings.inputBindingOverridesJson` via `InputRebindingService`)
 
+## Persistence
+- Settings persistence is isolated to `UserSettingsService` (`PlayerPrefs`) and is intentionally separate from profile save-file persistence.
+- Profile save persistence (`Assets/Scripts/Save/SaveManager.cs`) now delegates file/migration/domain logic to bounded save services:
+  - `ISavePersistenceAdapter` / `AtomicJsonSavePersistenceAdapter`
+  - `ISaveMigrationLoadCoordinator` / `SaveMigrationLoadCoordinator`
+  - `SaveProgressionService`
+  - `SaveDomainMutationService`
+- This boundary keeps settings UI changes decoupled from save-file I/O and migration handling.
+
 ## Runtime Integration
 - Service: `Assets/Scripts/Core/UserSettingsService.cs`
 - UI controller: `Assets/Scripts/UI/SettingsMenuController.cs`

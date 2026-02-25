@@ -21,12 +21,12 @@ Current corpus cases:
 - Coverage:
   - Corpus manifest replay with expected success/failure outcomes.
   - Idempotent re-run checks for successful migrations.
-  - Rollback drill using in-memory save filesystem to verify corrupt backup preservation path.
+  - Rollback drill using in-memory save filesystem + `SaveMigrationLoadCoordinator` (`ISaveMigrationLoadCoordinator`) to verify corrupt backup preservation path.
 
 ## Rollback Drill Procedure (Operator)
 1. Back up current profile save before any rehearsal.
 2. Inject malformed payload in isolated test location.
-3. Execute migration/load path in test harness.
+3. Execute migration/load path through `SaveMigrationLoadCoordinator` test harness.
 4. Verify:
    - load returns safe failure path,
    - source save remains intact,

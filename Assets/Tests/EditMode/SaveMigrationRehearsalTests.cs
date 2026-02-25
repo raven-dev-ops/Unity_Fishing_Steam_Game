@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Runtime.Serialization;
 using NUnit.Framework;
 using RavenDevOps.Fishing.Save;
 using UnityEngine;
@@ -81,19 +79,16 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         [Test]
         public void RollbackDrill_MigrationFailure_PreservesSourceWithCorruptBackup()
         {
-            var manager = (SaveManager)FormatterServices.GetUninitializedObject(typeof(SaveManager));
+            var coordinator = new SaveMigrationLoadCoordinator();
             var fileSystem = new InMemorySaveFileSystem(@"C:\MemorySaveProfile");
             var now = new DateTime(2026, 2, 21, 4, 0, 0, DateTimeKind.Local);
             var timeProvider = new FixedTimeProvider(now);
-
-            SetPrivateField(manager, "_fileSystem", fileSystem);
-            SetPrivateField(manager, "_timeProvider", timeProvider);
 
             var savePath = Path.Combine(fileSystem.PersistentDataPath, "save_v1.json");
             fileSystem.WriteAllText(savePath, "{bad-json");
 
             var loaded = default(SaveDataV1);
-            var ok = InvokeTryLoadExisting(manager, out loaded);
+            var ok = coordinator.TryLoad(savePath, fileSystem, timeProvider, out loaded, out _);
 
             Assert.That(ok, Is.False);
             Assert.That(loaded, Is.Null);
@@ -105,23 +100,6 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         private static string ResolveFixturePath(string relativePath)
         {
             return Path.Combine(Application.dataPath, FixtureDirectory, relativePath);
-        }
-
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.That(field, Is.Not.Null, $"Expected private field '{fieldName}' to exist.");
-            field.SetValue(target, value);
-        }
-
-        private static bool InvokeTryLoadExisting(SaveManager manager, out SaveDataV1 loaded)
-        {
-            var method = typeof(SaveManager).GetMethod("TryLoadExisting", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.That(method, Is.Not.Null, "Expected SaveManager.TryLoadExisting private method.");
-            var args = new object[] { null };
-            var result = method.Invoke(manager, args);
-            loaded = args[0] as SaveDataV1;
-            return result is bool b && b;
         }
 
         private sealed class FixedTimeProvider : ITimeProvider

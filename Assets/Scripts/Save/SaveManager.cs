@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RavenDevOps.Fishing.Core;
-using RavenDevOps.Fishing.Core.Logging;
 using UnityEngine;
 
 namespace RavenDevOps.Fishing.Save
@@ -26,8 +25,6 @@ namespace RavenDevOps.Fishing.Save
     public sealed class SaveManager : MonoBehaviour, ISaveDataView
     {
         private const string FileName = "save_v1.json";
-        private const string TempFileSuffix = ".tmp";
-        private const string BackupFileSuffix = ".bak";
         private const int MaxCatchLogEntries = 200;
         private const int MaxFishSaleHistoryEntries = 160;
 
@@ -42,6 +39,10 @@ namespace RavenDevOps.Fishing.Save
         [NonSerialized] private ISaveFileSystem _fileSystem;
         [NonSerialized] private ITimeProvider _timeProvider;
         [NonSerialized] private SaveWriteThrottle _saveWriteThrottle;
+        [NonSerialized] private ISavePersistenceAdapter _savePersistenceAdapter;
+        [NonSerialized] private ISaveMigrationLoadCoordinator _saveLoadCoordinator;
+        [NonSerialized] private SaveProgressionService _progressionService;
+        [NonSerialized] private SaveDomainMutationService _mutationService;
 
         public static SaveManager Instance => _instance;
         public SaveDataV1 Current => _current;
@@ -60,6 +61,10 @@ namespace RavenDevOps.Fishing.Save
         private ISaveFileSystem FileSystem => _fileSystem ??= new SaveFileSystem();
         private ITimeProvider TimeProvider => _timeProvider ??= new UnityTimeProvider();
         private SaveWriteThrottle WriteThrottle => _saveWriteThrottle ??= new SaveWriteThrottle(_minimumSaveIntervalSeconds);
+        private ISavePersistenceAdapter PersistenceAdapter => _savePersistenceAdapter ??= new AtomicJsonSavePersistenceAdapter();
+        private ISaveMigrationLoadCoordinator LoadCoordinator => _saveLoadCoordinator ??= new SaveMigrationLoadCoordinator();
+        private SaveProgressionService ProgressionService => _progressionService ??= new SaveProgressionService();
+        private SaveDomainMutationService MutationService => _mutationService ??= new SaveDomainMutationService();
         private string SavePath => Path.Combine(FileSystem.PersistentDataPath, FileName);
 
         private void Awake()
@@ -138,11 +143,17 @@ namespace RavenDevOps.Fishing.Save
             }
         }
 
-        internal void ConfigureRuntimeDependencies(ISaveFileSystem fileSystem, ITimeProvider timeProvider)
+        internal void ConfigureRuntimeDependencies(
+            ISaveFileSystem fileSystem,
+            ITimeProvider timeProvider,
+            ISavePersistenceAdapter persistenceAdapter = null,
+            ISaveMigrationLoadCoordinator loadCoordinator = null)
         {
             _fileSystem = fileSystem ?? new SaveFileSystem();
             _timeProvider = timeProvider ?? new UnityTimeProvider();
             _saveWriteThrottle = new SaveWriteThrottle(_minimumSaveIntervalSeconds);
+            _savePersistenceAdapter = persistenceAdapter ?? new AtomicJsonSavePersistenceAdapter();
+            _saveLoadCoordinator = loadCoordinator ?? new SaveMigrationLoadCoordinator();
         }
 
         private void TryFlushPendingSave()
@@ -157,47 +168,15 @@ namespace RavenDevOps.Fishing.Save
 
         private void PersistNow()
         {
-            try
+            if (!PersistenceAdapter.TryPersist(SavePath, _current, FileSystem, out var failureReason))
             {
-                var saveDir = Path.GetDirectoryName(SavePath);
-                if (!string.IsNullOrWhiteSpace(saveDir))
-                {
-                    FileSystem.EnsureDirectory(saveDir);
-                }
-
-                var tmpPath = SavePath + TempFileSuffix;
-                var backupPath = SavePath + BackupFileSuffix;
-                var json = JsonUtility.ToJson(_current, true);
-
-                FileSystem.WriteAllText(tmpPath, json);
-
-                if (FileSystem.FileExists(SavePath))
-                {
-                    AtomicReplace(tmpPath, SavePath, backupPath, FileSystem);
-                }
-                else
-                {
-                    FileSystem.MoveFile(tmpPath, SavePath);
-                }
-
-                if (FileSystem.FileExists(backupPath))
-                {
-                    FileSystem.DeleteFile(backupPath);
-                }
-
-                if (FileSystem.FileExists(tmpPath))
-                {
-                    FileSystem.DeleteFile(tmpPath);
-                }
-
-                WriteThrottle.MarkPersisted(TimeProvider.RealtimeSinceStartup);
-                NotifySaveDataChanged();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SaveManager: failed to save profile atomically ({ex.Message}).");
+                Debug.LogError($"SaveManager: failed to save profile atomically ({failureReason}).");
                 WriteThrottle.MarkPending();
+                return;
             }
+
+            WriteThrottle.MarkPersisted(TimeProvider.RealtimeSinceStartup);
+            NotifySaveDataChanged();
         }
 
         public void AddCopecs(int value)
@@ -221,22 +200,9 @@ namespace RavenDevOps.Fishing.Save
 
         public void SetTutorialSeen(bool tutorialSeen)
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            var changed = _current.tutorialFlags.tutorialSeen != tutorialSeen;
-            if (tutorialSeen && _current.tutorialFlags.introTutorialReplayRequested)
-            {
-                changed = true;
-            }
-
-            if (!changed)
+            if (!MutationService.SetTutorialSeen(_current, tutorialSeen))
             {
                 return;
-            }
-
-            _current.tutorialFlags.tutorialSeen = tutorialSeen;
-            if (tutorialSeen)
-            {
-                _current.tutorialFlags.introTutorialReplayRequested = false;
             }
 
             Save();
@@ -244,133 +210,80 @@ namespace RavenDevOps.Fishing.Save
 
         public bool ShouldRunIntroTutorial()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            return !_current.tutorialFlags.tutorialSeen || _current.tutorialFlags.introTutorialReplayRequested;
+            return MutationService.ShouldRunIntroTutorial(_current);
         }
 
         public void RequestIntroTutorialReplay()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            _current.tutorialFlags.tutorialSeen = false;
-            _current.tutorialFlags.introTutorialReplayRequested = true;
-            Save();
+            if (MutationService.RequestIntroTutorialReplay(_current))
+            {
+                Save();
+            }
         }
 
         public void MarkIntroTutorialStarted()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            if (_current.tutorialFlags.introTutorialReplayRequested)
+            if (MutationService.MarkIntroTutorialStarted(_current))
             {
-                _current.tutorialFlags.introTutorialReplayRequested = false;
                 Save();
             }
         }
 
         public bool ShouldRunFishingLoopTutorial()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            return !_current.tutorialFlags.fishingLoopTutorialCompleted || _current.tutorialFlags.fishingLoopTutorialReplayRequested;
+            return MutationService.ShouldRunFishingLoopTutorial(_current);
         }
 
         public void RequestFishingLoopTutorialReplay()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            _current.tutorialFlags.fishingLoopTutorialCompleted = false;
-            _current.tutorialFlags.fishingLoopTutorialSkipped = false;
-            _current.tutorialFlags.fishingLoopTutorialReplayRequested = true;
-            Save();
+            if (MutationService.RequestFishingLoopTutorialReplay(_current))
+            {
+                Save();
+            }
         }
 
         public void MarkFishingLoopTutorialStarted()
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            if (_current.tutorialFlags.fishingLoopTutorialReplayRequested)
+            if (MutationService.MarkFishingLoopTutorialStarted(_current))
             {
-                _current.tutorialFlags.fishingLoopTutorialReplayRequested = false;
                 Save();
             }
         }
 
         public void CompleteFishingLoopTutorial(bool skipped)
         {
-            _current.tutorialFlags ??= new TutorialFlags();
-            _current.tutorialFlags.fishingLoopTutorialCompleted = true;
-            _current.tutorialFlags.fishingLoopTutorialSkipped = skipped;
-            _current.tutorialFlags.fishingLoopTutorialReplayRequested = false;
-            Save();
+            if (MutationService.CompleteFishingLoopTutorial(_current, skipped))
+            {
+                Save();
+            }
         }
 
         public void ResetProfileStats()
         {
-            _current.stats ??= new SaveStats();
-            _current.progression ??= new ProgressionData();
-            _current.copecs = 0;
-            _current.stats.totalFishCaught = 0;
-            _current.stats.farthestDistanceTier = 0;
-            _current.stats.totalTrips = 0;
-            _current.stats.totalPurchases = 0;
-            _current.stats.totalCatchValueCopecs = 0;
-            _current.progression.totalXp = 0;
-            _current.progression.level = 1;
-            _current.progression.xpIntoLevel = 0;
-            _current.progression.xpToNextLevel = _levelXpThresholds.Count > 1 ? _levelXpThresholds[1] : 0;
-            _current.progression.unlockedContentIds ??= new List<string>();
-            _current.progression.unlockedContentIds.Clear();
-            _current.progression.lastUnlockId = string.Empty;
-            _current.objectiveProgress ??= new ObjectiveProgressData();
-            _current.objectiveProgress.entries ??= new List<ObjectiveProgressEntry>();
-            for (var i = 0; i < _current.objectiveProgress.entries.Count; i++)
+            if (MutationService.ResetProfileStats(_current, _levelXpThresholds))
             {
-                var entry = _current.objectiveProgress.entries[i];
-                if (entry == null)
-                {
-                    continue;
-                }
-
-                entry.currentCount = 0;
-                entry.completed = false;
+                Save();
             }
-
-            _current.objectiveProgress.completedObjectives = 0;
-            Save();
         }
 
         public void ClearFishInventory()
         {
-            _current.fishInventory ??= new List<FishInventoryEntry>();
-            if (_current.fishInventory.Count == 0)
+            if (!MutationService.ClearFishInventory(_current))
             {
                 return;
             }
 
-            _current.fishInventory.Clear();
             Save();
         }
 
         public int GetFishInventoryCount()
         {
-            return CountFishInventory(_current != null ? _current.fishInventory : null);
+            return SaveDomainMutationService.CountFishInventory(_current != null ? _current.fishInventory : null);
         }
 
         public void EnsureStarterOwnership()
         {
-            _current.ownedShips ??= new List<string>();
-            _current.ownedHooks ??= new List<string>();
-
-            var changed = false;
-            if (!_current.ownedShips.Contains("ship_lv1"))
-            {
-                _current.ownedShips.Add("ship_lv1");
-                changed = true;
-            }
-
-            if (!_current.ownedHooks.Contains("hook_lv1"))
-            {
-                _current.ownedHooks.Add("hook_lv1");
-                changed = true;
-            }
-
-            if (changed)
+            if (MutationService.EnsureStarterOwnership(_current))
             {
                 Save();
             }
@@ -465,85 +378,17 @@ namespace RavenDevOps.Fishing.Save
 
         public string GetNextUnlockDescription()
         {
-            _current.progression ??= new ProgressionData();
-            _current.progression.unlockedContentIds ??= new List<string>();
-
-            for (var i = 0; i < _progressionUnlocks.Count; i++)
-            {
-                var unlock = _progressionUnlocks[i];
-                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
-                {
-                    continue;
-                }
-
-                if (_current.progression.unlockedContentIds.Contains(unlock.unlockId))
-                {
-                    continue;
-                }
-
-                var label = string.IsNullOrWhiteSpace(unlock.displayName) ? unlock.unlockId : unlock.displayName;
-                return $"Level {Mathf.Max(1, unlock.level)}: {label}";
-            }
-
-            return "All configured unlocks claimed";
+            return ProgressionService.GetNextUnlockDescription(_current, _progressionUnlocks);
         }
 
         public bool IsContentUnlocked(string contentId)
         {
-            if (string.IsNullOrWhiteSpace(contentId))
-            {
-                return false;
-            }
-
-            _current.progression ??= new ProgressionData();
-            _current.progression.unlockedContentIds ??= new List<string>();
-
-            var isTrackedUnlock = false;
-            for (var i = 0; i < _progressionUnlocks.Count; i++)
-            {
-                var unlock = _progressionUnlocks[i];
-                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
-                {
-                    continue;
-                }
-
-                if (!string.Equals(unlock.unlockId, contentId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                isTrackedUnlock = true;
-                if (_current.progression.unlockedContentIds.Contains(unlock.unlockId))
-                {
-                    return true;
-                }
-            }
-
-            return !isTrackedUnlock;
+            return ProgressionService.IsContentUnlocked(_current, _progressionUnlocks, contentId);
         }
 
         public int GetUnlockLevel(string contentId)
         {
-            if (string.IsNullOrWhiteSpace(contentId))
-            {
-                return 1;
-            }
-
-            for (var i = 0; i < _progressionUnlocks.Count; i++)
-            {
-                var unlock = _progressionUnlocks[i];
-                if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
-                {
-                    continue;
-                }
-
-                if (string.Equals(unlock.unlockId, contentId, StringComparison.Ordinal))
-                {
-                    return Mathf.Max(1, unlock.level);
-                }
-            }
-
-            return 1;
+            return ProgressionService.GetUnlockLevel(_progressionUnlocks, contentId);
         }
 
         private void OnDestroy()
@@ -559,52 +404,7 @@ namespace RavenDevOps.Fishing.Save
 
         private bool TryLoadExisting(out SaveDataV1 loaded)
         {
-            loaded = null;
-            if (!FileSystem.FileExists(SavePath))
-            {
-                return false;
-            }
-
-            try
-            {
-                var rawJson = FileSystem.ReadAllText(SavePath);
-                if (!SaveMigrationPipeline.TryPrepareForLoad(rawJson, out var normalizedJson, out var migrationReport))
-                {
-                    var reason = string.IsNullOrWhiteSpace(migrationReport.FailureReason)
-                        ? "migration failed"
-                        : migrationReport.FailureReason;
-                    StructuredLogService.LogWarning(
-                        "save-migration",
-                        $"status=failed source_version={migrationReport.SourceVersion} final_version={migrationReport.FinalVersion} reason=\"{reason}\" path=\"{SavePath}\"");
-                    BackupCorruptSaveFile($"migration failed: {reason}");
-                    return false;
-                }
-
-                loaded = JsonUtility.FromJson<SaveDataV1>(normalizedJson);
-                if (migrationReport.WasMigrated)
-                {
-                    var steps = migrationReport.AppliedSteps.Count > 0
-                        ? string.Join(", ", migrationReport.AppliedSteps)
-                        : "unknown";
-                    StructuredLogService.LogInfo(
-                        "save-migration",
-                        $"status=success source_version={migrationReport.SourceVersion} final_version={migrationReport.FinalVersion} steps=\"{steps}\" path=\"{SavePath}\"");
-                    Debug.Log($"SaveManager: migrated save v{migrationReport.SourceVersion} -> v{migrationReport.FinalVersion} ({steps}).");
-                }
-            }
-            catch (Exception ex)
-            {
-                BackupCorruptSaveFile($"read/deserialize exception: {ex.Message}");
-                return false;
-            }
-
-            if (loaded == null)
-            {
-                BackupCorruptSaveFile("deserialize produced null save");
-                return false;
-            }
-
-            return true;
+            return LoadCoordinator.TryLoad(SavePath, FileSystem, TimeProvider, out loaded, out _);
         }
 
         private SaveDataV1 CreateNewSaveData()
@@ -624,279 +424,35 @@ namespace RavenDevOps.Fishing.Save
                 _current = CreateNewSaveData();
             }
 
-            _current.ownedShips ??= new List<string>();
-            _current.ownedHooks ??= new List<string>();
-            _current.fishInventory ??= new List<FishInventoryEntry>();
-            _current.catchLog ??= new List<CatchLogEntry>();
-            _current.fishSaleHistory ??= new List<FishSaleHistoryEntry>();
-            _current.tutorialFlags ??= new TutorialFlags();
-            _current.dailyFishBonus ??= new DailyFishBonusState();
-            _current.fishingMarketQuest ??= new FishingMarketQuestState();
-            _current.stats ??= new SaveStats();
-            _current.progression ??= new ProgressionData();
-            _current.progression.unlockedContentIds ??= new List<string>();
-            _current.objectiveProgress ??= new ObjectiveProgressData();
-            _current.objectiveProgress.entries ??= new List<ObjectiveProgressEntry>();
-
-            if (_current.ownedShips.Count == 0)
-            {
-                _current.ownedShips.Add("ship_lv1");
-            }
-
-            if (_current.ownedHooks.Count == 0)
-            {
-                _current.ownedHooks.Add("hook_lv1");
-            }
-
-            if (string.IsNullOrWhiteSpace(_current.equippedShipId))
-            {
-                _current.equippedShipId = _current.ownedShips[0];
-            }
-
-            if (string.IsNullOrWhiteSpace(_current.equippedHookId))
-            {
-                _current.equippedHookId = _current.ownedHooks[0];
-            }
-
-            if (string.IsNullOrWhiteSpace(_current.careerStartLocalDate))
-            {
-                _current.careerStartLocalDate = CurrentLocalDate();
-            }
-
-            if (string.IsNullOrWhiteSpace(_current.lastLoginLocalDate))
-            {
-                _current.lastLoginLocalDate = _current.careerStartLocalDate;
-            }
-
-            TrimCatchLog(_current.catchLog);
-            TrimFishSaleHistory(_current.fishSaleHistory);
+            MutationService.NormalizeCurrentDataEnvelope(
+                _current,
+                CurrentLocalDate,
+                MaxCatchLogEntries,
+                MaxFishSaleHistoryEntries);
             NormalizeProgressionData();
         }
 
         private void NormalizeProgressionData()
         {
-            var progression = _current.progression ?? new ProgressionData();
-            progression.totalXp = Mathf.Max(0, progression.totalXp);
-            ProgressionRules.ResolveXpProgress(
-                progression.totalXp,
-                _levelXpThresholds,
-                out var resolvedLevel,
-                out var xpIntoLevel,
-                out var xpToNextLevel);
-
-            progression.level = resolvedLevel;
-            progression.xpIntoLevel = xpIntoLevel;
-            progression.xpToNextLevel = xpToNextLevel;
-            _current.progression = progression;
-            ApplyProgressionUnlocks(minLevelInclusive: 1, maxLevelInclusive: progression.level);
+            ProgressionService.NormalizeProgressionData(_current, _levelXpThresholds, _progressionUnlocks);
         }
 
         private void NormalizeProgressionConfig()
         {
             _levelXpThresholds ??= new List<int>();
-            if (_levelXpThresholds.Count == 0)
-            {
-                _levelXpThresholds.AddRange(ProgressionRules.Defaults);
-            }
-
-            for (var i = 0; i < _levelXpThresholds.Count; i++)
-            {
-                _levelXpThresholds[i] = Mathf.Max(0, _levelXpThresholds[i]);
-            }
-
-            _levelXpThresholds.Sort();
-            for (var i = _levelXpThresholds.Count - 1; i > 0; i--)
-            {
-                if (_levelXpThresholds[i] == _levelXpThresholds[i - 1])
-                {
-                    _levelXpThresholds.RemoveAt(i);
-                }
-            }
-
-            if (_levelXpThresholds.Count == 0 || _levelXpThresholds[0] != 0)
-            {
-                _levelXpThresholds.Insert(0, 0);
-            }
-
             _progressionUnlocks ??= new List<ProgressionUnlockDefinition>();
-            if (_progressionUnlocks.Count == 0)
-            {
-                SeedDefaultProgressionUnlocks();
-            }
-
-            _progressionUnlocks.RemoveAll(IsInvalidUnlockDefinition);
-            _progressionUnlocks.Sort((a, b) => a.level.CompareTo(b.level));
-        }
-
-        private void SeedDefaultProgressionUnlocks()
-        {
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 2,
-                unlockType = ProgressionUnlockType.Hook,
-                unlockId = "hook_lv2",
-                displayName = "Hook Lv2"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 3,
-                unlockType = ProgressionUnlockType.Ship,
-                unlockId = "ship_lv2",
-                displayName = "Ship Lv2"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 4,
-                unlockType = ProgressionUnlockType.Hook,
-                unlockId = "hook_lv3",
-                displayName = "Hook Lv3"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 5,
-                unlockType = ProgressionUnlockType.Ship,
-                unlockId = "ship_lv3",
-                displayName = "Ship Lv3"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 6,
-                unlockType = ProgressionUnlockType.Hook,
-                unlockId = "hook_lv4",
-                displayName = "Hook Lv4"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 7,
-                unlockType = ProgressionUnlockType.Hook,
-                unlockId = "hook_lv5",
-                displayName = "Hook Lv5"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 8,
-                unlockType = ProgressionUnlockType.Ship,
-                unlockId = "ship_lv4",
-                displayName = "Ship Lv4"
-            });
-            _progressionUnlocks.Add(new ProgressionUnlockDefinition
-            {
-                level = 9,
-                unlockType = ProgressionUnlockType.Ship,
-                unlockId = "ship_lv5",
-                displayName = "Ship Lv5"
-            });
-        }
-
-        private static bool IsInvalidUnlockDefinition(ProgressionUnlockDefinition unlock)
-        {
-            return unlock == null || unlock.level < 2 || string.IsNullOrWhiteSpace(unlock.unlockId);
+            ProgressionService.NormalizeConfig(_levelXpThresholds, _progressionUnlocks);
         }
 
         private bool ApplyProgressionXp(int xpAmount, out int previousLevel, out int newLevel)
         {
-            previousLevel = CurrentLevel;
-            newLevel = previousLevel;
-            if (xpAmount <= 0)
-            {
-                return false;
-            }
-
-            _current.progression ??= new ProgressionData();
-            _current.progression.totalXp = Mathf.Max(0, _current.progression.totalXp + xpAmount);
-            ProgressionRules.ResolveXpProgress(
-                _current.progression.totalXp,
+            return ProgressionService.ApplyProgressionXp(
+                _current,
+                xpAmount,
                 _levelXpThresholds,
-                out var resolvedLevel,
-                out var xpIntoLevel,
-                out var xpToNextLevel);
-
-            _current.progression.level = resolvedLevel;
-            _current.progression.xpIntoLevel = xpIntoLevel;
-            _current.progression.xpToNextLevel = xpToNextLevel;
-            newLevel = resolvedLevel;
-
-            if (resolvedLevel > previousLevel)
-            {
-                ApplyProgressionUnlocks(previousLevel + 1, resolvedLevel);
-                return true;
-            }
-
-            return false;
-        }
-
-        private void ApplyProgressionUnlocks(int minLevelInclusive, int maxLevelInclusive)
-        {
-            _current.ownedShips ??= new List<string>();
-            _current.ownedHooks ??= new List<string>();
-            _current.progression ??= new ProgressionData();
-            _current.progression.unlockedContentIds ??= new List<string>();
-
-            for (var i = 0; i < _progressionUnlocks.Count; i++)
-            {
-                var unlock = _progressionUnlocks[i];
-                if (unlock == null || unlock.level < minLevelInclusive || unlock.level > maxLevelInclusive)
-                {
-                    continue;
-                }
-
-                if (!_current.progression.unlockedContentIds.Contains(unlock.unlockId))
-                {
-                    _current.progression.unlockedContentIds.Add(unlock.unlockId);
-                    _current.progression.lastUnlockId = unlock.unlockId;
-                }
-
-                ApplyUnlockOwnership(unlock);
-            }
-        }
-
-        private void ApplyUnlockOwnership(ProgressionUnlockDefinition unlock)
-        {
-            if (unlock == null || string.IsNullOrWhiteSpace(unlock.unlockId))
-            {
-                return;
-            }
-
-            // Progression unlocks gate availability in shops.
-            // Ownership of ships/hooks is now granted only through shop purchase/upgrade flow.
-        }
-
-        private void BackupCorruptSaveFile(string reason)
-        {
-            if (!FileSystem.FileExists(SavePath))
-            {
-                return;
-            }
-
-            try
-            {
-                var timestamp = TimeProvider.LocalNow.ToString("yyyyMMdd_HHmmss");
-                var corruptPath = SavePath + $".corrupt_{timestamp}";
-                FileSystem.CopyFile(SavePath, corruptPath, overwrite: true);
-                Debug.LogWarning($"SaveManager: detected corrupt save, copied to '{corruptPath}' ({reason}).");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"SaveManager: failed to back up corrupt save ({ex.Message}).");
-            }
-        }
-
-        private static void AtomicReplace(string tempPath, string destinationPath, string backupPath, ISaveFileSystem fileSystem)
-        {
-            try
-            {
-                fileSystem.ReplaceFile(tempPath, destinationPath, backupPath);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                fileSystem.CopyFile(tempPath, destinationPath, overwrite: true);
-                fileSystem.DeleteFile(tempPath);
-            }
-            catch (IOException)
-            {
-                fileSystem.CopyFile(tempPath, destinationPath, overwrite: true);
-                fileSystem.DeleteFile(tempPath);
-            }
+                _progressionUnlocks,
+                out previousLevel,
+                out newLevel);
         }
 
         private string CurrentLocalDate()
@@ -906,77 +462,18 @@ namespace RavenDevOps.Fishing.Save
 
         private CatchLogEntry AppendCatchLog(string fishId, int distanceTier, bool landed, float depthMeters, float weightKg, int valueCopecs, string failReason)
         {
-            _current.catchLog ??= new List<CatchLogEntry>();
-            var entry = new CatchLogEntry
-            {
-                fishId = fishId ?? string.Empty,
-                distanceTier = Mathf.Max(1, distanceTier),
-                depthMeters = Mathf.Max(0f, depthMeters),
-                weightKg = Mathf.Max(0f, weightKg),
-                valueCopecs = Mathf.Max(0, valueCopecs),
-                timestampUtc = TimeProvider.UtcNow.ToString("O"),
-                sessionId = _sessionId,
-                landed = landed,
-                failReason = failReason ?? string.Empty
-            };
-
-            _current.catchLog.Add(entry);
-            TrimCatchLog(_current.catchLog);
-            return entry;
-        }
-
-        private static void TrimCatchLog(List<CatchLogEntry> log)
-        {
-            if (log == null)
-            {
-                return;
-            }
-
-            if (log.Count <= MaxCatchLogEntries)
-            {
-                return;
-            }
-
-            var removeCount = log.Count - MaxCatchLogEntries;
-            log.RemoveRange(0, removeCount);
-        }
-
-        private static void TrimFishSaleHistory(List<FishSaleHistoryEntry> history)
-        {
-            if (history == null)
-            {
-                return;
-            }
-
-            if (history.Count <= MaxFishSaleHistoryEntries)
-            {
-                return;
-            }
-
-            var removeCount = history.Count - MaxFishSaleHistoryEntries;
-            history.RemoveRange(0, removeCount);
-        }
-
-        private static int CountFishInventory(List<FishInventoryEntry> fishInventory)
-        {
-            if (fishInventory == null || fishInventory.Count == 0)
-            {
-                return 0;
-            }
-
-            var count = 0;
-            for (var i = 0; i < fishInventory.Count; i++)
-            {
-                var entry = fishInventory[i];
-                if (entry == null)
-                {
-                    continue;
-                }
-
-                count += Mathf.Max(0, entry.count);
-            }
-
-            return count;
+            return MutationService.AppendCatchLog(
+                _current,
+                MaxCatchLogEntries,
+                fishId,
+                distanceTier,
+                landed,
+                depthMeters,
+                weightKg,
+                valueCopecs,
+                failReason,
+                _sessionId,
+                TimeProvider.UtcNow);
         }
 
         private void InvokeCatchRecorded(CatchLogEntry entry)
