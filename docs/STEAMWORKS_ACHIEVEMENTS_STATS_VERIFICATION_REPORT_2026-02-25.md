@@ -53,6 +53,8 @@ Goal: verify runtime achievements/stats key/type parity and release app/depot ma
 - Current state is therefore **not ready for strict publish gate** (`-RequirePublishedMetadata`).
 
 ## Next Required Operator Step
+0. Optional one-command evidence intake helper:
+   - `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 1. Perform Steamworks backend publish in partner portal.
 2. Fill publish metadata fields in `backend_contract.json`.
 3. Attach screenshot/note artifacts and reference paths in `verification_artifacts`.

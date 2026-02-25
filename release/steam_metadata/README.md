@@ -40,3 +40,7 @@ Run a simulated mismatch rehearsal:
 
 Latest report:
 - `docs/STEAM_CONTROLLER_METADATA_DRIFT_REHEARSAL_REPORT_2026-02-25.md`
+
+## Final Intake Helper
+- `scripts/release/intake-steam-partner-evidence.ps1`
+- runbook: `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`

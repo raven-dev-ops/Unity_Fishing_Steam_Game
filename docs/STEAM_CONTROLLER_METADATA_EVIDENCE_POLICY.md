@@ -31,6 +31,8 @@
 5. Rehearse mismatch gating periodically:
    - `./scripts/ci/rehearse-steam-metadata-drift.ps1`
    - latest report: `docs/STEAM_CONTROLLER_METADATA_DRIFT_REHEARSAL_REPORT_2026-02-25.md`
+6. Use deterministic external evidence intake for final RC artifact commit:
+   - `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 
 ## Validation Command
 ```powershell

@@ -13,3 +13,6 @@
 3. Run `scripts/ci/verify-steamworks-achievements-stats.ps1` after any key/type or publish metadata change.
 4. For release strict gate, run:
    - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata -SummaryJsonPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json" -SummaryMarkdownPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md"`
+5. Optional one-command external artifact intake helper:
+   - `scripts/release/intake-steam-partner-evidence.ps1`
+   - runbook: `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`

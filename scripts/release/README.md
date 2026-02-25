@@ -27,3 +27,14 @@ STEAM_USERNAME=build-bot \
 STEAM_CONFIG_VDF=/tmp/config.vdf \
 scripts/release/steam_upload.sh v0.1.0-rc1
 ```
+
+## Steam Partner Evidence Intake
+
+Script: `scripts/release/intake-steam-partner-evidence.ps1`
+
+Purpose:
+- standardize external Steam Partner evidence intake for issue closure (`#226`, `#245`).
+- generate/update metadata bundle and backend publish contract fields.
+
+Runbook:
+- `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`

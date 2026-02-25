@@ -64,3 +64,5 @@ Runtime state can be inspected:
    - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata -SummaryJsonPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json" -SummaryMarkdownPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md"`
 11. Confirm release workflow strict gate passes:
    - `.github/workflows/release-steampipe.yml` -> `steam_release_metadata_gates`
+12. Optional one-command external artifact intake helper:
+   - `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`

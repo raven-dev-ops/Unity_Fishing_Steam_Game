@@ -33,6 +33,8 @@
   - `.github/workflows/release-steampipe.yml` (`steam_release_metadata_gates` job)
 - Policy and drift escalation:
   - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- External evidence intake helper:
+  - `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 
 ## Legal and Compliance Status
 
@@ -87,6 +89,7 @@
 - `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
 - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
 - `docs/STEAM_CONTROLLER_METADATA_DRIFT_REHEARSAL_REPORT_2026-02-25.md`
+- `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 - `release/steamworks/achievements_stats/backend_contract.json`
 - `docs/STEAMWORKS_ACHIEVEMENTS_STATS_VERIFICATION_REPORT_2026-02-25.md`
 - `release/compliance/rc-2026-02-25/compliance_manifest.json`

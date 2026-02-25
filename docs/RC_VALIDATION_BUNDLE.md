@@ -99,4 +99,5 @@
 - UX/accessibility signoff: `docs/UX_ACCESSIBILITY_SIGNOFF.md`
 - Steam release compliance: `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`
 - Steam metadata evidence policy: `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- Steam external evidence intake: `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 - Release ops dry run/hotfix drill: `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md`

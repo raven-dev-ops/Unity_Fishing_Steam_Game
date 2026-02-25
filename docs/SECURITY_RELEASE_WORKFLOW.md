@@ -77,6 +77,8 @@ Configure in GitHub repository settings:
 ## RC Signoff Integration
 - Before final tag push, complete the RC validation/signoff bundle:
   - `docs/RC_VALIDATION_BUNDLE.md`
+- For external Steam Partner evidence intake/update flow:
+  - `docs/STEAM_EXTERNAL_EVIDENCE_INTAKE.md`
 - Security/provenance sections in the RC bundle must include:
   - release run URL,
   - provenance artifact URL,
