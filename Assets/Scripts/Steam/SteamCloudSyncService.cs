@@ -14,20 +14,29 @@ namespace RavenDevOps.Fishing.Steam
     public sealed class SteamCloudSyncService : MonoBehaviour
     {
         [SerializeField] private SaveManager _saveManager;
+        [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private bool _autoSyncOnSave = true;
         [SerializeField] private bool _verboseLogs = true;
+        [SerializeField] private bool _restrictBlockingSyncToSafeStates = true;
+        [SerializeField] private int _maxCloudReadBytes = 262144;
+        [SerializeField, Min(0f)] private float _syncDurationWarningMilliseconds = 12f;
         [SerializeField] private int _conflictSkewToleranceSeconds = 2;
         [SerializeField] private string _cloudSaveFileName = "save_v1.json";
         [SerializeField] private string _cloudManifestFileName = "save_v1.meta.json";
 
         private bool _startupSyncCompleted;
         private bool _syncInProgress;
+        private bool _deferredUploadPending;
 
         public string LastConflictDecision { get; private set; } = string.Empty;
+        public float LastSyncDurationMilliseconds { get; private set; }
+        public int LastRemoteFileSizeBytes { get; private set; }
+        public string LastSyncOperation { get; private set; } = string.Empty;
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _gameFlowManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Register(this);
             TouchConfigInNonSteamBuilds();
         }
@@ -50,12 +59,23 @@ namespace RavenDevOps.Fishing.Steam
 
         private void Update()
         {
-            if (_startupSyncCompleted || !CanUseCloud())
+            if (!_startupSyncCompleted)
             {
+                if (CanUseCloud() && IsBlockingSyncWindowSafe())
+                {
+                    TryPerformStartupSync();
+                }
+
                 return;
             }
 
-            TryPerformStartupSync();
+            if (_deferredUploadPending
+                && !_syncInProgress
+                && CanUseCloud()
+                && IsBlockingSyncWindowSafe())
+            {
+                FlushDeferredUpload();
+            }
         }
 
         private void OnDestroy()
@@ -65,12 +85,16 @@ namespace RavenDevOps.Fishing.Steam
 
         private void OnSaveDataChanged(SaveDataV1 data)
         {
-            if (!_autoSyncOnSave || !_startupSyncCompleted || _syncInProgress || !CanUseCloud())
+            if (!_autoSyncOnSave || !_startupSyncCompleted || _syncInProgress)
             {
                 return;
             }
 
-            UploadLocalToCloud();
+            _deferredUploadPending = true;
+            if (CanUseCloud() && IsBlockingSyncWindowSafe())
+            {
+                FlushDeferredUpload();
+            }
         }
 
         private void TryPerformStartupSync()
@@ -80,6 +104,8 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
+            var startedAtRealtime = Time.realtimeSinceStartup;
+            var remoteFileSizeBytes = ResolveRemoteFileSizeBytes(_cloudSaveFileName);
             _syncInProgress = true;
             try
             {
@@ -94,6 +120,7 @@ namespace RavenDevOps.Fishing.Steam
             finally
             {
                 _syncInProgress = false;
+                RecordSyncTelemetry("startup_sync", startedAtRealtime, remoteFileSizeBytes);
             }
         }
 
@@ -112,7 +139,7 @@ namespace RavenDevOps.Fishing.Steam
 
             if (!localExists && cloudExists)
             {
-                if (TryReadCloudText(_cloudSaveFileName, out var cloudJson))
+                if (TryReadCloudText(_cloudSaveFileName, out var cloudJson, out _))
                 {
                     if (!ValidateCloudPayloadIntegrity(cloudJson, hasLocalSave: false, out var integrityReason))
                     {
@@ -146,7 +173,7 @@ namespace RavenDevOps.Fishing.Steam
             }
 
             var localJson = File.ReadAllText(localPath);
-            if (!TryReadCloudText(_cloudSaveFileName, out var cloudText))
+            if (!TryReadCloudText(_cloudSaveFileName, out var cloudText, out _))
             {
                 LastConflictDecision = "cloud_read_failed_keep_local";
                 return;
@@ -202,18 +229,43 @@ namespace RavenDevOps.Fishing.Steam
 #endif
         }
 
-        private void UploadLocalToCloud()
+        private void FlushDeferredUpload()
+        {
+            if (_syncInProgress || !_deferredUploadPending)
+            {
+                return;
+            }
+
+            var startedAtRealtime = Time.realtimeSinceStartup;
+            var localFileSizeBytes = ResolveLocalFileSizeBytes();
+            _syncInProgress = true;
+            try
+            {
+                if (UploadLocalToCloud())
+                {
+                    _deferredUploadPending = false;
+                    LastConflictDecision = "deferred_upload_uploaded";
+                }
+            }
+            finally
+            {
+                _syncInProgress = false;
+                RecordSyncTelemetry("deferred_upload", startedAtRealtime, localFileSizeBytes);
+            }
+        }
+
+        private bool UploadLocalToCloud()
         {
 #if STEAMWORKS_NET
             if (_saveManager == null)
             {
-                return;
+                return false;
             }
 
             var localPath = _saveManager.SaveFilePath;
             if (!File.Exists(localPath))
             {
-                return;
+                return false;
             }
 
             var text = File.ReadAllText(localPath);
@@ -221,10 +273,13 @@ namespace RavenDevOps.Fishing.Steam
             if (!SteamRemoteStorage.FileWrite(_cloudSaveFileName, bytes, bytes.Length))
             {
                 Debug.LogWarning($"SteamCloudSyncService: failed to write '{_cloudSaveFileName}' to cloud.");
-                return;
+                return false;
             }
 
             UploadManifest(localPath, text);
+            return true;
+#else
+            return false;
 #endif
         }
 
@@ -247,7 +302,7 @@ namespace RavenDevOps.Fishing.Steam
         private DateTime ResolveCloudTimestampUtc()
         {
 #if STEAMWORKS_NET
-            if (TryReadCloudText(_cloudManifestFileName, out var manifestJson))
+            if (TryReadCloudText(_cloudManifestFileName, out var manifestJson, out _))
             {
                 if (SteamCloudIntegrity.TryParseManifest(manifestJson, out var manifest) &&
                     DateTime.TryParse(manifest.savedAtUtc, out var parsed))
@@ -269,7 +324,7 @@ namespace RavenDevOps.Fishing.Steam
         {
 #if STEAMWORKS_NET
             integrityReason = string.Empty;
-            if (!TryReadCloudText(_cloudManifestFileName, out var manifestJson))
+            if (!TryReadCloudText(_cloudManifestFileName, out var manifestJson, out _))
             {
                 if (hasLocalSave)
                 {
@@ -352,9 +407,79 @@ namespace RavenDevOps.Fishing.Steam
 #endif
         }
 
-        private static bool TryReadCloudText(string remoteFileName, out string text)
+        private bool IsBlockingSyncWindowSafe()
+        {
+            if (!_restrictBlockingSyncToSafeStates || _gameFlowManager == null)
+            {
+                return true;
+            }
+
+            switch (_gameFlowManager.CurrentState)
+            {
+                case GameFlowState.None:
+                case GameFlowState.MainMenu:
+                case GameFlowState.Cinematic:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private int ResolveRemoteFileSizeBytes(string remoteFileName)
+        {
+#if STEAMWORKS_NET
+            if (string.IsNullOrWhiteSpace(remoteFileName) || !SteamRemoteStorage.FileExists(remoteFileName))
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, SteamRemoteStorage.GetFileSize(remoteFileName));
+#else
+            return 0;
+#endif
+        }
+
+        private int ResolveLocalFileSizeBytes()
+        {
+            if (_saveManager == null)
+            {
+                return 0;
+            }
+
+            var localPath = _saveManager.SaveFilePath;
+            if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath))
+            {
+                return 0;
+            }
+
+            return (int)new FileInfo(localPath).Length;
+        }
+
+        private void RecordSyncTelemetry(string operation, float startedAtRealtime, int remoteFileSizeBytes)
+        {
+            LastSyncDurationMilliseconds = Mathf.Max(0f, (Time.realtimeSinceStartup - startedAtRealtime) * 1000f);
+            LastRemoteFileSizeBytes = Mathf.Max(0, remoteFileSizeBytes);
+            LastSyncOperation = operation ?? string.Empty;
+
+            if (!_verboseLogs)
+            {
+                return;
+            }
+
+            var message = $"SteamCloudSyncService: op={LastSyncOperation} duration_ms={LastSyncDurationMilliseconds:0.00} remote_bytes={LastRemoteFileSizeBytes} deferred_pending={_deferredUploadPending} decision={LastConflictDecision}";
+            if (LastSyncDurationMilliseconds > Mathf.Max(0f, _syncDurationWarningMilliseconds))
+            {
+                Debug.LogWarning(message);
+                return;
+            }
+
+            Debug.Log(message);
+        }
+
+        private bool TryReadCloudText(string remoteFileName, out string text, out int remoteFileSizeBytes)
         {
             text = string.Empty;
+            remoteFileSizeBytes = 0;
 #if STEAMWORKS_NET
             if (!SteamRemoteStorage.FileExists(remoteFileName))
             {
@@ -362,8 +487,16 @@ namespace RavenDevOps.Fishing.Steam
             }
 
             var fileSize = SteamRemoteStorage.GetFileSize(remoteFileName);
+            remoteFileSizeBytes = Mathf.Max(0, fileSize);
             if (fileSize <= 0)
             {
+                return false;
+            }
+
+            var maxBytes = Mathf.Max(1024, _maxCloudReadBytes);
+            if (fileSize > maxBytes)
+            {
+                Debug.LogWarning($"SteamCloudSyncService: remote file '{remoteFileName}' is {fileSize} bytes (limit {maxBytes}); skipping blocking read.");
                 return false;
             }
 
@@ -385,6 +518,10 @@ namespace RavenDevOps.Fishing.Steam
         {
 #if !STEAMWORKS_NET
             _ = _verboseLogs;
+            _ = _gameFlowManager;
+            _ = _restrictBlockingSyncToSafeStates;
+            _ = _maxCloudReadBytes;
+            _ = _syncDurationWarningMilliseconds;
             _ = _conflictSkewToleranceSeconds;
             _ = _cloudSaveFileName;
             _ = _cloudManifestFileName;
