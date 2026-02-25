@@ -278,6 +278,16 @@ jobs:
         with:
           lfs: true
 
+      - name: Enforce Addressables delivery policy
+        shell: pwsh
+        run: |
+          ./scripts/ci/addressables-delivery-policy-check.ps1 `
+            -PolicyConfigPath "ci/addressables-delivery-policy.json" `
+            -ManifestPath "Packages/manifest.json" `
+            -LoaderScriptPath "Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs" `
+            -SummaryJsonPath "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.json" `
+            -SummaryMarkdownPath "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md"
+
       - name: Run release-context perf evidence gate (strict)
         shell: pwsh
         run: |
@@ -305,7 +315,7 @@ jobs:
             -SummaryMarkdownPath "Artifacts/Addressables/duplication_summary.md" `
             -FailOnNoReports
 
-      - name: Publish release perf/memory/duplication summaries
+      - name: Publish release perf/memory/duplication/policy summaries
         if: always()
         shell: bash
         run: |
@@ -325,15 +335,21 @@ jobs:
             cat "Artifacts/Addressables/duplication_summary.md" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload release perf/memory/duplication artifacts
+          if [ -f "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload release perf/memory/duplication/policy artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: perf-memory-duplication-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          name: perf-memory-duplication-policy-release-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
           path: |
             Artifacts/Perf/**
             Artifacts/Memory/**
             Artifacts/Addressables/**
+            Artifacts/AddressablesPolicy/**
           if-no-files-found: warn
 
       - name: Validate Unity version contract

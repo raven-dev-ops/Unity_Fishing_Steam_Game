@@ -118,6 +118,17 @@ Unity.exe -batchmode -nographics -quit `
 - Reference: `docs/ADDRESSABLES_PILOT.md`
 - Pilot loader artifact: `Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs`
 - Runtime overlay integration: `Assets/Scripts/Data/CatalogService.cs` (base catalog -> pilot fish overlay)
+- 1.0 launch policy:
+  - keep content delivery on Resources-backed path only
+  - do not add Addressables package/groups in release train
+- Enforced safety gate:
+  - policy: `ci/addressables-delivery-policy.json`
+  - check script: `scripts/ci/addressables-delivery-policy-check.ps1`
+  - CI/release workflows fail when policy is violated
+- Post-1.0 safe update ordering:
+  1. publish bundles
+  2. publish catalog pointer update
+  3. roll back pointer before bundle replacement/removal
 
 ## Add Fish (No Code) Quick Checklist
 1. Create `FishDefinitionSO` and set stable `id`.

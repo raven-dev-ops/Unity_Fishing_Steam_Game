@@ -3,6 +3,19 @@
 ## Scope
 Post-1.0 Addressables rollout for scalable content loading beyond MVP eager-catalog approach.
 
+## Launch Policy (1.0)
+- Selected policy: **Resources-only for 1.0 release trains**.
+- Addressables runtime is treated as post-1.0 pilot-only and must remain disabled for launch:
+  - policy file: `ci/addressables-delivery-policy.json`
+  - CI gate: `scripts/ci/addressables-delivery-policy-check.ps1`
+  - workflows:
+    - `.github/workflows/ci-memory-duplication.yml`
+    - `.github/workflows/release-steampipe.yml`
+- Launch safety constraints:
+  - do not add `com.unity.addressables` to `Packages/manifest.json`
+  - do not introduce `Assets/AddressableAssetsData` in 1.0 release trains
+  - keep `_useAddressablesWhenAvailable` default `false` in `AddressablesPilotCatalogLoader`
+
 ## Pilot Artifacts
 - `Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs`
   - Async label-based load path behind `ENABLE_ADDRESSABLES`
@@ -75,10 +88,18 @@ Recommended profile split:
   - added QA matrix for catalog/update scenarios
 
 ## Recommendation
-- Adopt Addressables **post-1.0 in phases**:
+- 1.0 recommendation: keep launch on **Resources-only** delivery.
+- Post-1.0 recommendation: adopt Addressables in controlled phases:
 1. Fish catalog and icon bundles.
 2. Audio packs and environment bundles (implemented runtime path + fallback).
 3. Additional catalog/audio/environment packs for post-launch content drops.
+
+## Safe Catalog Update Ordering and Bundle-ID Strategy
+For post-1.0 Addressables activation:
+1. Publish new bundles first.
+2. Publish catalog pointer update second.
+3. Roll back by restoring prior catalog pointer before removing/replacing bundles.
+4. Use immutable content-hash bundle IDs; never reuse bundle IDs for incompatible payloads.
 
 ## Migration Path
 1. Install Addressables package and configure profiles/groups.

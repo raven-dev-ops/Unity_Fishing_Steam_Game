@@ -1,0 +1,22 @@
+{
+  "launch_mode": "resources_only",
+  "release_target": "1.0",
+  "addressables_package_allowed": false,
+  "addressables_assets_allowed": false,
+  "runtime_toggle_required_false": true,
+  "unsafe_patterns": {
+    "manifest_dependency": "com.unity.addressables",
+    "addressables_asset_root": "Assets/AddressableAssetsData"
+  },
+  "bundle_id_strategy": {
+    "mode": "post_1_0_only",
+    "rule": "Do not introduce mutable remote catalog/bundle IDs in 1.0 release trains.",
+    "post_1_0_requirement": "Use immutable content hash + monotonic catalog versioning with staged promotion."
+  },
+  "safe_catalog_update_ordering": [
+    "1.0 launch: no remote catalog update path; ship Resources-backed content only.",
+    "Post-1.0 pilot: publish new bundles first, then publish catalog pointer.",
+    "Rollback path: restore previous catalog pointer before deleting or replacing bundles.",
+    "Never reuse bundle IDs across incompatible payloads."
+  ]
+}

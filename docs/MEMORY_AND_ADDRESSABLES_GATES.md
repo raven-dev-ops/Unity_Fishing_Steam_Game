@@ -38,6 +38,18 @@
   - duplicate total MB warn/fail `64/96`
   - duplicate asset count warn/fail `150/250`
 
+## Addressables Delivery Policy Gate
+- Script: `scripts/ci/addressables-delivery-policy-check.ps1`
+- Policy file: `ci/addressables-delivery-policy.json`
+- Launch mode (1.0): `resources_only`
+- Enforced checks:
+  - Addressables package dependency (`com.unity.addressables`) must not be present.
+  - `Assets/AddressableAssetsData` root must not exist in launch train.
+  - `AddressablesPilotCatalogLoader` runtime toggle default must remain disabled for launch (`_useAddressablesWhenAvailable=false`).
+- Outputs:
+  - `Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.json`
+  - `Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md`
+
 ## Status Semantics
 - `passed`: within warn thresholds.
 - `warning`: over warn threshold, under fail threshold.
@@ -47,6 +59,7 @@
 CI behavior:
 - Fail-level breaches are blocking.
 - Warn-level breaches are non-blocking by default and must follow waiver policy.
+- Addressables delivery policy gate failures are blocking in CI and release workflows.
 - Missing evidence handling:
   - default CI path: no samples/reports produce `skipped` summary artifacts.
   - release-context path (`release_context=true`): no samples/reports are hard failures (`-FailOnNoSamples` / `-FailOnNoReports`).

@@ -25,8 +25,13 @@ on:
       - ".github/workflows/ci-memory-duplication.yml"
       - "scripts/ci/memory-budget-check.ps1"
       - "scripts/ci/addressables-duplication-check.ps1"
+      - "scripts/ci/addressables-delivery-policy-check.ps1"
       - "ci/memory-budget-baseline.json"
       - "ci/addressables-duplication-baseline.json"
+      - "ci/addressables-delivery-policy.json"
+      - "Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs"
+      - "docs/ADDRESSABLES_PILOT.md"
+      - "docs/CONTENT_PIPELINE.md"
       - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
       - "PerfLogs/**"
       - "Artifacts/Memory/**"
@@ -36,8 +41,13 @@ on:
       - ".github/workflows/ci-memory-duplication.yml"
       - "scripts/ci/memory-budget-check.ps1"
       - "scripts/ci/addressables-duplication-check.ps1"
+      - "scripts/ci/addressables-delivery-policy-check.ps1"
       - "ci/memory-budget-baseline.json"
       - "ci/addressables-duplication-baseline.json"
+      - "ci/addressables-delivery-policy.json"
+      - "Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs"
+      - "docs/ADDRESSABLES_PILOT.md"
+      - "docs/CONTENT_PIPELINE.md"
       - "docs/MEMORY_AND_ADDRESSABLES_GATES.md"
       - "PerfLogs/**"
       - "Artifacts/Memory/**"
@@ -57,6 +67,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Enforce Addressables delivery policy
+        shell: pwsh
+        run: |
+          ./scripts/ci/addressables-delivery-policy-check.ps1 `
+            -PolicyConfigPath "ci/addressables-delivery-policy.json" `
+            -ManifestPath "Packages/manifest.json" `
+            -LoaderScriptPath "Assets/Scripts/Data/AddressablesPilotCatalogLoader.cs" `
+            -SummaryJsonPath "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.json" `
+            -SummaryMarkdownPath "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md"
 
       - name: Run memory budget gate
         shell: pwsh
@@ -111,6 +131,11 @@ jobs:
             cat "Artifacts/Addressables/duplication_summary.md" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+          if [ -f "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/AddressablesPolicy/addressables_delivery_policy_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload memory artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -125,4 +150,12 @@ jobs:
         with:
           name: addressables-duplication-${{ github.sha }}
           path: Artifacts/Addressables/**
+          if-no-files-found: warn
+
+      - name: Upload addressables policy artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: addressables-policy-${{ github.sha }}
+          path: Artifacts/AddressablesPolicy/**
           if-no-files-found: warn

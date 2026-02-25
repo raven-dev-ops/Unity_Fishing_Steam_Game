@@ -21,7 +21,7 @@ namespace RavenDevOps.Fishing.Data
         private const bool AllowGeneratedPhaseTwoAudioFallback = true;
 #endif
 
-        [SerializeField] private bool _useAddressablesWhenAvailable = true;
+        [SerializeField] private bool _useAddressablesWhenAvailable = false;
         [SerializeField] private string _fishDefinitionsLabel = "pilot/fish-definitions";
         [SerializeField] private string _fishResourcesFallbackPath = "Pilot/FishDefinitions";
 
