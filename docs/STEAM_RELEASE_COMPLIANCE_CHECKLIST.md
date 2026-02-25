@@ -15,8 +15,20 @@
 | Trailer | Launch trailer optional but recommended | READY | Product | Optional for first publish, non-blocking |
 | Library assets | Library capsule/header/hero/logo prepared | PASS | Product | Package lock: `release/steam_store_assets/rc-2026-02-25/export_manifest.lock.json` (`package_sha256=40767fe901c37514d723ec118c63e930251b80a3cbfcac7bc857d4def725346d`) |
 | Copy | Short + long description reviewed | PASS | Product | Versioned package: `marketing/steam/store_copy/rc-2026-02-25/`; report: `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md` |
-| Metadata | Genre/tags/controller support reviewed | PASS | Product | Controller/rebind prompt alignment evidence: `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md` |
+| Metadata | Genre/tags/controller support reviewed | READY | Product | Runtime alignment evidence: `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`; partner screenshot bundle required per `release/steam_metadata/<rc-tag>/` |
 | System requirements | Minimum/recommended requirements reviewed | PASS | Engineering | Aligned to hardware baseline lock doc |
+
+## Steam Controller Metadata Evidence
+- Required RC artifact path: `release/steam_metadata/<rc-tag>/`
+- Required files per RC bundle:
+  - `manifest.json`
+  - `controller_support.png`
+  - `steam_input_settings.png`
+  - `summary.md`
+- Validation command:
+  - `./scripts/ci/verify-steam-metadata-evidence.ps1 -EvidenceRoot "release/steam_metadata"`
+- Policy and drift escalation:
+  - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
 
 ## Legal and Compliance Status
 
@@ -44,6 +56,7 @@
 | Store assets/copy reviewed and not blocked | PASS | Product | Release Ops |
 | Legal/compliance docs current | PASS | Engineering | Product |
 | Release metadata aligned with tag/runbooks | PASS | Release Ops | Engineering |
+| Steam controller metadata evidence bundle captured and verified | READY | Release Ops | Product |
 | Ownership/escalation contacts confirmed | PASS | Release Ops | Repository owner |
 
 ## Ownership and Escalation
@@ -61,6 +74,8 @@
 - `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md`
 - `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`
 - `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
+- `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- `release/steam_metadata/`
 - `docs/RELEASE_TAGGING.md`
 - `docs/STEAMPIPE_UPLOAD_TEST.md`
 - `docs/SECURITY_RELEASE_WORKFLOW.md`

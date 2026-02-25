@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "rc_tag": "rc-YYYY-MM-DD",
+  "captured_at_utc": "YYYY-MM-DDTHH:MM:SSZ",
+  "captured_by": "@owner",
+  "steam_app_id": "set-in-portal",
+  "partner_section": "Steamworks > Store Presence > Edit Store Page > Basic Info",
+  "evidence_files": {
+    "controller_support": "controller_support.png",
+    "steam_input_settings": "steam_input_settings.png",
+    "summary": "summary.md"
+  },
+  "expected_metadata_state": {
+    "controller_support_declared": true,
+    "steam_input_enabled": true,
+    "supported_devices_label": "Aligned with in-game bindings and issue #228 evidence"
+  },
+  "verification_result": "pass",
+  "drift_action": "If metadata mismatches runtime behavior, block release and update Steamworks settings before retest.",
+  "notes": "Attach screenshots captured from Steamworks partner portal for this RC."
+}

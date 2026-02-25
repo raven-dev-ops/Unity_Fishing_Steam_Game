@@ -26,6 +26,7 @@
 | Nightly regression | `.github/workflows/nightly-full-regression.yml` | schedule/manual | Success and consolidated summary | nightly summary artifact |
 | RC blocker issue gate | `.github/workflows/release-steampipe.yml` (`preflight`) | tag/manual | Success (no open `P0-blocker` + `scope:1.0` issues in `M9.1 - 1.0 Launch Remediation`) or explicit emergency override with reason | `rc-blocker-gate-<tag>-<sha>` artifact (`rc_blocker_gate_summary.md/json`) |
 | RC validation bundle gate | `.github/workflows/release-steampipe.yml` (`rc_validation_bundle`) | tag/manual | Success | `rc-validation-bundle-<tag>-<sha>` artifact (`rc_validation_bundle.md/json`) |
+| Steam controller metadata evidence | `release/steam_metadata/<rc-tag>/` + `scripts/ci/verify-steam-metadata-evidence.ps1` | release prep | Success (`manifest.json` + required screenshots/summary validated) | metadata bundle path + validation output |
 | Release provenance | `.github/workflows/release-steampipe.yml` | tag/manual | Success | release artifact, SBOM, provenance/attestation, SteamPipe logs |
 | Release ops dry run + hotfix drill | `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md` | release prep | Completed drill report with follow-ups | Drill report revision + run URLs/evidence |
 
@@ -57,6 +58,7 @@
 | Nightly regression |  |  |  |  |  |
 | RC blocker issue gate |  |  |  |  |  |
 | RC validation bundle gate |  |  |  |  |  |
+| Steam controller metadata evidence |  |  |  |  |  |
 | Release provenance |  |  |  |  |  |
 | Release ops dry run + hotfix drill |  |  |  |  |  |
 
@@ -95,4 +97,5 @@
 - QA smoke checklist: `docs/QA_SMOKE_TEST.md`
 - UX/accessibility signoff: `docs/UX_ACCESSIBILITY_SIGNOFF.md`
 - Steam release compliance: `docs/STEAM_RELEASE_COMPLIANCE_CHECKLIST.md`
+- Steam metadata evidence policy: `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
 - Release ops dry run/hotfix drill: `docs/RELEASE_OPS_DRY_RUN_AND_HOTFIX_DRILL.md`
