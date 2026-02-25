@@ -110,16 +110,22 @@
     {
       "tier": "minimum",
       "owner": "raven-dev-ops",
-      "reason": "Awaiting physical minimum-spec capture machine allocation.",
-      "expires_on": "2026-03-06",
-      "ticket": "#207"
+      "reason": "Approved renewal pending physical minimum-spec capture completion.",
+      "expires_on": "2026-03-10",
+      "ticket": "#236",
+      "approved_by": "raven-dev-ops",
+      "approved_on_utc": "2026-02-25T03:00:00Z",
+      "approval_note": "Renewal approved as time-boxed exception; validated capture evidence is required before expiry."
     },
     {
       "tier": "recommended",
       "owner": "raven-dev-ops",
-      "reason": "Awaiting physical recommended-spec capture machine allocation.",
-      "expires_on": "2026-03-06",
-      "ticket": "#207"
+      "reason": "Approved renewal pending physical recommended-spec capture completion.",
+      "expires_on": "2026-03-10",
+      "ticket": "#236",
+      "approved_by": "raven-dev-ops",
+      "approved_on_utc": "2026-02-25T03:00:00Z",
+      "approval_note": "Renewal approved as time-boxed exception; validated capture evidence is required before expiry."
     }
   ]
 }

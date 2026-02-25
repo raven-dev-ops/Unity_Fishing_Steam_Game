@@ -105,6 +105,8 @@ Hardware-tier waiver policy:
   - `scripts/ci/hardware-baseline-lock-check.ps1`
 - Run strict 1.0 validation (all tiers must have at least one validated capture):
   - `scripts/ci/hardware-baseline-lock-check.ps1 -RequireAllTiersValidated`
+- Latest verification report:
+  - `docs/HARDWARE_BASELINE_LOCK_VERIFICATION_REPORT_2026-02-25.md`
 - Current lock state (2026-02-25):
-  - `minimum` and `recommended` remain waiver-backed in `ci/hardware-baseline-matrix.json` with expiry `2026-03-06`.
+  - `minimum` and `recommended` remain waiver-backed in `ci/hardware-baseline-matrix.json` with approved renewal expiry `2026-03-10`.
   - Any extension must be explicit, time-boxed, and approved before expiry; expired waivers fail the lock gate.

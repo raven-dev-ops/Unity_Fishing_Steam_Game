@@ -68,7 +68,9 @@ Each tier must define:
 - Expected artifacts:
   - `Artifacts/Hardware/hardware_baseline_lock_summary.json`
   - `Artifacts/Hardware/hardware_baseline_lock_summary.md`
-- As of 2026-02-25, active waivers in `ci/hardware-baseline-matrix.json` for `minimum` and `recommended` expire on `2026-03-06`.
+- Latest report:
+  - `docs/HARDWARE_BASELINE_LOCK_VERIFICATION_REPORT_2026-02-25.md`
+- As of 2026-02-25, active waivers in `ci/hardware-baseline-matrix.json` for `minimum` and `recommended` carry approved renewal expiry on `2026-03-10`.
 - Any renewal must be explicitly approved and time-boxed before expiry; expired waivers are blocker-level failures.
 
 ## Current State (2026-02-21)
