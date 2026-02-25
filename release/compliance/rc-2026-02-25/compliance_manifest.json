@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "rc_tag": "rc-2026-02-25",
+  "generated_at_utc": "2026-02-25T00:00:00Z",
+  "owner": "@raven-dev-ops",
+  "artifacts": [
+    {
+      "path": "LICENSE",
+      "purpose": "project license distribution artifact"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "purpose": "third-party attribution baseline"
+    },
+    {
+      "path": "docs/EULA_PRIVACY_DISCLOSURE_REQUIREMENTS_2026-02-25.md",
+      "purpose": "launch disclosure requirement baseline"
+    },
+    {
+      "path": "release/compliance/rc-2026-02-25/legal_signoff.md",
+      "purpose": "rights/attribution/disclosure signoff"
+    }
+  ],
+  "rights_verification": {
+    "art_assets_reviewed": true,
+    "audio_assets_reviewed": true,
+    "font_assets_reviewed": true
+  },
+  "notes": "Update this manifest per RC with latest artifact paths and signoff timestamps."
+}

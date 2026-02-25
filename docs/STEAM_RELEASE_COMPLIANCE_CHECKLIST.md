@@ -38,9 +38,12 @@
 |---|---|---|---|---|
 | License | `LICENSE` | PASS | Engineering | Repository license present and current |
 | Third-party notices | `THIRD_PARTY_NOTICES.md` | PASS | Engineering | Dependency/tool attribution baseline maintained |
+| Compliance package manifest | `release/compliance/rc-2026-02-25/compliance_manifest.json` | PASS | Release Ops | Versioned legal/compliance package inventory for RC |
+| Legal signoff record | `release/compliance/rc-2026-02-25/legal_signoff.md` | PASS | Release Ops | Rights/attribution/disclosure signoff captured |
 | Security disclosure | `SECURITY.md` | PASS | Engineering | Coordinated disclosure process documented |
 | Release secret handling | `docs/SECURITY_RELEASE_WORKFLOW.md` | PASS | Release Ops | Protected environment + approval gates documented |
 | Privacy baseline | `docs/CRASH_REPORTING.md` | PASS | Engineering | Local-only crash artifact flow documented |
+| EULA/privacy disclosure baseline | `docs/EULA_PRIVACY_DISCLOSURE_REQUIREMENTS_2026-02-25.md` | PASS | Product | Launch disclosure requirement baseline versioned |
 
 ## Steam Depot/Branch/Release Metadata Alignment
 
@@ -79,6 +82,9 @@
 - `docs/AGE_RATING_DESCRIPTOR_DECISION_2026-02-25.md`
 - `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
 - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- `release/compliance/rc-2026-02-25/compliance_manifest.json`
+- `release/compliance/rc-2026-02-25/legal_signoff.md`
+- `docs/EULA_PRIVACY_DISCLOSURE_REQUIREMENTS_2026-02-25.md`
 - `release/steam_descriptors/`
 - `release/steam_metadata/`
 - `docs/RELEASE_TAGGING.md`

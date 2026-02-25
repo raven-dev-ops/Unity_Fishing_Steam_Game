@@ -77,3 +77,7 @@ Configure in GitHub repository settings:
   - release run URL,
   - provenance artifact URL,
   - attestation verification note and operator.
+- Legal/compliance section in RC signoff must include:
+  - compliance package manifest path (`release/compliance/<rc-tag>/compliance_manifest.json`),
+  - legal signoff path (`release/compliance/<rc-tag>/legal_signoff.md`),
+  - disclosure baseline link (`docs/EULA_PRIVACY_DISCLOSURE_REQUIREMENTS_2026-02-25.md` or newer revision).
