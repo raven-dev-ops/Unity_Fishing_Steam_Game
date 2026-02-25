@@ -43,6 +43,134 @@ namespace RavenDevOps.Fishing.Core
             "FishingInfoPanel",
             "PausePanel"
         };
+        private static readonly Dictionary<string, ISceneRuntimeComposer> SceneComposers =
+            new Dictionary<string, ISceneRuntimeComposer>(System.StringComparer.Ordinal)
+            {
+                { ScenePathConstants.Boot, new BootSceneRuntimeComposer() },
+                { ScenePathConstants.Cinematic, new CinematicSceneRuntimeComposer() },
+                { ScenePathConstants.MainMenu, new MainMenuSceneRuntimeComposer() },
+                { ScenePathConstants.Harbor, new HarborSceneRuntimeComposer() },
+                { ScenePathConstants.Fishing, new FishingSceneRuntimeComposer() }
+            };
+
+        private interface ISceneRuntimeComposer
+        {
+            void Compose(Scene scene);
+        }
+
+        private sealed class BootSceneRuntimeComposer : ISceneRuntimeComposer
+        {
+            public void Compose(Scene scene)
+            {
+                ComposeBoot(scene);
+            }
+        }
+
+        private sealed class CinematicSceneRuntimeComposer : ISceneRuntimeComposer
+        {
+            public void Compose(Scene scene)
+            {
+                ComposeCinematic(scene);
+            }
+        }
+
+        private sealed class MainMenuSceneRuntimeComposer : ISceneRuntimeComposer
+        {
+            public void Compose(Scene scene)
+            {
+                ComposeMainMenu(scene);
+            }
+        }
+
+        private sealed class HarborSceneRuntimeComposer : ISceneRuntimeComposer
+        {
+            public void Compose(Scene scene)
+            {
+                ComposeHarbor(scene);
+            }
+        }
+
+        private sealed class FishingSceneRuntimeComposer : ISceneRuntimeComposer
+        {
+            public void Compose(Scene scene)
+            {
+                ComposeFishing(scene);
+            }
+        }
+
+        private sealed class SceneRuntimeCompositionServices
+        {
+            public SceneRuntimeCompositionServices(
+                GameFlowManager gameFlowManager,
+                SaveManager saveManager,
+                ObjectivesService objectivesService,
+                UserSettingsService userSettingsService,
+                SellSummaryCalculator sellSummaryCalculator)
+            {
+                GameFlowManager = gameFlowManager;
+                SaveManager = saveManager;
+                ObjectivesService = objectivesService;
+                UserSettingsService = userSettingsService;
+                SellSummaryCalculator = sellSummaryCalculator;
+            }
+
+            public GameFlowManager GameFlowManager { get; }
+            public SaveManager SaveManager { get; }
+            public ObjectivesService ObjectivesService { get; }
+            public UserSettingsService UserSettingsService { get; }
+            public SellSummaryCalculator SellSummaryCalculator { get; }
+        }
+
+        private readonly struct CinematicSceneReferences
+        {
+            public CinematicSceneReferences(GameObject backdropFar, GameObject backdropVeil)
+            {
+                BackdropFar = backdropFar;
+                BackdropVeil = backdropVeil;
+            }
+
+            public GameObject BackdropFar { get; }
+            public GameObject BackdropVeil { get; }
+        }
+
+        private readonly struct HarborSceneReferences
+        {
+            public HarborSceneReferences(GameObject harborShipMain, GameObject dockPlankZero)
+            {
+                HarborShipMain = harborShipMain;
+                DockPlankZero = dockPlankZero;
+            }
+
+            public GameObject HarborShipMain { get; }
+            public GameObject DockPlankZero { get; }
+        }
+
+        private readonly struct FishingSceneReferences
+        {
+            public FishingSceneReferences(
+                GameObject fishingShip,
+                GameObject fishingHook,
+                GameObject fishingLine,
+                GameObject fishingDynamicLine,
+                GameObject backdropFar,
+                GameObject backdropVeil)
+            {
+                FishingShip = fishingShip;
+                FishingHook = fishingHook;
+                FishingLine = fishingLine;
+                FishingDynamicLine = fishingDynamicLine;
+                BackdropFar = backdropFar;
+                BackdropVeil = backdropVeil;
+            }
+
+            public GameObject FishingShip { get; }
+            public GameObject FishingHook { get; }
+            public GameObject FishingLine { get; }
+            public GameObject FishingDynamicLine { get; }
+            public GameObject BackdropFar { get; }
+            public GameObject BackdropVeil { get; }
+        }
+
         private static bool _initialized;
         private static Font _defaultFont;
         private static TMP_FontAsset _defaultTmpFontAsset;
@@ -75,24 +203,12 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            switch (scene.path)
+            if (!SceneComposers.TryGetValue(scene.path, out var composer))
             {
-                case ScenePathConstants.Boot:
-                    ComposeBoot(scene);
-                    break;
-                case ScenePathConstants.Cinematic:
-                    ComposeCinematic(scene);
-                    break;
-                case ScenePathConstants.MainMenu:
-                    ComposeMainMenu(scene);
-                    break;
-                case ScenePathConstants.Harbor:
-                    ComposeHarbor(scene);
-                    break;
-                case ScenePathConstants.Fishing:
-                    ComposeFishing(scene);
-                    break;
+                return;
             }
+
+            composer.Compose(scene);
         }
 
         private static void ComposeBoot(Scene scene)
@@ -109,7 +225,8 @@ namespace RavenDevOps.Fishing.Core
             CreateText(canvas.transform, "BootTitle", "Raven DevOps Fishing", 42, TextAnchor.MiddleCenter, new Vector2(0f, 82f), new Vector2(780f, 92f));
             var status = CreateText(canvas.transform, "BootStatus", "Boot: Press Submit to continue.", 24, TextAnchor.MiddleCenter, new Vector2(0f, -18f), new Vector2(760f, 72f));
             var continueButton = CreateButton(canvas.transform, "ContinueButton", "Continue", new Vector2(0f, -114f), new Vector2(220f, 56f));
-            continueButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.Cinematic));
+            var services = ResolveRuntimeServices();
+            continueButton.onClick.AddListener(() => services.GameFlowManager?.SetState(GameFlowState.Cinematic));
 
             var controller = GetOrAddComponent<BootSceneFlowController>(root);
             controller.Configure(status);
@@ -127,7 +244,8 @@ namespace RavenDevOps.Fishing.Core
             EnsureEventSystem(scene);
             SuppressLeakedNonCinematicUi();
             HideHarborVisualArtifactsFromCinematic(scene);
-            NormalizeCinematicBackdrop(scene);
+            var sceneReferences = ResolveCinematicSceneReferences(scene);
+            NormalizeCinematicBackdrop(sceneReferences);
             var canvas = CreateCanvas(root.transform, "CinematicCanvas", 250);
             var skipButton = CreateBottomRightButton(
                 canvas.transform,
@@ -281,10 +399,10 @@ namespace RavenDevOps.Fishing.Core
                 "DockPlank_5");
         }
 
-        private static void NormalizeCinematicBackdrop(Scene scene)
+        private static void NormalizeCinematicBackdrop(CinematicSceneReferences sceneReferences)
         {
-            var backdropLayerA = FindSceneObject(scene, "BackdropFar");
-            var backdropLayerB = FindSceneObject(scene, "BackdropVeil");
+            var backdropLayerA = sceneReferences.BackdropFar;
+            var backdropLayerB = sceneReferences.BackdropVeil;
             if (backdropLayerA == null && backdropLayerB == null)
             {
                 return;
@@ -887,8 +1005,9 @@ namespace RavenDevOps.Fishing.Core
             var pauseExitButton = CreateButton(pauseRoot.transform, "HarborPauseExitButton", "Exit", new Vector2(0f, -82f), new Vector2(250f, 48f));
             pauseRoot.SetActive(false);
 
+            var sceneReferences = ResolveHarborSceneReferences(scene);
             var tutorialHarborShipSprite = ResolveTutorialHarborShipSprite();
-            var player = FindSceneObject(scene, "HarborShipMain");
+            var player = sceneReferences.HarborShipMain;
             SpriteRenderer playerRenderer = null;
             if (player == null)
             {
@@ -913,11 +1032,9 @@ namespace RavenDevOps.Fishing.Core
 
             GetOrAddComponent<HarborPlayerController>(player);
 
-            var sailObject = FindSceneObject(scene, "DockPlank_0");
-            if (sailObject == null)
-            {
-                sailObject = FindSceneObject(scene, "HarborShipMain");
-            }
+            var sailObject = sceneReferences.DockPlankZero != null
+                ? sceneReferences.DockPlankZero
+                : sceneReferences.HarborShipMain;
 
             var interactables = new List<WorldInteractable>
             {
@@ -1087,6 +1204,8 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            var services = ResolveRuntimeServices();
+            var sceneReferences = ResolveFishingSceneReferences(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);
             var infoPanel = CreateTopRightPanel(canvas.transform, "FishingInfoPanel", new Vector2(20f, 20f), new Vector2(880f, 292f), new Color(0.04f, 0.10f, 0.17f, 0.78f));
             var distanceTierText = CreateTopLeftTmpText(infoPanel.transform, "FishingDistanceTierText", "Distance Tier: 1", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 14f), new Vector2(428f, 32f));
@@ -1107,7 +1226,7 @@ namespace RavenDevOps.Fishing.Core
                 new Vector2(18f, 238f),
                 new Vector2(844f, 46f));
             var menuButton = CreateTopLeftButton(canvas.transform, "FishingMenuButton", "Menu", new Vector2(20f, 20f), new Vector2(140f, 44f));
-            menuButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.TogglePause());
+            menuButton.onClick.AddListener(() => services.GameFlowManager?.TogglePause());
             var fishingTutorialSkipAllButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipAllButton", "Skip All", new Vector2(532f, 12f), new Vector2(156f, 28f));
             fishingTutorialSkipAllButton.gameObject.SetActive(false);
             var fishingTutorialSkipButton = CreateTopLeftButton(infoPanel.transform, "FishingTutorialSkipButton", "Skip Tutorial", new Vector2(694f, 12f), new Vector2(160f, 28f));
@@ -1187,7 +1306,7 @@ namespace RavenDevOps.Fishing.Core
             pauseRoot.SetActive(false);
 
             var tutorialFishingShipSprite = ResolveTutorialFishingShipSprite();
-            var shipObject = FindSceneObject(scene, "FishingShip");
+            var shipObject = sceneReferences.FishingShip;
             if (shipObject == null)
             {
                 shipObject = new GameObject("FishingShip");
@@ -1201,7 +1320,7 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var tutorialHookSprite = ResolveTutorialHookSprite();
-            var hookObject = FindSceneObject(scene, "FishingHook");
+            var hookObject = sceneReferences.FishingHook;
             if (hookObject == null)
             {
                 hookObject = new GameObject("FishingHook");
@@ -1214,13 +1333,13 @@ namespace RavenDevOps.Fishing.Core
                 hookObject.transform.position = new Vector3(0f, -1f, 0f);
             }
 
-            var legacyLineObject = FindSceneObject(scene, "FishingLine");
+            var legacyLineObject = sceneReferences.FishingLine;
             if (legacyLineObject != null)
             {
                 legacyLineObject.SetActive(false);
             }
 
-            var dynamicLineObject = FindSceneObject(scene, "FishingDynamicLine");
+            var dynamicLineObject = sceneReferences.FishingDynamicLine;
             if (dynamicLineObject == null)
             {
                 dynamicLineObject = new GameObject("FishingDynamicLine");
@@ -1293,8 +1412,8 @@ namespace RavenDevOps.Fishing.Core
             dockedHookPosition.y = hookMovement.GetDockedY(0.65f);
             hookObject.transform.position = dockedHookPosition;
 
-            var backdropLayerA = FindSceneObject(scene, "BackdropFar");
-            var backdropLayerB = FindSceneObject(scene, "BackdropVeil");
+            var backdropLayerA = sceneReferences.BackdropFar;
+            var backdropLayerB = sceneReferences.BackdropVeil;
             if (backdropLayerA != null && backdropLayerB != null)
             {
                 var backdropRendererA = backdropLayerA.GetComponent<SpriteRenderer>();
@@ -1335,11 +1454,11 @@ namespace RavenDevOps.Fishing.Core
                 objectiveText,
                 statusText,
                 failureText,
-                RuntimeServiceRegistry.Get<ObjectivesService>());
+                services.ObjectivesService);
             hud.ConfigureDependencies(
-                RuntimeServiceRegistry.Get<SaveManager>(),
-                RuntimeServiceRegistry.Get<GameFlowManager>(),
-                RuntimeServiceRegistry.Get<UserSettingsService>());
+                services.SaveManager,
+                services.GameFlowManager,
+                services.UserSettingsService);
 
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
@@ -1362,12 +1481,12 @@ namespace RavenDevOps.Fishing.Core
                 shipMovement,
                 hookMovement,
                 spawner,
-                RuntimeServiceRegistry.Get<SellSummaryCalculator>());
+                services.SellSummaryCalculator);
             tuningConfigApplier.ApplyNow();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             var debugPanelController = GetOrAddComponent<DebugPanelController>(root);
-            debugPanelController.Configure(waveAnimator, spawner, RuntimeServiceRegistry.Get<SaveManager>());
+            debugPanelController.Configure(waveAnimator, spawner, services.SaveManager);
 #endif
 
             GetOrAddComponent<FishingPauseBridge>(root);
@@ -1389,6 +1508,124 @@ namespace RavenDevOps.Fishing.Core
             settingsButton.onClick.AddListener(pauseMenu.OnSettingsPressed);
             exitButton.onClick.AddListener(pauseMenu.OnExitGamePressed);
             EnsurePerfSanityRunner(root, canvas.transform, "FishingPerfLabel");
+        }
+
+        private static SceneRuntimeCompositionServices ResolveRuntimeServices()
+        {
+            return new SceneRuntimeCompositionServices(
+                RuntimeServiceRegistry.Get<GameFlowManager>(),
+                RuntimeServiceRegistry.Get<SaveManager>(),
+                RuntimeServiceRegistry.Get<ObjectivesService>(),
+                RuntimeServiceRegistry.Get<UserSettingsService>(),
+                RuntimeServiceRegistry.Get<SellSummaryCalculator>());
+        }
+
+        private static CinematicSceneReferences ResolveCinematicSceneReferences(Scene scene)
+        {
+            var contract = FindSceneContract<CinematicSceneContract>(scene);
+            return new CinematicSceneReferences(
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(CinematicSceneContract),
+                    nameof(CinematicSceneContract.BackdropFar),
+                    contract != null ? contract.BackdropFar : null,
+                    "BackdropFar",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(CinematicSceneContract),
+                    nameof(CinematicSceneContract.BackdropVeil),
+                    contract != null ? contract.BackdropVeil : null,
+                    "BackdropVeil",
+                    required: false));
+        }
+
+        private static HarborSceneReferences ResolveHarborSceneReferences(Scene scene)
+        {
+            var contract = FindSceneContract<HarborSceneContract>(scene);
+            return new HarborSceneReferences(
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(HarborSceneContract),
+                    nameof(HarborSceneContract.HarborShipMain),
+                    contract != null ? contract.HarborShipMain : null,
+                    "HarborShipMain",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(HarborSceneContract),
+                    nameof(HarborSceneContract.DockPlankZero),
+                    contract != null ? contract.DockPlankZero : null,
+                    "DockPlank_0",
+                    required: false));
+        }
+
+        private static FishingSceneReferences ResolveFishingSceneReferences(Scene scene)
+        {
+            var contract = FindSceneContract<FishingSceneContract>(scene);
+            return new FishingSceneReferences(
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.FishingShip),
+                    contract != null ? contract.FishingShip : null,
+                    "FishingShip",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.FishingHook),
+                    contract != null ? contract.FishingHook : null,
+                    "FishingHook",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.FishingLine),
+                    contract != null ? contract.FishingLine : null,
+                    "FishingLine",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.FishingDynamicLine),
+                    contract != null ? contract.FishingDynamicLine : null,
+                    "FishingDynamicLine",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.BackdropFar),
+                    contract != null ? contract.BackdropFar : null,
+                    "BackdropFar",
+                    required: false),
+                SceneContractReferenceResolver.Resolve(
+                    scene,
+                    nameof(FishingSceneContract),
+                    nameof(FishingSceneContract.BackdropVeil),
+                    contract != null ? contract.BackdropVeil : null,
+                    "BackdropVeil",
+                    required: false));
+        }
+
+        private static T FindSceneContract<T>(Scene scene) where T : Component
+        {
+            if (!scene.IsValid())
+            {
+                return null;
+            }
+
+            var contracts = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < contracts.Length; i++)
+            {
+                var contract = contracts[i];
+                if (contract != null && contract.gameObject.scene == scene)
+                {
+                    return contract;
+                }
+            }
+
+            return null;
         }
 
         private static GameObject GetOrCreateRuntimeRoot(Scene scene)

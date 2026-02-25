@@ -144,6 +144,29 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator MainMenuScene_CompositionIsIdempotentWhenComposeIsReapplied()
+        {
+            yield return LoadScene(MainMenuScenePath);
+            yield return null;
+
+            var composeSceneMethod = typeof(SceneRuntimeCompositionBootstrap).GetMethod(
+                "ComposeScene",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(composeSceneMethod, Is.Not.Null, "Expected private compose method for idempotence check.");
+
+            var initialCanvasCount = CountObjectsWithNameInActiveScene("MainMenuCanvas");
+            var initialControllerCount = CountComponentsInActiveScene<MainMenuController>();
+            Assert.That(initialCanvasCount, Is.EqualTo(1), "Expected exactly one main-menu canvas before recompose.");
+            Assert.That(initialControllerCount, Is.EqualTo(1), "Expected exactly one main-menu controller before recompose.");
+
+            composeSceneMethod.Invoke(null, new object[] { SceneManager.GetActiveScene() });
+            yield return null;
+
+            Assert.That(CountObjectsWithNameInActiveScene("MainMenuCanvas"), Is.EqualTo(initialCanvasCount));
+            Assert.That(CountComponentsInActiveScene<MainMenuController>(), Is.EqualTo(initialControllerCount));
+        }
+
+        [UnityTest]
         public IEnumerator CinematicScene_UsesDedicatedBackdropAndNoHarborHud()
         {
             yield return LoadScene(CinematicScenePath);
@@ -454,6 +477,50 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             return totalFish;
+        }
+
+        private static int CountObjectsWithNameInActiveScene(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return 0;
+            }
+
+            var scene = SceneManager.GetActiveScene();
+            var transforms = UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var count = 0;
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var transform = transforms[i];
+                if (transform == null || transform.gameObject.scene != scene)
+                {
+                    continue;
+                }
+
+                if (string.Equals(transform.gameObject.name, objectName, StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountComponentsInActiveScene<T>() where T : Component
+        {
+            var scene = SceneManager.GetActiveScene();
+            var components = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var count = 0;
+            for (var i = 0; i < components.Length; i++)
+            {
+                var component = components[i];
+                if (component != null && component.gameObject.scene == scene)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private static void SetPrivateFieldValue(object target, string fieldName, object value)

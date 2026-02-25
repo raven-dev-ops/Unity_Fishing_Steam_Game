@@ -59,6 +59,9 @@ flowchart LR
 ## Runtime Notes
 - `RuntimeServicesBootstrap` creates persistent services before scene load.
 - `RuntimeServiceRegistry` provides explicit runtime dependency wiring and replaces scene-search based lookups.
+- Scene runtime composition is module-based (`Boot`, `Cinematic`, `MainMenu`, `Harbor`, `Fishing`) behind a shared composer seam in `SceneRuntimeCompositionBootstrap`.
+- Scene object wiring is driven by explicit scene contracts (`CinematicSceneContract`, `HarborSceneContract`, `FishingSceneContract`), with temporary name-fallback resolution and warning logs during migration.
+- Scene modules consume runtime dependencies through a composition service resolver seam instead of ad hoc `RuntimeServiceRegistry.Get<T>()` calls.
 - `GameFlowManager` owns flow state and pause transitions.
 - `GameFlowOrchestrator` maps states to scenes and input contexts.
 - Intro replay return routing keeps `MainMenuSettings` and `MainMenuProfile` follow-up intents distinct, and clears follow-up panel flags for default MainMenu exits.

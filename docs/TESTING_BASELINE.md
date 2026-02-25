@@ -93,6 +93,7 @@ Unity.exe -batchmode -nographics -quit `
   - Input context map activation and rebinding override persistence
   - Accessibility default/persistence guardrails (subtitles, readability options)
   - Fishing assist anti-frustration default settings guardrails
+  - Scene contract resolver fallback and required-missing diagnostics checks
 - PlayMode:
   - Deterministic launch-path regression suite (`Assets/Tests/PlayMode/LaunchPathRegressionPlayModeTests.cs`, category `LaunchRegression`) covering:
     - Boot -> Cinematic -> MainMenu transition path
@@ -107,6 +108,7 @@ Unity.exe -batchmode -nographics -quit `
   - Save/load roundtrip across scene transitions
   - Non-Steam fallback guard-path checks
   - Main-menu runtime composition checks (Profile panel telemetry/actions + Settings controls/rebinds)
+  - Main-menu runtime composition idempotence checks (re-applying composition does not duplicate runtime objects/components)
   - Harbor scene runtime composition checks (action panel, harbor status telemetry, pause menu)
   - Fishing scene runtime composition checks (HUD/objective/pause controls/controllers)
   - Fishing backdrop camera coverage checks
