@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Harbor;
@@ -16,16 +15,71 @@ namespace RavenDevOps.Fishing.Core
 {
     public sealed class HarborSceneInteractionRouter : MonoBehaviour
     {
-        private enum ShopMenuType
+        public sealed class RuntimeDependencyBundle
         {
-            None = 0,
-            Hook = 1,
-            Boat = 2,
-            Fish = 3,
-            Fishery = 4,
-            Profile = 5,
-            Shipyard = 6,
-            MainMenuConfirm = 7
+            public List<WorldInteractable> Interactables { get; set; }
+            public HookShopController HookShop { get; set; }
+            public BoatShopController BoatShop { get; set; }
+            public FishShopController FishShop { get; set; }
+            public HarborInteractionController InteractionController { get; set; }
+        }
+
+        public sealed class MenuDependencyBundle
+        {
+            public GameObject ActionPanel { get; set; }
+            public GameObject HookShopPanel { get; set; }
+            public GameObject BoatShopPanel { get; set; }
+            public GameObject FishShopPanel { get; set; }
+            public GameObject FisheryPanel { get; set; }
+            public GameObject ProfilePanel { get; set; }
+            public GameObject ShipyardPanel { get; set; }
+            public GameObject MainMenuConfirmPanel { get; set; }
+            public GameObject MainMenuDefaultSelection { get; set; }
+            public GameObject HookShopDefaultSelection { get; set; }
+            public GameObject BoatShopDefaultSelection { get; set; }
+            public GameObject FishShopDefaultSelection { get; set; }
+            public GameObject FisheryDefaultSelection { get; set; }
+            public GameObject ProfileDefaultSelection { get; set; }
+            public GameObject ShipyardDefaultSelection { get; set; }
+            public GameObject MainMenuConfirmDefaultSelection { get; set; }
+        }
+
+        public sealed class TextDependencyBundle
+        {
+            public TMP_Text StatusText { get; set; }
+            public TMP_Text SelectionText { get; set; }
+            public TMP_Text EconomyText { get; set; }
+            public TMP_Text EquipmentText { get; set; }
+            public TMP_Text CargoText { get; set; }
+            public TMP_Text ActivityLogText { get; set; }
+            public TMP_Text HookShopInfoText { get; set; }
+            public TMP_Text BoatShopInfoText { get; set; }
+            public TMP_Text FishShopInfoText { get; set; }
+            public TMP_Text FisheryCardText { get; set; }
+            public Image FisheryCardIcon { get; set; }
+            public TMP_Text ShipyardInfoText { get; set; }
+            public TMP_Text ShipyardCargoText { get; set; }
+        }
+
+        public sealed class ButtonDependencyBundle
+        {
+            public Button SailButton { get; set; }
+            public Button FishQuestAcceptButton { get; set; }
+            public Button FishQuestFulfillButton { get; set; }
+            public List<Button> HookShopButtons { get; set; }
+            public List<Button> BoatShopButtons { get; set; }
+            public List<Button> ShipyardHookButtons { get; set; }
+            public List<Button> ShipyardShipButtons { get; set; }
+            public List<Image> HookShopIcons { get; set; }
+            public List<Image> BoatShopIcons { get; set; }
+        }
+
+        public sealed class DependencyBundle
+        {
+            public RuntimeDependencyBundle Runtime { get; set; }
+            public MenuDependencyBundle Menu { get; set; }
+            public TextDependencyBundle Text { get; set; }
+            public ButtonDependencyBundle Buttons { get; set; }
         }
 
         private const int MaxActivityLines = 4;
@@ -88,9 +142,74 @@ namespace RavenDevOps.Fishing.Core
         private readonly List<Image> _hookShopIcons = new List<Image>();
         private readonly List<Image> _boatShopIcons = new List<Image>();
         private readonly List<string> _fisheryCardFishIds = new List<string>();
-        private ShopMenuType _activeMenu = ShopMenuType.None;
+        private readonly HarborMenuStateRouter _menuRouter = new HarborMenuStateRouter();
+        private readonly HarborShopTransactionHandler _shopTransactionHandler = new HarborShopTransactionHandler();
+        private readonly HarborFisheryTransactionHandler _fisheryTransactionHandler = new HarborFisheryTransactionHandler();
+        private readonly HarborShipyardTransactionHandler _shipyardTransactionHandler = new HarborShipyardTransactionHandler();
+        private readonly HarborShopViewPresenter _shopViewPresenter = new HarborShopViewPresenter();
+        private readonly HarborFisheryCardViewPresenter _fisheryCardPresenter = new HarborFisheryCardViewPresenter();
+        private readonly HarborInteractionViewPresenter _interactionViewPresenter = new HarborInteractionViewPresenter();
         private int _fisheryCardIndex;
         private static Sprite _shopFallbackIconSprite;
+
+        public void Configure(DependencyBundle dependencies)
+        {
+            var runtime = dependencies != null ? dependencies.Runtime : null;
+            var menu = dependencies != null ? dependencies.Menu : null;
+            var text = dependencies != null ? dependencies.Text : null;
+            var buttons = dependencies != null ? dependencies.Buttons : null;
+
+            _interactables = runtime != null && runtime.Interactables != null
+                ? runtime.Interactables
+                : new List<WorldInteractable>();
+            _hookShop = runtime != null ? runtime.HookShop : null;
+            _boatShop = runtime != null ? runtime.BoatShop : null;
+            _fishShop = runtime != null ? runtime.FishShop : null;
+            _interactionController = runtime != null ? runtime.InteractionController : null;
+
+            _actionPanel = menu != null ? menu.ActionPanel : null;
+            _hookShopPanel = menu != null ? menu.HookShopPanel : null;
+            _boatShopPanel = menu != null ? menu.BoatShopPanel : null;
+            _fishShopPanel = menu != null ? menu.FishShopPanel : null;
+            _fisheryPanel = menu != null ? menu.FisheryPanel : null;
+            _profilePanel = menu != null ? menu.ProfilePanel : null;
+            _shipyardPanel = menu != null ? menu.ShipyardPanel : null;
+            _mainMenuConfirmPanel = menu != null ? menu.MainMenuConfirmPanel : null;
+            _mainMenuDefaultSelection = menu != null ? menu.MainMenuDefaultSelection : null;
+            _hookShopDefaultSelection = menu != null ? menu.HookShopDefaultSelection : null;
+            _boatShopDefaultSelection = menu != null ? menu.BoatShopDefaultSelection : null;
+            _fishShopDefaultSelection = menu != null ? menu.FishShopDefaultSelection : null;
+            _fisheryDefaultSelection = menu != null ? menu.FisheryDefaultSelection : null;
+            _profileDefaultSelection = menu != null ? menu.ProfileDefaultSelection : null;
+            _shipyardDefaultSelection = menu != null ? menu.ShipyardDefaultSelection : null;
+            _mainMenuConfirmDefaultSelection = menu != null ? menu.MainMenuConfirmDefaultSelection : null;
+
+            _statusText = text != null ? text.StatusText : null;
+            _selectionText = text != null ? text.SelectionText : null;
+            _economyText = text != null ? text.EconomyText : null;
+            _equipmentText = text != null ? text.EquipmentText : null;
+            _cargoText = text != null ? text.CargoText : null;
+            _activityLogText = text != null ? text.ActivityLogText : null;
+            _hookShopInfoText = text != null ? text.HookShopInfoText : null;
+            _boatShopInfoText = text != null ? text.BoatShopInfoText : null;
+            _fishShopInfoText = text != null ? text.FishShopInfoText : null;
+            _fisheryCardText = text != null ? text.FisheryCardText : null;
+            _fisheryCardIcon = text != null ? text.FisheryCardIcon : null;
+            _shipyardInfoText = text != null ? text.ShipyardInfoText : null;
+            _shipyardCargoText = text != null ? text.ShipyardCargoText : null;
+
+            _sailButton = buttons != null ? buttons.SailButton : null;
+            _fishQuestAcceptButton = buttons != null ? buttons.FishQuestAcceptButton : null;
+            _fishQuestFulfillButton = buttons != null ? buttons.FishQuestFulfillButton : null;
+            AssignUiList(_hookShopButtons, buttons != null ? buttons.HookShopButtons : null);
+            AssignUiList(_boatShopButtons, buttons != null ? buttons.BoatShopButtons : null);
+            AssignUiList(_shipyardHookButtons, buttons != null ? buttons.ShipyardHookButtons : null);
+            AssignUiList(_shipyardShipButtons, buttons != null ? buttons.ShipyardShipButtons : null);
+            AssignUiList(_hookShopIcons, buttons != null ? buttons.HookShopIcons : null);
+            AssignUiList(_boatShopIcons, buttons != null ? buttons.BoatShopIcons : null);
+
+            ConfigureBoundedComponents();
+        }
 
         public void Configure(
             List<WorldInteractable> interactables,
@@ -137,49 +256,65 @@ namespace RavenDevOps.Fishing.Core
             List<Image> hookShopIcons = null,
             List<Image> boatShopIcons = null)
         {
-            _interactables = interactables ?? new List<WorldInteractable>();
-            _hookShop = hookShop;
-            _boatShop = boatShop;
-            _fishShop = fishShop;
-            _statusText = statusText;
-            _selectionText = selectionText;
-            _economyText = economyText;
-            _equipmentText = equipmentText;
-            _cargoText = cargoText;
-            _activityLogText = activityLogText;
-            _interactionController = interactionController;
-            _actionPanel = actionPanel;
-            _hookShopPanel = hookShopPanel;
-            _boatShopPanel = boatShopPanel;
-            _fishShopPanel = fishShopPanel;
-            _fisheryPanel = fisheryPanel;
-            _profilePanel = profilePanel;
-            _shipyardPanel = shipyardPanel;
-            _mainMenuConfirmPanel = mainMenuConfirmPanel;
-            _hookShopInfoText = hookShopInfoText;
-            _boatShopInfoText = boatShopInfoText;
-            _fishShopInfoText = fishShopInfoText;
-            _fisheryCardText = fisheryCardText;
-            _fisheryCardIcon = fisheryCardIcon;
-            _shipyardInfoText = shipyardInfoText;
-            _shipyardCargoText = shipyardCargoText;
-            _mainMenuDefaultSelection = mainMenuDefaultSelection;
-            _hookShopDefaultSelection = hookShopDefaultSelection;
-            _boatShopDefaultSelection = boatShopDefaultSelection;
-            _fishShopDefaultSelection = fishShopDefaultSelection;
-            _fisheryDefaultSelection = fisheryDefaultSelection;
-            _profileDefaultSelection = profileDefaultSelection;
-            _shipyardDefaultSelection = shipyardDefaultSelection;
-            _mainMenuConfirmDefaultSelection = mainMenuConfirmDefaultSelection;
-            _sailButton = sailButton;
-            _fishQuestAcceptButton = fishQuestAcceptButton;
-            _fishQuestFulfillButton = fishQuestFulfillButton;
-            AssignUiList(_hookShopButtons, hookShopButtons);
-            AssignUiList(_boatShopButtons, boatShopButtons);
-            AssignUiList(_shipyardHookButtons, shipyardHookButtons);
-            AssignUiList(_shipyardShipButtons, shipyardShipButtons);
-            AssignUiList(_hookShopIcons, hookShopIcons);
-            AssignUiList(_boatShopIcons, boatShopIcons);
+            Configure(
+                new DependencyBundle
+                {
+                    Runtime = new RuntimeDependencyBundle
+                    {
+                        Interactables = interactables,
+                        HookShop = hookShop,
+                        BoatShop = boatShop,
+                        FishShop = fishShop,
+                        InteractionController = interactionController
+                    },
+                    Menu = new MenuDependencyBundle
+                    {
+                        ActionPanel = actionPanel,
+                        HookShopPanel = hookShopPanel,
+                        BoatShopPanel = boatShopPanel,
+                        FishShopPanel = fishShopPanel,
+                        FisheryPanel = fisheryPanel,
+                        ProfilePanel = profilePanel,
+                        ShipyardPanel = shipyardPanel,
+                        MainMenuConfirmPanel = mainMenuConfirmPanel,
+                        MainMenuDefaultSelection = mainMenuDefaultSelection,
+                        HookShopDefaultSelection = hookShopDefaultSelection,
+                        BoatShopDefaultSelection = boatShopDefaultSelection,
+                        FishShopDefaultSelection = fishShopDefaultSelection,
+                        FisheryDefaultSelection = fisheryDefaultSelection,
+                        ProfileDefaultSelection = profileDefaultSelection,
+                        ShipyardDefaultSelection = shipyardDefaultSelection,
+                        MainMenuConfirmDefaultSelection = mainMenuConfirmDefaultSelection
+                    },
+                    Text = new TextDependencyBundle
+                    {
+                        StatusText = statusText,
+                        SelectionText = selectionText,
+                        EconomyText = economyText,
+                        EquipmentText = equipmentText,
+                        CargoText = cargoText,
+                        ActivityLogText = activityLogText,
+                        HookShopInfoText = hookShopInfoText,
+                        BoatShopInfoText = boatShopInfoText,
+                        FishShopInfoText = fishShopInfoText,
+                        FisheryCardText = fisheryCardText,
+                        FisheryCardIcon = fisheryCardIcon,
+                        ShipyardInfoText = shipyardInfoText,
+                        ShipyardCargoText = shipyardCargoText
+                    },
+                    Buttons = new ButtonDependencyBundle
+                    {
+                        SailButton = sailButton,
+                        FishQuestAcceptButton = fishQuestAcceptButton,
+                        FishQuestFulfillButton = fishQuestFulfillButton,
+                        HookShopButtons = hookShopButtons,
+                        BoatShopButtons = boatShopButtons,
+                        ShipyardHookButtons = shipyardHookButtons,
+                        ShipyardShipButtons = shipyardShipButtons,
+                        HookShopIcons = hookShopIcons,
+                        BoatShopIcons = boatShopIcons
+                    }
+                });
         }
 
         private void Awake()
@@ -189,10 +324,12 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
             _interactionController ??= GetComponent<HarborInteractionController>();
+            ConfigureBoundedComponents();
         }
 
         private void OnEnable()
         {
+            ConfigureBoundedComponents();
             BindInteractables();
             BindRuntimeEvents();
             CloseShopMenus(selectMainAction: false);
@@ -207,6 +344,45 @@ namespace RavenDevOps.Fishing.Core
         {
             UnbindRuntimeEvents();
             UnbindInteractables();
+        }
+
+        private void ConfigureBoundedComponents()
+        {
+            _menuRouter.ConfigureDependencies(
+                new HarborMenuStateRouter.DependencyBundle
+                {
+                    ActionPanel = _actionPanel,
+                    HookShopPanel = _hookShopPanel,
+                    BoatShopPanel = _boatShopPanel,
+                    FishShopPanel = _fishShopPanel,
+                    FisheryPanel = _fisheryPanel,
+                    ProfilePanel = _profilePanel,
+                    ShipyardPanel = _shipyardPanel,
+                    MainMenuConfirmPanel = _mainMenuConfirmPanel,
+                    MainMenuDefaultSelection = _mainMenuDefaultSelection
+                });
+
+            _shopTransactionHandler.ConfigureDependencies(
+                new HarborShopTransactionHandler.DependencyBundle
+                {
+                    SaveManager = _saveManager,
+                    HookShop = _hookShop,
+                    BoatShop = _boatShop
+                });
+            _shopTransactionHandler.SetUnlockAllShopItemsForQa(_unlockAllShopItemsForQa);
+
+            _fisheryTransactionHandler.ConfigureDependencies(
+                new HarborFisheryTransactionHandler.DependencyBundle
+                {
+                    SaveManager = _saveManager,
+                    FishShop = _fishShop
+                });
+
+            _shipyardTransactionHandler.ConfigureDependencies(
+                new HarborShipyardTransactionHandler.DependencyBundle
+                {
+                    SaveManager = _saveManager
+                });
         }
 
         public void OnHookShopRequested()
@@ -292,12 +468,13 @@ namespace RavenDevOps.Fishing.Core
         public void SetUnlockAllShopItemsForQa(bool enabled)
         {
             _unlockAllShopItemsForQa = enabled;
+            _shopTransactionHandler.SetUnlockAllShopItemsForQa(enabled);
             RefreshShopMenuDetails();
         }
 
         public void OnShopBackRequested()
         {
-            if (_activeMenu == ShopMenuType.None)
+            if (_menuRouter.ActiveMenu == HarborMenuType.None)
             {
                 return;
             }
@@ -430,11 +607,8 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            OpenShopMenu(
-                ShopMenuType.Hook,
-                _hookShopPanel,
-                _hookShopDefaultSelection,
-                "Warehouse open. Purchase hooks for Shipyard inventory.");
+            _menuRouter.OpenMenu(HarborMenuType.Hook, _hookShopPanel, _hookShopDefaultSelection);
+            SetStatus("Warehouse open. Purchase hooks for Shipyard inventory.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened warehouse.");
             RefreshHookShopDetails();
@@ -450,11 +624,8 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            OpenShopMenu(
-                ShopMenuType.Boat,
-                _boatShopPanel,
-                _boatShopDefaultSelection,
-                "Dockyard open. Purchase ships for Shipyard inventory.");
+            _menuRouter.OpenMenu(HarborMenuType.Boat, _boatShopPanel, _boatShopDefaultSelection);
+            SetStatus("Dockyard open. Purchase ships for Shipyard inventory.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened dockyard.");
             RefreshBoatShopDetails();
@@ -470,11 +641,8 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            OpenShopMenu(
-                ShopMenuType.Fish,
-                _fishShopPanel,
-                _fishShopDefaultSelection,
-                "Fishery open. Sell cargo, track daily fish, and manage the Fishing Charter.");
+            _menuRouter.OpenMenu(HarborMenuType.Fish, _fishShopPanel, _fishShopDefaultSelection);
+            SetStatus("Fishery open. Sell cargo, track daily fish, and manage the Fishing Charter.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened fishery.");
             RefreshFishShopDetails();
@@ -483,11 +651,8 @@ namespace RavenDevOps.Fishing.Core
 
         private void OpenFisheryMenu()
         {
-            OpenShopMenu(
-                ShopMenuType.Fishery,
-                _fisheryPanel,
-                _fisheryDefaultSelection,
-                "Fishery open. Review capture cards, fish stats, and latest catch details.");
+            _menuRouter.OpenMenu(HarborMenuType.Fishery, _fisheryPanel, _fisheryDefaultSelection);
+            SetStatus("Fishery open. Review capture cards, fish stats, and latest catch details.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened fishery cards.");
             RefreshFisheryCard(forceRebuild: true);
@@ -496,22 +661,16 @@ namespace RavenDevOps.Fishing.Core
 
         private void OpenProfileMenu()
         {
-            OpenShopMenu(
-                ShopMenuType.Profile,
-                _profilePanel,
-                _profileDefaultSelection,
-                "Profile menu open. Review progression and catches.");
+            _menuRouter.OpenMenu(HarborMenuType.Profile, _profilePanel, _profileDefaultSelection);
+            SetStatus("Profile menu open. Review progression and catches.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened profile menu.");
         }
 
         private void OpenShipyardMenu()
         {
-            OpenShopMenu(
-                ShopMenuType.Shipyard,
-                _shipyardPanel,
-                _shipyardDefaultSelection,
-                "Shipyard open. Equip owned gear and set sail.");
+            _menuRouter.OpenMenu(HarborMenuType.Shipyard, _shipyardPanel, _shipyardDefaultSelection);
+            SetStatus("Shipyard open. Equip owned gear and set sail.");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Opened shipyard.");
             RefreshShipyardDetails();
@@ -520,382 +679,97 @@ namespace RavenDevOps.Fishing.Core
 
         private void OpenMainMenuConfirmMenu()
         {
-            OpenShopMenu(
-                ShopMenuType.MainMenuConfirm,
-                _mainMenuConfirmPanel,
-                _mainMenuConfirmDefaultSelection,
-                "Return to the main menu?");
+            _menuRouter.OpenMenu(HarborMenuType.MainMenuConfirm, _mainMenuConfirmPanel, _mainMenuConfirmDefaultSelection);
+            SetStatus("Return to the main menu?");
             PlaySfx(SfxEvent.UiSelect);
             PushActivity("Prompted for main menu confirmation.");
         }
 
-        private void OpenShopMenu(ShopMenuType menuType, GameObject menuPanel, GameObject defaultSelection, string statusMessage)
-        {
-            _activeMenu = menuType;
-            SetPanel(_actionPanel, false);
-            SetPanel(_hookShopPanel, menuType == ShopMenuType.Hook);
-            SetPanel(_boatShopPanel, menuType == ShopMenuType.Boat);
-            SetPanel(_fishShopPanel, menuType == ShopMenuType.Fish);
-            SetPanel(_fisheryPanel, menuType == ShopMenuType.Fishery);
-            SetPanel(_profilePanel, menuType == ShopMenuType.Profile);
-            SetPanel(_shipyardPanel, menuType == ShopMenuType.Shipyard);
-            SetPanel(_mainMenuConfirmPanel, menuType == ShopMenuType.MainMenuConfirm);
-            if (menuPanel != null)
-            {
-                menuPanel.transform.SetAsLastSibling();
-            }
-
-            SetStatus(statusMessage);
-            SetSelected(defaultSelection);
-        }
-
         private void HandleHookShopSelection(string hookId)
         {
-            if (_hookShop == null)
-            {
-                SetStatus("Warehouse is unavailable.");
-                PushActivity("Warehouse unavailable.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(hookId))
-            {
-                SetStatus("No hook selected.");
-                return;
-            }
-
-            if (_saveManager == null || _saveManager.Current == null)
-            {
-                SetStatus("Cannot process hook purchase without save data.");
-                PushActivity("Warehouse unavailable: save not ready.");
-                return;
-            }
-
-            var save = _saveManager.Current;
-            var wasOwned = save.ownedHooks != null && save.ownedHooks.Contains(hookId);
-            var price = Mathf.Max(0, _hookShop.GetPrice(hookId));
-            var hookOrder = ResolveHookMenuOrder();
-            var hasRequiredTier = HasRequiredPreviousTierForShop(save.ownedHooks, hookId, hookOrder, out var requiredTierId);
-
-            if (wasOwned)
-            {
-                SetStatus($"{ToDisplayLabel(hookId)} already in inventory. Equip it in Shipyard.");
-                PushActivity($"Warehouse: {ToDisplayLabel(hookId)} already owned.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!IsShopItemUnlocked(hookId))
-            {
-                var unlockLevel = _saveManager.GetUnlockLevel(hookId);
-                SetStatus($"{ToDisplayLabel(hookId)} unlocks at level {unlockLevel}.");
-                PushActivity($"Warehouse: {ToDisplayLabel(hookId)} is locked.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!wasOwned && !hasRequiredTier)
-            {
-                var requiredLabel = ToDisplayLabel(requiredTierId);
-                SetStatus($"Need {requiredLabel} before buying {ToDisplayLabel(hookId)}.");
-                PushActivity($"Warehouse: {ToDisplayLabel(hookId)} requires {requiredLabel}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!wasOwned && save.copecs < price)
-            {
-                SetStatus($"Need {price} copecs for {ToDisplayLabel(hookId)}. Balance: {save.copecs}.");
-                PushActivity($"Warehouse: insufficient copecs for {ToDisplayLabel(hookId)}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!_hookShop.BuyOrEquip(hookId))
-            {
-                SetStatus($"Could not purchase {ToDisplayLabel(hookId)}.");
-                PushActivity($"Warehouse: action failed for {ToDisplayLabel(hookId)}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            SetStatus($"Purchased {ToDisplayLabel(hookId)} for {price} copecs. Equip it in Shipyard. Balance: {CurrentCopecs()} copecs.");
-            PushActivity($"Warehouse: purchased {ToDisplayLabel(hookId)}.");
-            PlaySfx(SfxEvent.Purchase);
-
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_shopTransactionHandler.HandleHookPurchase(hookId, ResolveHookMenuOrder()));
         }
 
         private void HandleBoatShopSelection(string shipId)
         {
-            if (_boatShop == null)
-            {
-                SetStatus("Dockyard is unavailable.");
-                PushActivity("Dockyard unavailable.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(shipId))
-            {
-                SetStatus("No ship selected.");
-                return;
-            }
-
-            if (_saveManager == null || _saveManager.Current == null)
-            {
-                SetStatus("Cannot process boat purchase without save data.");
-                PushActivity("Dockyard unavailable: save not ready.");
-                return;
-            }
-
-            var save = _saveManager.Current;
-            var wasOwned = save.ownedShips != null && save.ownedShips.Contains(shipId);
-            var price = Mathf.Max(0, _boatShop.GetPrice(shipId));
-            var shipOrder = ResolveShipMenuOrder();
-            var hasRequiredTier = HasRequiredPreviousTierForShop(save.ownedShips, shipId, shipOrder, out var requiredTierId);
-
-            if (wasOwned)
-            {
-                SetStatus($"{ToDisplayLabel(shipId)} already in inventory. Select it in Shipyard.");
-                PushActivity($"Dockyard: {ToDisplayLabel(shipId)} already owned.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!IsShopItemUnlocked(shipId))
-            {
-                var unlockLevel = _saveManager.GetUnlockLevel(shipId);
-                SetStatus($"{ToDisplayLabel(shipId)} unlocks at level {unlockLevel}.");
-                PushActivity($"Dockyard: {ToDisplayLabel(shipId)} is locked.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!wasOwned && !hasRequiredTier)
-            {
-                var requiredLabel = ToDisplayLabel(requiredTierId);
-                SetStatus($"Need {requiredLabel} before buying {ToDisplayLabel(shipId)}.");
-                PushActivity($"Dockyard: {ToDisplayLabel(shipId)} requires {requiredLabel}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!wasOwned && save.copecs < price)
-            {
-                SetStatus($"Need {price} copecs for {ToDisplayLabel(shipId)}. Balance: {save.copecs}.");
-                PushActivity($"Dockyard: insufficient copecs for {ToDisplayLabel(shipId)}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            if (!_boatShop.BuyOrEquip(shipId))
-            {
-                SetStatus($"Could not purchase {ToDisplayLabel(shipId)}.");
-                PushActivity($"Dockyard: action failed for {ToDisplayLabel(shipId)}.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            SetStatus($"Purchased {ToDisplayLabel(shipId)} for {price} copecs. Select it in Shipyard. Balance: {CurrentCopecs()} copecs.");
-            PushActivity($"Dockyard: purchased {ToDisplayLabel(shipId)}.");
-            PlaySfx(SfxEvent.Purchase);
-
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_shopTransactionHandler.HandleBoatPurchase(shipId, ResolveShipMenuOrder()));
         }
 
         private void HandleFishShopSale()
         {
-            if (_fishShop == null)
-            {
-                SetStatus("Fishery is unavailable.");
-                PushActivity("Fishery unavailable.");
-                return;
-            }
-
-            var summary = _fishShop.PreviewSellAll();
-            var pendingCount = Mathf.Max(0, summary.itemCount);
-            if (pendingCount <= 0)
-            {
-                SetStatus("No fish in cargo to sell.");
-                PushActivity("Fishery: cargo already empty.");
-                RefreshShopMenuDetails();
-                return;
-            }
-
-            var result = _fishShop.SellAllDetailed();
-            var earned = Mathf.Max(0, result.totalEarnedCopecs);
-            var dailyBonus = Mathf.Max(0, result.dailyBonusEarnedCopecs);
-            if (dailyBonus > 0)
-            {
-                SetStatus($"Sold {pendingCount} fish for {result.baseEarnedCopecs} copecs + daily bonus {dailyBonus}c. Balance: {CurrentCopecs()} copecs.");
-                PushActivity($"Fishery: sold {pendingCount} fish for {earned} copecs (daily bonus +{dailyBonus}c).");
-            }
-            else
-            {
-                SetStatus($"Sold {pendingCount} fish for {earned} copecs. Balance: {CurrentCopecs()} copecs.");
-                PushActivity($"Fishery: sold {pendingCount} fish for {earned} copecs.");
-            }
-
-            PlaySfx(SfxEvent.Sell);
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_fisheryTransactionHandler.HandleSellAll());
         }
 
         private void HandleFishQuestAccept()
         {
-            if (_fishShop == null)
-            {
-                SetStatus("Fishery is unavailable.");
-                PushActivity("Fishery unavailable.");
-                return;
-            }
-
-            if (_fishShop.AcceptQuest(out var message))
-            {
-                SetStatus(message);
-                PushActivity("Fishing Charter accepted.");
-                PlaySfx(SfxEvent.UiSelect);
-            }
-            else
-            {
-                SetStatus(message);
-                PushActivity("Fishing Charter not accepted.");
-                PlaySfx(SfxEvent.UiCancel);
-            }
-
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_fisheryTransactionHandler.HandleQuestAccept());
         }
 
         private void HandleFishQuestClaim()
         {
-            if (_fishShop == null)
-            {
-                SetStatus("Fishery is unavailable.");
-                PushActivity("Fishery unavailable.");
-                return;
-            }
-
-            if (_fishShop.ClaimQuestReward(out var rewardCopecs, out var message))
-            {
-                SetStatus(message);
-                PushActivity($"Fishing Charter fulfilled (+{rewardCopecs}c).");
-                PlaySfx(SfxEvent.Purchase);
-            }
-            else
-            {
-                SetStatus(message);
-                PushActivity("Fishing Charter not ready.");
-                PlaySfx(SfxEvent.UiCancel);
-            }
-
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_fisheryTransactionHandler.HandleQuestClaim());
         }
 
         private void EquipHookFromShipyard(string hookId)
         {
-            if (_saveManager == null || _saveManager.Current == null || string.IsNullOrWhiteSpace(hookId))
-            {
-                return;
-            }
-
-            var save = _saveManager.Current;
-            save.ownedHooks ??= new List<string>();
-            if (!save.ownedHooks.Contains(hookId))
-            {
-                SetStatus($"{ToDisplayLabel(hookId)} is not in inventory.");
-                PushActivity($"Shipyard: missing {ToDisplayLabel(hookId)}.");
-                PlaySfx(SfxEvent.UiCancel);
-                RefreshShipyardDetails();
-                return;
-            }
-
-            if (string.Equals(save.equippedHookId, hookId, StringComparison.Ordinal))
-            {
-                SetStatus($"{ToDisplayLabel(hookId)} is already equipped.");
-                PushActivity($"Shipyard: {ToDisplayLabel(hookId)} already equipped.");
-                RefreshShipyardDetails();
-                return;
-            }
-
-            save.equippedHookId = hookId;
-            _saveManager.Save();
-            SetStatus($"Equipped {ToDisplayLabel(hookId)} in shipyard.");
-            PushActivity($"Shipyard: equipped {ToDisplayLabel(hookId)}.");
-            PlaySfx(SfxEvent.UiSelect);
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_shipyardTransactionHandler.HandleEquipHook(hookId));
         }
 
         private void EquipShipFromShipyard(string shipId)
         {
-            if (_saveManager == null || _saveManager.Current == null || string.IsNullOrWhiteSpace(shipId))
-            {
-                return;
-            }
-
-            var save = _saveManager.Current;
-            save.ownedShips ??= new List<string>();
-            if (!save.ownedShips.Contains(shipId))
-            {
-                SetStatus($"{ToDisplayLabel(shipId)} is not in inventory.");
-                PushActivity($"Shipyard: missing {ToDisplayLabel(shipId)}.");
-                PlaySfx(SfxEvent.UiCancel);
-                RefreshShipyardDetails();
-                return;
-            }
-
-            if (string.Equals(save.equippedShipId, shipId, StringComparison.Ordinal))
-            {
-                SetStatus($"{ToDisplayLabel(shipId)} is already selected.");
-                PushActivity($"Shipyard: {ToDisplayLabel(shipId)} already selected.");
-                RefreshShipyardDetails();
-                return;
-            }
-
-            save.equippedShipId = shipId;
-            _saveManager.Save();
-            SetStatus($"Selected {ToDisplayLabel(shipId)} in shipyard.");
-            PushActivity($"Shipyard: selected {ToDisplayLabel(shipId)}.");
-            PlaySfx(SfxEvent.UiSelect);
-            RefreshSaveSnapshot();
-            RefreshShopMenuDetails();
+            ApplyTransactionResult(_shipyardTransactionHandler.HandleEquipShip(shipId));
         }
 
         private void HandleSail()
         {
-            if (_saveManager != null && _saveManager.Current != null && IsCargoFull(_saveManager.Current, out var fishCount, out var cargoCapacity))
-            {
-                SetStatus($"Cargo full ({fishCount}/{cargoCapacity}). Sell fish at the Fishery before sailing.");
-                PushActivity("Departure blocked: cargo is full.");
-                PlaySfx(SfxEvent.UiCancel);
-                RefreshSaveSnapshot();
-                return;
-            }
-
-            PlaySfx(SfxEvent.Depart);
-            SetStatus("Casting off for fishing grounds...");
-            PushActivity("Departure confirmed. Sailing to fishing waters.");
-            _orchestrator?.RequestOpenFishing();
+            ApplyTransactionResult(_shipyardTransactionHandler.HandleSail(ResolveCargoCapacity));
         }
 
         private void CloseShopMenus(bool selectMainAction)
         {
-            _activeMenu = ShopMenuType.None;
-            SetPanel(_actionPanel, true);
-            SetPanel(_hookShopPanel, false);
-            SetPanel(_boatShopPanel, false);
-            SetPanel(_fishShopPanel, false);
-            SetPanel(_fisheryPanel, false);
-            SetPanel(_profilePanel, false);
-            SetPanel(_shipyardPanel, false);
-            SetPanel(_mainMenuConfirmPanel, false);
-            if (selectMainAction)
+            _menuRouter.CloseMenus(selectMainAction);
+        }
+
+        private void ApplyTransactionResult(HarborTransactionResult result)
+        {
+            if (result == null)
             {
-                SetSelected(_mainMenuDefaultSelection);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.StatusMessage))
+            {
+                SetStatus(result.StatusMessage);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ActivityMessage))
+            {
+                PushActivity(result.ActivityMessage);
+            }
+
+            if (result.SoundEffect.HasValue)
+            {
+                PlaySfx(result.SoundEffect.Value);
+            }
+
+            if (result.RefreshSaveSnapshot)
+            {
+                RefreshSaveSnapshot();
+            }
+
+            if (result.RefreshShopMenuDetails)
+            {
+                RefreshShopMenuDetails();
+            }
+
+            if (result.RefreshShipyardDetails)
+            {
+                RefreshShipyardDetails();
+            }
+
+            if (result.RequestOpenFishing)
+            {
+                _orchestrator?.RequestOpenFishing();
             }
         }
 
@@ -1006,117 +880,25 @@ namespace RavenDevOps.Fishing.Core
 
             var marketSnapshot = _fishShop.BuildMarketSnapshot(maxHistoryEntries: 5);
             var summary = _fishShop.PreviewSellAll();
-            var pendingValue = Mathf.Max(0, summary.totalEarned);
             var fishCount = CountCargoFish(save);
             var cargoCapacity = ResolveCargoCapacity(save.equippedShipId);
-            var balance = Mathf.Max(0, save.copecs);
-
-            var infoBuilder = new StringBuilder();
-            infoBuilder.AppendLine($"Balance: {balance} copecs");
-            infoBuilder.AppendLine($"Cargo hold: {fishCount}/{cargoCapacity}");
-            if (fishCount <= 0)
-            {
-                infoBuilder.AppendLine("Cargo is empty. Catch fish before selling.");
-            }
-            else
-            {
-                var projectedBalance = balance + pendingValue;
-                infoBuilder.AppendLine($"Projected cargo payout: {pendingValue} copecs");
-                infoBuilder.AppendLine($"Balance after sale: {projectedBalance} copecs");
-            }
-
-            infoBuilder.AppendLine(string.Empty);
-            infoBuilder.AppendLine(
-                $"Daily Fish: {ToDisplayLabel(marketSnapshot.dailyFishId)} " +
-                $"({Mathf.Clamp(marketSnapshot.dailyProgressCount, 0, Mathf.Max(1, marketSnapshot.dailyRequiredCount))}/{Mathf.Max(1, marketSnapshot.dailyRequiredCount)}) " +
-                $"+{Mathf.Max(0, marketSnapshot.dailyBonusCopecs)}c");
-            infoBuilder.AppendLine(marketSnapshot.dailyBonusGranted
-                ? "Daily bonus complete for today."
-                : "Sell daily fish to earn today's bonus.");
-
-            infoBuilder.AppendLine(string.Empty);
-            infoBuilder.AppendLine(
-                $"Fishing Charter Target: {ToDisplayLabel(marketSnapshot.questFishId)} " +
-                $"({Mathf.Clamp(marketSnapshot.questProgressCount, 0, Mathf.Max(1, marketSnapshot.questRequiredCount))}/{Mathf.Max(1, marketSnapshot.questRequiredCount)}) " +
-                $"+{Mathf.Max(0, marketSnapshot.questRewardCopecs)}c");
-            if (marketSnapshot.questClaimed)
-            {
-                infoBuilder.AppendLine("Fishing Charter fulfilled and claimed.");
-            }
-            else if (marketSnapshot.questCompleted)
-            {
-                infoBuilder.AppendLine("Fishing Charter complete. Click Fulfill Charter to claim reward.");
-            }
-            else if (marketSnapshot.questAccepted)
-            {
-                infoBuilder.AppendLine("Fishing Charter accepted. Sell matching fish in this Fishery.");
-            }
-            else
-            {
-                infoBuilder.AppendLine("Fishing Charter not accepted. Click Accept Charter.");
-            }
-
-            infoBuilder.AppendLine(string.Empty);
-            infoBuilder.AppendLine("Recent Sales:");
-            if (marketSnapshot.recentSales == null || marketSnapshot.recentSales.Count == 0)
-            {
-                infoBuilder.AppendLine("- No fish sold yet.");
-            }
-            else
-            {
-                for (var i = 0; i < marketSnapshot.recentSales.Count; i++)
+            _fishShopInfoText.text = _shopViewPresenter.BuildFishShopDetails(
+                new HarborShopViewPresenter.FishShopDetailsRequest
                 {
-                    var saleEntry = marketSnapshot.recentSales[i];
-                    if (saleEntry == null)
-                    {
-                        continue;
-                    }
-
-                    var soldTime = FormatUtcTimestampToLocalTime(saleEntry.timestampUtc);
-                    var dailyTag = saleEntry.dailyFishTarget ? " [Daily]" : string.Empty;
-                    infoBuilder.AppendLine(
-                        $"- [{soldTime}] {ToDisplayLabel(saleEntry.fishId)} x{Mathf.Max(0, saleEntry.count)} " +
-                        $"(T{Mathf.Max(1, saleEntry.distanceTier)}) +{Mathf.Max(0, saleEntry.earnedCopecs)}c{dailyTag}");
-                }
-            }
-
-            _fishShopInfoText.text = infoBuilder.ToString().TrimEnd();
+                    MarketSnapshot = marketSnapshot,
+                    PendingSaleSummary = summary,
+                    FishCount = fishCount,
+                    CargoCapacity = cargoCapacity,
+                    BalanceCopecs = save.copecs
+                });
             RefreshFishQuestButtons(marketSnapshot);
         }
 
         private void RefreshFishQuestButtons(FishMarketSnapshot snapshot)
         {
-            if (_fishQuestAcceptButton != null)
-            {
-                if (snapshot != null && snapshot.questClaimed)
-                {
-                    ApplyShopButtonState(_fishQuestAcceptButton, false, "Charter Claimed");
-                }
-                else if (snapshot != null && snapshot.questAccepted)
-                {
-                    ApplyShopButtonState(_fishQuestAcceptButton, false, "Charter Active");
-                }
-                else
-                {
-                    ApplyShopButtonState(_fishQuestAcceptButton, true, "Accept Charter");
-                }
-            }
-
-            if (_fishQuestFulfillButton != null)
-            {
-                if (snapshot != null && snapshot.questClaimed)
-                {
-                    ApplyShopButtonState(_fishQuestFulfillButton, false, "Fulfilled");
-                }
-                else if (snapshot != null && snapshot.questCompleted)
-                {
-                    ApplyShopButtonState(_fishQuestFulfillButton, true, $"Fulfill Charter (+{Mathf.Max(0, snapshot.questRewardCopecs)}c)");
-                }
-                else
-                {
-                    ApplyShopButtonState(_fishQuestFulfillButton, false, "Fulfill Charter");
-                }
-            }
+            var buttonState = _shopViewPresenter.BuildFishQuestButtonState(snapshot);
+            ApplyShopButtonState(_fishQuestAcceptButton, buttonState.AcceptInteractable, buttonState.AcceptLabel);
+            ApplyShopButtonState(_fishQuestFulfillButton, buttonState.FulfillInteractable, buttonState.FulfillLabel);
         }
 
         private void ShiftFisheryCard(int direction)
@@ -1181,58 +963,20 @@ namespace RavenDevOps.Fishing.Core
             {
                 latestCatch = null;
             }
-            var cardBuilder = new StringBuilder();
-            cardBuilder.AppendLine($"Card {_fisheryCardIndex + 1}/{_fisheryCardFishIds.Count}");
-            cardBuilder.AppendLine($"Fish: {ToDisplayLabel(fishId)}");
-
-            var description = fishDefinition != null && !string.IsNullOrWhiteSpace(fishDefinition.description)
-                ? fishDefinition.description.Trim()
-                : BuildFallbackFishDescription(fishDefinition);
-            cardBuilder.AppendLine($"Description: {description}");
-            cardBuilder.AppendLine(string.Empty);
-
-            if (fishDefinition != null)
-            {
-                cardBuilder.AppendLine($"Base Value: {Mathf.Max(1, fishDefinition.baseValue)} copecs");
-                cardBuilder.AppendLine($"Rarity Weight: {Mathf.Max(1, fishDefinition.rarityWeight)}");
-                cardBuilder.AppendLine($"Distance Range: Tier {Mathf.Max(0, fishDefinition.minDistanceTier)} - {Mathf.Max(0, fishDefinition.maxDistanceTier)}");
-                cardBuilder.AppendLine($"Depth Range: {Mathf.Max(0f, fishDefinition.minDepth):0}-{Mathf.Max(0f, fishDefinition.maxDepth):0} m");
-                cardBuilder.AppendLine($"Weight Range: {Mathf.Max(0f, fishDefinition.minCatchWeightKg):0.0}-{Mathf.Max(0f, fishDefinition.maxCatchWeightKg):0.0} kg");
-            }
-            else
-            {
-                cardBuilder.AppendLine("Stats unavailable for this fish.");
-            }
-
-            cardBuilder.AppendLine(string.Empty);
-            cardBuilder.AppendLine("Latest Capture:");
-            if (latestCatch == null)
-            {
-                cardBuilder.AppendLine("- Not captured yet.");
-            }
-            else
-            {
-                cardBuilder.AppendLine($"- Date: {FormatUtcTimestampToLocalDate(latestCatch.timestampUtc)}");
-                cardBuilder.AppendLine($"- Distance Tier: {Mathf.Max(1, latestCatch.distanceTier)}");
-                cardBuilder.AppendLine($"- Depth: {Mathf.Max(0f, latestCatch.depthMeters):0.0} m");
-                cardBuilder.AppendLine($"- Weight: {Mathf.Max(0f, latestCatch.weightKg):0.0} kg");
-                cardBuilder.AppendLine($"- Value: {Mathf.Max(0, latestCatch.valueCopecs)} copecs");
-            }
-
-            cardBuilder.AppendLine(string.Empty);
-            cardBuilder.AppendLine("Lifetime Records:");
-            if (!TryGetFisheryLifetimeStats(fishId, out var landedCount, out var bestWeightKg, out var bestValueCopecs))
-            {
-                cardBuilder.AppendLine("- No landed records yet.");
-            }
-            else
-            {
-                cardBuilder.AppendLine($"- Landed: {landedCount}");
-                cardBuilder.AppendLine($"- Best Weight: {Mathf.Max(0f, bestWeightKg):0.0} kg");
-                cardBuilder.AppendLine($"- Best Value: {Mathf.Max(0, bestValueCopecs)} copecs");
-            }
-
-            _fisheryCardText.text = cardBuilder.ToString().TrimEnd();
+            var hasLifetimeStats = TryGetFisheryLifetimeStats(fishId, out var landedCount, out var bestWeightKg, out var bestValueCopecs);
+            _fisheryCardText.text = _fisheryCardPresenter.BuildCardText(
+                new HarborFisheryCardViewPresenter.CardRequest
+                {
+                    CardIndex = _fisheryCardIndex,
+                    TotalCards = _fisheryCardFishIds.Count,
+                    FishId = fishId,
+                    FishDefinition = fishDefinition,
+                    LatestCatch = latestCatch,
+                    HasLifetimeStats = hasLifetimeStats,
+                    LandedCount = landedCount,
+                    BestWeightKg = bestWeightKg,
+                    BestValueCopecs = bestValueCopecs
+                });
             if (_fisheryCardIcon != null)
             {
                 _fisheryCardIcon.sprite = fishDefinition != null ? fishDefinition.icon : null;
@@ -1345,16 +1089,6 @@ namespace RavenDevOps.Fishing.Core
             return landedCount > 0;
         }
 
-        private static string BuildFallbackFishDescription(FishDefinitionSO fishDefinition)
-        {
-            if (fishDefinition == null)
-            {
-                return "Catalog description unavailable.";
-            }
-
-            return $"A catchable species found between {Mathf.Max(0f, fishDefinition.minDepth):0}-{Mathf.Max(0f, fishDefinition.maxDepth):0}m.";
-        }
-
         private void RefreshShipyardDetails()
         {
             if (_saveManager == null || _saveManager.Current == null)
@@ -1372,18 +1106,17 @@ namespace RavenDevOps.Fishing.Core
             var hookId = save.equippedHookId;
             var fishCount = CountCargoFish(save);
             var cargoCapacity = ResolveCargoCapacity(shipId);
-            var cargoRemaining = Mathf.Max(0, cargoCapacity - fishCount);
 
             SetText(
                 _shipyardInfoText,
-                $"Selected Ship: {ToDisplayLabel(shipId)}\n" +
-                $"Equipped Hook: {ToDisplayLabel(hookId)}\n" +
-                $"Owned Ships: {CountOwned(save.ownedShips)} | Owned Hooks: {CountOwned(save.ownedHooks)}");
+                _shopViewPresenter.BuildShipyardInfoText(
+                    shipId,
+                    hookId,
+                    CountOwned(save.ownedShips),
+                    CountOwned(save.ownedHooks)));
             SetText(
                 _shipyardCargoText,
-                $"Cargo Hold: {fishCount}/{cargoCapacity}\n" +
-                $"Space Remaining: {cargoRemaining}\n" +
-                BuildCargoManifestSummary(save));
+                _shopViewPresenter.BuildShipyardCargoText(save, fishCount, cargoCapacity));
 
             RefreshShipyardHookButtons(save);
             RefreshShipyardShipButtons(save);
@@ -1455,40 +1188,7 @@ namespace RavenDevOps.Fishing.Core
             return ownedIds != null ? Mathf.Max(0, ownedIds.Count) : 0;
         }
 
-        private static string BuildCargoManifestSummary(SaveDataV1 save)
-        {
-            if (save == null || save.fishInventory == null || save.fishInventory.Count == 0)
-            {
-                return "Manifest: empty";
-            }
-
-            var entries = 0;
-            var manifest = "Manifest:";
-            for (var i = 0; i < save.fishInventory.Count; i++)
-            {
-                var entry = save.fishInventory[i];
-                if (entry == null || string.IsNullOrWhiteSpace(entry.fishId) || entry.count <= 0)
-                {
-                    continue;
-                }
-
-                manifest += $"\n- {ToDisplayLabel(entry.fishId)} x{entry.count}";
-                entries++;
-                if (entries >= 4)
-                {
-                    break;
-                }
-            }
-
-            if (entries == 0)
-            {
-                return "Manifest: empty";
-            }
-
-            return manifest;
-        }
-
-        private static string BuildShopItemLine(
+        private string BuildShopItemLine(
             string itemId,
             bool owned,
             bool equipped,
@@ -1499,39 +1199,16 @@ namespace RavenDevOps.Fishing.Core
             string requiredTierId,
             int balance)
         {
-            var label = ToDisplayLabel(itemId);
-            if (!unlocked)
-            {
-                return $"- {label}: Locked until level {Mathf.Max(1, unlockLevel)}";
-            }
-
-            if (!owned && !hasRequiredPreviousTier)
-            {
-                return $"- {label}: Requires {ToDisplayLabel(requiredTierId)}";
-            }
-
-            if (equipped)
-            {
-                return $"- {label}: Equipped";
-            }
-
-            if (owned)
-            {
-                return $"- {label}: Owned (equip in Shipyard)";
-            }
-
-            if (price < 0)
-            {
-                return $"- {label}: Price unavailable";
-            }
-
-            var normalizedPrice = Mathf.Max(0, price);
-            if (balance < normalizedPrice)
-            {
-                return $"- {label}: Buy {normalizedPrice} copecs (need {normalizedPrice - balance} more)";
-            }
-
-            return $"- {label}: Buy {normalizedPrice} copecs";
+            return _shopViewPresenter.BuildShopItemLine(
+                itemId,
+                owned,
+                equipped,
+                unlocked,
+                unlockLevel,
+                price,
+                hasRequiredPreviousTier,
+                requiredTierId,
+                balance);
         }
 
         private void RefreshHookShopButtons(SaveDataV1 save)
@@ -1749,7 +1426,7 @@ namespace RavenDevOps.Fishing.Core
             return FallbackShipMenuOrder;
         }
 
-        private static string BuildShopButtonLabel(
+        private string BuildShopButtonLabel(
             bool owned,
             bool equipped,
             bool unlocked,
@@ -1757,32 +1434,13 @@ namespace RavenDevOps.Fishing.Core
             bool hasRequiredPreviousTier,
             int price)
         {
-            if (equipped)
-            {
-                return "Equipped";
-            }
-
-            if (owned)
-            {
-                return "Owned";
-            }
-
-            if (!unlocked)
-            {
-                return $"Locked Lv{Mathf.Max(1, unlockLevel)}";
-            }
-
-            if (!hasRequiredPreviousTier)
-            {
-                return "Locked (Prev)";
-            }
-
-            if (price < 0)
-            {
-                return "Unavailable";
-            }
-
-            return $"Buy ({Mathf.Max(0, price)}c)";
+            return _shopViewPresenter.BuildShopButtonLabel(
+                owned,
+                equipped,
+                unlocked,
+                unlockLevel,
+                hasRequiredPreviousTier,
+                price);
         }
 
         private bool IsShopItemUnlocked(string itemId)
@@ -1883,20 +1541,6 @@ namespace RavenDevOps.Fishing.Core
             return _shopFallbackIconSprite;
         }
 
-        private static void SetPanel(GameObject panel, bool active)
-        {
-            if (panel == null)
-            {
-                return;
-            }
-
-            panel.SetActive(active);
-            if (active)
-            {
-                panel.transform.SetAsLastSibling();
-            }
-        }
-
         private static void SetSelected(GameObject target)
         {
             if (target == null || EventSystem.current == null)
@@ -1932,13 +1576,6 @@ namespace RavenDevOps.Fishing.Core
             SetSelected(fallbackSelection);
         }
 
-        private int CurrentCopecs()
-        {
-            return _saveManager != null && _saveManager.Current != null
-                ? _saveManager.Current.copecs
-                : 0;
-        }
-
         private void HandleSaveDataChanged(SaveDataV1 _)
         {
             RefreshSaveSnapshot();
@@ -1970,7 +1607,9 @@ namespace RavenDevOps.Fishing.Core
                 ? " (FULL)"
                 : string.Empty;
             SetText(_economyText, $"Copecs: {Mathf.Max(0, save.copecs)}");
-            SetText(_equipmentText, $"Equipped Ship: {ToDisplayLabel(save.equippedShipId)} | Hook: {ToDisplayLabel(save.equippedHookId)}");
+            SetText(
+                _equipmentText,
+                $"Equipped Ship: {HarborTextFormatting.ToDisplayLabel(save.equippedShipId)} | Hook: {HarborTextFormatting.ToDisplayLabel(save.equippedHookId)}");
             SetText(_cargoText, $"Cargo: {fishCount}/{cargoCapacity} fish{cargoStatus} | Trips: {totalTrips} | Level: {_saveManager.CurrentLevel}");
             RefreshSailButton(save, !isCargoFull, fishCount, cargoCapacity);
         }
@@ -1982,23 +1621,8 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            if (interactable == null)
-            {
-                _selectionText.text = "Nearby target: none. Use center menu actions for harbor operations.";
-                return;
-            }
-
             var interactLabel = ResolveInteractPromptLabel();
-            var message = interactable.Type switch
-            {
-                InteractableType.HookShop => $"Nearby target: Warehouse. Press {interactLabel} to buy hooks for Shipyard inventory.",
-                InteractableType.BoatShop => $"Nearby target: Dockyard. Press {interactLabel} to buy ships for Shipyard inventory.",
-                InteractableType.FishShop => $"Nearby target: Fishery. Press {interactLabel} to sell all fish cargo.",
-                InteractableType.Sail => $"Nearby target: Dock. Press {interactLabel} to set sail or use Shipyard in the menu.",
-                _ => $"Nearby target: Interaction available. Press {interactLabel}."
-            };
-
-            _selectionText.text = message;
+            _selectionText.text = _interactionViewPresenter.BuildSelectionHint(interactable, interactLabel);
         }
 
         private string ResolveInteractPromptLabel()
@@ -2047,13 +1671,7 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var entries = _recentActivity.ToArray();
-            var output = "Recent Activity:";
-            for (var i = entries.Length - 1; i >= 0; i--)
-            {
-                output += $"\n- {entries[i]}";
-            }
-
-            _activityLogText.text = output;
+            _activityLogText.text = _interactionViewPresenter.BuildActivityLog(entries);
         }
 
         private void SetStatus(string message)
@@ -2070,59 +1688,6 @@ namespace RavenDevOps.Fishing.Core
             {
                 text.text = value ?? string.Empty;
             }
-        }
-
-        private static string FormatUtcTimestampToLocalTime(string timestampUtc)
-        {
-            if (DateTimeUtility.TryParseUtcTimestampToLocal(timestampUtc, out var parsedLocal))
-            {
-                return parsedLocal.ToString("HH:mm");
-            }
-
-            return "--:--";
-        }
-
-        private static string FormatUtcTimestampToLocalDate(string timestampUtc)
-        {
-            if (DateTimeUtility.TryParseUtcTimestampToLocal(timestampUtc, out var parsedLocal))
-            {
-                return parsedLocal.ToString("yyyy-MM-dd HH:mm");
-            }
-
-            return "Unknown";
-        }
-
-        private static string ToDisplayLabel(string rawId)
-        {
-            if (string.IsNullOrWhiteSpace(rawId))
-            {
-                return "None";
-            }
-
-            var tokens = rawId.Split(new[] { '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
-            if (tokens.Length == 0)
-            {
-                return rawId;
-            }
-
-            for (var i = 0; i < tokens.Length; i++)
-            {
-                var token = tokens[i];
-                if (token.Length == 0)
-                {
-                    continue;
-                }
-
-                if (token.Length == 1)
-                {
-                    tokens[i] = char.ToUpperInvariant(token[0]).ToString();
-                    continue;
-                }
-
-                tokens[i] = char.ToUpperInvariant(token[0]) + token.Substring(1);
-            }
-
-            return string.Join(" ", tokens);
         }
 
         private int ResolveCargoCapacity(string shipId)
@@ -2162,13 +1727,6 @@ namespace RavenDevOps.Fishing.Core
             }
 
             return Mathf.Max(1, _fallbackCargoCapacityTier1);
-        }
-
-        private bool IsCargoFull(SaveDataV1 save, out int fishCount, out int cargoCapacity)
-        {
-            fishCount = CountCargoFish(save);
-            cargoCapacity = ResolveCargoCapacity(save != null ? save.equippedShipId : string.Empty);
-            return fishCount >= cargoCapacity;
         }
 
         private static int CountCargoFish(SaveDataV1 save)

@@ -390,6 +390,174 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator HarborPurchaseAndShipyardEquipFlow_UsesRouterTransactions()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborPurchaseEquip");
+            yield return null;
+
+            saveManager.Current.copecs = 1000;
+            saveManager.Current.ownedHooks = new List<string> { "hook_lv1" };
+            saveManager.Current.ownedShips = new List<string> { "ship_lv1" };
+            saveManager.Current.equippedHookId = "hook_lv1";
+            saveManager.Current.equippedShipId = "ship_lv1";
+            saveManager.Save(forceImmediate: true);
+
+            var hookShop = CreateComponent<HookShopController>("HookShopController_HarborPurchaseEquip");
+            SetPrivateField(
+                hookShop,
+                "_items",
+                new List<ShopItem>
+                {
+                    new ShopItem { id = "hook_lv1", price = 0, valueTier = 1 },
+                    new ShopItem { id = "hook_lv2", price = 120, valueTier = 2 }
+                });
+            hookShop.SetUnlockAllItemsForQa(true);
+            var boatShop = CreateComponent<BoatShopController>("BoatShopController_HarborPurchaseEquip");
+            SetPrivateField(
+                boatShop,
+                "_items",
+                new List<ShopItem>
+                {
+                    new ShopItem { id = "ship_lv1", price = 0, valueTier = 1 },
+                    new ShopItem { id = "ship_lv2", price = 180, valueTier = 2 }
+                });
+            boatShop.SetUnlockAllItemsForQa(true);
+            yield return null;
+
+            var statusText = CreateUiText("HarborStatusText_PurchaseEquip");
+            var shipyardInfoText = CreateUiText("HarborShipyardInfoText_PurchaseEquip");
+            var shipyardCargoText = CreateUiText("HarborShipyardCargoText_PurchaseEquip");
+
+            var routerRoot = new GameObject("HarborRouter_PurchaseEquip");
+            routerRoot.SetActive(false);
+            _createdRoots.Add(routerRoot);
+            var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
+            SetPrivateField(router, "_saveManager", saveManager);
+            router.Configure(
+                new HarborSceneInteractionRouter.DependencyBundle
+                {
+                    Runtime = new HarborSceneInteractionRouter.RuntimeDependencyBundle
+                    {
+                        Interactables = new List<WorldInteractable>(),
+                        HookShop = hookShop,
+                        BoatShop = boatShop,
+                        FishShop = null,
+                        InteractionController = null
+                    },
+                    Text = new HarborSceneInteractionRouter.TextDependencyBundle
+                    {
+                        StatusText = statusText,
+                        ShipyardInfoText = shipyardInfoText,
+                        ShipyardCargoText = shipyardCargoText
+                    }
+                });
+            router.SetUnlockAllShopItemsForQa(true);
+            routerRoot.SetActive(true);
+            yield return null;
+
+            var startingCopecs = saveManager.Current.copecs;
+            router.OnHookShopItemRequested("hook_lv2");
+            router.OnBoatShopItemRequested("ship_lv2");
+            yield return null;
+
+            Assert.That(saveManager.Current.ownedHooks, Contains.Item("hook_lv2"));
+            Assert.That(saveManager.Current.ownedShips, Contains.Item("ship_lv2"));
+            Assert.That(saveManager.Current.copecs, Is.EqualTo(startingCopecs - 300));
+
+            router.OnShipyardHookRequested("hook_lv2");
+            router.OnShipyardShipRequested("ship_lv2");
+            yield return null;
+
+            Assert.That(saveManager.Current.equippedHookId, Is.EqualTo("hook_lv2"));
+            Assert.That(saveManager.Current.equippedShipId, Is.EqualTo("ship_lv2"));
+            Assert.That(statusText.text, Does.Contain("Selected Ship Lv2"));
+        }
+
+        [UnityTest]
+        public IEnumerator HarborFishMarketCharterFlow_AcceptsAndClaimsViaRouter()
+        {
+            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborCharterFlow");
+            yield return null;
+
+            saveManager.Current.copecs = 0;
+            saveManager.Current.fishInventory.Clear();
+            saveManager.Save(forceImmediate: true);
+
+            var summaryCalculator = CreateComponent<SellSummaryCalculator>("SellSummaryCalculator_HarborCharterFlow");
+            summaryCalculator.SetDistanceTierStep(0.25f);
+            var fishShop = CreateComponent<FishShopController>("FishShopController_HarborCharterFlow");
+            yield return null;
+
+            var initialSnapshot = fishShop.BuildMarketSnapshot(maxHistoryEntries: 1);
+            Assert.That(string.IsNullOrWhiteSpace(initialSnapshot.questFishId), Is.False, "Expected an active charter fish target.");
+            var questCount = Mathf.Max(1, initialSnapshot.questRequiredCount);
+            var questReward = Mathf.Max(0, initialSnapshot.questRewardCopecs);
+
+            saveManager.Current.fishInventory.Add(new FishInventoryEntry
+            {
+                fishId = initialSnapshot.questFishId,
+                distanceTier = 2,
+                count = questCount
+            });
+            saveManager.Save(forceImmediate: true);
+
+            var statusText = CreateUiText("HarborStatusText_CharterFlow");
+            var fishInfoText = CreateUiText("HarborFishInfoText_CharterFlow");
+            var acceptButton = CreateUiButton("HarborCharterAcceptButton_CharterFlow");
+            var fulfillButton = CreateUiButton("HarborCharterFulfillButton_CharterFlow");
+
+            var routerRoot = new GameObject("HarborRouter_CharterFlow");
+            routerRoot.SetActive(false);
+            _createdRoots.Add(routerRoot);
+            var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
+            SetPrivateField(router, "_saveManager", saveManager);
+            router.Configure(
+                new HarborSceneInteractionRouter.DependencyBundle
+                {
+                    Runtime = new HarborSceneInteractionRouter.RuntimeDependencyBundle
+                    {
+                        Interactables = new List<WorldInteractable>(),
+                        HookShop = null,
+                        BoatShop = null,
+                        FishShop = fishShop,
+                        InteractionController = null
+                    },
+                    Text = new HarborSceneInteractionRouter.TextDependencyBundle
+                    {
+                        StatusText = statusText,
+                        FishShopInfoText = fishInfoText
+                    },
+                    Buttons = new HarborSceneInteractionRouter.ButtonDependencyBundle
+                    {
+                        FishQuestAcceptButton = acceptButton,
+                        FishQuestFulfillButton = fulfillButton
+                    }
+                });
+            routerRoot.SetActive(true);
+            yield return null;
+
+            router.OnFishShopQuestAcceptRequested();
+            yield return null;
+
+            Assert.That(statusText.text, Does.Contain("accepted").IgnoreCase);
+
+            router.OnFishShopSellRequested();
+            yield return null;
+
+            var completedSnapshot = fishShop.BuildMarketSnapshot(maxHistoryEntries: 1);
+            Assert.That(completedSnapshot.questCompleted, Is.True, "Expected charter progress to complete after selling target fish.");
+
+            var copecsBeforeClaim = saveManager.Current.copecs;
+            router.OnFishShopQuestClaimRequested();
+            yield return null;
+
+            var claimedSnapshot = fishShop.BuildMarketSnapshot(maxHistoryEntries: 1);
+            Assert.That(claimedSnapshot.questClaimed, Is.True);
+            Assert.That(saveManager.Current.copecs, Is.EqualTo(copecsBeforeClaim + questReward));
+            Assert.That(fulfillButton.interactable, Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator HarborHookShopButtons_RespectUnlockAndAffordabilityRules()
         {
             var saveManager = CreateComponent<SaveManager>("SaveManager_HarborHookButtons");

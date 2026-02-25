@@ -94,6 +94,7 @@ Unity.exe -batchmode -nographics -quit `
   - Accessibility default/persistence guardrails (subtitles, readability options)
   - Fishing assist anti-frustration default settings guardrails
   - Scene contract resolver fallback and required-missing diagnostics checks
+  - Harbor presenter formatting seams (`HarborShopViewPresenter`, `HarborFisheryCardViewPresenter`)
 - PlayMode:
   - Deterministic launch-path regression suite (`Assets/Tests/PlayMode/LaunchPathRegressionPlayModeTests.cs`, category `LaunchRegression`) covering:
     - Boot -> Cinematic -> MainMenu transition path
@@ -104,6 +105,7 @@ Unity.exe -batchmode -nographics -quit `
   - Pause-to-harbor transition behavior
   - Intro replay exit-route regression coverage for Settings/Profile/default MainMenu follow-up behavior
   - Catch -> inventory -> sell regression path
+  - Harbor router transaction flow checks (purchase, equip, fish sale, charter accept/claim, sail guard/route)
   - CatchResolver explicit dependency-bundle catch-flow checks without auto-attached setup dependencies
   - Purchase ownership/equip regression path
   - Save/load roundtrip across scene transitions

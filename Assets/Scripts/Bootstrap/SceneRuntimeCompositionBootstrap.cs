@@ -1108,49 +1108,64 @@ namespace RavenDevOps.Fishing.Core
                 10);
             var router = GetOrAddComponent<HarborSceneInteractionRouter>(root);
             router.Configure(
-                interactables,
-                hookShop,
-                boatShop,
-                fishShop,
-                status,
-                selection,
-                economy,
-                equipment,
-                cargo,
-                activityLog,
-                interactionController,
-                actionPanel,
-                hookShopPanel,
-                boatShopPanel,
-                fishShopPanel,
-                fisheryPanel,
-                harborProfilePanel,
-                shipyardPanel,
-                harborMainMenuConfirmPanel,
-                hookShopInfo,
-                boatShopInfo,
-                fishShopInfo,
-                fisheryCardText,
-                fisheryCardIcon,
-                shipyardInfoText,
-                shipyardCargoText,
-                profileButton.gameObject,
-                hookLv1Button.gameObject,
-                boatLv1Button.gameObject,
-                fishSellButton.gameObject,
-                fisheryPreviousButton.gameObject,
-                harborProfileBackButton.gameObject,
-                shipyardShipLv1Button.gameObject,
-                harborMainMenuConfirmNoButton.gameObject,
-                setSailButton,
-                fishQuestAcceptButton,
-                fishQuestFulfillButton,
-                new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
-                new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
-                new List<Button> { shipyardHookLv1Button, shipyardHookLv2Button, shipyardHookLv3Button, shipyardHookLv4Button, shipyardHookLv5Button },
-                new List<Button> { shipyardShipLv1Button, shipyardShipLv2Button, shipyardShipLv3Button, shipyardShipLv4Button, shipyardShipLv5Button },
-                new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon, hookLv4Icon, hookLv5Icon },
-                new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon, boatLv4Icon, boatLv5Icon });
+                new HarborSceneInteractionRouter.DependencyBundle
+                {
+                    Runtime = new HarborSceneInteractionRouter.RuntimeDependencyBundle
+                    {
+                        Interactables = interactables,
+                        HookShop = hookShop,
+                        BoatShop = boatShop,
+                        FishShop = fishShop,
+                        InteractionController = interactionController
+                    },
+                    Menu = new HarborSceneInteractionRouter.MenuDependencyBundle
+                    {
+                        ActionPanel = actionPanel,
+                        HookShopPanel = hookShopPanel,
+                        BoatShopPanel = boatShopPanel,
+                        FishShopPanel = fishShopPanel,
+                        FisheryPanel = fisheryPanel,
+                        ProfilePanel = harborProfilePanel,
+                        ShipyardPanel = shipyardPanel,
+                        MainMenuConfirmPanel = harborMainMenuConfirmPanel,
+                        MainMenuDefaultSelection = profileButton.gameObject,
+                        HookShopDefaultSelection = hookLv1Button.gameObject,
+                        BoatShopDefaultSelection = boatLv1Button.gameObject,
+                        FishShopDefaultSelection = fishSellButton.gameObject,
+                        FisheryDefaultSelection = fisheryPreviousButton.gameObject,
+                        ProfileDefaultSelection = harborProfileBackButton.gameObject,
+                        ShipyardDefaultSelection = shipyardShipLv1Button.gameObject,
+                        MainMenuConfirmDefaultSelection = harborMainMenuConfirmNoButton.gameObject
+                    },
+                    Text = new HarborSceneInteractionRouter.TextDependencyBundle
+                    {
+                        StatusText = status,
+                        SelectionText = selection,
+                        EconomyText = economy,
+                        EquipmentText = equipment,
+                        CargoText = cargo,
+                        ActivityLogText = activityLog,
+                        HookShopInfoText = hookShopInfo,
+                        BoatShopInfoText = boatShopInfo,
+                        FishShopInfoText = fishShopInfo,
+                        FisheryCardText = fisheryCardText,
+                        FisheryCardIcon = fisheryCardIcon,
+                        ShipyardInfoText = shipyardInfoText,
+                        ShipyardCargoText = shipyardCargoText
+                    },
+                    Buttons = new HarborSceneInteractionRouter.ButtonDependencyBundle
+                    {
+                        SailButton = setSailButton,
+                        FishQuestAcceptButton = fishQuestAcceptButton,
+                        FishQuestFulfillButton = fishQuestFulfillButton,
+                        HookShopButtons = new List<Button> { hookLv1Button, hookLv2Button, hookLv3Button, hookLv4Button, hookLv5Button },
+                        BoatShopButtons = new List<Button> { boatLv1Button, boatLv2Button, boatLv3Button, boatLv4Button, boatLv5Button },
+                        ShipyardHookButtons = new List<Button> { shipyardHookLv1Button, shipyardHookLv2Button, shipyardHookLv3Button, shipyardHookLv4Button, shipyardHookLv5Button },
+                        ShipyardShipButtons = new List<Button> { shipyardShipLv1Button, shipyardShipLv2Button, shipyardShipLv3Button, shipyardShipLv4Button, shipyardShipLv5Button },
+                        HookShopIcons = new List<Image> { hookLv1Icon, hookLv2Icon, hookLv3Icon, hookLv4Icon, hookLv5Icon },
+                        BoatShopIcons = new List<Image> { boatLv1Icon, boatLv2Icon, boatLv3Icon, boatLv4Icon, boatLv5Icon }
+                    }
+                });
             router.SetUnlockAllShopItemsForQa(true);
 
             hookButton.onClick.AddListener(router.OnHookShopRequested);

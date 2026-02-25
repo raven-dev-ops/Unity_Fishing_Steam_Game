@@ -23,6 +23,14 @@
 - Catch persistence:
   - `CatchResolver.ResolveCatch()` -> `SaveManager.RecordCatch(fishId, distanceTier)`
   - `CatchResolver` receives HUD/runtime collaborators through explicit composition-time seams (`Configure` + `ConfigureDependencies`) instead of scene-wide fallback scans.
+- Harbor menu routing:
+  - Harbor UI button callbacks -> `HarborSceneInteractionRouter` -> `HarborMenuStateRouter` for panel state/selection ownership.
+- Harbor transactions:
+  - `HarborSceneInteractionRouter` -> `HarborShopTransactionHandler` (hook/boat purchases) -> `HookShopController` / `BoatShopController`
+  - `HarborSceneInteractionRouter` -> `HarborFisheryTransactionHandler` (sell, charter accept/claim) -> `FishShopController`
+  - `HarborSceneInteractionRouter` -> `HarborShipyardTransactionHandler` (equip + sail guard) -> `SaveManager` + `GameFlowOrchestrator`
+- Harbor text presentation:
+  - Shop/fishery/shipyard/selection-hint text is produced by dedicated presenters (`HarborShopViewPresenter`, `HarborFisheryCardViewPresenter`, `HarborInteractionViewPresenter`) and applied by the router.
 
 ## Current Event Pathways
 - Save data refresh:
