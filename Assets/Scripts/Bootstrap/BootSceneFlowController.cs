@@ -1,7 +1,7 @@
 using RavenDevOps.Fishing.Input;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Core
 {
@@ -9,7 +9,7 @@ namespace RavenDevOps.Fishing.Core
     {
         [SerializeField, Min(0.05f)] private float _autoAdvanceSeconds = 0.05f;
         [SerializeField, Min(0.05f)] private float _bootToIntroFadeInSeconds = 2f;
-        [SerializeField] private Text _statusText;
+        [SerializeField] private TMP_Text _statusText;
         [SerializeField] private GameFlowManager _gameFlowManager;
         [SerializeField] private SceneLoader _sceneLoader;
         [SerializeField] private InputContextRouter _inputContextRouter;
@@ -19,7 +19,7 @@ namespace RavenDevOps.Fishing.Core
         private float _startedAtTime;
         private bool _advanced;
 
-        public void Configure(Text statusText)
+        public void Configure(TMP_Text statusText)
         {
             _statusText = statusText;
         }

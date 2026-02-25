@@ -5,6 +5,11 @@
 - Route gameplay state mutation through explicit services/commands.
 - Ensure listeners are always detached on screen disable/destroy.
 - Maintain English-only launch copy consistency (see `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`).
+- Keep player-facing runtime text on `TMP_Text`/`TextMeshProUGUI` only; do not introduce `UnityEngine.UI.Text` in gameplay scenes.
+
+## Text Rendering Policy
+- Runtime scope: Boot, Cinematic, Main Menu, Harbor, and Fishing all use TMP components for player-facing text surfaces.
+- Allowed exceptions: none for player-facing runtime paths. Any future non-player-facing/editor diagnostics must be explicitly documented at introduction time.
 
 ## Current Command Pathways
 - Main menu profile entry:

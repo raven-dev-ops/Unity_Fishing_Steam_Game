@@ -1,5 +1,6 @@
 using System.Collections;
 using RavenDevOps.Fishing.Input;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -14,7 +15,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private InputContextRouter _inputContextRouter;
         [SerializeField] private Button _skipIntroButton;
         [SerializeField] private CanvasGroup _titleCardOverlay;
-        [SerializeField] private Text _titleCardText;
+        [SerializeField] private TMP_Text _titleCardText;
         [SerializeField] private string _titleCardLabel = "Raven DevOps Fishing";
         [SerializeField, Min(0f)] private float _minimumIntroWatchSeconds = 3.5f;
         [SerializeField, Min(0f)] private float _introAutoAdvanceSeconds = 6.5f;
@@ -36,7 +37,7 @@ namespace RavenDevOps.Fishing.Core
         public void Configure(
             Button skipIntroButton,
             CanvasGroup titleCardOverlay,
-            Text titleCardText)
+            TMP_Text titleCardText)
         {
             ConfigureSkipButton(skipIntroButton);
             _titleCardOverlay = titleCardOverlay;

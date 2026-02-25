@@ -2,6 +2,7 @@ using System.Collections;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -65,11 +66,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Button _skipTutorialButton;
         [SerializeField] private Button _skipAllTutorialButton;
         [SerializeField] private GameObject _tutorialMessageBox;
-        [SerializeField] private Text _tutorialMessageText;
+        [SerializeField] private TMP_Text _tutorialMessageText;
         [SerializeField] private GameObject _tutorialTransitionOverlay;
         [SerializeField] private Image _tutorialTransitionFadeImage;
-        [SerializeField] private Text _tutorialTransitionTitleText;
-        [SerializeField] private Text _tutorialTransitionSubtitleText;
+        [SerializeField] private TMP_Text _tutorialTransitionTitleText;
+        [SerializeField] private TMP_Text _tutorialTransitionSubtitleText;
         [SerializeField] private string _skipTutorialButtonText = "Skip Tutorial";
         [SerializeField] private string _skipSceneButtonText = "Next Scene";
         [SerializeField] private string _skipAllButtonText = "Skip All";
@@ -182,7 +183,7 @@ namespace RavenDevOps.Fishing.Fishing
             UpdateSkipButtonVisibility();
         }
 
-        public void ConfigureTutorialMessageBox(GameObject tutorialMessageBox, Text tutorialMessageText)
+        public void ConfigureTutorialMessageBox(GameObject tutorialMessageBox, TMP_Text tutorialMessageText)
         {
             _tutorialMessageBox = tutorialMessageBox;
             _tutorialMessageText = tutorialMessageText;
@@ -192,8 +193,8 @@ namespace RavenDevOps.Fishing.Fishing
         public void ConfigureTutorialTransitionOverlay(
             GameObject tutorialTransitionOverlay,
             Image tutorialTransitionFadeImage,
-            Text tutorialTransitionTitleText,
-            Text tutorialTransitionSubtitleText = null)
+            TMP_Text tutorialTransitionTitleText,
+            TMP_Text tutorialTransitionSubtitleText = null)
         {
             _tutorialTransitionOverlay = tutorialTransitionOverlay;
             _tutorialTransitionFadeImage = tutorialTransitionFadeImage;
@@ -2027,7 +2028,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _skipTutorialButton.gameObject.SetActive(_isActive);
-            var skipButtonLabel = _skipTutorialButton.GetComponentInChildren<Text>();
+            var skipButtonLabel = _skipTutorialButton.GetComponentInChildren<TMP_Text>();
             if (skipButtonLabel != null)
             {
                 skipButtonLabel.text = _demoActive ? _skipSceneButtonText : _skipTutorialButtonText;
@@ -2039,7 +2040,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _skipAllTutorialButton.gameObject.SetActive(_isActive);
-            var skipAllLabel = _skipAllTutorialButton.GetComponentInChildren<Text>();
+            var skipAllLabel = _skipAllTutorialButton.GetComponentInChildren<TMP_Text>();
             if (skipAllLabel != null)
             {
                 skipAllLabel.text = _skipAllButtonText;

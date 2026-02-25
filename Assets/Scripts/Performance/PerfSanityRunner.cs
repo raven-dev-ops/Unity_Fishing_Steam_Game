@@ -1,7 +1,7 @@
 using System.Globalization;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Performance
 {
@@ -9,7 +9,7 @@ namespace RavenDevOps.Fishing.Performance
     {
         private const float MinimumFrameSeconds = 0.0001f;
 
-        [SerializeField] private Text _fpsLabel;
+        [SerializeField] private TMP_Text _fpsLabel;
         [SerializeField] private int _sampleFrames = 300;
         [SerializeField] private bool _emitWarningsOnBudgetFailure = true;
         [SerializeField] private bool _emitSampleLogs = true;
@@ -32,7 +32,7 @@ namespace RavenDevOps.Fishing.Performance
         private int _sampleLogsForScene;
 
         public void Configure(
-            Text fpsLabel,
+            TMP_Text fpsLabel,
             int sampleFrames = 300,
             bool emitWarningsOnBudgetFailure = true,
             string hardwareTier = "minimum",

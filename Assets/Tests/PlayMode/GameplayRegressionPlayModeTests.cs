@@ -10,6 +10,7 @@ using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Harbor;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -475,11 +476,11 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             return root.AddComponent<T>();
         }
 
-        private Text CreateUiText(string name)
+        private TMP_Text CreateUiText(string name)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             _createdRoots.Add(go);
-            var text = go.GetComponent<Text>();
+            var text = go.GetComponent<TMP_Text>();
             text.text = string.Empty;
             return text;
         }
@@ -491,9 +492,9 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var button = go.GetComponent<Button>();
             button.transition = Selectable.Transition.None;
 
-            var labelGo = new GameObject($"{name}_Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            var labelGo = new GameObject($"{name}_Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             labelGo.transform.SetParent(go.transform, worldPositionStays: false);
-            var label = labelGo.GetComponent<Text>();
+            var label = labelGo.GetComponent<TMP_Text>();
             label.text = name;
             return button;
         }

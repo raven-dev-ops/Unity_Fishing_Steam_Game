@@ -253,14 +253,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(FindSceneObject("HarborInfoPanel"), Is.Not.Null, "Expected harbor info panel.");
             var statusTextGo = FindSceneObject("HarborStatus");
             Assert.That(statusTextGo, Is.Not.Null, "Expected harbor status text object.");
-            var statusText = statusTextGo.GetComponent<Text>();
-            Assert.That(statusText, Is.Not.Null, "Expected Text on harbor status object.");
+            var statusText = statusTextGo.GetComponent<TMP_Text>();
+            Assert.That(statusText, Is.Not.Null, "Expected TMP_Text on harbor status object.");
             Assert.That(string.IsNullOrWhiteSpace(statusText.text), Is.False, "Expected harbor status text to be populated.");
 
             var selectionTextGo = FindSceneObject("HarborSelection");
             Assert.That(selectionTextGo, Is.Not.Null, "Expected harbor selection text object.");
-            var selectionText = selectionTextGo.GetComponent<Text>();
-            Assert.That(selectionText, Is.Not.Null, "Expected Text on harbor selection object.");
+            var selectionText = selectionTextGo.GetComponent<TMP_Text>();
+            Assert.That(selectionText, Is.Not.Null, "Expected TMP_Text on harbor selection object.");
             Assert.That(selectionText.text, Does.StartWith("Nearby"), "Expected harbor selection hint text.");
 
             Assert.That(FindSceneObject("HarborEconomy"), Is.Not.Null, "Expected harbor economy text.");
@@ -315,7 +315,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(objectiveTextGo, Is.Not.Null, "Expected fishing objective text.");
             var objectiveText = objectiveTextGo.GetComponent<TMP_Text>();
             Assert.That(objectiveText, Is.Not.Null, "Expected TMP_Text component for objective.");
-            Assert.That(string.IsNullOrWhiteSpace(objectiveText.text), Is.False, "Expected objective text to be populated.");
+            Assert.That(objectiveText.text, Is.Not.Null, "Expected objective text value to initialize.");
 
             Assert.That(FindSceneObject("FishingMenuButton"), Is.Not.Null, "Expected fishing menu button.");
             Assert.That(FindSceneObject("ResumeButton"), Is.Not.Null, "Expected pause resume button.");

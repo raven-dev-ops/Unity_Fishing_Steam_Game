@@ -8,10 +8,10 @@ using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Steam;
 using RavenDevOps.Fishing.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.TestTools;
-using UnityEngine.UI;
 
 namespace RavenDevOps.Fishing.Tests.PlayMode
 {
@@ -363,11 +363,11 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             return root.AddComponent<T>();
         }
 
-        private Text CreateUiText(string objectName)
+        private TMP_Text CreateUiText(string objectName)
         {
-            var go = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            var go = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             _roots.Add(go);
-            var text = go.GetComponent<Text>();
+            var text = go.GetComponent<TMP_Text>();
             text.text = string.Empty;
             return text;
         }

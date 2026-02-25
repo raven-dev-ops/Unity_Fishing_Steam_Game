@@ -1,4 +1,5 @@
 using RavenDevOps.Fishing.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,12 +15,12 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private Button _uiScaleDownButton;
         [SerializeField] private Button _uiScaleUpButton;
         [SerializeField] private Button _backButton;
-        [SerializeField] private Text _uiScaleLabel;
+        [SerializeField] private TMP_Text _uiScaleLabel;
         [SerializeField] private float _uiScaleStep = 0.05f;
 
-        private Text _reelInputLabel;
-        private Text _reducedMotionLabel;
-        private Text _highContrastLabel;
+        private TMP_Text _reelInputLabel;
+        private TMP_Text _reducedMotionLabel;
+        private TMP_Text _highContrastLabel;
         private bool _buttonHandlersBound;
 
         public void Configure(
@@ -29,7 +30,7 @@ namespace RavenDevOps.Fishing.UI
             Button highContrastButton,
             Button uiScaleDownButton,
             Button uiScaleUpButton,
-            Text uiScaleLabel,
+            TMP_Text uiScaleLabel,
             Button backButton)
         {
             _pauseMenuController = pauseMenuController;
@@ -120,17 +121,17 @@ namespace RavenDevOps.Fishing.UI
         {
             if (_reelInputLabel == null && _reelInputButton != null)
             {
-                _reelInputLabel = _reelInputButton.GetComponentInChildren<Text>(includeInactive: true);
+                _reelInputLabel = _reelInputButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
             }
 
             if (_reducedMotionLabel == null && _reducedMotionButton != null)
             {
-                _reducedMotionLabel = _reducedMotionButton.GetComponentInChildren<Text>(includeInactive: true);
+                _reducedMotionLabel = _reducedMotionButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
             }
 
             if (_highContrastLabel == null && _highContrastButton != null)
             {
-                _highContrastLabel = _highContrastButton.GetComponentInChildren<Text>(includeInactive: true);
+                _highContrastLabel = _highContrastButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
             }
         }
 
@@ -221,7 +222,7 @@ namespace RavenDevOps.Fishing.UI
             SetLabel(_uiScaleLabel, $"UI Scale: {_settingsService.UiScale:0.00}x");
         }
 
-        private static void SetLabel(Text label, string value)
+        private static void SetLabel(TMP_Text label, string value)
         {
             if (label != null)
             {

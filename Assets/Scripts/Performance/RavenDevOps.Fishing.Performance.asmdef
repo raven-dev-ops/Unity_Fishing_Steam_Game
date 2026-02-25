@@ -1,7 +1,9 @@
 {
   "name": "RavenDevOps.Fishing.Performance",
   "rootNamespace": "RavenDevOps.Fishing.Performance",
-  "references": [],
+  "references": [
+    "Unity.TextMeshPro"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

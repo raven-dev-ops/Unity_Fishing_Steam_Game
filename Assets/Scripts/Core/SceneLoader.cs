@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,7 +13,8 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private float _fadeDurationSeconds = 0.45f;
         [SerializeField] private float _defaultTitleCardHoldSeconds = 1.1f;
         [SerializeField] private CanvasGroup _transitionTitleOverlay;
-        [SerializeField] private Text _transitionTitleText;
+        [SerializeField] private TMP_Text _transitionTitleText;
+        private static TMP_FontAsset _defaultTitleFontAsset;
 
         private bool _isTransitioning;
         private bool _nextTransitionStartsFromBlack;
@@ -217,17 +219,22 @@ namespace RavenDevOps.Fishing.Core
                 titleRect.offsetMin = Vector2.zero;
                 titleRect.offsetMax = Vector2.zero;
 
-                var titleText = titleObject.AddComponent<Text>();
-                titleText.alignment = TextAnchor.MiddleCenter;
-                titleText.resizeTextForBestFit = true;
-                titleText.resizeTextMinSize = 26;
-                titleText.resizeTextMaxSize = 62;
-                titleText.fontStyle = FontStyle.Bold;
-                titleText.horizontalOverflow = HorizontalWrapMode.Wrap;
-                titleText.verticalOverflow = VerticalWrapMode.Truncate;
+                var titleText = titleObject.AddComponent<TextMeshProUGUI>();
+                var fontAsset = ResolveBuiltInTmpFont();
+                if (fontAsset != null)
+                {
+                    titleText.font = fontAsset;
+                }
+
+                titleText.alignment = TextAlignmentOptions.Center;
+                titleText.enableAutoSizing = true;
+                titleText.fontSizeMin = 26f;
+                titleText.fontSizeMax = 62f;
+                titleText.fontStyle = FontStyles.Bold;
+                titleText.textWrappingMode = TextWrappingModes.Normal;
+                titleText.overflowMode = TextOverflowModes.Truncate;
                 titleText.color = new Color(0.94f, 0.98f, 1f, 1f);
                 titleText.text = string.Empty;
-                titleText.font = ResolveBuiltInUiFont();
                 _transitionTitleText = titleText;
                 titleObject.transform.SetAsLastSibling();
             }
@@ -279,15 +286,39 @@ namespace RavenDevOps.Fishing.Core
             _nextTransitionTitleCardHoldSeconds = _defaultTitleCardHoldSeconds;
         }
 
-        private static Font ResolveBuiltInUiFont()
+        private static TMP_FontAsset ResolveBuiltInTmpFont()
         {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (font != null)
+            if (_defaultTitleFontAsset != null)
             {
-                return font;
+                return _defaultTitleFontAsset;
             }
 
-            return Resources.GetBuiltinResource<Font>("Arial.ttf");
+            var configured = TMP_Settings.GetFontAsset();
+            if (configured != null)
+            {
+                _defaultTitleFontAsset = configured;
+                return _defaultTitleFontAsset;
+            }
+
+            var fallbackFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            fallbackFont ??= Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (fallbackFont == null)
+            {
+                fallbackFont = Font.CreateDynamicFontFromOSFont("Arial", 14);
+            }
+
+            if (fallbackFont == null)
+            {
+                return null;
+            }
+
+            _defaultTitleFontAsset = TMP_FontAsset.CreateFontAsset(fallbackFont);
+            if (_defaultTitleFontAsset != null)
+            {
+                _defaultTitleFontAsset.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            return _defaultTitleFontAsset;
         }
     }
 }

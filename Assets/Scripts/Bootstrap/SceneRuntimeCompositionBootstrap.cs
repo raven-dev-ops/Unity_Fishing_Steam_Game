@@ -1461,7 +1461,7 @@ namespace RavenDevOps.Fishing.Core
             return panel;
         }
 
-        private static Text CreateText(
+        private static TMP_Text CreateText(
             Transform parent,
             string name,
             string value,
@@ -1477,12 +1477,17 @@ namespace RavenDevOps.Fishing.Core
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = size;
             rect.anchoredPosition = anchoredPosition;
-            var text = go.AddComponent<Text>();
-            text.font = GetDefaultFont();
+            var text = go.AddComponent<TextMeshProUGUI>();
+            var fontAsset = GetDefaultTmpFontAsset();
+            if (fontAsset != null)
+            {
+                text.font = fontAsset;
+            }
+
             text.fontSize = Mathf.Max(10, fontSize);
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.alignment = ConvertTextAnchorToTmp(alignment);
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Overflow;
             text.color = new Color(0.96f, 0.98f, 1f, 1f);
             text.text = value ?? string.Empty;
             return text;
@@ -1518,7 +1523,7 @@ namespace RavenDevOps.Fishing.Core
             return panel;
         }
 
-        private static Text CreateTopLeftText(
+        private static TMP_Text CreateTopLeftText(
             Transform parent,
             string name,
             string value,
@@ -1535,12 +1540,17 @@ namespace RavenDevOps.Fishing.Core
             rect.pivot = new Vector2(0f, 1f);
             rect.sizeDelta = size;
             rect.anchoredPosition = new Vector2(Mathf.Abs(marginFromTopLeft.x), -Mathf.Abs(marginFromTopLeft.y));
-            var text = go.AddComponent<Text>();
-            text.font = GetDefaultFont();
+            var text = go.AddComponent<TextMeshProUGUI>();
+            var fontAsset = GetDefaultTmpFontAsset();
+            if (fontAsset != null)
+            {
+                text.font = fontAsset;
+            }
+
             text.fontSize = Mathf.Max(10, fontSize);
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.alignment = ConvertTextAnchorToTmp(alignment);
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Overflow;
             text.color = new Color(0.96f, 0.98f, 1f, 1f);
             text.text = value ?? string.Empty;
             return text;
@@ -1577,6 +1587,33 @@ namespace RavenDevOps.Fishing.Core
             text.color = new Color(0.96f, 0.98f, 1f, 1f);
             text.text = value ?? string.Empty;
             return text;
+        }
+
+        private static TextAlignmentOptions ConvertTextAnchorToTmp(TextAnchor anchor)
+        {
+            switch (anchor)
+            {
+                case TextAnchor.UpperLeft:
+                    return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter:
+                    return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight:
+                    return TextAlignmentOptions.TopRight;
+                case TextAnchor.MiddleLeft:
+                    return TextAlignmentOptions.Left;
+                case TextAnchor.MiddleCenter:
+                    return TextAlignmentOptions.Center;
+                case TextAnchor.MiddleRight:
+                    return TextAlignmentOptions.Right;
+                case TextAnchor.LowerLeft:
+                    return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter:
+                    return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight:
+                    return TextAlignmentOptions.BottomRight;
+                default:
+                    return TextAlignmentOptions.Center;
+            }
         }
 
         private static Button CreateButton(Transform parent, string name, string label, Vector2 anchoredPosition, Vector2 size)
@@ -2083,11 +2120,11 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            Text label = null;
+            TMP_Text label = null;
             var existing = FindChildRecursive(uiParent, labelName);
             if (existing != null)
             {
-                label = existing.GetComponent<Text>();
+                label = existing.GetComponent<TMP_Text>();
             }
 
             if (label == null)

@@ -9,7 +9,8 @@
     "RavenDevOps.Fishing.Input",
     "RavenDevOps.Fishing.Save",
     "RavenDevOps.Fishing.Systems",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

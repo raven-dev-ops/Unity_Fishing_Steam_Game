@@ -6,6 +6,7 @@ using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Harbor;
 using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Save;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -38,12 +39,12 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
-        [SerializeField] private Text _statusText;
-        [SerializeField] private Text _selectionText;
-        [SerializeField] private Text _economyText;
-        [SerializeField] private Text _equipmentText;
-        [SerializeField] private Text _cargoText;
-        [SerializeField] private Text _activityLogText;
+        [SerializeField] private TMP_Text _statusText;
+        [SerializeField] private TMP_Text _selectionText;
+        [SerializeField] private TMP_Text _economyText;
+        [SerializeField] private TMP_Text _equipmentText;
+        [SerializeField] private TMP_Text _cargoText;
+        [SerializeField] private TMP_Text _activityLogText;
         [SerializeField] private GameObject _actionPanel;
         [SerializeField] private GameObject _hookShopPanel;
         [SerializeField] private GameObject _boatShopPanel;
@@ -52,13 +53,13 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameObject _profilePanel;
         [SerializeField] private GameObject _shipyardPanel;
         [SerializeField] private GameObject _mainMenuConfirmPanel;
-        [SerializeField] private Text _hookShopInfoText;
-        [SerializeField] private Text _boatShopInfoText;
-        [SerializeField] private Text _fishShopInfoText;
-        [SerializeField] private Text _fisheryCardText;
+        [SerializeField] private TMP_Text _hookShopInfoText;
+        [SerializeField] private TMP_Text _boatShopInfoText;
+        [SerializeField] private TMP_Text _fishShopInfoText;
+        [SerializeField] private TMP_Text _fisheryCardText;
         [SerializeField] private Image _fisheryCardIcon;
-        [SerializeField] private Text _shipyardInfoText;
-        [SerializeField] private Text _shipyardCargoText;
+        [SerializeField] private TMP_Text _shipyardInfoText;
+        [SerializeField] private TMP_Text _shipyardCargoText;
         [SerializeField] private GameObject _mainMenuDefaultSelection;
         [SerializeField] private GameObject _hookShopDefaultSelection;
         [SerializeField] private GameObject _boatShopDefaultSelection;
@@ -94,12 +95,12 @@ namespace RavenDevOps.Fishing.Core
             HookShopController hookShop,
             BoatShopController boatShop,
             FishShopController fishShop,
-            Text statusText,
-            Text selectionText = null,
-            Text economyText = null,
-            Text equipmentText = null,
-            Text cargoText = null,
-            Text activityLogText = null,
+            TMP_Text statusText,
+            TMP_Text selectionText = null,
+            TMP_Text economyText = null,
+            TMP_Text equipmentText = null,
+            TMP_Text cargoText = null,
+            TMP_Text activityLogText = null,
             HarborInteractionController interactionController = null,
             GameObject actionPanel = null,
             GameObject hookShopPanel = null,
@@ -109,13 +110,13 @@ namespace RavenDevOps.Fishing.Core
             GameObject profilePanel = null,
             GameObject shipyardPanel = null,
             GameObject mainMenuConfirmPanel = null,
-            Text hookShopInfoText = null,
-            Text boatShopInfoText = null,
-            Text fishShopInfoText = null,
-            Text fisheryCardText = null,
+            TMP_Text hookShopInfoText = null,
+            TMP_Text boatShopInfoText = null,
+            TMP_Text fishShopInfoText = null,
+            TMP_Text fisheryCardText = null,
             Image fisheryCardIcon = null,
-            Text shipyardInfoText = null,
-            Text shipyardCargoText = null,
+            TMP_Text shipyardInfoText = null,
+            TMP_Text shipyardCargoText = null,
             GameObject mainMenuDefaultSelection = null,
             GameObject hookShopDefaultSelection = null,
             GameObject boatShopDefaultSelection = null,
@@ -1810,7 +1811,7 @@ namespace RavenDevOps.Fishing.Core
             }
 
             button.interactable = interactable;
-            var labelText = button.GetComponentInChildren<Text>(includeInactive: true);
+            var labelText = button.GetComponentInChildren<TMP_Text>(includeInactive: true);
             if (labelText != null)
             {
                 labelText.text = label ?? string.Empty;
@@ -2032,7 +2033,7 @@ namespace RavenDevOps.Fishing.Core
             }
         }
 
-        private static void SetText(Text text, string value)
+        private static void SetText(TMP_Text text, string value)
         {
             if (text != null)
             {

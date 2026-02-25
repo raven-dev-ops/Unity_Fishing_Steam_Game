@@ -13,6 +13,11 @@
 
 ## Features
 
+### TMP Text Consistency
+- Player-facing runtime text uses `TMP_Text`/`TextMeshProUGUI` across Boot, Cinematic, Main Menu, Harbor, and Fishing.
+- This keeps text metrics/styling behavior consistent for subtitle scaling, readability boost, and UI-scale accessibility adjustments.
+- No legacy `UnityEngine.UI.Text` exceptions remain in player-facing runtime paths.
+
 ### Subtitles Toggle
 - Setting: `settings.subtitlesEnabled`
 - Controls dialogue subtitle visibility in `DialogueBubbleController`.
