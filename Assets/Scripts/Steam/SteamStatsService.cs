@@ -12,6 +12,11 @@ namespace RavenDevOps.Fishing.Steam
     {
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private bool _verboseLogs = true;
+        [SerializeField, Min(0.1f)] private float _storeStatsMinimumIntervalSeconds = 15f;
+        [SerializeField, Min(0.1f)] private float _storeStatsFailureInitialBackoffSeconds = 2f;
+        [SerializeField, Min(0.1f)] private float _storeStatsFailureMaxBackoffSeconds = 60f;
+        [SerializeField, Min(1f)] private float _storeStatsFailureBackoffMultiplier = 2f;
+        [SerializeField, Min(0.1f)] private float _requestStatsRetryIntervalSeconds = 5f;
 
         [Header("Steam Stats")]
         [SerializeField] private string _statTotalCatches = "STAT_TOTAL_CATCHES";
@@ -26,7 +31,11 @@ namespace RavenDevOps.Fishing.Steam
         [SerializeField] private int _tripMilestoneTarget = 5;
 
         private bool _steamReady;
-        private bool _syncPending;
+        private bool _statsRequestInFlight;
+        private float _nextStatsRequestAt;
+        private SteamStoreStatsSyncPolicy _storeSyncPolicy;
+        private SteamStoreStatsGateReason _lastReportedThrottleReason = SteamStoreStatsGateReason.None;
+        private float _lastReportedThrottleUntil = -1f;
 
 #if STEAMWORKS_NET
         private Callback<UserStatsReceived_t> _userStatsReceived;
@@ -37,6 +46,11 @@ namespace RavenDevOps.Fishing.Steam
         {
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Register(this);
+            _storeSyncPolicy = new SteamStoreStatsSyncPolicy(
+                _storeStatsMinimumIntervalSeconds,
+                _storeStatsFailureInitialBackoffSeconds,
+                _storeStatsFailureMaxBackoffSeconds,
+                _storeStatsFailureBackoffMultiplier);
             TouchConfigInNonSteamBuilds();
             InitializeSteamHooks();
         }
@@ -51,7 +65,7 @@ namespace RavenDevOps.Fishing.Steam
                 _saveManager.SaveDataChanged += OnSaveDataChanged;
             }
 
-            _syncPending = true;
+            MarkSyncPending("enable");
         }
 
         private void OnDisable()
@@ -73,10 +87,7 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
-            if (_syncPending)
-            {
-                SyncStatsFromSave();
-            }
+            SyncStatsFromSave();
         }
 
         private void OnDestroy()
@@ -90,22 +101,22 @@ namespace RavenDevOps.Fishing.Steam
 
         private void OnCatchRecorded(CatchLogEntry entry)
         {
-            _syncPending = true;
+            MarkSyncPending("catch-recorded");
         }
 
         private void OnTripCompleted(int totalTrips)
         {
-            _syncPending = true;
+            MarkSyncPending("trip-completed");
         }
 
         private void OnPurchaseRecorded(string itemId, int priceCopecs, int totalPurchases)
         {
-            _syncPending = true;
+            MarkSyncPending("purchase-recorded");
         }
 
         private void OnSaveDataChanged(SaveDataV1 data)
         {
-            _syncPending = true;
+            MarkSyncPending("save-data-changed");
         }
 
         private void InitializeSteamHooks()
@@ -120,20 +131,28 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
+            var now = Time.unscaledTime;
+            if (_statsRequestInFlight || now + 0.0001f < _nextStatsRequestAt)
+            {
+                return;
+            }
+
 #if STEAMWORKS_NET
             _userStatsReceived ??= Callback<UserStatsReceived_t>.Create(OnUserStatsReceived);
             _userStatsStored ??= Callback<UserStatsStored_t>.Create(OnUserStatsStored);
 
             if (!SteamUserStats.RequestCurrentStats())
             {
+                _nextStatsRequestAt = now + Mathf.Max(0.1f, _requestStatsRetryIntervalSeconds);
                 if (_verboseLogs)
                 {
-                    Debug.LogWarning("SteamStatsService: RequestCurrentStats returned false; retrying.");
+                    Debug.LogWarning($"SteamStatsService: RequestCurrentStats returned false; retry in {_nextStatsRequestAt - now:0.00}s.");
                 }
 
                 return;
             }
 
+            _statsRequestInFlight = true;
             if (_verboseLogs)
             {
                 Debug.Log("SteamStatsService: requested current Steam stats.");
@@ -148,6 +167,11 @@ namespace RavenDevOps.Fishing.Steam
 
         private void SyncStatsFromSave()
         {
+            if (_storeSyncPolicy == null || !_storeSyncPolicy.HasPendingSync)
+            {
+                return;
+            }
+
             if (_saveManager == null)
             {
                 return;
@@ -158,6 +182,16 @@ namespace RavenDevOps.Fishing.Steam
             {
                 return;
             }
+
+            var now = Time.unscaledTime;
+            var gateReason = _storeSyncPolicy.GetGateReason(now);
+            if (gateReason != SteamStoreStatsGateReason.None)
+            {
+                ReportThrottledWriteIfNeeded(gateReason, now);
+                return;
+            }
+
+            ClearThrottleReport();
 
 #if STEAMWORKS_NET
             if (!_steamReady)
@@ -185,13 +219,12 @@ namespace RavenDevOps.Fishing.Steam
                 UnlockAchievement(_achievementTripMilestone);
             }
 
-            if (!SteamUserStats.StoreStats() && _verboseLogs)
-            {
-                Debug.LogWarning("SteamStatsService: StoreStats returned false.");
-            }
+            var storeResult = SteamUserStats.StoreStats();
+            _storeSyncPolicy.RecordStoreAttempt(now, storeResult);
+            LogStoreStatsDiagnostics(storeResult ? "StoreStats attempt queued" : "StoreStats attempt failed", now, warning: !storeResult);
+#else
+            _storeSyncPolicy.RecordStoreAttempt(now, success: true);
 #endif
-
-            _syncPending = false;
         }
 
 #if STEAMWORKS_NET
@@ -203,18 +236,21 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
+            _statsRequestInFlight = false;
             _steamReady = callback.m_eResult == EResult.k_EResultOK;
             if (!_steamReady)
             {
+                _nextStatsRequestAt = Time.unscaledTime + Mathf.Max(0.1f, _requestStatsRetryIntervalSeconds);
                 if (_verboseLogs)
                 {
-                    Debug.LogWarning($"SteamStatsService: stats request failed ({callback.m_eResult}).");
+                    Debug.LogWarning($"SteamStatsService: stats request failed ({callback.m_eResult}); retry in {_nextStatsRequestAt - Time.unscaledTime:0.00}s.");
                 }
 
                 return;
             }
 
-            _syncPending = true;
+            _nextStatsRequestAt = 0f;
+            MarkSyncPending("steam-stats-ready");
             if (_verboseLogs)
             {
                 Debug.Log("SteamStatsService: Steam stats ready.");
@@ -229,9 +265,18 @@ namespace RavenDevOps.Fishing.Steam
                 return;
             }
 
-            if (callback.m_eResult != EResult.k_EResultOK && _verboseLogs)
+            if (callback.m_eResult != EResult.k_EResultOK)
             {
-                Debug.LogWarning($"SteamStatsService: stats store result was {callback.m_eResult}.");
+                if (_storeSyncPolicy != null)
+                {
+                    _storeSyncPolicy.RecordStoreCallbackFailure(Time.unscaledTime);
+                }
+
+                if (_verboseLogs)
+                {
+                    Debug.LogWarning($"SteamStatsService: stats store callback result was {callback.m_eResult}; queued backoff retry.");
+                    LogStoreStatsDiagnostics("StoreStats callback failure", Time.unscaledTime, warning: false);
+                }
             }
         }
 
@@ -256,6 +301,73 @@ namespace RavenDevOps.Fishing.Steam
         }
 #endif
 
+        private void MarkSyncPending(string reason)
+        {
+            if (_storeSyncPolicy == null)
+            {
+                return;
+            }
+
+            var wasPending = _storeSyncPolicy.HasPendingSync;
+            _storeSyncPolicy.MarkPending();
+            if (_verboseLogs && !wasPending)
+            {
+                Debug.Log($"SteamStatsService: marked sync pending ({reason}).");
+            }
+        }
+
+        private void ReportThrottledWriteIfNeeded(SteamStoreStatsGateReason gateReason, float now)
+        {
+            if (_storeSyncPolicy == null
+                || gateReason == SteamStoreStatsGateReason.None
+                || gateReason == SteamStoreStatsGateReason.NoPendingSync)
+            {
+                return;
+            }
+
+            var nextAttemptAt = _storeSyncPolicy.NextStoreAttemptAt;
+            if (gateReason == _lastReportedThrottleReason
+                && Mathf.Abs(_lastReportedThrottleUntil - nextAttemptAt) <= 0.0001f)
+            {
+                return;
+            }
+
+            _lastReportedThrottleReason = gateReason;
+            _lastReportedThrottleUntil = nextAttemptAt;
+            _storeSyncPolicy.RecordThrottledWrite();
+
+            if (_verboseLogs)
+            {
+                var waitSeconds = Mathf.Max(0f, nextAttemptAt - now);
+                Debug.Log($"SteamStatsService: throttled StoreStats write ({gateReason}); retry in {waitSeconds:0.00}s.");
+                LogStoreStatsDiagnostics("StoreStats throttled", now, warning: false);
+            }
+        }
+
+        private void ClearThrottleReport()
+        {
+            _lastReportedThrottleReason = SteamStoreStatsGateReason.None;
+            _lastReportedThrottleUntil = -1f;
+        }
+
+        private void LogStoreStatsDiagnostics(string context, float now, bool warning)
+        {
+            if (!_verboseLogs || _storeSyncPolicy == null)
+            {
+                return;
+            }
+
+            var nextAttemptInSeconds = Mathf.Max(0f, _storeSyncPolicy.NextStoreAttemptAt - now);
+            var message = $"SteamStatsService: {context}; pending={_storeSyncPolicy.HasPendingSync} attempts={_storeSyncPolicy.StoreAttemptCount} success={_storeSyncPolicy.StoreSuccessCount} failures={_storeSyncPolicy.StoreFailureCount} throttled={_storeSyncPolicy.StoreThrottledCount} nextAttemptIn={nextAttemptInSeconds:0.00}s backoff={_storeSyncPolicy.ActiveBackoffSeconds:0.00}s.";
+            if (warning)
+            {
+                Debug.LogWarning(message);
+                return;
+            }
+
+            Debug.Log(message);
+        }
+
         private void TouchConfigInNonSteamBuilds()
         {
 #if !STEAMWORKS_NET
@@ -267,6 +379,11 @@ namespace RavenDevOps.Fishing.Steam
             _ = _achievementFirstPurchase;
             _ = _achievementTripMilestone;
             _ = _tripMilestoneTarget;
+            _ = _storeStatsMinimumIntervalSeconds;
+            _ = _storeStatsFailureInitialBackoffSeconds;
+            _ = _storeStatsFailureMaxBackoffSeconds;
+            _ = _storeStatsFailureBackoffMultiplier;
+            _ = _requestStatsRetryIntervalSeconds;
 #endif
         }
     }
