@@ -126,6 +126,39 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Object.Destroy(managerRoot);
         }
 
+        [UnityTest]
+        public IEnumerator GameFlowOrchestrator_UsesTypedMainMenuNavigatorForSettingsAndProfileFollowUp()
+        {
+            var managerRoot = new GameObject("GameFlowManager_TypedNavigator");
+            var manager = managerRoot.AddComponent<GameFlowManager>();
+            var navigatorRoot = new GameObject("MainMenuNavigator_TypedNavigator");
+            var navigator = navigatorRoot.AddComponent<TestMainMenuNavigator>();
+            RuntimeServiceRegistry.RegisterInterface<IMainMenuNavigator>(navigator);
+
+            var orchestratorRoot = new GameObject("GameFlowOrchestrator_TypedNavigator");
+            var orchestrator = orchestratorRoot.AddComponent<GameFlowOrchestrator>();
+            orchestrator.enabled = false;
+            orchestrator.Initialize(manager, null, null, null, null, navigator);
+
+            yield return null;
+
+            orchestrator.RequestOpenIntroReplayFromSettings();
+            orchestrator.RequestCompleteIntroFlow();
+            InvokePrivateMethod(orchestrator, "TryOpenMainMenuSettingsPanel");
+
+            orchestrator.RequestOpenIntroReplayFromProfile();
+            orchestrator.RequestCompleteIntroFlow();
+            InvokePrivateMethod(orchestrator, "TryOpenMainMenuProfilePanel");
+
+            Assert.That(navigator.SettingsOpenCalls, Is.EqualTo(1), "Expected typed settings follow-up to invoke navigator once.");
+            Assert.That(navigator.ProfileOpenCalls, Is.EqualTo(1), "Expected typed profile follow-up to invoke navigator once.");
+
+            RuntimeServiceRegistry.UnregisterInterface<IMainMenuNavigator>(navigator);
+            Object.Destroy(navigatorRoot);
+            Object.Destroy(orchestratorRoot);
+            Object.Destroy(managerRoot);
+        }
+
         private static bool GetPrivateBool(object target, string fieldName)
         {
             Assert.That(target, Is.Not.Null);
@@ -134,6 +167,16 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Missing private field '{fieldName}'.");
             return field != null && (bool)field.GetValue(target);
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName)
+        {
+            Assert.That(target, Is.Not.Null);
+            Assert.That(string.IsNullOrWhiteSpace(methodName), Is.False);
+
+            var method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"Missing private method '{methodName}'.");
+            method.Invoke(target, null);
         }
 
         private static void CleanupSingletons()
@@ -146,6 +189,24 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             if (GameFlowManager.Instance != null)
             {
                 Object.DestroyImmediate(GameFlowManager.Instance.gameObject);
+            }
+        }
+
+        private sealed class TestMainMenuNavigator : MonoBehaviour, IMainMenuNavigator
+        {
+            public int ProfileOpenCalls { get; private set; }
+            public int SettingsOpenCalls { get; private set; }
+
+            public bool TryOpenProfilePanel()
+            {
+                ProfileOpenCalls += 1;
+                return true;
+            }
+
+            public bool TryOpenSettingsPanel()
+            {
+                SettingsOpenCalls += 1;
+                return true;
             }
         }
 

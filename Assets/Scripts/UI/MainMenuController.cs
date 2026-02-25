@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 namespace RavenDevOps.Fishing.UI
 {
-    public sealed class MainMenuController : MonoBehaviour
+    public sealed class MainMenuController : MonoBehaviour, IMainMenuNavigator
     {
         [SerializeField] private GameObject _startButton;
         [SerializeField] private GameObject _profileButton;
@@ -57,6 +57,12 @@ namespace RavenDevOps.Fishing.UI
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.RegisterInterface<IMainMenuNavigator>(this);
+        }
+
+        private void OnDestroy()
+        {
+            RuntimeServiceRegistry.UnregisterInterface<IMainMenuNavigator>(this);
         }
 
         private void OnEnable()
@@ -139,6 +145,18 @@ namespace RavenDevOps.Fishing.UI
             PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_settingsPanel);
             SetSelected(_settingsDefaultSelection != null ? _settingsDefaultSelection : _settingsButton);
+        }
+
+        public bool TryOpenProfilePanel()
+        {
+            OpenProfile();
+            return _profilePanel != null && _profilePanel.activeSelf;
+        }
+
+        public bool TryOpenSettingsPanel()
+        {
+            OpenSettings();
+            return _settingsPanel != null && _settingsPanel.activeSelf;
         }
 
         public void OpenExitPanel()

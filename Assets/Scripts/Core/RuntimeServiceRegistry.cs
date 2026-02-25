@@ -7,6 +7,7 @@ namespace RavenDevOps.Fishing.Core
     public static class RuntimeServiceRegistry
     {
         private static readonly Dictionary<Type, UnityEngine.Object> ServicesByType = new Dictionary<Type, UnityEngine.Object>();
+        private static readonly Dictionary<Type, object> InterfaceServicesByType = new Dictionary<Type, object>();
 
         public static void Register<T>(T service) where T : UnityEngine.Object
         {
@@ -73,6 +74,74 @@ namespace RavenDevOps.Fishing.Core
         public static void Clear()
         {
             ServicesByType.Clear();
+            InterfaceServicesByType.Clear();
+        }
+
+        public static void RegisterInterface<TInterface>(UnityEngine.Object service) where TInterface : class
+        {
+            if (service == null)
+            {
+                return;
+            }
+
+            if (!(service is TInterface typedService))
+            {
+                Debug.LogWarning($"RuntimeServiceRegistry: attempted to register {service.GetType().Name} as {typeof(TInterface).Name}, but it does not implement that interface.");
+                return;
+            }
+
+            InterfaceServicesByType[typeof(TInterface)] = typedService;
+        }
+
+        public static void UnregisterInterface<TInterface>(UnityEngine.Object service) where TInterface : class
+        {
+            if (service == null)
+            {
+                return;
+            }
+
+            var type = typeof(TInterface);
+            if (!InterfaceServicesByType.TryGetValue(type, out var existing))
+            {
+                return;
+            }
+
+            if (ReferenceEquals(existing, service))
+            {
+                InterfaceServicesByType.Remove(type);
+            }
+        }
+
+        public static bool TryGetInterface<TInterface>(out TInterface service) where TInterface : class
+        {
+            if (InterfaceServicesByType.TryGetValue(typeof(TInterface), out var value) && value is TInterface typed)
+            {
+                service = typed;
+                return true;
+            }
+
+            service = null;
+            return false;
+        }
+
+        public static bool ResolveInterface<TInterface>(ref TInterface target, MonoBehaviour owner, bool warnIfMissing = true) where TInterface : class
+        {
+            if (target != null)
+            {
+                return true;
+            }
+
+            if (TryGetInterface(out target))
+            {
+                return true;
+            }
+
+            if (warnIfMissing && owner != null)
+            {
+                Debug.LogWarning($"{owner.GetType().Name}: Missing dependency {typeof(TInterface).Name}. Assign in inspector or register during bootstrap.");
+            }
+
+            return false;
         }
     }
 }

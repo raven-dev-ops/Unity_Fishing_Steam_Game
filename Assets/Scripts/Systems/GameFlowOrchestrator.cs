@@ -32,6 +32,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private InputContextRouter _inputContextRouter;
         [SerializeField] private InputActionMapController _inputMapController;
         [SerializeField] private SaveManager _saveManager;
+        [NonSerialized] private IMainMenuNavigator _mainMenuNavigator;
 
         private Coroutine _activeLoadRoutine;
         private bool _eventsBound;
@@ -48,13 +49,15 @@ namespace RavenDevOps.Fishing.Core
             SceneLoader sceneLoader,
             InputContextRouter inputContextRouter,
             InputActionMapController inputMapController,
-            SaveManager saveManager)
+            SaveManager saveManager,
+            IMainMenuNavigator mainMenuNavigator = null)
         {
             _gameFlowManager = gameFlowManager;
             _sceneLoader = sceneLoader;
             _inputContextRouter = inputContextRouter;
             _inputMapController = inputMapController;
             _saveManager = saveManager;
+            _mainMenuNavigator = mainMenuNavigator;
 
             BindEvents();
         }
@@ -115,6 +118,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Resolve(ref _inputContextRouter, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
+            RuntimeServiceRegistry.ResolveInterface(ref _mainMenuNavigator, this, warnIfMissing: false);
 
             _gameFlowManager ??= GetComponent<GameFlowManager>();
             _sceneLoader ??= GetComponent<SceneLoader>();
@@ -453,28 +457,7 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            var openedProfile = false;
-            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (candidate == null)
-                {
-                    continue;
-                }
-
-                var candidateType = candidate.GetType();
-                if (!string.Equals(candidateType.FullName, "RavenDevOps.Fishing.UI.MainMenuController", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                candidate.SendMessage("OpenProfile", SendMessageOptions.DontRequireReceiver);
-                openedProfile = true;
-                break;
-            }
-
-            if (!openedProfile)
+            if (!TryResolveMainMenuNavigator() || !_mainMenuNavigator.TryOpenProfilePanel())
             {
                 Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Profile panel after flow return.");
             }
@@ -489,33 +472,22 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
-            var openedSettings = false;
-            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (candidate == null)
-                {
-                    continue;
-                }
-
-                var candidateType = candidate.GetType();
-                if (!string.Equals(candidateType.FullName, "RavenDevOps.Fishing.UI.MainMenuController", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                candidate.SendMessage("OpenSettings", SendMessageOptions.DontRequireReceiver);
-                openedSettings = true;
-                break;
-            }
-
-            if (!openedSettings)
+            if (!TryResolveMainMenuNavigator() || !_mainMenuNavigator.TryOpenSettingsPanel())
             {
                 Debug.LogWarning("GameFlowOrchestrator: Unable to auto-open Settings panel after intro replay return.");
             }
 
             _openSettingsAfterMainMenuLoad = false;
+        }
+
+        private bool TryResolveMainMenuNavigator()
+        {
+            if (_mainMenuNavigator != null)
+            {
+                return true;
+            }
+
+            return RuntimeServiceRegistry.TryGetInterface(out _mainMenuNavigator) && _mainMenuNavigator != null;
         }
     }
 }

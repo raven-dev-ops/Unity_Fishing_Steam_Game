@@ -9,6 +9,8 @@
 ## Current Command Pathways
 - Main menu profile entry:
   - `MainMenuController.OpenProfile()` -> opens `ProfilePanel` (stats + tutorial controls surface)
+- Intro replay follow-up routing:
+  - `GameFlowOrchestrator` -> typed seam `IMainMenuNavigator.TryOpenSettingsPanel()/TryOpenProfilePanel()` implemented by `MainMenuController`
 - Profile reset:
   - `ProfileMenuController.ResetProfile()` -> `SaveManager.ResetProfileStats()`
 - Tutorial controls:
