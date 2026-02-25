@@ -42,6 +42,10 @@ Runtime state can be inspected:
   - `STEAM_DEPOT_WINDOWS_ID`
 - Contract verification script (runtime keys + release mapping + publish metadata completeness):
   - `scripts/ci/verify-steamworks-achievements-stats.ps1`
+- `backend_publish` contract fields must use:
+  - numeric `steamworks_change_number`
+  - UTC timestamp format `yyyy-MM-ddTHH:mm:ssZ`
+  - repo-relative `verification_artifacts` paths that resolve to committed files
 
 ## Validation Steps
 1. Install Steamworks.NET and define `STEAMWORKS_NET`.
@@ -57,4 +61,6 @@ Runtime state can be inspected:
    - with relaunch guard enabled in production settings: app should request restart via Steam.
    - with relaunch guard disabled (or dev build without override): fallback warning remains explicit and non-crashing.
 10. After Steamworks backend publish, update `backend_contract.json` publish metadata and rerun verification with strict gate:
-   - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata`
+   - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata -SummaryJsonPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json" -SummaryMarkdownPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md"`
+11. Confirm release workflow strict gate passes:
+   - `.github/workflows/release-steampipe.yml` -> `steam_release_metadata_gates`

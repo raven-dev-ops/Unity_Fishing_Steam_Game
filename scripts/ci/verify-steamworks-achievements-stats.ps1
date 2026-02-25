@@ -3,6 +3,7 @@ param(
     [string]$SteamStatsServicePath = "Assets/Scripts/Steam/SteamStatsService.cs",
     [string]$SteamBootstrapPath = "Assets/Scripts/Steam/SteamBootstrap.cs",
     [string]$ReleaseWorkflowPath = ".github/workflows/release-steampipe.yml",
+    [string]$RepositoryRoot = ".",
     [string]$SummaryJsonPath = "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json",
     [string]$SummaryMarkdownPath = "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md",
     [switch]$RequirePublishedMetadata
@@ -17,6 +18,41 @@ function Require-File {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Missing required file: $Path"
     }
+}
+
+function Test-Iso8601UtcTimestamp {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
+    }
+
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $parsed = [DateTime]::MinValue
+    return [DateTime]::TryParseExact(
+        $Value,
+        "yyyy-MM-ddTHH:mm:ssZ",
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        $styles,
+        [ref]$parsed)
+}
+
+function Test-RepoRelativePath {
+    param([string]$PathValue)
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return $false
+    }
+
+    if ([System.IO.Path]::IsPathRooted($PathValue)) {
+        return $false
+    }
+
+    if ($PathValue.Contains("..")) {
+        return $false
+    }
+
+    return $true
 }
 
 function Get-SerializedStringKeys {
@@ -75,6 +111,9 @@ Require-File -Path $ContractPath
 Require-File -Path $SteamStatsServicePath
 Require-File -Path $SteamBootstrapPath
 Require-File -Path $ReleaseWorkflowPath
+if (-not (Test-Path -LiteralPath $RepositoryRoot -PathType Container)) {
+    throw "Repository root does not exist or is not a directory: $RepositoryRoot"
+}
 
 $contract = Get-Content -Raw -Path $ContractPath | ConvertFrom-Json
 $steamStatsSource = Get-Content -Raw -Path $SteamStatsServicePath
@@ -108,12 +147,37 @@ $workflowHasAppSecret = -not [string]::IsNullOrWhiteSpace($appIdSecretName) -and
 $workflowHasDepotSecret = -not [string]::IsNullOrWhiteSpace($depotSecretName) -and $releaseWorkflowSource.Contains($depotSecretName)
 
 $publishMetadata = $contract.backend_publish
-$publishArtifactsCount = if ($null -ne $publishMetadata.verification_artifacts) { @($publishMetadata.verification_artifacts).Count } else { 0 }
+if ($null -eq $publishMetadata) {
+    throw "Missing required contract section: backend_publish"
+}
+
+$publishArtifactRows = @($publishMetadata.verification_artifacts)
+$publishArtifactsCount = $publishArtifactRows.Count
 $publishMetadataComplete =
     -not [string]::IsNullOrWhiteSpace([string]$publishMetadata.steamworks_change_number) -and
     -not [string]::IsNullOrWhiteSpace([string]$publishMetadata.published_at_utc) -and
     -not [string]::IsNullOrWhiteSpace([string]$publishMetadata.verified_by) -and
     ($publishArtifactsCount -gt 0)
+
+$publishChangeNumberValid = [regex]::IsMatch([string]$publishMetadata.steamworks_change_number, '^[0-9]+$')
+$publishTimestampValid = Test-Iso8601UtcTimestamp -Value ([string]$publishMetadata.published_at_utc)
+
+$publishArtifactPathViolations = New-Object System.Collections.Generic.List[string]
+$publishArtifactMissing = New-Object System.Collections.Generic.List[string]
+foreach ($artifact in $publishArtifactRows) {
+    $artifactPath = [string]$artifact
+    if (-not (Test-RepoRelativePath -PathValue $artifactPath)) {
+        $publishArtifactPathViolations.Add($artifactPath) | Out-Null
+        continue
+    }
+
+    $resolvedArtifactPath = Join-Path -Path $RepositoryRoot -ChildPath $artifactPath
+    if (-not (Test-Path -LiteralPath $resolvedArtifactPath -PathType Leaf)) {
+        $publishArtifactMissing.Add($artifactPath) | Out-Null
+    }
+}
+
+$publishArtifactPathsValid = ($publishArtifactPathViolations.Count -eq 0) -and ($publishArtifactMissing.Count -eq 0)
 
 $failures = New-Object System.Collections.Generic.List[string]
 $warnings = New-Object System.Collections.Generic.List[string]
@@ -175,6 +239,25 @@ if (-not $publishMetadataComplete) {
         $failures.Add("Publish metadata is required but incomplete.") | Out-Null
     }
 }
+else {
+    if (-not $publishChangeNumberValid) {
+        $failures.Add("backend_publish.steamworks_change_number must be numeric.") | Out-Null
+    }
+
+    if (-not $publishTimestampValid) {
+        $failures.Add("backend_publish.published_at_utc must be ISO-8601 UTC (yyyy-MM-ddTHH:mm:ssZ).") | Out-Null
+    }
+
+    if (-not $publishArtifactPathsValid) {
+        if ($publishArtifactPathViolations.Count -gt 0) {
+            $failures.Add("backend_publish.verification_artifacts contains invalid repo-relative paths: $($publishArtifactPathViolations -join ', ')") | Out-Null
+        }
+
+        if ($publishArtifactMissing.Count -gt 0) {
+            $failures.Add("backend_publish.verification_artifacts files are missing: $($publishArtifactMissing -join ', ')") | Out-Null
+        }
+    }
+}
 
 $status = if ($failures.Count -gt 0) { "failed" } elseif ($warnings.Count -gt 0) { "warning" } else { "passed" }
 
@@ -212,10 +295,15 @@ $summary = [ordered]@{
         }
         backend_publish_metadata = [ordered]@{
             complete = $publishMetadataComplete
+            change_number_numeric = $publishChangeNumberValid
+            published_at_utc_valid = $publishTimestampValid
+            artifact_paths_valid = $publishArtifactPathsValid
             steamworks_change_number = [string]$publishMetadata.steamworks_change_number
             published_at_utc = [string]$publishMetadata.published_at_utc
             verified_by = [string]$publishMetadata.verified_by
             verification_artifact_count = $publishArtifactsCount
+            invalid_artifact_paths = @($publishArtifactPathViolations)
+            missing_artifacts = @($publishArtifactMissing)
         }
     }
     failures = @($failures)
@@ -250,6 +338,9 @@ $markdown += "| Bootstrap app ID parity | contract=$contractBootstrapDefaultAppI
 $markdown += "| Release workflow app secret | $workflowHasAppSecret ($appIdSecretName) |"
 $markdown += "| Release workflow depot secret | $workflowHasDepotSecret ($depotSecretName) |"
 $markdown += "| Backend publish metadata complete | $publishMetadataComplete |"
+$markdown += "| Publish change number numeric | $publishChangeNumberValid |"
+$markdown += "| Publish timestamp valid UTC | $publishTimestampValid |"
+$markdown += "| Publish artifact paths valid | $publishArtifactPathsValid |"
 
 if ($failures.Count -gt 0) {
     $markdown += ""

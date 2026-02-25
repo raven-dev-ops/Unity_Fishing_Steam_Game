@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$EvidenceRoot = "release/steam_metadata",
-    [bool]$RequireAtLeastOneBundle = $false,
+    [switch]$RequireAtLeastOneBundle,
+    [switch]$RequireAtLeastOnePassingBundle,
     [string]$SummaryJsonPath = "",
     [string]$SummaryMarkdownPath = ""
 )
@@ -22,6 +23,41 @@ function Add-ResultIssue {
     $Issues.Add($Message)
 }
 
+function Test-Iso8601UtcTimestamp {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $false
+    }
+
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $parsed = [DateTime]::MinValue
+    return [DateTime]::TryParseExact(
+        $Value,
+        "yyyy-MM-ddTHH:mm:ssZ",
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        $styles,
+        [ref]$parsed)
+}
+
+function Test-RepoRelativePath {
+    param([string]$PathValue)
+
+    if ([string]::IsNullOrWhiteSpace($PathValue)) {
+        return $false
+    }
+
+    if ([System.IO.Path]::IsPathRooted($PathValue)) {
+        return $false
+    }
+
+    if ($PathValue.Contains("..")) {
+        return $false
+    }
+
+    return $true
+}
+
 if (-not (Test-Path -Path $EvidenceRoot -PathType Container)) {
     throw "Steam metadata evidence root not found: $EvidenceRoot"
 }
@@ -32,6 +68,7 @@ $bundleDirs = @(Get-ChildItem -Path $EvidenceRoot -Directory |
 
 $bundleSummaries = New-Object System.Collections.Generic.List[object]
 $overallIssues = New-Object System.Collections.Generic.List[string]
+$passingBundleCount = 0
 
 if ($bundleDirs.Count -eq 0 -and $RequireAtLeastOneBundle) {
     Add-ResultIssue -Issues $overallIssues -Message "No RC metadata bundles found under '$EvidenceRoot' (template excluded)."
@@ -77,9 +114,8 @@ foreach ($bundleDir in $bundleDirs) {
             Add-ResultIssue -Issues $issues -Message "captured_at_utc is required."
         }
         else {
-            $parsedCapturedAt = [DateTime]::MinValue
-            if (-not [DateTime]::TryParse($manifest.captured_at_utc, [ref]$parsedCapturedAt)) {
-                Add-ResultIssue -Issues $issues -Message "captured_at_utc must be parseable datetime."
+            if (-not (Test-Iso8601UtcTimestamp -Value ([string]$manifest.captured_at_utc))) {
+                Add-ResultIssue -Issues $issues -Message "captured_at_utc must be ISO-8601 UTC (yyyy-MM-ddTHH:mm:ssZ)."
             }
         }
 
@@ -108,6 +144,19 @@ foreach ($bundleDir in $bundleDirs) {
                     continue
                 }
 
+                if (-not (Test-RepoRelativePath -PathValue ([string]$relative))) {
+                    Add-ResultIssue -Issues $issues -Message "evidence_files.$key must use repo-relative path syntax without '..'."
+                    continue
+                }
+
+                if ($key -eq "summary" -and -not $relative.EndsWith(".md", [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Add-ResultIssue -Issues $issues -Message "evidence_files.summary must target a markdown file (.md)."
+                }
+
+                if (($key -eq "controller_support" -or $key -eq "steam_input_settings") -and -not $relative.EndsWith(".png", [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Add-ResultIssue -Issues $issues -Message "evidence_files.$key must target a PNG screenshot (.png)."
+                }
+
                 $resolved = Join-Path $bundleDir.FullName $relative
                 if (-not (Test-Path -Path $resolved -PathType Leaf)) {
                     Add-ResultIssue -Issues $issues -Message "Missing evidence file '$relative'."
@@ -117,6 +166,10 @@ foreach ($bundleDir in $bundleDirs) {
     }
 
     $status = if ($issues.Count -eq 0) { "pass" } else { "fail" }
+    if ($status -eq "pass" -and $manifest.verification_result.ToString().Trim().ToLowerInvariant() -eq "pass") {
+        $passingBundleCount += 1
+    }
+
     if ($status -eq "fail") {
         foreach ($issue in $issues) {
             Add-ResultIssue -Issues $overallIssues -Message "Bundle '$($bundleDir.Name)': $issue"
@@ -130,11 +183,17 @@ foreach ($bundleDir in $bundleDirs) {
         })
 }
 
+if ($RequireAtLeastOnePassingBundle -and $passingBundleCount -eq 0) {
+    Add-ResultIssue -Issues $overallIssues -Message "No bundle with verification_result='pass' is available."
+}
+
 $overallStatus = if ($overallIssues.Count -eq 0) { "pass" } else { "fail" }
 $summaryObject = [pscustomobject]@{
     evidence_root = (Resolve-Path $EvidenceRoot).Path
     bundle_count = $bundleDirs.Count
-    require_at_least_one_bundle = $RequireAtLeastOneBundle
+    passing_bundle_count = $passingBundleCount
+    require_at_least_one_bundle = [bool]$RequireAtLeastOneBundle
+    require_at_least_one_passing_bundle = [bool]$RequireAtLeastOnePassingBundle
     overall_status = $overallStatus
     bundles = $bundleSummaries
     issues = $overallIssues
@@ -160,6 +219,7 @@ if (-not [string]::IsNullOrWhiteSpace($SummaryMarkdownPath)) {
     $mdLines.Add("")
     $mdLines.Add("- Evidence root: $($summaryObject.evidence_root)")
     $mdLines.Add("- Bundle count: $($summaryObject.bundle_count)")
+    $mdLines.Add("- Passing bundle count: $($summaryObject.passing_bundle_count)")
     $mdLines.Add("- Overall status: $($summaryObject.overall_status)")
     $mdLines.Add("")
     $mdLines.Add("| Bundle | Status | Issues |")

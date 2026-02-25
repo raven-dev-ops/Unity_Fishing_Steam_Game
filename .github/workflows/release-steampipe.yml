@@ -261,12 +261,74 @@ jobs:
             exit 1
           fi
 
+  steam_release_metadata_gates:
+    name: Steam release metadata gates
+    needs:
+      - preflight
+      - secret_scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Steamworks achievements/stats contract (strict)
+        shell: pwsh
+        run: |
+          ./scripts/ci/verify-steamworks-achievements-stats.ps1 `
+            -ContractPath "release/steamworks/achievements_stats/backend_contract.json" `
+            -SteamStatsServicePath "Assets/Scripts/Steam/SteamStatsService.cs" `
+            -SteamBootstrapPath "Assets/Scripts/Steam/SteamBootstrap.cs" `
+            -ReleaseWorkflowPath ".github/workflows/release-steampipe.yml" `
+            -RepositoryRoot "." `
+            -SummaryJsonPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json" `
+            -SummaryMarkdownPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md" `
+            -RequirePublishedMetadata
+
+      - name: Verify Steam controller metadata evidence (strict)
+        shell: pwsh
+        run: |
+          ./scripts/ci/verify-steam-metadata-evidence.ps1 `
+            -EvidenceRoot "release/steam_metadata" `
+            -RequireAtLeastOneBundle `
+            -RequireAtLeastOnePassingBundle `
+            -SummaryJsonPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.json" `
+            -SummaryMarkdownPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.md"
+
+      - name: Publish Steam metadata gate summaries
+        if: always()
+        shell: bash
+        run: |
+          echo "## Steam Metadata Gates" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f "Artifacts/SteamMetadata/steam_metadata_evidence_summary.md" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat "Artifacts/SteamMetadata/steam_metadata_evidence_summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Steam metadata gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: steam-metadata-gates-${{ needs.preflight.outputs.release_tag }}-${{ github.sha }}
+          path: |
+            Artifacts/Steamworks/**
+            Artifacts/SteamMetadata/**
+          if-no-files-found: warn
+
   build_windows_release:
     name: Build Windows release artifact
     needs:
       - preflight
       - secret_scan
       - rc_validation_bundle
+      - steam_release_metadata_gates
     runs-on: ubuntu-latest
     permissions:
       contents: read

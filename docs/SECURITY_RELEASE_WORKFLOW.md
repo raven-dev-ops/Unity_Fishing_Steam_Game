@@ -21,6 +21,10 @@
 - Release preflight enforces RC blocker issue gate:
   - blocks release when open `P0-blocker` + `scope:1.0` issues exist in milestone `M9.1 - 1.0 Launch Remediation`.
   - records blocker list in workflow summary + `rc-blocker-gate-<tag>-<sha>` artifact.
+- Release workflow enforces strict Steam metadata gates before build/upload:
+  - `scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata`
+  - `scripts/ci/verify-steam-metadata-evidence.ps1 -RequireAtLeastOneBundle -RequireAtLeastOnePassingBundle`
+  - publishes `steam-metadata-gates-<tag>-<sha>` artifact with summaries.
 - Workflow builds Windows release artifact and hands it off to upload job (`Artifacts/ReleaseBuild/Windows`).
 - Workflow generates provenance evidence in `build_windows_release`:
   - SBOM: `Artifacts/Provenance/release_windows_sbom.spdx.json`

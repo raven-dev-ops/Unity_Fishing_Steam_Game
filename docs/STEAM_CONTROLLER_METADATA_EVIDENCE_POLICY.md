@@ -28,8 +28,11 @@
    - target fix date,
    - updated evidence path.
 4. Recapture screenshots after remediation and update bundle `summary.md` + `manifest.json`.
+5. Rehearse mismatch gating periodically:
+   - `./scripts/ci/rehearse-steam-metadata-drift.ps1`
+   - latest report: `docs/STEAM_CONTROLLER_METADATA_DRIFT_REHEARSAL_REPORT_2026-02-25.md`
 
 ## Validation Command
 ```powershell
-./scripts/ci/verify-steam-metadata-evidence.ps1 -EvidenceRoot "release/steam_metadata"
+./scripts/ci/verify-steam-metadata-evidence.ps1 -EvidenceRoot "release/steam_metadata" -RequireAtLeastOneBundle -RequireAtLeastOnePassingBundle -SummaryJsonPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.json" -SummaryMarkdownPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.md"
 ```

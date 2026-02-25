@@ -27,8 +27,10 @@
   - `controller_support.png`
   - `steam_input_settings.png`
   - `summary.md`
-- Validation command:
-  - `./scripts/ci/verify-steam-metadata-evidence.ps1 -EvidenceRoot "release/steam_metadata"`
+- Strict validation command (release gate):
+  - `./scripts/ci/verify-steam-metadata-evidence.ps1 -EvidenceRoot "release/steam_metadata" -RequireAtLeastOneBundle -RequireAtLeastOnePassingBundle -SummaryJsonPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.json" -SummaryMarkdownPath "Artifacts/SteamMetadata/steam_metadata_evidence_summary.md"`
+- Release workflow enforcement:
+  - `.github/workflows/release-steampipe.yml` (`steam_release_metadata_gates` job)
 - Policy and drift escalation:
   - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
 
@@ -51,6 +53,7 @@
 |---|---|---|
 | Semver tag release path (`v*`) | PASS | `docs/RELEASE_TAGGING.md` |
 | SteamPipe dry-run/live path | PASS | `docs/STEAMPIPE_UPLOAD_TEST.md` |
+| Steamworks achievements/stats publish contract gate | READY | `scripts/ci/verify-steamworks-achievements-stats.ps1` + `release/steamworks/achievements_stats/backend_contract.json` |
 | Protected release environment + reviewers | PASS | `docs/SECURITY_RELEASE_WORKFLOW.md` |
 | RC signoff linkage before tag | PASS | `docs/RC_VALIDATION_BUNDLE.md` |
 
@@ -63,6 +66,7 @@
 | Release metadata aligned with tag/runbooks | PASS | Release Ops | Engineering |
 | Age rating/content descriptor decision reviewed and current for target RC | PASS | Product | Release Ops |
 | Steam controller metadata evidence bundle captured and verified | READY | Release Ops | Product |
+| Steamworks achievements/stats backend publish metadata captured and strict contract gate passes | READY | Release Ops | Engineering |
 | Ownership/escalation contacts confirmed | PASS | Release Ops | Repository owner |
 
 ## Ownership and Escalation
@@ -82,6 +86,9 @@
 - `docs/AGE_RATING_DESCRIPTOR_DECISION_2026-02-25.md`
 - `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
 - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- `docs/STEAM_CONTROLLER_METADATA_DRIFT_REHEARSAL_REPORT_2026-02-25.md`
+- `release/steamworks/achievements_stats/backend_contract.json`
+- `docs/STEAMWORKS_ACHIEVEMENTS_STATS_VERIFICATION_REPORT_2026-02-25.md`
 - `release/compliance/rc-2026-02-25/compliance_manifest.json`
 - `release/compliance/rc-2026-02-25/legal_signoff.md`
 - `docs/EULA_PRIVACY_DISCLOSURE_REQUIREMENTS_2026-02-25.md`

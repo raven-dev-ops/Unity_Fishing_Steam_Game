@@ -32,7 +32,10 @@
   - runtime key parity (stats + achievements)
   - stat type contract (`INT`)
   - release app/depot mapping secret references (`STEAM_APP_ID`, `STEAM_DEPOT_WINDOWS_ID`)
-  - publish metadata completeness for backend publish evidence
+  - publish metadata completeness/quality for backend publish evidence:
+    - numeric `steamworks_change_number`
+    - UTC `published_at_utc` (`yyyy-MM-ddTHH:mm:ssZ`)
+    - repo-relative `verification_artifacts` paths that resolve to files
 
 ## Alignment Policy (Save vs Steam)
 - Canonical source: local save (`SaveDataV1.stats`).
@@ -60,6 +63,8 @@
 7. Confirm non-Steam fallback PlayMode regression still passes:
    - `./scripts/unity-cli.ps1 -Task test-play -LogFile issue-225-launch-regression-playmode.log -ExtraArgs @('-testFilter','LaunchPathRegressionPlayModeTests')`
 8. After Steamworks backend publish, update `backend_contract.json` publish metadata and run strict validation:
-   - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata`
+   - `powershell -ExecutionPolicy Bypass -File scripts/ci/verify-steamworks-achievements-stats.ps1 -RequirePublishedMetadata -SummaryJsonPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.json" -SummaryMarkdownPath "Artifacts/Steamworks/steamworks_achievements_stats_contract_summary.md"`
 9. Current repository verification report (this pass):
    - `docs/STEAMWORKS_ACHIEVEMENTS_STATS_VERIFICATION_REPORT_2026-02-25.md`
+10. Release workflow enforces this gate before build/upload:
+   - `.github/workflows/release-steampipe.yml` -> `steam_release_metadata_gates`
