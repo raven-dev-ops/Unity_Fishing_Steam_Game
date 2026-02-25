@@ -5,6 +5,8 @@
 - Goal: finalize store/compliance readiness and release metadata ownership for `v1.0.0`.
 - Launch localization stance: English-only (`docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`).
 - Store language metadata target: Interface=English, Subtitles=English, Full Audio=not claimed.
+- Age rating/content descriptor decision record: `docs/AGE_RATING_DESCRIPTOR_DECISION_2026-02-25.md`.
+- Descriptor evidence bundle root: `release/steam_descriptors/`.
 
 ## Store Asset and Copy Status
 
@@ -56,6 +58,7 @@
 | Store assets/copy reviewed and not blocked | PASS | Product | Release Ops |
 | Legal/compliance docs current | PASS | Engineering | Product |
 | Release metadata aligned with tag/runbooks | PASS | Release Ops | Engineering |
+| Age rating/content descriptor decision reviewed and current for target RC | PASS | Product | Release Ops |
 | Steam controller metadata evidence bundle captured and verified | READY | Release Ops | Product |
 | Ownership/escalation contacts confirmed | PASS | Release Ops | Repository owner |
 
@@ -73,8 +76,10 @@
 - `docs/STORE_ASSET_VALIDATION_REPORT_2026-02-25.md`
 - `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md`
 - `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`
+- `docs/AGE_RATING_DESCRIPTOR_DECISION_2026-02-25.md`
 - `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
 - `docs/STEAM_CONTROLLER_METADATA_EVIDENCE_POLICY.md`
+- `release/steam_descriptors/`
 - `release/steam_metadata/`
 - `docs/RELEASE_TAGGING.md`
 - `docs/STEAMPIPE_UPLOAD_TEST.md`

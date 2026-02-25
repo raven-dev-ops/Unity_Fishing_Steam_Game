@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "rc_tag": "rc-2026-02-25",
+  "reviewed_at_utc": "2026-02-25T00:00:00Z",
+  "reviewed_by": "@raven-dev-ops",
+  "launch_scope": {
+    "platform": "Steam desktop",
+    "language_scope": "English-only"
+  },
+  "formal_rating_required": false,
+  "formal_rating_rationale": "Current launch scope is Steam desktop distribution with content-survey descriptors tracked in release compliance docs. No additional board-rating artifact is required for this scoped release plan; reassessment triggers remain active.",
+  "descriptor_matrix": {
+    "violence": false,
+    "blood_or_gore": false,
+    "sexual_content_or_nudity": false,
+    "drugs_or_alcohol": false,
+    "gambling": false,
+    "user_generated_content": false,
+    "online_interactions_not_rated": false
+  },
+  "reassessment_triggers": [
+    "Launch-region expansion with mandatory board rating requirements",
+    "Any content update introducing violence, gore, sexual content, drugs/alcohol, gambling, or UGC",
+    "Steam policy/rubric changes affecting descriptors or age-gating requirements",
+    "New platform release channel outside current Steam desktop scope"
+  ],
+  "next_review_due_utc": "2026-03-31T00:00:00Z"
+}
