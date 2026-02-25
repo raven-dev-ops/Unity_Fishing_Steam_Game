@@ -113,4 +113,5 @@ Unity.exe -batchmode -nographics -quit `
   - Fishing scene runtime composition checks (HUD/objective/pause controls/controllers)
   - Fishing backdrop camera coverage checks
   - Fishing ambient fish concurrency cap checks
+  - Fishing tutorial explicit dependency-bundle wiring + deterministic demo/hands-on progression checks
   - Headless scene screenshot capture (default-on; explicit env opt-out)

@@ -118,6 +118,23 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoHookedFishFadeDelaySeconds = 0.65f;
         [SerializeField] private float _demoDockOffsetY = 0.65f;
 
+        public sealed class DependencyBundle
+        {
+            public SaveManager SaveManager { get; set; }
+            public GameFlowOrchestrator Orchestrator { get; set; }
+            public FishingActionStateMachine StateMachine { get; set; }
+            public CatchResolver CatchResolver { get; set; }
+            public ShipMovementController ShipMovement { get; set; }
+            public HookMovementController HookMovement { get; set; }
+            public FishingHookCastDropController HookCastDropController { get; set; }
+            public FishingDepthDarknessController DepthDarknessController { get; set; }
+            public FishingAmbientFishSwimController AmbientFishController { get; set; }
+            public FishingCameraController FishingCameraController { get; set; }
+            public InputActionMapController InputMapController { get; set; }
+            public InputRebindingService InputRebindingService { get; set; }
+            public IFishingHudOverlay HudOverlay { get; set; }
+        }
+
         private TutorialStep _step = TutorialStep.None;
         private bool _isActive;
         private bool _demoActive;
@@ -154,6 +171,47 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoLevel5ReelStartDepthMeters;
         private bool _demoHookDepthOverrideApplied;
         private float _demoHookPreviousMaxDepthMeters;
+        private bool _dependenciesInitialized;
+        private bool _missingDependencyLogEmitted;
+
+        public void ConfigureDependencies(DependencyBundle dependencies)
+        {
+            if (dependencies == null)
+            {
+                return;
+            }
+
+            _saveManager = dependencies.SaveManager ?? _saveManager;
+            _orchestrator = dependencies.Orchestrator ?? _orchestrator;
+            _stateMachine = dependencies.StateMachine ?? _stateMachine;
+            _catchResolver = dependencies.CatchResolver ?? _catchResolver;
+            _shipMovement = dependencies.ShipMovement ?? _shipMovement;
+            _hookMovement = dependencies.HookMovement ?? _hookMovement;
+            _hookCastDropController = dependencies.HookCastDropController ?? _hookCastDropController;
+            _depthDarknessController = dependencies.DepthDarknessController ?? _depthDarknessController;
+            _ambientFishController = dependencies.AmbientFishController ?? _ambientFishController;
+            _fishingCameraController = dependencies.FishingCameraController ?? _fishingCameraController;
+            _inputMapController = dependencies.InputMapController ?? _inputMapController;
+            _inputRebindingService = dependencies.InputRebindingService ?? _inputRebindingService;
+
+            if (dependencies.HudOverlay != null)
+            {
+                _hudOverlay = dependencies.HudOverlay;
+                if (dependencies.HudOverlay is MonoBehaviour hudOverlayBehaviour)
+                {
+                    _hudOverlayBehaviour = hudOverlayBehaviour;
+                }
+            }
+
+            _dependenciesInitialized = false;
+            _missingDependencyLogEmitted = false;
+            TryInitializeDependencies(emitMissingDependencyError: true);
+            SubscribeToDependencies();
+            if (isActiveAndEnabled)
+            {
+                EvaluateActivation();
+            }
+        }
 
         public void ConfigureSkipButton(Button skipTutorialButton)
         {
@@ -209,13 +267,16 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Awake()
         {
-            EnsureDependencies();
+            TryInitializeDependencies();
         }
 
         private void OnEnable()
         {
-            EnsureDependencies();
-            SubscribeToDependencies();
+            TryInitializeDependencies();
+            if (_dependenciesInitialized)
+            {
+                SubscribeToDependencies();
+            }
 
             if (_skipTutorialButton != null)
             {
@@ -229,7 +290,10 @@ namespace RavenDevOps.Fishing.Fishing
                 _skipAllTutorialButton.onClick.AddListener(SkipAllTutorial);
             }
 
-            EvaluateActivation();
+            if (_dependenciesInitialized)
+            {
+                EvaluateActivation();
+            }
         }
 
         private void OnDisable()
@@ -257,10 +321,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void Update()
         {
-            EnsureDependencies();
-            SubscribeToDependencies();
-
-            if (!_isActive)
+            if (!_dependenciesInitialized || !_isActive)
             {
                 return;
             }
@@ -321,8 +382,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void EvaluateActivation()
         {
-            EnsureDependencies();
-            if (_saveManager == null)
+            if (!TryInitializeDependencies(emitMissingDependencyError: true))
             {
                 return;
             }
@@ -360,6 +420,11 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void BeginTutorial()
         {
+            if (!TryInitializeDependencies(emitMissingDependencyError: true))
+            {
+                return;
+            }
+
             _isActive = true;
             _step = TutorialStep.MoveShip;
             _demoActive = true;
@@ -599,8 +664,12 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void StartDemoSequence()
         {
-            EnsureDependencies();
-            EnsureDemoAnchors();
+            if (!TryInitializeDependencies(emitMissingDependencyError: true))
+            {
+                return;
+            }
+
+            RefreshDemoAnchors();
             ApplyDemoHookDepthOverride();
             SuppressRuntimeHookCastControllerForDemo();
             ClearDemoSceneTransition(forceHideOverlay: true);
@@ -628,7 +697,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            EnsureDemoAnchors();
+            RefreshDemoAnchors();
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -1432,15 +1501,8 @@ namespace RavenDevOps.Fishing.Fishing
             SetDemoHookVisible(false);
         }
 
-        private void EnsureDemoAnchors()
+        private void RefreshDemoAnchors()
         {
-            _hookMovement ??= GetComponent<HookMovementController>();
-            _hookMovement ??= FindAnyObjectByType<HookMovementController>(FindObjectsInactive.Include);
-            _shipMovement ??= GetComponent<ShipMovementController>();
-            _shipMovement ??= FindAnyObjectByType<ShipMovementController>(FindObjectsInactive.Include);
-            _ambientFishController ??= GetComponent<FishingAmbientFishSwimController>();
-            _ambientFishController ??= FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
-
             if (_hookMovement != null)
             {
                 _demoHookTransform = _hookMovement.transform;
@@ -1462,17 +1524,6 @@ namespace RavenDevOps.Fishing.Fishing
             if (_demoHookRenderer == null && _demoHookTransform != null)
             {
                 _demoHookRenderer = _demoHookTransform.GetComponent<SpriteRenderer>();
-            }
-
-            if (_fishingCameraController == null)
-            {
-                var mainCamera = Camera.main;
-                if (mainCamera != null)
-                {
-                    _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
-                }
-
-                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
             }
         }
 
@@ -1594,17 +1645,6 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void ApplyScene8CameraFollowOverride(bool active)
         {
-            if (_fishingCameraController == null)
-            {
-                var mainCamera = Camera.main;
-                if (mainCamera != null)
-                {
-                    _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
-                }
-
-                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
-            }
-
             if (_fishingCameraController == null)
             {
                 return;
@@ -2068,8 +2108,13 @@ namespace RavenDevOps.Fishing.Fishing
             return false;
         }
 
-        private void EnsureDependencies()
+        private bool TryInitializeDependencies(bool emitMissingDependencyError = false)
         {
+            if (_dependenciesInitialized)
+            {
+                return true;
+            }
+
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _stateMachine, this, warnIfMissing: false);
@@ -2083,37 +2128,17 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
 
             _saveManager ??= GetComponent<SaveManager>();
-            _saveManager ??= FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
-
             _orchestrator ??= GetComponent<GameFlowOrchestrator>();
-            _orchestrator ??= FindAnyObjectByType<GameFlowOrchestrator>(FindObjectsInactive.Include);
-
             _stateMachine ??= GetComponent<FishingActionStateMachine>();
-            _stateMachine ??= FindAnyObjectByType<FishingActionStateMachine>(FindObjectsInactive.Include);
-
             _catchResolver ??= GetComponent<CatchResolver>();
-            _catchResolver ??= FindAnyObjectByType<CatchResolver>(FindObjectsInactive.Include);
-
             _shipMovement ??= GetComponent<ShipMovementController>();
-            _shipMovement ??= FindAnyObjectByType<ShipMovementController>(FindObjectsInactive.Include);
-
             _hookMovement ??= GetComponent<HookMovementController>();
-            _hookMovement ??= FindAnyObjectByType<HookMovementController>(FindObjectsInactive.Include);
-
             _hookCastDropController ??= GetComponent<FishingHookCastDropController>();
-            _hookCastDropController ??= FindAnyObjectByType<FishingHookCastDropController>(FindObjectsInactive.Include);
-
             _depthDarknessController ??= GetComponent<FishingDepthDarknessController>();
-            _depthDarknessController ??= FindAnyObjectByType<FishingDepthDarknessController>(FindObjectsInactive.Include);
-
             _ambientFishController ??= GetComponent<FishingAmbientFishSwimController>();
-            _ambientFishController ??= FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
-
             _inputMapController ??= GetComponent<InputActionMapController>();
-            _inputMapController ??= FindAnyObjectByType<InputActionMapController>(FindObjectsInactive.Include);
-
             _inputRebindingService ??= GetComponent<InputRebindingService>();
-            _inputRebindingService ??= FindAnyObjectByType<InputRebindingService>(FindObjectsInactive.Include);
+            _hudOverlay ??= _hudOverlayBehaviour as IFishingHudOverlay;
 
             if (_fishingCameraController == null)
             {
@@ -2122,19 +2147,92 @@ namespace RavenDevOps.Fishing.Fishing
                 {
                     _fishingCameraController = mainCamera.GetComponent<FishingCameraController>();
                 }
+            }
 
-                _fishingCameraController ??= FindAnyObjectByType<FishingCameraController>(FindObjectsInactive.Include);
+            RefreshDemoAnchors();
+            if (!ValidateRequiredDependencies(out var missingDependencies))
+            {
+                if (emitMissingDependencyError && !_missingDependencyLogEmitted)
+                {
+                    _missingDependencyLogEmitted = true;
+                    Debug.LogError(
+                        $"FishingLoopTutorialController missing required dependencies: {missingDependencies}. Configure dependencies from scene composition before tutorial activation.");
+                }
+
+                _dependenciesInitialized = false;
+                return false;
+            }
+
+            _missingDependencyLogEmitted = false;
+            _dependenciesInitialized = true;
+            return true;
+        }
+
+        private bool ValidateRequiredDependencies(out string missingDependencies)
+        {
+            var missing = new List<string>(12);
+            if (_saveManager == null)
+            {
+                missing.Add(nameof(_saveManager));
+            }
+
+            if (_orchestrator == null)
+            {
+                missing.Add(nameof(_orchestrator));
+            }
+
+            if (_stateMachine == null)
+            {
+                missing.Add(nameof(_stateMachine));
+            }
+
+            if (_catchResolver == null)
+            {
+                missing.Add(nameof(_catchResolver));
+            }
+
+            if (_shipMovement == null)
+            {
+                missing.Add(nameof(_shipMovement));
+            }
+
+            if (_hookMovement == null)
+            {
+                missing.Add(nameof(_hookMovement));
+            }
+
+            if (_hookCastDropController == null)
+            {
+                missing.Add(nameof(_hookCastDropController));
+            }
+
+            if (_depthDarknessController == null)
+            {
+                missing.Add(nameof(_depthDarknessController));
+            }
+
+            if (_ambientFishController == null)
+            {
+                missing.Add(nameof(_ambientFishController));
+            }
+
+            if (_inputMapController == null)
+            {
+                missing.Add(nameof(_inputMapController));
+            }
+
+            if (_inputRebindingService == null)
+            {
+                missing.Add(nameof(_inputRebindingService));
             }
 
             if (_hudOverlay == null)
             {
-                _hudOverlay = _hudOverlayBehaviour as IFishingHudOverlay;
+                missing.Add(nameof(_hudOverlay));
             }
 
-            if (_hudOverlay == null)
-            {
-                _hudOverlay = FindFishingHudOverlay();
-            }
+            missingDependencies = string.Join(", ", missing);
+            return missing.Count == 0;
         }
 
         private void SubscribeToDependencies()
@@ -2350,20 +2448,6 @@ namespace RavenDevOps.Fishing.Fishing
                 default:
                     return DemoAutoplayPhase.None;
             }
-        }
-
-        private static IFishingHudOverlay FindFishingHudOverlay()
-        {
-            var candidates = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                if (candidates[i] is IFishingHudOverlay overlay)
-                {
-                    return overlay;
-                }
-            }
-
-            return null;
         }
 
         private void SuppressRuntimeHookCastControllerForDemo()

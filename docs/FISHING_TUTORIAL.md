@@ -11,6 +11,8 @@
 2. `Hook` prompt: tells player to react when bite occurs.
 3. `Reel` prompt: tells player to hold action and manage tension.
 4. Completion: tutorial marks complete on success, or auto-completes after repeated failures to avoid soft-lock.
+- Runtime wiring: `FishingLoopTutorialController` receives a `DependencyBundle` at scene composition time (`ConfigureDependencies`) and initializes once in `Awake`/`OnEnable`.
+- Lifecycle rule: tutorial runtime no longer performs per-frame dependency discovery/subscription checks.
 
 ## Recovery Behavior
 - Failed tutorial attempts increment retry count.

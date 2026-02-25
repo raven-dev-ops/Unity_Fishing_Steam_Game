@@ -33,6 +33,7 @@
 - Subscribe in `OnEnable`.
 - Unsubscribe in `OnDisable`.
 - Avoid long-lived static listeners in scene-bound UI controllers.
+- `FishingLoopTutorialController` dependencies are injected from scene composition (`ConfigureDependencies`) and event subscriptions are refreshed only during initialization lifecycle (not per-frame).
 
 ## Regression Checklist
 1. Open/close profile and settings screens repeatedly; verify no listener duplication errors.

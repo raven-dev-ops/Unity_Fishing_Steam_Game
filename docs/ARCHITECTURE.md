@@ -78,6 +78,7 @@ flowchart LR
 - Crash diagnostics writes local-only artifact files for exception/error logs.
 - UI update pathways prefer event-driven refresh (`SaveDataChanged`, flow state events) over always-on polling for menu/profile/HUD data.
 - Interface-first seam example: `HudOverlayController` can be explicitly wired with `ISaveDataView` (`ConfigureDependencies`) for tests/mocks, and falls back to `RuntimeServiceRegistry` only when dependency injection is not provided.
+- `FishingLoopTutorialController` now uses explicit `DependencyBundle` wiring from scene composition and one-time lifecycle initialization, removing per-frame dependency/subscription discovery.
 - Fishing combat uses data-driven bite/fight parameters with `FishEncounterModel`.
 - Fishing conditions (time/weather) apply modifier layers to fish spawn/fight behavior.
 - Catch history is persisted in `SaveDataV1.catchLog` and surfaced in profile UI.

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Performance;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.Tools;
@@ -102,23 +103,32 @@ namespace RavenDevOps.Fishing.Core
         {
             public SceneRuntimeCompositionServices(
                 GameFlowManager gameFlowManager,
+                GameFlowOrchestrator gameFlowOrchestrator,
                 SaveManager saveManager,
                 ObjectivesService objectivesService,
                 UserSettingsService userSettingsService,
-                SellSummaryCalculator sellSummaryCalculator)
+                SellSummaryCalculator sellSummaryCalculator,
+                InputActionMapController inputMapController,
+                InputRebindingService inputRebindingService)
             {
                 GameFlowManager = gameFlowManager;
+                GameFlowOrchestrator = gameFlowOrchestrator;
                 SaveManager = saveManager;
                 ObjectivesService = objectivesService;
                 UserSettingsService = userSettingsService;
                 SellSummaryCalculator = sellSummaryCalculator;
+                InputMapController = inputMapController;
+                InputRebindingService = inputRebindingService;
             }
 
             public GameFlowManager GameFlowManager { get; }
+            public GameFlowOrchestrator GameFlowOrchestrator { get; }
             public SaveManager SaveManager { get; }
             public ObjectivesService ObjectivesService { get; }
             public UserSettingsService UserSettingsService { get; }
             public SellSummaryCalculator SellSummaryCalculator { get; }
+            public InputActionMapController InputMapController { get; }
+            public InputRebindingService InputRebindingService { get; }
         }
 
         private readonly struct CinematicSceneReferences
@@ -1401,7 +1411,7 @@ namespace RavenDevOps.Fishing.Core
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
             hookMovement.RefreshHookStats();
-            GetOrAddComponent<FishingDepthDarknessController>(root);
+            var depthDarknessController = GetOrAddComponent<FishingDepthDarknessController>(root);
             var hookSway = hookObject.GetComponent<SpriteSwayMotion2D>();
             if (hookSway != null)
             {
@@ -1438,7 +1448,7 @@ namespace RavenDevOps.Fishing.Core
             var stateMachine = GetOrAddComponent<FishingActionStateMachine>(root);
             var spawner = GetOrAddComponent<FishSpawner>(root);
             spawner.SetFallbackDefinitions(CreateDefaultFishDefinitions());
-            GetOrAddComponent<FishingAmbientFishSwimController>(root);
+            var ambientFishController = GetOrAddComponent<FishingAmbientFishSwimController>(root);
 
             var hookDropController = GetOrAddComponent<FishingHookCastDropController>(root);
             hookDropController.Configure(stateMachine, hookMovement, shipObject.transform);
@@ -1463,6 +1473,26 @@ namespace RavenDevOps.Fishing.Core
             var resolver = GetOrAddComponent<CatchResolver>(root);
             resolver.Configure(stateMachine, spawner, hookMovement, hud);
             var fishingTutorialController = GetOrAddComponent<FishingLoopTutorialController>(root);
+            var fishingCameraController = Camera.main != null
+                ? Camera.main.GetComponent<FishingCameraController>()
+                : null;
+            fishingTutorialController.ConfigureDependencies(
+                new FishingLoopTutorialController.DependencyBundle
+                {
+                    SaveManager = services.SaveManager,
+                    Orchestrator = services.GameFlowOrchestrator,
+                    StateMachine = stateMachine,
+                    CatchResolver = resolver,
+                    ShipMovement = shipMovement,
+                    HookMovement = hookMovement,
+                    HookCastDropController = hookDropController,
+                    DepthDarknessController = depthDarknessController,
+                    AmbientFishController = ambientFishController,
+                    FishingCameraController = fishingCameraController,
+                    InputMapController = services.InputMapController,
+                    InputRebindingService = services.InputRebindingService,
+                    HudOverlay = hud
+                });
             fishingTutorialTransitionPanel.transform.SetAsLastSibling();
             fishingTutorialController.ConfigureSkipButton(fishingTutorialSkipButton);
             fishingTutorialController.ConfigureSkipAllButton(fishingTutorialSkipAllButton);
@@ -1514,10 +1544,13 @@ namespace RavenDevOps.Fishing.Core
         {
             return new SceneRuntimeCompositionServices(
                 RuntimeServiceRegistry.Get<GameFlowManager>(),
+                RuntimeServiceRegistry.Get<GameFlowOrchestrator>(),
                 RuntimeServiceRegistry.Get<SaveManager>(),
                 RuntimeServiceRegistry.Get<ObjectivesService>(),
                 RuntimeServiceRegistry.Get<UserSettingsService>(),
-                RuntimeServiceRegistry.Get<SellSummaryCalculator>());
+                RuntimeServiceRegistry.Get<SellSummaryCalculator>(),
+                RuntimeServiceRegistry.Get<InputActionMapController>(),
+                RuntimeServiceRegistry.Get<InputRebindingService>());
         }
 
         private static CinematicSceneReferences ResolveCinematicSceneReferences(Scene scene)
