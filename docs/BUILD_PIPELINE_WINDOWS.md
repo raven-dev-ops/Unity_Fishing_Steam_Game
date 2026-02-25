@@ -99,6 +99,20 @@ Project wrapper (recommended):
 - `buildTimestampUtc`
 - `outputExecutable`
 
+## PlayerSettings Snapshot (2026-02-25)
+Captured from `ProjectSettings/ProjectSettings.asset` for launch-ready defaults:
+
+| Field | Value |
+|---|---|
+| `companyName` | `Raven DevOps` |
+| `productName` | `Raven DevOps Fishing` |
+| `defaultScreenWidth` / `defaultScreenHeight` | `1920 x 1080` |
+| `fullscreenMode` | `1` |
+| `resizableWindow` | `0` |
+| `runInBackground` | `0` |
+| `m_ShowUnitySplashScreen` | `1` |
+| `m_ShowUnitySplashLogo` | `1` |
+
 ## Failure Behavior
 - Build method exits non-zero on failures in batch mode.
 - Common hard failures:
@@ -111,5 +125,7 @@ Project wrapper (recommended):
 3. Verify no missing-scene or initialization errors.
 
 ## Save Path (Windows)
-- `%USERPROFILE%/AppData/LocalLow/<CompanyName>/<ProductName>/save_v1.json`
+- `%USERPROFILE%/AppData/LocalLow/Raven DevOps/Raven DevOps Fishing/save_v1.json`
+- Validation guard:
+  - `Assets/Tests/EditMode/PlayerSettingsIdentityTests.cs` confirms persistent path contains finalized company/product identifiers.
 
