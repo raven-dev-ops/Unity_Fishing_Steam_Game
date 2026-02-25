@@ -34,6 +34,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private AudioManager _audioManager;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private InputRebindingService _inputRebindingService;
         [SerializeField] private UserSettingsService _settingsService;
         [SerializeField] private MetaLoopRuntimeService _metaLoopService;
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
@@ -155,6 +156,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _audioManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _settingsService, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _metaLoopService, this, warnIfMissing: false);
             EnsureAmbientFishControllerReference();
@@ -429,7 +431,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _targetFishBoundToAmbient = false;
                 _inWaterElapsedSeconds = 0f;
                 ResetHookStationaryAttractionTimer(reseedDelay: true);
-                _hudOverlay?.SetFishingStatus("Adjusting cast depth. Use Down/S to lower deeper.");
+                _hudOverlay?.SetFishingStatus($"Adjusting cast depth. Use {ResolveCastDepthControlPrompt()} to lower deeper.");
                 return;
             }
 
@@ -671,7 +673,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
                 else
                 {
-                    _hudOverlay?.SetFishingStatus("Press Down/S to cast again.");
+                    _hudOverlay?.SetFishingStatus($"Press {ResolveCastDepthControlPrompt()} to cast again.");
                 }
 
                 _saveManager?.RecordCatchFailure(_hookedFish != null ? _hookedFish.id : string.Empty, _currentDistanceTier, reason);
@@ -943,7 +945,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _targetFish = null;
                 _hudOverlay?.SetFishingStatus(
-                    $"No fish above {minimumSpawnDepth:0}m. Lower with Down/S to {minimumSpawnDepth:0}m+.");
+                    $"No fish above {minimumSpawnDepth:0}m. Lower with {ResolveCastDepthControlPrompt()} to {minimumSpawnDepth:0}m+.");
                 return false;
             }
 
@@ -965,7 +967,8 @@ namespace RavenDevOps.Fishing.Fishing
             _assistService.RecordCastResult(_targetFish != null);
             if (_targetFish == null)
             {
-                _hudOverlay?.SetFishingStatus($"No fish at {depth:0}m. Lower with Down/S or reel up with Up/W.");
+                _hudOverlay?.SetFishingStatus(
+                    $"No fish at {depth:0}m. Lower with {ResolveCastDepthControlPrompt()} or reel with {ResolveReelUpControlPrompt()}.");
                 return false;
             }
 
@@ -1542,50 +1545,83 @@ namespace RavenDevOps.Fishing.Fishing
 
         private string ResolveHookedPrompt()
         {
+            var reelPrompt = ResolveReelUpControlPrompt();
             switch (ResolveHookReelInputMode())
             {
                 case HookReelInputMode.Level1Tap:
-                    return "Tap Up/W repeatedly to reel in.";
+                    return $"Tap {reelPrompt} repeatedly to reel in.";
                 case HookReelInputMode.Level2Hold:
-                    return "Hold Up/W to reel in at double speed.";
+                    return $"Hold {reelPrompt} to reel in at double speed.";
                 case HookReelInputMode.Level3Auto:
-                    return "Press Up/W to start auto reel.";
+                    return $"Press {reelPrompt} to start auto reel.";
                 default:
-                    return "Reel up with Up/W.";
+                    return $"Reel up with {reelPrompt}.";
             }
         }
 
         private string ResolveReelInstruction()
         {
             var secureDepth = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
+            var reelPrompt = ResolveReelUpControlPrompt();
             switch (ResolveHookReelInputMode())
             {
                 case HookReelInputMode.Level1Tap:
-                    return $"Fish hooked. Tap Up/W repeatedly to reel to {secureDepth:0}m before it escapes.";
+                    return $"Fish hooked. Tap {reelPrompt} repeatedly to reel to {secureDepth:0}m before it escapes.";
                 case HookReelInputMode.Level2Hold:
-                    return $"Fish hooked. Hold Up/W to reel to {secureDepth:0}m at double speed.";
+                    return $"Fish hooked. Hold {reelPrompt} to reel to {secureDepth:0}m at double speed.";
                 case HookReelInputMode.Level3Auto:
                     return $"Fish hooked. Auto reel engaged to {secureDepth:0}m.";
                 default:
                     return IsReelToggleModeEnabled()
                         ? $"Fish hooked. Auto reeling to {secureDepth:0}m..."
-                        : $"Fish hooked. Hold Up/W to reel to {secureDepth:0}m before it escapes.";
+                        : $"Fish hooked. Hold {reelPrompt} to reel to {secureDepth:0}m before it escapes.";
             }
         }
 
         private string ResolveReelFailPrompt()
         {
+            var reelPrompt = ResolveReelUpControlPrompt();
             switch (ResolveHookReelInputMode())
             {
                 case HookReelInputMode.Level1Tap:
-                    return "tap Up/W to reel.";
+                    return $"tap {reelPrompt} to reel.";
                 case HookReelInputMode.Level2Hold:
-                    return "hold Up/W to reel.";
+                    return $"hold {reelPrompt} to reel.";
                 case HookReelInputMode.Level3Auto:
-                    return "press Up/W to start auto reel.";
+                    return $"press {reelPrompt} to start auto reel.";
                 default:
-                    return "hold Up/W to reel.";
+                    return $"hold {reelPrompt} to reel.";
             }
+        }
+
+        private string ResolveCastDepthControlPrompt()
+        {
+            var keyboardDown = ResolveMoveHookKeyboardBinding("negative", "Down Arrow");
+            var gamepad = ResolveMoveHookGamepadBindings();
+            return $"{keyboardDown} or {gamepad} down";
+        }
+
+        private string ResolveReelUpControlPrompt()
+        {
+            var keyboardUp = ResolveMoveHookKeyboardBinding("positive", "Up Arrow");
+            var gamepad = ResolveMoveHookGamepadBindings();
+            return $"{keyboardUp} or {gamepad} up";
+        }
+
+        private string ResolveMoveHookKeyboardBinding(string compositePartName, string fallback)
+        {
+            var display = _inputRebindingService != null
+                ? _inputRebindingService.GetDisplayBindingForCompositePart("Fishing/MoveHook", compositePartName, "Keyboard")
+                : string.Empty;
+            return string.IsNullOrWhiteSpace(display) ? fallback : display;
+        }
+
+        private string ResolveMoveHookGamepadBindings()
+        {
+            var display = _inputRebindingService != null
+                ? _inputRebindingService.GetDisplayBindingsForAction("Fishing/MoveHook", "Gamepad", " or ", 2)
+                : string.Empty;
+            return string.IsNullOrWhiteSpace(display) ? "Right Stick or D-Pad" : display;
         }
 
         private bool IsActionHeldForCastDepth()

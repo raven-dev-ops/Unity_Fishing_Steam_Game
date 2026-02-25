@@ -15,7 +15,7 @@
 | Trailer | Launch trailer optional but recommended | READY | Product | Optional for first publish, non-blocking |
 | Library assets | Library capsule/header/hero/logo prepared | PASS | Product | Package lock: `release/steam_store_assets/rc-2026-02-25/export_manifest.lock.json` (`package_sha256=40767fe901c37514d723ec118c63e930251b80a3cbfcac7bc857d4def725346d`) |
 | Copy | Short + long description reviewed | PASS | Product | Versioned package: `marketing/steam/store_copy/rc-2026-02-25/`; report: `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md` |
-| Metadata | Genre/tags/controller support reviewed | PASS | Product | Matches current feature set |
+| Metadata | Genre/tags/controller support reviewed | PASS | Product | Controller/rebind prompt alignment evidence: `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md` |
 | System requirements | Minimum/recommended requirements reviewed | PASS | Engineering | Aligned to hardware baseline lock doc |
 
 ## Legal and Compliance Status
@@ -60,6 +60,7 @@
 - `docs/STORE_ASSET_VALIDATION_REPORT_2026-02-25.md`
 - `docs/STORE_COPY_COMPLIANCE_REPORT_2026-02-25.md`
 - `docs/LOCALIZATION_SCOPE_DECISION_2026-02-25.md`
+- `docs/INPUT_PROMPT_REBIND_QA_REPORT_2026-02-25.md`
 - `docs/RELEASE_TAGGING.md`
 - `docs/STEAMPIPE_UPLOAD_TEST.md`
 - `docs/SECURITY_RELEASE_WORKFLOW.md`

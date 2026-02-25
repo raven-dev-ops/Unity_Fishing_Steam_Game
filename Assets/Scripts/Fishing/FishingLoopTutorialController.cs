@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
@@ -62,6 +64,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingAmbientFishSwimController _ambientFishController;
         [SerializeField] private FishingCameraController _fishingCameraController;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private InputRebindingService _inputRebindingService;
         [SerializeField] private MonoBehaviour _hudOverlayBehaviour;
         [SerializeField] private Button _skipTutorialButton;
         [SerializeField] private Button _skipAllTutorialButton;
@@ -140,6 +143,7 @@ namespace RavenDevOps.Fishing.Fishing
         private CatchResolver _subscribedCatchResolver;
         private SaveManager _subscribedSaveManager;
         private InputAction _moveShipAction;
+        private InputAction _moveHookAction;
         private Transform _demoShipTransform;
         private Transform _demoHookTransform;
         private SpriteRenderer _demoHookRenderer;
@@ -544,13 +548,13 @@ namespace RavenDevOps.Fishing.Fishing
             switch (step)
             {
                 case TutorialStep.MoveShip:
-                    return "Hands-On Step 1/5: Steer left or right (A/D, Arrow keys, or Left Stick/D-Pad). Steering always works, even with the hook down.";
+                    return $"Hands-On Step 1/5: Steer left or right ({ResolveMoveShipControlHint()}). Steering always works, even with the hook down.";
                 case TutorialStep.Cast:
-                    return "Hands-On Step 2/5: Cast by pressing Down/S (or Left Stick down). The hook drops toward 25m.";
+                    return $"Hands-On Step 2/5: Cast by pressing {ResolveMoveHookDownControlHint()}. The hook drops toward 25m.";
                 case TutorialStep.Hook:
                     return "Hands-On Step 3/5: Keep steering until the hook collides with a fish to secure the hook.";
                 case TutorialStep.Reel:
-                    return "Hands-On Step 4/5: Start reeling with Up/W (or Left Stick up).";
+                    return $"Hands-On Step 4/5: Start reeling with {ResolveMoveHookUpControlHint()}.";
                 case TutorialStep.Land:
                     return "Hands-On Step 5/5: Keep reeling. At 25m the catch is secured, then hauled to the boat.";
                 default:
@@ -1189,13 +1193,13 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.IntroInfo:
                     return "Fishing tutorial demo. Each scene pauses before transitions so you can track the full loop.";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Step 1: Steer left/right (A/D, Arrow keys, or Left Stick/D-Pad). You can always steer, even while the hook is down.";
+                    return $"Step 1: Steer left/right ({ResolveMoveShipControlHint()}). You can always steer, even while the hook is down.";
                 case DemoAutoplayPhase.CastInfo:
-                    return "Step 2: Cast with Down/S (or Left Stick down). The hook descends to 30m.";
+                    return $"Step 2: Cast with {ResolveMoveHookDownControlHint()}. The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
                     return "Step 3: Keep steering while the hook is down. A fish approaches and is hooked on collision.";
                 case DemoAutoplayPhase.ReelInfo:
-                    return "Step 4: Reel with Up/W (or Left Stick up). Secure the fish, then haul it to the boat.";
+                    return $"Step 4: Reel with {ResolveMoveHookUpControlHint()}. Secure the fish, then haul it to the boat.";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
                     return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 5,000m.";
                 case DemoAutoplayPhase.HookUpgradeInfo:
@@ -1835,6 +1839,189 @@ namespace RavenDevOps.Fishing.Fishing
                 : null;
         }
 
+        private void RefreshMoveHookAction()
+        {
+            if (_moveHookAction != null)
+            {
+                return;
+            }
+
+            _moveHookAction = _inputMapController != null
+                ? _inputMapController.FindAction("Fishing/MoveHook")
+                : null;
+        }
+
+        private void RefreshPromptActions()
+        {
+            RefreshMoveShipAction();
+            RefreshMoveHookAction();
+        }
+
+        private string ResolveMoveShipControlHint()
+        {
+            var keyboardLeft = ResolveKeyboardCompositeBinding("Fishing/MoveShip", "negative", "Left Arrow");
+            var keyboardRight = ResolveKeyboardCompositeBinding("Fishing/MoveShip", "positive", "Right Arrow");
+            var gamepad = ResolveGamepadBindingSet("Fishing/MoveShip", "Left Stick or D-Pad");
+            return $"{keyboardLeft}/{keyboardRight} or {gamepad}";
+        }
+
+        private string ResolveMoveHookDownControlHint()
+        {
+            var keyboardDown = ResolveKeyboardCompositeBinding("Fishing/MoveHook", "negative", "Down Arrow");
+            var gamepad = ResolveGamepadBindingSet("Fishing/MoveHook", "Right Stick or D-Pad");
+            return $"{keyboardDown} or {gamepad} down";
+        }
+
+        private string ResolveMoveHookUpControlHint()
+        {
+            var keyboardUp = ResolveKeyboardCompositeBinding("Fishing/MoveHook", "positive", "Up Arrow");
+            var gamepad = ResolveGamepadBindingSet("Fishing/MoveHook", "Right Stick or D-Pad");
+            return $"{keyboardUp} or {gamepad} up";
+        }
+
+        private string ResolveKeyboardCompositeBinding(string actionPath, string compositePart, string fallback)
+        {
+            if (_inputRebindingService != null)
+            {
+                var fromService = _inputRebindingService.GetDisplayBindingForCompositePart(actionPath, compositePart, "Keyboard");
+                if (!string.IsNullOrWhiteSpace(fromService))
+                {
+                    return fromService;
+                }
+            }
+
+            var action = ResolvePromptAction(actionPath);
+            if (action == null)
+            {
+                return fallback;
+            }
+
+            for (var i = 0; i < action.bindings.Count; i++)
+            {
+                var binding = action.bindings[i];
+                if (!binding.isPartOfComposite
+                    || !string.Equals(binding.name, compositePart, StringComparison.OrdinalIgnoreCase)
+                    || !IsBindingOnDevice(binding, "Keyboard"))
+                {
+                    continue;
+                }
+
+                var display = action.GetBindingDisplayString(i);
+                if (!string.IsNullOrWhiteSpace(display))
+                {
+                    return display;
+                }
+            }
+
+            return fallback;
+        }
+
+        private string ResolveGamepadBindingSet(string actionPath, string fallback)
+        {
+            if (_inputRebindingService != null)
+            {
+                var fromService = _inputRebindingService.GetDisplayBindingsForAction(actionPath, "Gamepad", " or ", 2);
+                if (!string.IsNullOrWhiteSpace(fromService))
+                {
+                    return fromService;
+                }
+            }
+
+            var action = ResolvePromptAction(actionPath);
+            if (action == null)
+            {
+                return fallback;
+            }
+
+            var displayBindings = new List<string>(2);
+            for (var i = 0; i < action.bindings.Count; i++)
+            {
+                var binding = action.bindings[i];
+                if (binding.isComposite || binding.isPartOfComposite || !IsBindingOnDevice(binding, "Gamepad"))
+                {
+                    continue;
+                }
+
+                var display = action.GetBindingDisplayString(i);
+                if (string.IsNullOrWhiteSpace(display) || ContainsDisplayIgnoreCase(displayBindings, display))
+                {
+                    continue;
+                }
+
+                displayBindings.Add(display);
+                if (displayBindings.Count >= 2)
+                {
+                    break;
+                }
+            }
+
+            return displayBindings.Count > 0 ? string.Join(" or ", displayBindings) : fallback;
+        }
+
+        private InputAction ResolvePromptAction(string actionPath)
+        {
+            RefreshPromptActions();
+            return actionPath switch
+            {
+                "Fishing/MoveShip" => _moveShipAction,
+                "Fishing/MoveHook" => _moveHookAction,
+                _ => _inputMapController != null
+                    ? _inputMapController.FindAction(actionPath)
+                    : null
+            };
+        }
+
+        private static bool IsBindingOnDevice(InputBinding binding, string requestedDevice)
+        {
+            var requested = string.IsNullOrWhiteSpace(requestedDevice)
+                ? string.Empty
+                : requestedDevice.Trim().Trim('<', '>');
+            if (string.IsNullOrWhiteSpace(requested))
+            {
+                return true;
+            }
+
+            var path = string.IsNullOrWhiteSpace(binding.effectivePath)
+                ? binding.path
+                : binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path) || !path.StartsWith("<", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var layoutEnd = path.IndexOf('>');
+            if (layoutEnd <= 1)
+            {
+                return false;
+            }
+
+            var actual = path.Substring(1, layoutEnd - 1);
+            if (string.Equals(actual, requested, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return requested switch
+            {
+                "Gamepad" => actual.IndexOf("Gamepad", StringComparison.OrdinalIgnoreCase) >= 0,
+                "Keyboard" => actual.IndexOf("Keyboard", StringComparison.OrdinalIgnoreCase) >= 0,
+                _ => false
+            };
+        }
+
+        private static bool ContainsDisplayIgnoreCase(List<string> displayBindings, string candidate)
+        {
+            for (var i = 0; i < displayBindings.Count; i++)
+            {
+                if (string.Equals(displayBindings[i], candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private bool IsShipMovementInputActive()
         {
             var axis = _moveShipAction != null
@@ -1893,6 +2080,7 @@ namespace RavenDevOps.Fishing.Fishing
             RuntimeServiceRegistry.Resolve(ref _depthDarknessController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _ambientFishController, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
 
             _saveManager ??= GetComponent<SaveManager>();
             _saveManager ??= FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
@@ -1923,6 +2111,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             _inputMapController ??= GetComponent<InputActionMapController>();
             _inputMapController ??= FindAnyObjectByType<InputActionMapController>(FindObjectsInactive.Include);
+
+            _inputRebindingService ??= GetComponent<InputRebindingService>();
+            _inputRebindingService ??= FindAnyObjectByType<InputRebindingService>(FindObjectsInactive.Include);
 
             if (_fishingCameraController == null)
             {

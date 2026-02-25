@@ -4,6 +4,7 @@ using System.Text;
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Economy;
 using RavenDevOps.Fishing.Harbor;
+using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Data;
 using RavenDevOps.Fishing.Save;
 using TMPro;
@@ -39,6 +40,7 @@ namespace RavenDevOps.Fishing.Core
         [SerializeField] private GameFlowOrchestrator _orchestrator;
         [SerializeField] private SaveManager _saveManager;
         [SerializeField] private CatalogService _catalogService;
+        [SerializeField] private InputRebindingService _inputRebindingService;
         [SerializeField] private TMP_Text _statusText;
         [SerializeField] private TMP_Text _selectionText;
         [SerializeField] private TMP_Text _economyText;
@@ -185,6 +187,7 @@ namespace RavenDevOps.Fishing.Core
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _inputRebindingService, this, warnIfMissing: false);
             _interactionController ??= GetComponent<HarborInteractionController>();
         }
 
@@ -1985,16 +1988,44 @@ namespace RavenDevOps.Fishing.Core
                 return;
             }
 
+            var interactLabel = ResolveInteractPromptLabel();
             var message = interactable.Type switch
             {
-                InteractableType.HookShop => "Nearby target: Warehouse. Press Enter to buy hooks for Shipyard inventory.",
-                InteractableType.BoatShop => "Nearby target: Dockyard. Press Enter to buy ships for Shipyard inventory.",
-                InteractableType.FishShop => "Nearby target: Fishery. Press Enter to sell all fish cargo.",
-                InteractableType.Sail => "Nearby target: Dock. Press Enter to set sail or use Shipyard in the menu.",
-                _ => "Nearby target: Interaction available. Press Enter."
+                InteractableType.HookShop => $"Nearby target: Warehouse. Press {interactLabel} to buy hooks for Shipyard inventory.",
+                InteractableType.BoatShop => $"Nearby target: Dockyard. Press {interactLabel} to buy ships for Shipyard inventory.",
+                InteractableType.FishShop => $"Nearby target: Fishery. Press {interactLabel} to sell all fish cargo.",
+                InteractableType.Sail => $"Nearby target: Dock. Press {interactLabel} to set sail or use Shipyard in the menu.",
+                _ => $"Nearby target: Interaction available. Press {interactLabel}."
             };
 
             _selectionText.text = message;
+        }
+
+        private string ResolveInteractPromptLabel()
+        {
+            var keyboard = _inputRebindingService != null
+                ? _inputRebindingService.GetDisplayBindingsForAction("Harbor/Interact", "Keyboard", " / ", 1)
+                : string.Empty;
+            var gamepad = _inputRebindingService != null
+                ? _inputRebindingService.GetDisplayBindingsForAction("Harbor/Interact", "Gamepad", " / ", 1)
+                : string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(keyboard) && !string.IsNullOrWhiteSpace(gamepad))
+            {
+                return $"{keyboard} or {gamepad}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyboard))
+            {
+                return keyboard;
+            }
+
+            if (!string.IsNullOrWhiteSpace(gamepad))
+            {
+                return gamepad;
+            }
+
+            return "Enter or South Button";
         }
 
         private void PushActivity(string message)

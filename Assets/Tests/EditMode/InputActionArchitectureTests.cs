@@ -81,6 +81,80 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             }
         }
 
+        [Test]
+        public void InputRebindingService_ResolvesCompositeAndDeviceBindingDisplays()
+        {
+            var serviceGo = new GameObject("input-rebind-display");
+            var service = serviceGo.AddComponent<InputRebindingService>();
+            var asset = LoadInputActionsAsset();
+
+            try
+            {
+                service.SetInputActions(asset);
+                var moveHook = asset.FindAction("Fishing/MoveHook", false);
+                Assert.IsNotNull(moveHook);
+
+                var negativeKeyboardIndex = FindCompositePartBindingIndex(moveHook, "negative", "Keyboard");
+                var positiveKeyboardIndex = FindCompositePartBindingIndex(moveHook, "positive", "Keyboard");
+                Assert.GreaterOrEqual(negativeKeyboardIndex, 0);
+                Assert.GreaterOrEqual(positiveKeyboardIndex, 0);
+
+                var expectedDown = moveHook.GetBindingDisplayString(negativeKeyboardIndex);
+                var expectedUp = moveHook.GetBindingDisplayString(positiveKeyboardIndex);
+                var expectedGamepad = BuildExpectedNonCompositeDisplay(moveHook, "Gamepad", " or ", 2);
+
+                Assert.AreEqual(
+                    expectedDown,
+                    service.GetDisplayBindingForCompositePart("Fishing/MoveHook", "negative", "Keyboard"));
+                Assert.AreEqual(
+                    expectedUp,
+                    service.GetDisplayBindingForCompositePart("Fishing/MoveHook", "positive", "Keyboard"));
+                Assert.AreEqual(
+                    expectedGamepad,
+                    service.GetDisplayBindingsForAction("Fishing/MoveHook", "Gamepad", " or ", 2));
+            }
+            finally
+            {
+                Object.DestroyImmediate(asset);
+                Object.DestroyImmediate(serviceGo);
+            }
+        }
+
+        [Test]
+        public void InputRebindingService_CompositeDisplayResolversReflectOverrides()
+        {
+            var serviceGo = new GameObject("input-rebind-display-overrides");
+            var service = serviceGo.AddComponent<InputRebindingService>();
+            var asset = LoadInputActionsAsset();
+
+            try
+            {
+                service.SetInputActions(asset);
+                var moveHook = asset.FindAction("Fishing/MoveHook", false);
+                Assert.IsNotNull(moveHook);
+
+                var negativeKeyboardIndex = FindCompositePartBindingIndex(moveHook, "negative", "Keyboard");
+                var positiveKeyboardIndex = FindCompositePartBindingIndex(moveHook, "positive", "Keyboard");
+                Assert.GreaterOrEqual(negativeKeyboardIndex, 0);
+                Assert.GreaterOrEqual(positiveKeyboardIndex, 0);
+
+                moveHook.ApplyBindingOverride(negativeKeyboardIndex, "<Keyboard>/j");
+                moveHook.ApplyBindingOverride(positiveKeyboardIndex, "<Keyboard>/k");
+
+                Assert.AreEqual(
+                    moveHook.GetBindingDisplayString(negativeKeyboardIndex),
+                    service.GetDisplayBindingForCompositePart("Fishing/MoveHook", "negative", "Keyboard"));
+                Assert.AreEqual(
+                    moveHook.GetBindingDisplayString(positiveKeyboardIndex),
+                    service.GetDisplayBindingForCompositePart("Fishing/MoveHook", "positive", "Keyboard"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(asset);
+                Object.DestroyImmediate(serviceGo);
+            }
+        }
+
         private static InputActionAsset LoadInputActionsAsset()
         {
             var source = Resources.Load<InputActionAsset>("InputActions_Gameplay");
@@ -115,6 +189,71 @@ namespace RavenDevOps.Fishing.Tests.EditMode
             }
 
             return -1;
+        }
+
+        private static int FindCompositePartBindingIndex(InputAction action, string partName, string deviceLayout)
+        {
+            for (var i = 0; i < action.bindings.Count; i++)
+            {
+                var binding = action.bindings[i];
+                if (!binding.isPartOfComposite
+                    || !string.Equals(binding.name, partName)
+                    || !IsBindingForDevice(binding, deviceLayout))
+                {
+                    continue;
+                }
+
+                return i;
+            }
+
+            return -1;
+        }
+
+        private static string BuildExpectedNonCompositeDisplay(InputAction action, string deviceLayout, string separator, int maxBindings)
+        {
+            var result = string.Empty;
+            var count = 0;
+            for (var i = 0; i < action.bindings.Count && count < maxBindings; i++)
+            {
+                var binding = action.bindings[i];
+                if (binding.isComposite || binding.isPartOfComposite || !IsBindingForDevice(binding, deviceLayout))
+                {
+                    continue;
+                }
+
+                var display = action.GetBindingDisplayString(i);
+                if (string.IsNullOrWhiteSpace(display))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    result = display;
+                }
+                else
+                {
+                    result += separator + display;
+                }
+
+                count++;
+            }
+
+            return result;
+        }
+
+        private static bool IsBindingForDevice(InputBinding binding, string deviceLayout)
+        {
+            var path = string.IsNullOrWhiteSpace(binding.effectivePath)
+                ? binding.path
+                : binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            var token = "<" + deviceLayout + ">";
+            return path.StartsWith(token);
         }
     }
 }

@@ -36,8 +36,18 @@
   - `OnRebindReturnHarborPressed`
   - `OnResetRebindsPressed`
 
+## Prompt Label Resolution
+- Runtime prompt labels resolve from the same `InputActionAsset` used for rebinding.
+- Prompt controllers read current keyboard/gamepad binding labels through `InputRebindingService`:
+  - `Assets/Scripts/Fishing/FishingLoopTutorialController.cs` (`Fishing/MoveShip`, `Fishing/MoveHook`)
+  - `Assets/Scripts/Fishing/CatchResolver.cs` (`Fishing/MoveHook`)
+  - `Assets/Scripts/Bootstrap/HarborSceneInteractionRouter.cs` (`Harbor/Interact`)
+- Where prompt strings are intentionally static copy, control references use semantic terms (`Submit`, `Cancel`) instead of fixed keys.
+
 ## UX Requirements
 - Keyboard-only flow is possible in all gameplay states.
 - Controller can navigate menus and execute core gameplay actions.
 - `Esc`/Cancel behavior is mapped consistently by context.
 - Pause input is not double-handled across scripts.
+- Prompt labels for tutorial/HUD/harbor interaction hints stay aligned with active binding overrides.
+- Keyboard/gamepad prompt instructions preserve parity after rebinding and relaunch.

@@ -107,7 +107,7 @@ namespace RavenDevOps.Fishing.Core
             var canvas = CreateCanvas(root.transform, "BootCanvas", 250);
             CreatePanel(canvas.transform, "BootPanel", new Vector2(0f, 0f), new Vector2(860f, 360f), new Color(0.05f, 0.08f, 0.14f, 0.72f));
             CreateText(canvas.transform, "BootTitle", "Raven DevOps Fishing", 42, TextAnchor.MiddleCenter, new Vector2(0f, 82f), new Vector2(780f, 92f));
-            var status = CreateText(canvas.transform, "BootStatus", "Boot: Press Enter to continue.", 24, TextAnchor.MiddleCenter, new Vector2(0f, -18f), new Vector2(760f, 72f));
+            var status = CreateText(canvas.transform, "BootStatus", "Boot: Press Submit to continue.", 24, TextAnchor.MiddleCenter, new Vector2(0f, -18f), new Vector2(760f, 72f));
             var continueButton = CreateButton(canvas.transform, "ContinueButton", "Continue", new Vector2(0f, -114f), new Vector2(220f, 56f));
             continueButton.onClick.AddListener(() => RuntimeServiceRegistry.Get<GameFlowManager>()?.SetState(GameFlowState.Cinematic));
 
@@ -354,7 +354,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftTmpText(
                 profilePanel.transform,
                 "ProfileHintText",
-                "Review profile progress and manage tutorial replay/skip flags. Use Esc or Back to return.",
+                "Review profile progress and manage tutorial replay/skip flags. Use Cancel/Back to return.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(24f, 62f),
@@ -657,7 +657,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftText(
                 infoPanel.transform,
                 "HarborControls",
-                "Harbor: Navigate menu with arrows/WASD, Enter to confirm, Esc to pause. Use center menu and submenus.",
+                "Harbor: Navigate with your current menu bindings to confirm, cancel, and pause. Use center menu and submenus.",
                 16,
                 TextAnchor.UpperLeft,
                 new Vector2(18f, 272f),
@@ -827,7 +827,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftTmpText(
                 harborProfilePanel.transform,
                 "HarborProfileHintText",
-                "View progression, objective status, and recent catches. Use Esc or Back to return.",
+                "View progression, objective status, and recent catches. Use Cancel/Back to return.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(24f, 62f),
@@ -1101,7 +1101,7 @@ namespace RavenDevOps.Fishing.Core
             CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Left/Right steers the ship at all times, even with hook down. Hook fish by colliding the hook with fish. Lv3 hook bait can attract fish. Down/S casts and lowers; Up/W reels. Esc pause, H return harbor.",
+                "Fishing: Steering works at all times, even with hook down. Hook fish by colliding the hook with fish. Lv3 hook bait can attract fish. Cast lowers depth and reel raises to secure catches. Pause and return-to-harbor use current bindings.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(18f, 238f),

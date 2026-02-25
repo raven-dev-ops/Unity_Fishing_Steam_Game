@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RavenDevOps.Fishing.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -133,6 +134,142 @@ namespace RavenDevOps.Fishing.Input
 
             var bindingIndex = FindPreferredBindingIndex(action);
             return bindingIndex >= 0 ? action.GetBindingDisplayString(bindingIndex) : string.Empty;
+        }
+
+        public string GetDisplayBindingForCompositePart(string actionPath, string compositePartName, string deviceLayoutName = null)
+        {
+            if (!TryFindAction(actionPath, out var action) || string.IsNullOrWhiteSpace(compositePartName))
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < action.bindings.Count; i++)
+            {
+                var binding = action.bindings[i];
+                if (!binding.isPartOfComposite
+                    || !string.Equals(binding.name, compositePartName, StringComparison.OrdinalIgnoreCase)
+                    || !MatchesDeviceLayout(binding, deviceLayoutName))
+                {
+                    continue;
+                }
+
+                var display = action.GetBindingDisplayString(i);
+                if (!string.IsNullOrWhiteSpace(display))
+                {
+                    return display;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public string GetDisplayBindingsForAction(string actionPath, string deviceLayoutName = null, string separator = " / ", int maxBindings = 2)
+        {
+            if (!TryFindAction(actionPath, out var action))
+            {
+                return string.Empty;
+            }
+
+            var clampedMaxBindings = Mathf.Max(1, maxBindings);
+            if (string.IsNullOrWhiteSpace(separator))
+            {
+                separator = " / ";
+            }
+
+            var displayBindings = new List<string>(clampedMaxBindings);
+            for (var i = 0; i < action.bindings.Count; i++)
+            {
+                var binding = action.bindings[i];
+                if (binding.isComposite || binding.isPartOfComposite || !MatchesDeviceLayout(binding, deviceLayoutName))
+                {
+                    continue;
+                }
+
+                var display = action.GetBindingDisplayString(i);
+                if (string.IsNullOrWhiteSpace(display) || ContainsDisplayIgnoreCase(displayBindings, display))
+                {
+                    continue;
+                }
+
+                displayBindings.Add(display);
+                if (displayBindings.Count >= clampedMaxBindings)
+                {
+                    break;
+                }
+            }
+
+            return displayBindings.Count == 0 ? string.Empty : string.Join(separator, displayBindings);
+        }
+
+        private bool TryFindAction(string actionPath, out InputAction action)
+        {
+            action = null;
+            if (_inputActions == null || string.IsNullOrWhiteSpace(actionPath))
+            {
+                return false;
+            }
+
+            action = _inputActions.FindAction(actionPath, throwIfNotFound: false);
+            return action != null;
+        }
+
+        private static bool MatchesDeviceLayout(InputBinding binding, string deviceLayoutName)
+        {
+            var requestedLayout = NormalizeDeviceLayoutName(deviceLayoutName);
+            if (string.IsNullOrWhiteSpace(requestedLayout))
+            {
+                return true;
+            }
+
+            var path = string.IsNullOrWhiteSpace(binding.effectivePath)
+                ? binding.path
+                : binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            var layoutEnd = path.IndexOf('>');
+            if (!path.StartsWith("<", StringComparison.Ordinal) || layoutEnd <= 1)
+            {
+                return false;
+            }
+
+            var actualLayout = path.Substring(1, layoutEnd - 1);
+            if (string.Equals(actualLayout, requestedLayout, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return requestedLayout switch
+            {
+                "Gamepad" => actualLayout.IndexOf("Gamepad", StringComparison.OrdinalIgnoreCase) >= 0,
+                "Keyboard" => actualLayout.IndexOf("Keyboard", StringComparison.OrdinalIgnoreCase) >= 0,
+                _ => false
+            };
+        }
+
+        private static string NormalizeDeviceLayoutName(string deviceLayoutName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceLayoutName))
+            {
+                return string.Empty;
+            }
+
+            return deviceLayoutName.Trim().Trim('<', '>');
+        }
+
+        private static bool ContainsDisplayIgnoreCase(List<string> displays, string candidate)
+        {
+            for (var i = 0; i < displays.Count; i++)
+            {
+                if (string.Equals(displays[i], candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static int FindPreferredBindingIndex(InputAction action)

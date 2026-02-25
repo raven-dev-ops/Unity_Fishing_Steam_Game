@@ -28,7 +28,7 @@ End-to-end regression checklist for the MVP loop.
 15. Complete objective milestones and verify objective progress/reward updates.
 16. Purchase locked/unlocked gear paths behave per progression level.
 17. Pause menu resume/return harbor/main-menu/exit behavior.
-18. Rebind core actions in Settings, relaunch, and verify persistence.
+18. Rebind core actions in Settings, relaunch, verify persistence, and confirm tutorial/HUD/harbor prompt labels match current bindings.
 19. Toggle subtitles/high-contrast/UI scale, relaunch, and verify accessibility persistence.
 20. Toggle reel input mode (hold/toggle) and verify fishing reel behavior updates correctly.
 21. Toggle reduced motion and verify camera/wave motion reduction in fishing scene.
