@@ -1310,12 +1310,16 @@ namespace RavenDevOps.Fishing.Core
                 hookObject.transform.position = new Vector3(0f, -1f, 0f);
             }
 
-            shipObject.transform.SetParent(null, worldPositionStays: true);
-            hookObject.transform.SetParent(null, worldPositionStays: true);
-            SceneManager.MoveGameObjectToScene(shipObject, scene);
-            SceneManager.MoveGameObjectToScene(hookObject, scene);
-            shipObject.SetActive(true);
-            hookObject.SetActive(true);
+            if (Application.isBatchMode)
+            {
+                // Keep batch-mode tests deterministic even when authored scene parents are inactive.
+                shipObject.transform.SetParent(null, worldPositionStays: true);
+                hookObject.transform.SetParent(null, worldPositionStays: true);
+                SceneManager.MoveGameObjectToScene(shipObject, scene);
+                SceneManager.MoveGameObjectToScene(hookObject, scene);
+                shipObject.SetActive(true);
+                hookObject.SetActive(true);
+            }
 
             var legacyLineObject = sceneReferences.FishingLine;
             if (legacyLineObject != null)
