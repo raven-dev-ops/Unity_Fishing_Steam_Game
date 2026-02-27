@@ -1,6 +1,7 @@
 using RavenDevOps.Fishing.Audio;
 using RavenDevOps.Fishing.Core;
 using RavenDevOps.Fishing.Input;
+using RavenDevOps.Fishing.Save;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -22,7 +23,9 @@ namespace RavenDevOps.Fishing.UI
         [SerializeField] private GameObject _profileDefaultSelection;
         [SerializeField] private GameObject _settingsDefaultSelection;
         [SerializeField] private GameFlowOrchestrator _orchestrator;
+        [SerializeField] private SaveManager _saveManager;
         [SerializeField] private InputActionMapController _inputMapController;
+        [SerializeField] private bool _profileButtonLaunchesDemo;
 
         private InputAction _submitAction;
         private InputAction _cancelAction;
@@ -38,7 +41,8 @@ namespace RavenDevOps.Fishing.UI
             GameObject exitConfirmButton = null,
             GameObject exitCancelButton = null,
             GameObject profileDefaultSelection = null,
-            GameObject settingsDefaultSelection = null)
+            GameObject settingsDefaultSelection = null,
+            bool profileButtonLaunchesDemo = false)
         {
             _startButton = startButton;
             _profileButton = profileButton;
@@ -51,11 +55,13 @@ namespace RavenDevOps.Fishing.UI
             _exitCancelButton = exitCancelButton;
             _profileDefaultSelection = profileDefaultSelection;
             _settingsDefaultSelection = settingsDefaultSelection;
+            _profileButtonLaunchesDemo = profileButtonLaunchesDemo;
         }
 
         private void Awake()
         {
             RuntimeServiceRegistry.Resolve(ref _orchestrator, this, warnIfMissing: false);
+            RuntimeServiceRegistry.Resolve(ref _saveManager, this, warnIfMissing: false);
             RuntimeServiceRegistry.Resolve(ref _inputMapController, this, warnIfMissing: false);
             RuntimeServiceRegistry.RegisterInterface<IMainMenuNavigator>(this);
         }
@@ -99,6 +105,12 @@ namespace RavenDevOps.Fishing.UI
 
             if (selected == _profileButton)
             {
+                if (_profileButtonLaunchesDemo)
+                {
+                    OpenDemo();
+                    return;
+                }
+
                 OpenProfile();
                 return;
             }
@@ -138,6 +150,13 @@ namespace RavenDevOps.Fishing.UI
             PlaySfx(SfxEvent.UiSelect);
             ShowSingleSubmenu(_profilePanel);
             SetSelected(_profileDefaultSelection != null ? _profileDefaultSelection : _profileButton);
+        }
+
+        public void OpenDemo()
+        {
+            PlaySfx(SfxEvent.UiSelect);
+            _saveManager?.RequestFishingLoopTutorialReplay();
+            _orchestrator?.RequestOpenFishingTutorialReplayFromMainMenu();
         }
 
         public void OpenSettings()
