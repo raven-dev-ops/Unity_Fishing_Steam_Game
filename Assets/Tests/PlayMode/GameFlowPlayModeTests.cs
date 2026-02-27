@@ -74,7 +74,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator GameFlowOrchestrator_IntroReplayFromProfile_QueuesProfilePanelOnly()
+        public IEnumerator GameFlowOrchestrator_IntroReplayFromProfile_QueuesMainMenuWithoutProfileFollowUp()
         {
             var managerRoot = new GameObject("GameFlowManager_IntroProfile");
             var manager = managerRoot.AddComponent<GameFlowManager>();
@@ -91,7 +91,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             orchestrator.RequestCompleteIntroFlow();
             Assert.That(manager.CurrentState, Is.EqualTo(GameFlowState.MainMenu));
             Assert.That(GetPrivateBool(orchestrator, "_openSettingsAfterMainMenuLoad"), Is.False);
-            Assert.That(GetPrivateBool(orchestrator, "_openProfileAfterMainMenuLoad"), Is.True);
+            Assert.That(GetPrivateBool(orchestrator, "_openProfileAfterMainMenuLoad"), Is.False);
 
             Object.Destroy(orchestratorRoot);
             Object.Destroy(managerRoot);
@@ -111,7 +111,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             orchestrator.RequestOpenIntroReplayFromProfile();
             orchestrator.RequestCompleteIntroFlow();
-            Assert.That(GetPrivateBool(orchestrator, "_openProfileAfterMainMenuLoad"), Is.True);
+            Assert.That(GetPrivateBool(orchestrator, "_openProfileAfterMainMenuLoad"), Is.False);
             Assert.That(GetPrivateBool(orchestrator, "_openSettingsAfterMainMenuLoad"), Is.False);
 
             orchestrator.RequestOpenCinematic();
@@ -127,7 +127,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator GameFlowOrchestrator_UsesTypedMainMenuNavigatorForSettingsAndProfileFollowUp()
+        public IEnumerator GameFlowOrchestrator_UsesTypedMainMenuNavigatorForSettingsFollowUpOnly()
         {
             var managerRoot = new GameObject("GameFlowManager_TypedNavigator");
             var manager = managerRoot.AddComponent<GameFlowManager>();
@@ -151,7 +151,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             InvokePrivateMethod(orchestrator, "TryOpenMainMenuProfilePanel");
 
             Assert.That(navigator.SettingsOpenCalls, Is.EqualTo(1), "Expected typed settings follow-up to invoke navigator once.");
-            Assert.That(navigator.ProfileOpenCalls, Is.EqualTo(1), "Expected typed profile follow-up to invoke navigator once.");
+            Assert.That(navigator.ProfileOpenCalls, Is.EqualTo(0), "Profile follow-up should not be queued in demo-first main menu.");
 
             RuntimeServiceRegistry.UnregisterInterface<IMainMenuNavigator>(navigator);
             Object.Destroy(navigatorRoot);

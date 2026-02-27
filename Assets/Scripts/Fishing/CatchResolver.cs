@@ -528,7 +528,6 @@ namespace RavenDevOps.Fishing.Fishing
             if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
             {
                 _hudOverlay?.SetFishingStatus($"Cargo full ({cargoFishCount}/{cargoCapacity}). Return to harbor and sell fish.");
-                _stateMachine?.ResetToCast();
                 return;
             }
 
@@ -547,7 +546,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 var secureDepth = Mathf.Max(0.1f, _haulCompletionDepthThreshold);
                 _hudOverlay?.SetFishingStatus(
-                    $"Casting to 25m. Steer left/right to hook fish on collision, reel to {secureDepth:0}m to secure, then bring it to the boat.");
+                    $"Ship auto-sails left. Use hook controls: lower to search, hook fish on collision, then reel to {secureDepth:0}m to secure and haul.");
             }
         }
 
@@ -631,7 +630,6 @@ namespace RavenDevOps.Fishing.Fishing
             if (IsCargoFull(out var cargoFishCount, out var cargoCapacity))
             {
                 _hudOverlay?.SetFishingStatus($"Cargo full ({cargoFishCount}/{cargoCapacity}). Return to harbor and sell fish.");
-                _stateMachine?.ResetToCast();
                 return;
             }
 
@@ -648,7 +646,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _targetFishBoundToAmbient = false;
                 _inWaterElapsedSeconds = 0f;
                 ResetHookStationaryAttractionTimer(reseedDelay: true);
-                _hudOverlay?.SetFishingStatus($"Adjusting cast depth. Use {ResolveCastDepthControlPrompt()} to lower deeper.");
+                _hudOverlay?.SetFishingStatus($"Adjusting hook depth. Use {ResolveCastDepthControlPrompt()} to lower deeper.");
                 return;
             }
 
@@ -890,7 +888,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
                 else
                 {
-                    _hudOverlay?.SetFishingStatus($"Press {ResolveCastDepthControlPrompt()} to cast again.");
+                    _hudOverlay?.SetFishingStatus($"Use {ResolveCastDepthControlPrompt()} to lower and continue fishing.");
                 }
 
                 _saveManager?.RecordCatchFailure(_hookedFish != null ? _hookedFish.id : string.Empty, _currentDistanceTier, reason);
@@ -1219,7 +1217,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
                 else if (_targetFishBoundToAmbient)
                 {
-                    _hudOverlay?.SetFishingStatus($"Fishing assist active at {depth:0}m: steer to collide hook with fish.");
+                    _hudOverlay?.SetFishingStatus($"Fishing assist active at {depth:0}m: keep hook in fish lanes for collision hooks.");
                 }
                 else
                 {
@@ -1235,7 +1233,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
             else if (_targetFishBoundToAmbient)
             {
-                _hudOverlay?.SetFishingStatus($"Fish spotted at {depth:0}m. Steer left/right so the hook collides to hook it.");
+                _hudOverlay?.SetFishingStatus($"Fish spotted at {depth:0}m. Keep the hook in lane so collision hooks the fish.");
             }
             else
             {

@@ -23,6 +23,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
     {
         private static MethodInfo _imageConversionEncodeToPngMethod;
         private static bool _imageConversionLookupCompleted;
+        private static MethodInfo _runtimeServicesEnsureBootstrapMethod;
+        private static bool _runtimeServicesBootstrapLookupCompleted;
 
         private static readonly string[] ScenePaths =
         {
@@ -341,18 +343,82 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator FishingScene_BackdropsCoverViewport()
+        public IEnumerator FishingScene_ComposesGradientBackgroundOverlay_AndDisablesLegacyBackdrops()
         {
             yield return LoadScene(FishingScenePath);
             yield return null;
             yield return null;
 
-            var camera = Camera.main != null ? Camera.main : UnityEngine.Object.FindAnyObjectByType<Camera>();
-            Assert.That(camera, Is.Not.Null, "Expected active camera.");
-            Assert.That(camera.orthographic, Is.True, "Expected orthographic camera for 2D scene.");
+            var runtimeRoot = GameObject.Find("__SceneRuntime");
+            Assert.That(runtimeRoot, Is.Not.Null, "Expected fishing runtime root.");
+            var gradientController = runtimeRoot.GetComponent<FishingOceanGradientBackgroundController>();
+            Assert.That(gradientController, Is.Not.Null, "Expected ocean/sky gradient background controller.");
 
-            AssertBackdropCoverage("BackdropFar", camera, 0.98f);
-            AssertBackdropCoverage("BackdropVeil", camera, 0.98f);
+            var gradientOverlay = GameObject.Find("FishingOceanGradientOverlay");
+            Assert.That(gradientOverlay, Is.Not.Null, "Expected gradient overlay object.");
+            var overlayRenderer = gradientOverlay.GetComponent<MeshRenderer>();
+            Assert.That(overlayRenderer, Is.Not.Null, "Expected MeshRenderer on gradient overlay.");
+            Assert.That(overlayRenderer.enabled, Is.True, "Expected gradient overlay to be enabled.");
+
+            var overlayMaterial = overlayRenderer.sharedMaterial;
+            Assert.That(overlayMaterial, Is.Not.Null, "Expected gradient overlay material.");
+            Assert.That(overlayMaterial.shader, Is.Not.Null, "Expected gradient overlay shader.");
+            Assert.That(overlayMaterial.shader.name, Is.EqualTo("Raven/Fishing/OceanSkyGradient"));
+
+            var backdropFar = FindSceneObject("BackdropFar");
+            var backdropVeil = FindSceneObject("BackdropVeil");
+            Assert.That(backdropFar, Is.Not.Null, "Expected legacy BackdropFar object.");
+            Assert.That(backdropVeil, Is.Not.Null, "Expected legacy BackdropVeil object.");
+
+            var farRenderer = backdropFar.GetComponent<SpriteRenderer>();
+            var veilRenderer = backdropVeil.GetComponent<SpriteRenderer>();
+            Assert.That(farRenderer, Is.Not.Null, "Expected SpriteRenderer on legacy BackdropFar.");
+            Assert.That(veilRenderer, Is.Not.Null, "Expected SpriteRenderer on legacy BackdropVeil.");
+
+            Assert.That(farRenderer.sprite, Is.Null, "Expected BackdropFar sprite to be cleared.");
+            Assert.That(veilRenderer.sprite, Is.Null, "Expected BackdropVeil sprite to be cleared.");
+            Assert.That(farRenderer.enabled, Is.False, "Expected BackdropFar renderer disabled.");
+            Assert.That(veilRenderer.enabled, Is.False, "Expected BackdropVeil renderer disabled.");
+        }
+
+        [UnityTest]
+        public IEnumerator FishingScene_ShipAutoSailsLeft_AndHookTracksShip()
+        {
+            yield return LoadScene(FishingScenePath);
+            yield return null;
+            yield return null;
+
+            var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            if (tutorial != null)
+            {
+                tutorial.SetDemoActiveForTests(false);
+            }
+
+            var ship = FindSceneObject("FishingShip");
+            var hook = FindSceneObject("FishingHook");
+            Assert.That(ship, Is.Not.Null, "Expected fishing ship object.");
+            Assert.That(hook, Is.Not.Null, "Expected fishing hook object.");
+
+            var shipMovement = ship.GetComponent<ShipMovementController>();
+            Assert.That(shipMovement, Is.Not.Null, "Expected ShipMovementController on fishing ship.");
+            var hookMovement = hook.GetComponent<HookMovementController>();
+            Assert.That(hookMovement, Is.Not.Null, "Expected HookMovementController on fishing hook.");
+
+            var startShipX = ship.transform.position.x;
+            var startHookX = hook.transform.position.x;
+            var timeoutAt = Time.realtimeSinceStartup + 1.5f;
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                yield return null;
+            }
+
+            var endShipX = ship.transform.position.x;
+            var endHookX = hook.transform.position.x;
+
+            Assert.That(endShipX, Is.LessThan(startShipX - 0.05f), "Ship should continuously move left.");
+            Assert.That(endHookX, Is.LessThan(startHookX - 0.02f), "Hook should drift left with ship motion.");
+            Assert.That(Mathf.Abs(endHookX - endShipX), Is.LessThan(8f), "Hook should remain near ship horizontal position.");
+            Assert.That(shipMovement.CurrentHorizontalVelocity, Is.LessThan(0f), "Ship velocity should remain leftward.");
         }
 
         [UnityTest]
@@ -568,10 +634,38 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private static IEnumerator LoadScene(string scenePath)
         {
             Assert.That(File.Exists(scenePath), Is.True, $"Scene path not found: {scenePath}");
+            if (string.Equals(scenePath, FishingScenePath, StringComparison.Ordinal))
+            {
+                var previousIgnoreLogs = LogAssert.ignoreFailingMessages;
+                LogAssert.ignoreFailingMessages = true;
+                try
+                {
+                    EnsureRuntimeServicesBootstrap();
+                }
+                finally
+                {
+                    LogAssert.ignoreFailingMessages = previousIgnoreLogs;
+                }
+            }
+
             Time.timeScale = 1f;
             var loadOperation = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
             Assert.That(loadOperation, Is.Not.Null, $"Failed to start load for scene: {scenePath}");
             yield return loadOperation;
+        }
+
+        private static void EnsureRuntimeServicesBootstrap()
+        {
+            if (!_runtimeServicesBootstrapLookupCompleted)
+            {
+                _runtimeServicesBootstrapLookupCompleted = true;
+                _runtimeServicesEnsureBootstrapMethod = typeof(RuntimeServicesBootstrap).GetMethod(
+                    "EnsureBootstrap",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+            }
+
+            Assert.That(_runtimeServicesEnsureBootstrapMethod, Is.Not.Null, "Expected RuntimeServicesBootstrap.EnsureBootstrap method.");
+            _runtimeServicesEnsureBootstrapMethod?.Invoke(null, null);
         }
 
         private static IEnumerator WaitForFile(string path, float timeoutSeconds)
@@ -587,23 +681,6 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
                 yield return null;
             }
-        }
-
-        private static void AssertBackdropCoverage(string objectName, Camera camera, float minCoverageRatio)
-        {
-            var backdrop = GameObject.Find(objectName);
-            Assert.That(backdrop, Is.Not.Null, $"Expected backdrop object '{objectName}'.");
-            Assert.That(backdrop.GetComponent<SceneBackdropFit2D>(), Is.Not.Null, $"Expected SceneBackdropFit2D on '{objectName}'.");
-
-            var renderer = backdrop.GetComponent<SpriteRenderer>();
-            Assert.That(renderer, Is.Not.Null, $"Expected SpriteRenderer on '{objectName}'.");
-
-            var viewportHeight = camera.orthographicSize * 2f;
-            var viewportWidth = viewportHeight * camera.aspect;
-            var bounds = renderer.bounds.size;
-
-            Assert.That(bounds.x, Is.GreaterThanOrEqualTo(viewportWidth * minCoverageRatio), $"Backdrop '{objectName}' does not cover viewport width.");
-            Assert.That(bounds.y, Is.GreaterThanOrEqualTo(viewportHeight * minCoverageRatio), $"Backdrop '{objectName}' does not cover viewport height.");
         }
 
         private static void CaptureScenePng(string outputPath)

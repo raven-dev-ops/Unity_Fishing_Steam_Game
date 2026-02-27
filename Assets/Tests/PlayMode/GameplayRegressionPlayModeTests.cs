@@ -54,7 +54,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator CatchInventorySellLoop_UpdatesEconomyAndStats()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_CatchSell");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_CatchSell");
             yield return null;
 
             saveManager.RecordCatch("fish_cod", 1, weightKg: 1.2f, valueCopecs: 10);
@@ -67,10 +67,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var summaryCalculator = CreateComponent<SellSummaryCalculator>("SellSummaryCalculator_CatchSell");
             summaryCalculator.SetDistanceTierStep(0.5f);
-            var fishShop = CreateComponent<FishShopController>("FishShopController_CatchSell");
+            var fishShop = CreateFishShopController("FishShopController_CatchSell", saveManager, summaryCalculator);
             yield return null;
 
-            var earned = fishShop.SellAll();
+            fishShop.ConfigureDependencies(saveManager, summaryCalculator);
+            var preview = fishShop.PreviewSellAll();
+            Assert.That(preview.itemCount, Is.EqualTo(3));
+            var saleResult = fishShop.SellAllDetailed();
+            var earned = saleResult.totalEarnedCopecs;
 
             Assert.That(earned, Is.EqualTo(35));
             Assert.That(saveManager.Current.copecs, Is.EqualTo(35));
@@ -80,7 +84,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator PurchaseOwnershipFlow_DeductsCurrencyOnce_AndDefersEquipToShipyard()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_PurchaseEquip");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_PurchaseEquip");
             yield return null;
 
             saveManager.AddCopecs(600);
@@ -117,7 +121,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ShopUpgradeFlow_RequiresPriorTierAndSufficientCopecs()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_UpgradeRules");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_UpgradeRules");
             yield return null;
 
             saveManager.AddCopecs(400);
@@ -166,7 +170,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         public IEnumerator SaveLoadRoundtrip_PersistsAcrossSceneTransitions()
         {
             var originalActiveScene = SceneManager.GetActiveScene();
-            var saveManager = CreateComponent<SaveManager>("SaveManager_Roundtrip_Source");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_Roundtrip_Source");
             yield return null;
 
             saveManager.AddCopecs(250);
@@ -201,7 +205,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             UnityEngine.Object.Destroy(saveManager.gameObject);
             yield return null;
 
-            var reloadedSaveManager = CreateComponent<SaveManager>("SaveManager_Roundtrip_Reloaded");
+            var reloadedSaveManager = CreateOrReuseSaveManager("SaveManager_Roundtrip_Reloaded");
             yield return null;
 
             Assert.That(reloadedSaveManager.Current.copecs, Is.EqualTo(250));
@@ -224,7 +228,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 #if STEAMWORKS_NET
             Assert.Ignore("Non-Steam fallback assertions apply only when STEAMWORKS_NET is not defined.");
 #else
-            var saveManager = CreateComponent<SaveManager>("SaveManager_SteamFallback");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_SteamFallback");
             var gameFlowManager = CreateComponent<GameFlowManager>("GameFlowManager_SteamFallback");
             CreateComponent<UserSettingsService>("UserSettingsService_SteamFallback");
             var steamBootstrap = CreateComponent<SteamBootstrap>("SteamBootstrap_SteamFallback");
@@ -249,7 +253,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         public IEnumerator PhaseTwoFallbackContent_LoadsRequiredAudioAndEnvironmentKeys()
         {
             var root = new GameObject("CatalogService_PhaseTwoFallback");
-            _createdRoots.Add(root);
+            TrackCreatedRoot(root);
             root.AddComponent<AddressablesPilotCatalogLoader>();
             var catalogService = root.AddComponent<CatalogService>();
 
@@ -279,7 +283,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator HarborSailFlow_CargoFullBlocksDepartureUntilCargoSold()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborSailGuard");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_HarborSailGuard");
             yield return null;
 
             saveManager.Current.fishInventory.Clear();
@@ -297,7 +301,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var routerRoot = new GameObject("HarborRouter_SailGuard");
             routerRoot.SetActive(false);
-            _createdRoots.Add(routerRoot);
+            TrackCreatedRoot(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
             router.Configure(
                 interactables: new List<WorldInteractable>(),
@@ -334,7 +338,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator HarborFishMarketSale_ClearsCargoAndCreditsBalance()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborFishSale");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_HarborFishSale");
             yield return null;
 
             saveManager.Current.copecs = 5;
@@ -355,14 +359,18 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var summaryCalculator = CreateComponent<SellSummaryCalculator>("SellSummaryCalculator_HarborFishSale");
             summaryCalculator.SetDistanceTierStep(0.25f);
-            var fishShop = CreateComponent<FishShopController>("FishShopController_HarborFishSale");
+            var fishShop = CreateFishShopController("FishShopController_HarborFishSale", saveManager, summaryCalculator);
             yield return null;
+
+            fishShop.ConfigureDependencies(saveManager, summaryCalculator);
+            var salePreview = fishShop.PreviewSellAll();
+            Assert.That(salePreview.itemCount, Is.EqualTo(3));
 
             var statusText = CreateUiText("HarborStatusText_FishSale");
             var fishInfoText = CreateUiText("HarborFishInfoText_FishSale");
             var routerRoot = new GameObject("HarborRouter_FishSale");
             routerRoot.SetActive(false);
-            _createdRoots.Add(routerRoot);
+            TrackCreatedRoot(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
             router.Configure(
                 interactables: new List<WorldInteractable>(),
@@ -387,7 +395,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator HarborPurchaseAndShipyardEquipFlow_UsesRouterTransactions()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborPurchaseEquip");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_HarborPurchaseEquip");
             yield return null;
 
             saveManager.Current.copecs = 1000;
@@ -421,7 +429,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var routerRoot = new GameObject("HarborRouter_PurchaseEquip");
             routerRoot.SetActive(false);
-            _createdRoots.Add(routerRoot);
+            TrackCreatedRoot(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
             router.Configure(
                 new HarborSceneInteractionRouter.DependencyBundle
@@ -467,7 +475,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator HarborFishMarketCharterFlow_AcceptsAndClaimsViaRouter()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborCharterFlow");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_HarborCharterFlow");
             yield return null;
 
             saveManager.Current.copecs = 0;
@@ -476,9 +484,10 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var summaryCalculator = CreateComponent<SellSummaryCalculator>("SellSummaryCalculator_HarborCharterFlow");
             summaryCalculator.SetDistanceTierStep(0.25f);
-            var fishShop = CreateComponent<FishShopController>("FishShopController_HarborCharterFlow");
+            var fishShop = CreateFishShopController("FishShopController_HarborCharterFlow", saveManager, summaryCalculator);
             yield return null;
 
+            fishShop.ConfigureDependencies(saveManager, summaryCalculator);
             var initialSnapshot = fishShop.BuildMarketSnapshot(maxHistoryEntries: 1);
             Assert.That(string.IsNullOrWhiteSpace(initialSnapshot.questFishId), Is.False, "Expected an active charter fish target.");
             var questCount = Mathf.Max(1, initialSnapshot.questRequiredCount);
@@ -499,7 +508,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var routerRoot = new GameObject("HarborRouter_CharterFlow");
             routerRoot.SetActive(false);
-            _createdRoots.Add(routerRoot);
+            TrackCreatedRoot(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
             router.Configure(
                 new HarborSceneInteractionRouter.DependencyBundle
@@ -551,7 +560,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         [UnityTest]
         public IEnumerator HarborHookShopButtons_RespectUnlockAndAffordabilityRules()
         {
-            var saveManager = CreateComponent<SaveManager>("SaveManager_HarborHookButtons");
+            var saveManager = CreateOrReuseSaveManager("SaveManager_HarborHookButtons");
             yield return null;
 
             saveManager.Current.copecs = 40;
@@ -584,7 +593,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var routerRoot = new GameObject("HarborRouter_HookButtons");
             routerRoot.SetActive(false);
-            _createdRoots.Add(routerRoot);
+            TrackCreatedRoot(routerRoot);
             var router = routerRoot.AddComponent<HarborSceneInteractionRouter>();
             router.Configure(
                 interactables: new List<WorldInteractable>(),
@@ -629,14 +638,39 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private T CreateComponent<T>(string rootName) where T : Component
         {
             var root = new GameObject(rootName);
-            _createdRoots.Add(root);
+            TrackCreatedRoot(root);
             return root.AddComponent<T>();
+        }
+
+        private SaveManager CreateOrReuseSaveManager(string rootName)
+        {
+            if (SaveManager.Instance != null)
+            {
+                SaveManager.Instance.LoadOrCreate();
+                return SaveManager.Instance;
+            }
+
+            var created = CreateComponent<SaveManager>(rootName);
+            if (SaveManager.Instance != null && SaveManager.Instance != created)
+            {
+                SaveManager.Instance.LoadOrCreate();
+                return SaveManager.Instance;
+            }
+
+            return created;
+        }
+
+        private FishShopController CreateFishShopController(string rootName, SaveManager saveManager, SellSummaryCalculator summaryCalculator)
+        {
+            var fishShop = CreateComponent<FishShopController>(rootName);
+            fishShop.ConfigureDependencies(saveManager, summaryCalculator);
+            return fishShop;
         }
 
         private TMP_Text CreateUiText(string name)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            _createdRoots.Add(go);
+            TrackCreatedRoot(go);
             var text = go.GetComponent<TMP_Text>();
             text.text = string.Empty;
             return text;
@@ -645,7 +679,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private Button CreateUiButton(string name)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
-            _createdRoots.Add(go);
+            TrackCreatedRoot(go);
             var button = go.GetComponent<Button>();
             button.transition = Selectable.Transition.None;
 
@@ -659,8 +693,19 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private Image CreateUiImage(string name)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            _createdRoots.Add(go);
+            TrackCreatedRoot(go);
             return go.GetComponent<Image>();
+        }
+
+        private void TrackCreatedRoot(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            UnityEngine.Object.DontDestroyOnLoad(root);
+            _createdRoots.Add(root);
         }
 
         private void BackupAndClearSaveFiles()
@@ -777,9 +822,48 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 UnityEngine.Object.DestroyImmediate(GameFlowManager.Instance.gameObject);
             }
 
+            if (GameFlowOrchestrator.Instance != null)
+            {
+                UnityEngine.Object.DestroyImmediate(GameFlowOrchestrator.Instance.gameObject);
+            }
+
             if (UserSettingsService.Instance != null)
             {
                 UnityEngine.Object.DestroyImmediate(UserSettingsService.Instance.gameObject);
+            }
+
+            DestroyNamedGlobalObject("__GameServices");
+            DestroyNamedGlobalObject("__GlobalFadeCanvas");
+            DestroyAllRuntimeComponents<SaveManager>();
+            DestroyAllRuntimeComponents<GameFlowManager>();
+            DestroyAllRuntimeComponents<GameFlowOrchestrator>();
+            DestroyAllRuntimeComponents<UserSettingsService>();
+        }
+
+        private static void DestroyNamedGlobalObject(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return;
+            }
+
+            var go = GameObject.Find(objectName);
+            if (go != null)
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+            }
+        }
+
+        private static void DestroyAllRuntimeComponents<T>() where T : Component
+        {
+            var components = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < components.Length; i++)
+            {
+                var component = components[i];
+                if (component != null && component.gameObject != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(component.gameObject);
+                }
             }
         }
     }

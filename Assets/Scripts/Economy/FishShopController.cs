@@ -57,6 +57,16 @@ namespace RavenDevOps.Fishing.Economy
             RuntimeServiceRegistry.Resolve(ref _catalogService, this, warnIfMissing: false);
         }
 
+        public void ConfigureDependencies(
+            SaveManager saveManager,
+            SellSummaryCalculator sellSummaryCalculator,
+            CatalogService catalogService = null)
+        {
+            _saveManager = saveManager ?? _saveManager;
+            _sellSummaryCalculator = sellSummaryCalculator ?? _sellSummaryCalculator;
+            _catalogService = catalogService ?? _catalogService;
+        }
+
         internal void ConfigureRuntimeDependencies(ITimeProvider timeProvider)
         {
             _timeProvider = timeProvider ?? new UnityTimeProvider();

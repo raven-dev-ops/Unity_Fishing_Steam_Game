@@ -481,7 +481,7 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _isActive = true;
-            _step = TutorialStep.MoveShip;
+            _step = TutorialStep.Cast;
             _demoActive = true;
             _failureCount = 0;
             _nextPromptRefreshAt = 0f;
@@ -668,15 +668,15 @@ namespace RavenDevOps.Fishing.Fishing
             switch (step)
             {
                 case TutorialStep.MoveShip:
-                    return $"Hands-On Step 1/5: Steer left or right ({ResolveMoveShipControlHint()}). Steering always works, even with the hook down.";
+                    return "Hands-On Setup: Ship auto-sails left in this build. No steering input is required.";
                 case TutorialStep.Cast:
-                    return $"Hands-On Step 2/5: Cast by pressing {ResolveMoveHookDownControlHint()}. The hook drops toward 25m.";
+                    return $"Hands-On Step 1/4: Lower the hook with {ResolveMoveHookDownControlHint()} until fish lanes become active.";
                 case TutorialStep.Hook:
-                    return "Hands-On Step 3/5: Keep steering until the hook collides with a fish to secure the hook.";
+                    return "Hands-On Step 2/4: Let the ship drag the hook through fish lanes until a collision secures a hook.";
                 case TutorialStep.Reel:
-                    return $"Hands-On Step 4/5: Start reeling with {ResolveMoveHookUpControlHint()}.";
+                    return $"Hands-On Step 3/4: Start reeling with {ResolveMoveHookUpControlHint()}.";
                 case TutorialStep.Land:
-                    return "Hands-On Step 5/5: Keep reeling. At 25m the catch is secured, then hauled to the boat.";
+                    return "Hands-On Step 4/4: Keep reeling. At 25m the catch secures, then auto-hauls to the boat.";
                 default:
                     return string.Empty;
             }
@@ -687,7 +687,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (failReason)
             {
                 case FishingFailReason.MissedHook:
-                    return "Steer into a fish to hook it, then start reeling immediately.";
+                    return "Keep the hook in fish paths to trigger a collision hook, then start reeling immediately.";
                 case FishingFailReason.LineSnap:
                     return "Keep steady reeling and avoid abrupt depth changes.";
                 case FishingFailReason.FishEscaped:
@@ -787,7 +787,7 @@ namespace RavenDevOps.Fishing.Fishing
                     MoveShipTowardX(_demoShipStartX);
                     SetDemoHookVisible(false);
                     SnapDemoHookToDock();
-                    TickInfoPhase(DemoAutoplayPhase.SteerRight);
+                    TickInfoPhase(DemoAutoplayPhase.CastInfo, pauseBeforeTransition: true);
                     break;
                 case DemoAutoplayPhase.SteerRight:
                     SetDemoHookVisible(false);
@@ -1317,11 +1317,11 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.IntroInfo:
                     return "Fishing tutorial demo. Each scene pauses before transitions so you can track the full loop.";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return $"Step 1: Steer left/right ({ResolveMoveShipControlHint()}). You can always steer, even while the hook is down.";
+                    return "Step 1: Ship auto-sails left continuously and drags the hook line for you.";
                 case DemoAutoplayPhase.CastInfo:
                     return $"Step 2: Cast with {ResolveMoveHookDownControlHint()}. The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
-                    return "Step 3: Keep steering while the hook is down. A fish approaches and is hooked on collision.";
+                    return "Step 3: Keep the hook in fish lanes while the ship sails. Fish hook on collision.";
                 case DemoAutoplayPhase.ReelInfo:
                     return $"Step 4: Reel with {ResolveMoveHookUpControlHint()}. Secure the fish, then haul it to the boat.";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
@@ -1339,7 +1339,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5ReelInfo:
                     return $"Level 5 deep-dark catch: fish stays hooked while reeling up about {_demoLevel5ReelDistanceBeforeTransitionMeters:0.#}m, then transitions before the hook fully stops.";
                 case DemoAutoplayPhase.FinishInfo:
-                    return "Demo complete. Your turn next: steer, cast, hook on collision, then reel your fish in.";
+                    return "Demo complete. Your turn next: lower hook, collide to hook fish, then reel it in.";
                 default:
                     return string.Empty;
             }
@@ -1352,7 +1352,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.IntroInfo:
                     return "Scene 1: How to Play";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Scene 2: Steering";
+                    return "Scene 2: Auto Sail";
                 case DemoAutoplayPhase.CastInfo:
                     return "Scene 3: Cast";
                 case DemoAutoplayPhase.FishHookInfo:
@@ -1381,7 +1381,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.IntroInfo:
                     return "Tutorial flow overview";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Core ship movement";
+                    return "Baseline ship motion";
                 case DemoAutoplayPhase.CastInfo:
                     return "Hook deployment";
                 case DemoAutoplayPhase.FishHookInfo:

@@ -104,7 +104,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator IntroReplayReturnRoutes_OpenCorrectMainMenuPanels()
+        public IEnumerator IntroReplayReturnRoutes_ProfileNoLongerOpensPanel_SettingsStillOpens()
         {
             var manager = CreateComponent<GameFlowManager>("LaunchRegression_GameFlowManager_IntroReplay");
             var orchestratorRoot = new GameObject("LaunchRegression_GameFlowOrchestrator_IntroReplay");
@@ -161,9 +161,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             InvokePrivateMethod(orchestrator, "TryOpenMainMenuProfilePanel");
 
             Assert.That(manager.CurrentState, Is.EqualTo(GameFlowState.MainMenu), "Expected intro replay route to return to main menu.");
-            Assert.That(profilePanel.activeSelf, Is.True, "Profile replay route must open Profile panel.");
-            Assert.That(settingsPanel.activeSelf, Is.False, "Profile replay route must not open Settings panel.");
-            Assert.That(EventSystem.current.currentSelectedGameObject, Is.EqualTo(profileDefault), "Profile replay route should focus the profile default selection.");
+            Assert.That(profilePanel.activeSelf, Is.False, "Profile replay route should not auto-open a profile panel in demo-first main menu.");
+            Assert.That(settingsPanel.activeSelf, Is.False, "Profile replay route should not auto-open settings.");
 
             orchestrator.RequestOpenIntroReplayFromSettings();
             orchestrator.RequestCompleteIntroFlow();

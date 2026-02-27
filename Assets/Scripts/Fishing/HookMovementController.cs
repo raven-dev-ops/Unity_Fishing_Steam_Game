@@ -170,6 +170,17 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
+        public void SetHorizontalLagEnabled(bool enabled)
+        {
+            if (_enableHorizontalLag == enabled)
+            {
+                return;
+            }
+
+            _enableHorizontalLag = enabled;
+            ResetHorizontalLagState();
+        }
+
         public void SetDistanceTier(int distanceTier)
         {
             var clampedTier = Mathf.Max(1, distanceTier);

@@ -1192,12 +1192,12 @@ namespace RavenDevOps.Fishing.Core
             var tensionText = CreateTopLeftTmpText(infoPanel.transform, "FishingTensionText", "Tension: None (0.00)", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 78f), new Vector2(844f, 32f));
             var conditionText = CreateTopLeftTmpText(infoPanel.transform, "FishingConditionText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 110f), new Vector2(844f, 32f));
             var objectiveText = CreateTopLeftTmpText(infoPanel.transform, "FishingObjectiveText", "Objective: Follow current task goals.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 142f), new Vector2(844f, 32f));
-            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Press Down Arrow or S to cast. Use Up Arrow or W to reel.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 174f), new Vector2(844f, 32f));
+            var statusText = CreateTopLeftTmpText(infoPanel.transform, "FishingStatusText", "Ship auto-sails left. Use Down to lower the hook and Up to reel toward the surface.", 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 174f), new Vector2(844f, 32f));
             var failureText = CreateTopLeftTmpText(infoPanel.transform, "FishingFailureText", string.Empty, 18, TextAlignmentOptions.TopLeft, new Vector2(18f, 206f), new Vector2(844f, 32f));
             CreateTopLeftTmpText(
                 infoPanel.transform,
                 "FishingControls",
-                "Fishing: Steering works at all times, even with hook down. Hook fish by colliding the hook with fish. Lv3 hook bait can attract fish. Cast lowers depth and reel raises to secure catches. Pause and return-to-harbor use current bindings.",
+                "Fishing: Ship auto-sails left and drags the hook. Use hook controls only: Down lowers depth and Up reels. Hook fish by colliding with them, then reel to secure catches. Pause and return-to-harbor use current bindings.",
                 16,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(18f, 238f),
@@ -1310,6 +1310,13 @@ namespace RavenDevOps.Fishing.Core
                 hookObject.transform.position = new Vector3(0f, -1f, 0f);
             }
 
+            shipObject.transform.SetParent(null, worldPositionStays: true);
+            hookObject.transform.SetParent(null, worldPositionStays: true);
+            SceneManager.MoveGameObjectToScene(shipObject, scene);
+            SceneManager.MoveGameObjectToScene(hookObject, scene);
+            shipObject.SetActive(true);
+            hookObject.SetActive(true);
+
             var legacyLineObject = sceneReferences.FishingLine;
             if (legacyLineObject != null)
             {
@@ -1383,6 +1390,7 @@ namespace RavenDevOps.Fishing.Core
 
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
+            hookMovement.SetHorizontalLagEnabled(false);
             hookMovement.RefreshHookStats();
             var depthDarknessController = GetOrAddComponent<FishingDepthDarknessController>(root);
             var hookSway = hookObject.GetComponent<SpriteSwayMotion2D>();

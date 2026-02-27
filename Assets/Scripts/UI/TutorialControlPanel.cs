@@ -54,7 +54,7 @@ namespace RavenDevOps.Fishing.UI
         {
             EnsureSaveManager();
             _saveManager?.RequestIntroTutorialReplay();
-            _orchestrator?.RequestOpenIntroReplayFromProfile();
+            _orchestrator?.RequestOpenCinematic();
             RefreshStatus();
         }
 
@@ -69,7 +69,7 @@ namespace RavenDevOps.Fishing.UI
         {
             EnsureSaveManager();
             _saveManager?.RequestFishingLoopTutorialReplay();
-            _orchestrator?.RequestOpenFishingTutorialReplayFromProfile();
+            _orchestrator?.RequestOpenFishingTutorialReplayFromMainMenu();
 
             RefreshStatus();
         }

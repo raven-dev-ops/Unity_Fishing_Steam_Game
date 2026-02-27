@@ -269,7 +269,8 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestOpenIntroReplayFromProfile()
         {
-            _pendingIntroReplayExitRoute = IntroReplayExitRoute.MainMenuProfile;
+            // Main menu no longer exposes a profile panel; return to the menu root route.
+            _pendingIntroReplayExitRoute = IntroReplayExitRoute.MainMenu;
             _gameFlowManager?.SetState(GameFlowState.Cinematic);
         }
 
@@ -287,7 +288,7 @@ namespace RavenDevOps.Fishing.Core
                     return;
                 case IntroReplayExitRoute.MainMenuProfile:
                     _openSettingsAfterMainMenuLoad = false;
-                    _openProfileAfterMainMenuLoad = true;
+                    _openProfileAfterMainMenuLoad = false;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
                 case IntroReplayExitRoute.MainMenu:
@@ -308,7 +309,8 @@ namespace RavenDevOps.Fishing.Core
 
         public void RequestOpenFishingTutorialReplayFromProfile()
         {
-            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.MainMenuProfile;
+            // Main menu no longer exposes a profile panel; return to the menu root route.
+            _pendingFishingTutorialExitRoute = FishingTutorialExitRoute.MainMenu;
             _gameFlowManager?.SetState(GameFlowState.Fishing);
         }
 
@@ -333,7 +335,7 @@ namespace RavenDevOps.Fishing.Core
             {
                 case FishingTutorialExitRoute.MainMenuProfile:
                     _openSettingsAfterMainMenuLoad = false;
-                    _openProfileAfterMainMenuLoad = true;
+                    _openProfileAfterMainMenuLoad = false;
                     _gameFlowManager?.SetState(GameFlowState.MainMenu);
                     return;
                 case FishingTutorialExitRoute.MainMenu:

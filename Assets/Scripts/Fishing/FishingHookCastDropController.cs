@@ -616,17 +616,12 @@ namespace RavenDevOps.Fishing.Fishing
             if (_stateMachine == null
                 || _stateMachine.State != FishingActionState.Cast
                 || _autoReelActive
-                || !WasCastInputPressedThisFrame())
+                || _autoDropActive)
             {
                 return;
             }
 
             _stateMachine.AdvanceByAction();
-        }
-
-        private bool WasCastInputPressedThisFrame()
-        {
-            return IsDownPressedThisFrame();
         }
 
         private bool IsDownPressedThisFrame()

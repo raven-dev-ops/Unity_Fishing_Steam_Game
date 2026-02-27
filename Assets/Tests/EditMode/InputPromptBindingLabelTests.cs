@@ -48,20 +48,14 @@ namespace RavenDevOps.Fishing.Tests.EditMode
                 moveHook.ApplyBindingOverride(downIndex, "<Keyboard>/j");
                 moveHook.ApplyBindingOverride(upIndex, "<Keyboard>/k");
 
-                var expectedLeft = moveShip.GetBindingDisplayString(leftIndex);
-                var expectedRight = moveShip.GetBindingDisplayString(rightIndex);
                 var expectedDown = moveHook.GetBindingDisplayString(downIndex);
                 var expectedUp = moveHook.GetBindingDisplayString(upIndex);
 
-                var movePrompt = InvokeTutorialPrompt(tutorial, "MoveShip");
                 var castPrompt = InvokeTutorialPrompt(tutorial, "Cast");
                 var reelPrompt = InvokeTutorialPrompt(tutorial, "Reel");
 
-                Assert.That(movePrompt, Does.Contain(expectedLeft));
-                Assert.That(movePrompt, Does.Contain(expectedRight));
                 Assert.That(castPrompt, Does.Contain(expectedDown));
                 Assert.That(reelPrompt, Does.Contain(expectedUp));
-                Assert.That(movePrompt, Does.Not.Contain("A/D"));
                 Assert.That(castPrompt, Does.Not.Contain("Down/S"));
                 Assert.That(reelPrompt, Does.Not.Contain("Up/W"));
             }
