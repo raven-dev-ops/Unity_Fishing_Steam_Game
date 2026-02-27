@@ -1396,6 +1396,10 @@ namespace RavenDevOps.Fishing.Core
                 hookSpriteRenderer.sprite = tutorialHookSprite;
             }
 
+            var shipPosition = shipObject.transform.position;
+            shipPosition.y = 0f;
+            shipObject.transform.position = shipPosition;
+
             ApplyTutorialFishSprites(scene, ResolveTutorialFishSprite());
 
             var legacyDynamicLineRenderer = dynamicLineObject.GetComponent<SpriteRenderer>();
@@ -1433,8 +1437,10 @@ namespace RavenDevOps.Fishing.Core
             lineBridge.Configure(shipObject.transform, hookObject.transform, 0.06f, -0.36f);
 
             var shipMovement = GetOrAddComponent<ShipMovementController>(shipObject);
+            shipMovement.SetAutoSail(enabled: true, direction: -1f);
             shipMovement.RefreshShipStats();
-            GetOrAddComponent<FishingBoatFloatMotion2D>(shipObject);
+            var boatFloatMotion = GetOrAddComponent<FishingBoatFloatMotion2D>(shipObject);
+            boatFloatMotion.enabled = false;
 
             var hookMovement = GetOrAddComponent<HookMovementController>(hookObject);
             hookMovement.ConfigureShipTransform(shipObject.transform);
@@ -1452,26 +1458,9 @@ namespace RavenDevOps.Fishing.Core
 
             var backdropLayerA = sceneReferences.BackdropFar;
             var backdropLayerB = sceneReferences.BackdropVeil;
-            if (backdropLayerA != null && backdropLayerB != null)
-            {
-                var backdropRendererA = backdropLayerA.GetComponent<SpriteRenderer>();
-                var backdropRendererB = backdropLayerB.GetComponent<SpriteRenderer>();
-                if (backdropRendererA != null
-                    && backdropRendererB != null
-                    && backdropRendererA.sprite != null
-                    && backdropRendererA.sprite == backdropRendererB.sprite)
-                {
-                    // Keep the veil object for scene/layout checks, but remove duplicate visual stacking.
-                    var veilColor = backdropRendererB.color;
-                    veilColor.a = 0f;
-                    backdropRendererB.color = veilColor;
-                }
-            }
-
             var waveAnimator = GetOrAddComponent<WaveAnimator>(root);
-            waveAnimator.ConfigureLayers(
-                backdropLayerA != null ? backdropLayerA.transform : null,
-                backdropLayerB != null ? backdropLayerB.transform : null);
+            waveAnimator.ConfigureLayers(null, null);
+            var oceanGradientBackgroundController = GetOrAddComponent<FishingOceanGradientBackgroundController>(root);
 
             var stateMachine = GetOrAddComponent<FishingActionStateMachine>(root);
             var spawner = GetOrAddComponent<FishSpawner>(root);
@@ -1513,6 +1502,15 @@ namespace RavenDevOps.Fishing.Core
             {
                 fishingCameraController.Configure(shipObject.transform, hookObject.transform);
             }
+
+            oceanGradientBackgroundController.Configure(
+                Camera.main,
+                backdropLayerA != null ? backdropLayerA.transform : null,
+                backdropLayerB != null ? backdropLayerB.transform : null,
+                surfaceY: 0f,
+                skyHeightMeters: 50f,
+                oceanDepthMeters: 5000f,
+                skyCycleSeconds: 600f);
 
             var environmentSliceController = GetOrAddComponent<FishingEnvironmentSliceController>(root);
             environmentSliceController.Configure(shipObject.transform, hookObject.transform);

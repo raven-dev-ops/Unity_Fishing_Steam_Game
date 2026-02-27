@@ -11,7 +11,7 @@ namespace RavenDevOps.Fishing.Fishing
     {
         [SerializeField] private Transform _shipTransform;
         [SerializeField] private float _verticalSpeed = 4f;
-        [SerializeField] private Vector2 _depthBounds = new Vector2(-5000f, -1f);
+        [SerializeField] private Vector2 _depthBounds = new Vector2(-5000f, 0f);
         [SerializeField] private float _absoluteMaxDepthMeters = 5000f;
         [SerializeField] private float _distanceTierDepthStep = 0.5f;
         [SerializeField] private int _distanceTier = 1;
@@ -319,22 +319,22 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 if (!this)
                 {
-                    return Mathf.Max(0.1f, _minDepthBelowSurface);
+                    return Mathf.Max(0f, _minDepthBelowSurface);
                 }
 
                 fallbackTransform = transform;
                 if (fallbackTransform == null)
                 {
-                    return Mathf.Max(0.1f, _minDepthBelowSurface);
+                    return Mathf.Max(0f, _minDepthBelowSurface);
                 }
             }
 
-            return fallbackTransform.position.y + Mathf.Max(0.1f, _minDepthBelowSurface);
+            return fallbackTransform.position.y + Mathf.Max(0f, _minDepthBelowSurface);
         }
 
         private void ApplyDepthBoundsFromTier()
         {
-            _minDepthBelowSurface = Mathf.Max(0.1f, _minDepthBelowSurface);
+            _minDepthBelowSurface = Mathf.Max(0f, _minDepthBelowSurface);
             var tierScale = 1f + (Mathf.Max(1, _distanceTier) - 1f) * Mathf.Max(0f, _distanceTierDepthStep);
             var baseDepthCap = Mathf.Max(_minDepthBelowSurface + 0.1f, _baseMaxDepth);
             var maxDepth = Mathf.Max(

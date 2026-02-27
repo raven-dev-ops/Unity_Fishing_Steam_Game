@@ -40,6 +40,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _speedMultiplier = 1f;
         [SerializeField] private float _inputDeadzone = 0.12f;
         [SerializeField] private float _axisSmoothing = 10f;
+        [SerializeField] private bool _autoSailLeft = false;
+        [SerializeField] private float _autoSailDirection = -1f;
 
         public int DistanceTierCap { get; private set; } = 1;
         public int CargoCapacity { get; private set; } = 12;
@@ -110,6 +112,12 @@ namespace RavenDevOps.Fishing.Fishing
             _speedMultiplier = Mathf.Max(0.1f, multiplier);
         }
 
+        public void SetAutoSail(bool enabled, float direction = -1f)
+        {
+            _autoSailLeft = enabled;
+            _autoSailDirection = direction;
+        }
+
         public void ConfigureFishingStateMachine(FishingActionStateMachine fishingActionStateMachine)
         {
             _fishingActionStateMachine = fishingActionStateMachine;
@@ -159,7 +167,7 @@ namespace RavenDevOps.Fishing.Fishing
         private void Update()
         {
             RefreshActionsIfNeeded();
-            if (IsSteeringLockedByFishingState())
+            if (!_autoSailLeft && IsSteeringLockedByFishingState())
             {
                 _smoothedAxis = 0f;
                 _currentHorizontalVelocity = 0f;
@@ -167,6 +175,30 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var speed = ResolveMoveSpeed();
+            var rawAxis = ResolveHorizontalAxis();
+
+            _smoothedAxis = Mathf.MoveTowards(_smoothedAxis, rawAxis, Mathf.Max(0.01f, _axisSmoothing) * Time.deltaTime);
+
+            var p = transform.position;
+            var previousX = p.x;
+            p.x += _smoothedAxis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
+            if (_clampHorizontalPosition)
+            {
+                p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
+            }
+
+            _currentHorizontalVelocity = (p.x - previousX) / Mathf.Max(0.0001f, Time.deltaTime);
+            transform.position = p;
+            TrackTravelDistance(previousX, p.x);
+        }
+
+        private float ResolveHorizontalAxis()
+        {
+            if (_autoSailLeft)
+            {
+                return _autoSailDirection <= 0f ? -1f : 1f;
+            }
+
             var mappedAxis = _moveShipAction != null
                 ? Mathf.Clamp(_moveShipAction.ReadValue<float>(), -1f, 1f)
                 : 0f;
@@ -188,19 +220,7 @@ namespace RavenDevOps.Fishing.Fishing
                 rawAxis = 0f;
             }
 
-            _smoothedAxis = Mathf.MoveTowards(_smoothedAxis, rawAxis, Mathf.Max(0.01f, _axisSmoothing) * Time.deltaTime);
-
-            var p = transform.position;
-            var previousX = p.x;
-            p.x += _smoothedAxis * speed * _speedMultiplier * ResolveInputSensitivity() * Time.deltaTime;
-            if (_clampHorizontalPosition)
-            {
-                p.x = Mathf.Clamp(p.x, Mathf.Min(_xBounds.x, _xBounds.y), Mathf.Max(_xBounds.x, _xBounds.y));
-            }
-
-            _currentHorizontalVelocity = (p.x - previousX) / Mathf.Max(0.0001f, Time.deltaTime);
-            transform.position = p;
-            TrackTravelDistance(previousX, p.x);
+            return rawAxis;
         }
 
         private float ResolveMoveSpeed()
