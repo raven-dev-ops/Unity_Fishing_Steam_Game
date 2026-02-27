@@ -398,6 +398,15 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var hook = FindSceneObject("FishingHook");
             Assert.That(ship, Is.Not.Null, "Expected fishing ship object.");
             Assert.That(hook, Is.Not.Null, "Expected fishing hook object.");
+            Assert.That(CountObjectsWithNameInActiveScene("FishingShip"), Is.EqualTo(1), "Expected exactly one fishing ship object.");
+            Assert.That(CountObjectsWithNameInActiveScene("FishingHook"), Is.EqualTo(1), "Expected exactly one fishing hook object.");
+
+            var shipRenderer = ship.GetComponent<SpriteRenderer>();
+            var hookRenderer = hook.GetComponent<SpriteRenderer>();
+            Assert.That(shipRenderer, Is.Not.Null, "Expected SpriteRenderer on fishing ship.");
+            Assert.That(hookRenderer, Is.Not.Null, "Expected SpriteRenderer on fishing hook.");
+            AssertSpriteLooksLikeSingleIcon(shipRenderer, "FishingShip");
+            AssertSpriteLooksLikeSingleIcon(hookRenderer, "FishingHook");
 
             var shipMovement = ship.GetComponent<ShipMovementController>();
             Assert.That(shipMovement, Is.Not.Null, "Expected ShipMovementController on fishing ship.");
@@ -551,6 +560,21 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             return count;
+        }
+
+        private static void AssertSpriteLooksLikeSingleIcon(SpriteRenderer renderer, string objectName)
+        {
+            Assert.That(renderer, Is.Not.Null, $"Expected SpriteRenderer for {objectName}.");
+            Assert.That(renderer.sprite, Is.Not.Null, $"Expected sprite assigned for {objectName}.");
+
+            var sprite = renderer.sprite;
+            var rect = sprite.rect;
+            Assert.That(rect.height, Is.GreaterThan(1f), $"Expected non-empty sprite height for {objectName}.");
+            var aspect = rect.width / rect.height;
+            Assert.That(
+                aspect,
+                Is.LessThanOrEqualTo(2.25f),
+                $"{objectName} sprite appears to be a wide strip (aspect {aspect:0.00}).");
         }
 
         private static int CountComponentsInActiveScene<T>() where T : Component
