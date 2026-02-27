@@ -88,7 +88,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator MainMenuScene_ComposesProfileAndSettingsPanels()
+        public IEnumerator MainMenuScene_ComposesDemoAndSettingsPanels()
         {
             yield return LoadScene(MainMenuScenePath);
             yield return null;
@@ -96,26 +96,13 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var runtimeRoot = GameObject.Find("__SceneRuntime");
             Assert.That(runtimeRoot, Is.Not.Null, "Expected main menu runtime root.");
             Assert.That(runtimeRoot.GetComponent<MainMenuController>(), Is.Not.Null, "Expected main menu controller.");
-            Assert.That(runtimeRoot.GetComponent<ProfileMenuController>(), Is.Not.Null, "Expected profile menu controller.");
             Assert.That(runtimeRoot.GetComponent<SettingsMenuController>(), Is.Not.Null, "Expected settings menu controller.");
-            Assert.That(runtimeRoot.GetComponent<TutorialControlPanel>(), Is.Not.Null, "Expected tutorial control panel.");
 
             var mainMenuCanvas = FindSceneObject("MainMenuCanvas");
             Assert.That(mainMenuCanvas, Is.Not.Null, "Expected main menu canvas.");
             Assert.That(mainMenuCanvas.GetComponent<UiAccessibilityCanvasRegistrant>(), Is.Not.Null, "Expected accessibility registrant on main menu canvas.");
-
-            Assert.That(FindSceneObject("ProfilePanel"), Is.Not.Null, "Expected profile panel.");
-            Assert.That(FindSceneObject("ProfileDayText"), Is.Not.Null, "Expected profile day text.");
-            Assert.That(FindSceneObject("ProfileCopecsText"), Is.Not.Null, "Expected profile copecs text.");
-            Assert.That(FindSceneObject("ProfileObjectiveText"), Is.Not.Null, "Expected profile objective text.");
-            Assert.That(FindSceneObject("ProfileCatchLogText"), Is.Not.Null, "Expected profile catch-log text.");
-            Assert.That(FindSceneObject("ProfileTutorialPanel"), Is.Not.Null, "Expected profile tutorial panel.");
-            Assert.That(FindSceneObject("ProfileTutorialStatusText"), Is.Not.Null, "Expected profile tutorial status text.");
-            Assert.That(FindSceneObject("ProfileReplayIntroTutorialButton"), Is.Not.Null, "Expected replay intro tutorial button.");
-            Assert.That(FindSceneObject("ProfileReplayFishingTutorialButton"), Is.Not.Null, "Expected replay fishing tutorial button.");
-            Assert.That(FindSceneObject("ProfileResetButton"), Is.Not.Null, "Expected profile reset button.");
-            Assert.That(FindSceneObject("ProfileResetObjectivesButton"), Is.Not.Null, "Expected profile reset-objectives button.");
-            Assert.That(FindSceneObject("ProfileBackButton"), Is.Not.Null, "Expected profile back button.");
+            Assert.That(FindSceneObject("DemoButton"), Is.Not.Null, "Expected demo button.");
+            Assert.That(FindSceneObject("ProfilePanel"), Is.Null, "Main menu should not compose profile panel.");
 
             Assert.That(FindSceneObject("SettingsPanel"), Is.Not.Null, "Expected settings panel.");
             Assert.That(FindSceneObject("SettingMasterSlider"), Is.Not.Null, "Expected master volume slider.");

@@ -168,6 +168,12 @@ namespace RavenDevOps.Fishing.UI
 
         public bool TryOpenProfilePanel()
         {
+            if (_profileButtonLaunchesDemo)
+            {
+                OpenDemo();
+                return true;
+            }
+
             OpenProfile();
             return _profilePanel != null && _profilePanel.activeSelf;
         }

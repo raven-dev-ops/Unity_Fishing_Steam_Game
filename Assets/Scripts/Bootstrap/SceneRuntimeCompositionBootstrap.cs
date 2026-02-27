@@ -489,53 +489,14 @@ namespace RavenDevOps.Fishing.Core
             var demoButton = CreateButton(canvas.transform, "DemoButton", "Demo", new Vector2(0f, 20f), new Vector2(300f, 56f));
             var settingsButton = CreateButton(canvas.transform, "SettingsButton", "Settings", new Vector2(0f, -48f), new Vector2(300f, 56f));
             var exitButton = CreateButton(canvas.transform, "ExitButton", "Exit", new Vector2(0f, -116f), new Vector2(300f, 56f));
-
-            var profilePanel = CreatePanel(canvas.transform, "ProfilePanel", new Vector2(0f, -8f), new Vector2(1320f, 720f), new Color(0.08f, 0.14f, 0.22f, 0.92f));
-            CreateTopLeftTmpText(profilePanel.transform, "ProfileTitleText", "Captain Profile", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(600f, 48f));
             CreateTopLeftTmpText(
-                profilePanel.transform,
-                "ProfileHintText",
-                "Review profile progress and manage tutorial replay/skip flags. Use Cancel/Back to return.",
-                16,
+                canvas.transform,
+                "DemoHintText",
+                "Demo starts the guided fishing tutorial reel. Start Voyage heads to Harbor.",
+                15,
                 TextAlignmentOptions.TopLeft,
-                new Vector2(24f, 62f),
-                new Vector2(820f, 38f));
-
-            var profileStatsPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileStatsPanel", new Vector2(22f, 104f), new Vector2(620f, 440f), new Color(0.09f, 0.16f, 0.25f, 0.92f));
-            var profileDayText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileDayText", "Day -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(576f, 32f));
-            var profileCopecsText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileCopecsText", "Copecs: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 56f), new Vector2(576f, 32f));
-            var profileTotalFishText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileTotalFishText", "Total Fish Caught: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 94f), new Vector2(576f, 32f));
-            var profileFarthestDistanceText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileFarthestDistanceText", "Farthest Distance Tier: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 132f), new Vector2(576f, 32f));
-            var profileLevelText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileLevelText", "Level: -", 20, TextAlignmentOptions.TopLeft, new Vector2(20f, 170f), new Vector2(576f, 32f));
-            var profileXpProgressText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileXpProgressText", "XP: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 208f), new Vector2(576f, 32f));
-            var profileNextUnlockText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileNextUnlockText", "Next Unlock: -", 18, TextAlignmentOptions.TopLeft, new Vector2(20f, 246f), new Vector2(576f, 32f));
-            var profileObjectiveText = CreateTopLeftTmpText(profileStatsPanel.transform, "ProfileObjectiveText", "Objective: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 286f), new Vector2(576f, 150f));
-
-            var profileCatchLogPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileCatchLogPanel", new Vector2(662f, 104f), new Vector2(634f, 440f), new Color(0.10f, 0.17f, 0.25f, 0.92f));
-            var profileCatchLogText = CreateTopLeftTmpText(profileCatchLogPanel.transform, "ProfileCatchLogText", "Catch Log: -", 17, TextAlignmentOptions.TopLeft, new Vector2(20f, 18f), new Vector2(592f, 400f));
-
-            var tutorialPanel = CreateTopLeftPanel(profilePanel.transform, "ProfileTutorialPanel", new Vector2(22f, 104f), new Vector2(1274f, 520f), new Color(0.10f, 0.19f, 0.29f, 0.94f));
-            var tutorialStatusText = CreateTopLeftTmpText(
-                tutorialPanel.transform,
-                "ProfileTutorialStatusText",
-                "Tutorial flags: initializing...",
-                17,
-                TextAlignmentOptions.TopLeft,
-                new Vector2(18f, 16f),
-                new Vector2(1238f, 76f));
-            var replayIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayIntroTutorialButton", "Replay Intro Tutorial", new Vector2(18f, 108f), new Vector2(300f, 42f));
-            var replayFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileReplayFishingTutorialButton", "Replay Fishing Tutorial", new Vector2(332f, 108f), new Vector2(320f, 42f));
-            var skipIntroTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipIntroTutorialButton", "Skip Intro Tutorial", new Vector2(18f, 160f), new Vector2(300f, 42f));
-            var skipFishingTutorialButton = CreateTopLeftButton(tutorialPanel.transform, "ProfileSkipFishingTutorialButton", "Skip Fishing Tutorial", new Vector2(332f, 160f), new Vector2(320f, 42f));
-
-            var profileResetButton = CreateButton(profilePanel.transform, "ProfileResetButton", "Reset Profile", new Vector2(-280f, -320f), new Vector2(240f, 52f));
-            var profileResetObjectivesButton = CreateButton(profilePanel.transform, "ProfileResetObjectivesButton", "Reset Objectives", new Vector2(0f, -320f), new Vector2(240f, 52f));
-            var profileBackButton = CreateButton(profilePanel.transform, "ProfileBackButton", "Back", new Vector2(280f, -320f), new Vector2(240f, 52f));
-            profileStatsPanel.SetActive(false);
-            profileCatchLogPanel.SetActive(false);
-            profileResetButton.gameObject.SetActive(false);
-            profileResetObjectivesButton.gameObject.SetActive(false);
-            profilePanel.SetActive(false);
+                new Vector2(22f, 324f),
+                new Vector2(760f, 34f));
 
             var settingsPanel = CreatePanel(canvas.transform, "SettingsPanel", new Vector2(0f, -8f), new Vector2(1480f, 840f), new Color(0.10f, 0.16f, 0.23f, 0.94f));
             CreateTopLeftTmpText(settingsPanel.transform, "SettingsTitleText", "Settings", 32, TextAlignmentOptions.TopLeft, new Vector2(24f, 20f), new Vector2(520f, 48f));
@@ -634,30 +595,14 @@ namespace RavenDevOps.Fishing.Core
                 demoButton.gameObject,
                 settingsButton.gameObject,
                 exitButton.gameObject,
-                profilePanel,
+                null,
                 settingsPanel,
                 exitPanel,
                 exitConfirmButton.gameObject,
                 exitCancelButton.gameObject,
-                profileBackButton.gameObject,
+                demoButton.gameObject,
                 settingsBackButton.gameObject,
                 profileButtonLaunchesDemo: true);
-
-            var profileController = GetOrAddComponent<ProfileMenuController>(root);
-            profileController.Configure(
-                profileDayText,
-                profileCopecsText,
-                profileTotalFishText,
-                profileFarthestDistanceText,
-                profileLevelText,
-                profileXpProgressText,
-                profileNextUnlockText,
-                profileObjectiveText,
-                profileCatchLogText,
-                10);
-
-            var tutorialControlPanel = GetOrAddComponent<TutorialControlPanel>(root);
-            tutorialControlPanel.Configure(tutorialStatusText);
 
             var settingsController = GetOrAddComponent<SettingsMenuController>(root);
             settingsController.Configure(
@@ -697,13 +642,6 @@ namespace RavenDevOps.Fishing.Core
             exitButton.onClick.AddListener(controller.OpenExitPanel);
             exitConfirmButton.onClick.AddListener(controller.ConfirmExit);
             exitCancelButton.onClick.AddListener(controller.CancelExit);
-            profileResetButton.onClick.AddListener(profileController.ResetProfile);
-            profileResetObjectivesButton.onClick.AddListener(profileController.ResetObjectivesForQa);
-            skipIntroTutorialButton.onClick.AddListener(tutorialControlPanel.SkipTutorial);
-            skipFishingTutorialButton.onClick.AddListener(tutorialControlPanel.SkipFishingTutorial);
-            replayIntroTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayTutorial);
-            replayFishingTutorialButton.onClick.AddListener(tutorialControlPanel.ReplayFishingTutorial);
-            profileBackButton.onClick.AddListener(controller.CloseProfilePanel);
 
             masterSlider.onValueChanged.AddListener(settingsController.OnMasterVolumeChanged);
             musicSlider.onValueChanged.AddListener(settingsController.OnMusicVolumeChanged);
