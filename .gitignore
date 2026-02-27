@@ -43,3 +43,7 @@ ProjectSettings/SceneTemplateSettings.json
 [Aa]rtifacts/
 TestResults-*.xml
 *.log
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
