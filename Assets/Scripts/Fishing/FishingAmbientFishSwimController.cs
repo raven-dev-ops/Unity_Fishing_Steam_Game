@@ -30,6 +30,8 @@ namespace RavenDevOps.Fishing.Fishing
             public float offscreenSeconds;
             public float spawnFadeDuration;
             public float spawnFadeElapsed;
+            public bool hasPreviousPosition;
+            public Vector3 previousPosition;
         }
 
         [SerializeField] private string _fishNameToken = "FishingFish";
@@ -76,6 +78,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _hookedStruggleFrequency = 6.8f;
         [SerializeField] private float _escapedFishSpeedMultiplier = 3f;
         [SerializeField] private bool _enforceCatchableSpawnRules = true;
+        [SerializeField] private float _collisionMotionPadding = 0.08f;
+        [SerializeField] private float _collisionSweepMaxStepDistance = 1.5f;
         [SerializeField] private Camera _runtimeCamera;
         [SerializeField] private Transform _ship;
         [SerializeField] private Transform _hook;
@@ -93,6 +97,11 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasLastHookY;
         private float _lastHookY;
         private bool _isHookDescending;
+        private bool _hasLastHookCollisionPosition;
+        private Vector2 _lastHookCollisionPosition;
+        private int _hookCollisionSampleFrame = -1;
+        private Vector2 _hookCollisionSampleStart;
+        private Vector2 _hookCollisionSampleEnd;
 
         private void Awake()
         {
@@ -168,12 +177,6 @@ namespace RavenDevOps.Fishing.Fishing
 
                 if (track.active)
                 {
-                    if (!allowAmbientPresence && !track.reserved && !track.hooked && !track.approaching)
-                    {
-                        DespawnTrack(track);
-                        continue;
-                    }
-
                     activeCount++;
                     TickTrack(track, now, speedScale);
                 }
@@ -281,7 +284,9 @@ namespace RavenDevOps.Fishing.Fishing
                     phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
                     offscreenSeconds = 0f,
                     spawnFadeDuration = 0f,
-                    spawnFadeElapsed = 0f
+                    spawnFadeElapsed = 0f,
+                    hasPreviousPosition = true,
+                    previousPosition = go.transform.position
                 };
 
                 renderer.enabled = false;
@@ -297,6 +302,8 @@ namespace RavenDevOps.Fishing.Fishing
             _hook = hook;
             _hasLastHookY = false;
             _isHookDescending = false;
+            _hasLastHookCollisionPosition = false;
+            _hookCollisionSampleFrame = -1;
         }
 
         public void SetMaxConcurrentFish(int maxConcurrentFish)
@@ -405,6 +412,8 @@ namespace RavenDevOps.Fishing.Fishing
                 ? cameraLeft - edgeBuffer
                 : cameraRight + edgeBuffer;
             _boundTrack.transform.position = new Vector3(spawnX, targetY, _boundTrack.transform.position.z);
+            _boundTrack.previousPosition = _boundTrack.transform.position;
+            _boundTrack.hasPreviousPosition = true;
             return true;
         }
 
@@ -553,6 +562,8 @@ namespace RavenDevOps.Fishing.Fishing
             track.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             track.spawnDelay = RandomSpawnDelay();
             track.renderer.flipX = track.direction < 0f;
+            track.previousPosition = track.transform.position;
+            track.hasPreviousPosition = true;
         }
 
         public bool IsBoundFishCollidingWithHook(Transform hookTransform, float hookRadius = 0.22f)
@@ -677,12 +688,36 @@ namespace RavenDevOps.Fishing.Fishing
                 return false;
             }
 
-            var hookPosition = hookTransform.position;
-            var fishPosition = track.transform.position;
-            var combinedRadius = Mathf.Max(0.02f, hookRadius) + ResolveTrackCollisionRadius(track);
-            var delta = new Vector2(hookPosition.x - fishPosition.x, hookPosition.y - fishPosition.y);
-            distanceSqr = delta.sqrMagnitude;
-            return distanceSqr <= combinedRadius * combinedRadius;
+            var fishCurrent = new Vector2(track.transform.position.x, track.transform.position.y);
+            var hookCurrent = new Vector2(hookTransform.position.x, hookTransform.position.y);
+            var combinedRadius = Mathf.Max(0.02f, hookRadius)
+                + ResolveTrackCollisionRadius(track)
+                + Mathf.Max(0f, _collisionMotionPadding);
+            var radiusSqr = combinedRadius * combinedRadius;
+
+            var deltaCurrent = hookCurrent - fishCurrent;
+            distanceSqr = deltaCurrent.sqrMagnitude;
+            if (distanceSqr <= radiusSqr)
+            {
+                return true;
+            }
+
+            ResolveHookCollisionSample(hookTransform, hookCurrent, out var hookPrevious, out var hookSampleCurrent);
+            var fishPrevious = track.hasPreviousPosition
+                ? new Vector2(track.previousPosition.x, track.previousPosition.y)
+                : fishCurrent;
+            var maxSweepStepDistance = Mathf.Max(0.1f, _collisionSweepMaxStepDistance);
+            if (Vector2.Distance(fishCurrent, fishPrevious) > maxSweepStepDistance
+                || Vector2.Distance(hookSampleCurrent, hookPrevious) > maxSweepStepDistance)
+            {
+                return false;
+            }
+
+            var relativeStart = hookPrevious - fishPrevious;
+            var relativeEnd = hookSampleCurrent - fishCurrent;
+            var sweptDistanceSqr = ResolvePointToSegmentDistanceSqr(Vector2.zero, relativeStart, relativeEnd);
+            distanceSqr = Mathf.Min(distanceSqr, sweptDistanceSqr);
+            return sweptDistanceSqr <= radiusSqr;
         }
 
         private SwimTrack FindBindingCandidateTrack(string preferredFishId)
@@ -736,6 +771,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TickTrack(SwimTrack track, float now, float speedScale)
         {
+            RecordTrackPreviousPosition(track);
             var p = track.transform.position;
             p.x += track.direction * track.speed * speedScale * Time.deltaTime;
             p.y = track.baseY + Mathf.Sin((now * _bobFrequency) + track.phase) * _bobAmplitude;
@@ -790,6 +826,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            RecordTrackPreviousPosition(track);
             var side = Mathf.Abs(track.hookedOffsetSign) > 0.01f
                 ? Mathf.Sign(track.hookedOffsetSign)
                 : ResolveHookSideSign(track.transform.position.x, _boundHookTransform.position.x);
@@ -832,6 +869,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            RecordTrackPreviousPosition(track);
             var side = Mathf.Abs(track.hookedOffsetSign) > 0.01f ? Mathf.Sign(track.hookedOffsetSign) : (track.direction >= 0f ? 1f : -1f);
             var baseTarget = _boundHookTransform.position + new Vector3(Mathf.Abs(_biteApproachHookOffset.x) * side, _biteApproachHookOffset.y, 0f);
             if (track.settled)
@@ -949,6 +987,8 @@ namespace RavenDevOps.Fishing.Fishing
                 ? left - edgeBuffer
                 : right + edgeBuffer;
             track.transform.position = new Vector3(spawnX, track.baseY, track.transform.position.z);
+            track.previousPosition = track.transform.position;
+            track.hasPreviousPosition = true;
 
             track.active = true;
             track.renderer.enabled = true;
@@ -1095,6 +1135,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.approaching = false;
             track.hooked = false;
             track.settled = false;
+            track.hasPreviousPosition = false;
             track.spawnFadeDuration = 0f;
             track.spawnFadeElapsed = 0f;
             if (track.renderer != null)
@@ -1734,6 +1775,60 @@ namespace RavenDevOps.Fishing.Fishing
             bottom = cameraPosition.y - halfHeight;
             top = cameraPosition.y + halfHeight;
             return true;
+        }
+
+        private void RecordTrackPreviousPosition(SwimTrack track)
+        {
+            if (track == null || track.transform == null)
+            {
+                return;
+            }
+
+            track.previousPosition = track.transform.position;
+            track.hasPreviousPosition = true;
+        }
+
+        private void ResolveHookCollisionSample(
+            Transform hookTransform,
+            Vector2 hookCurrent,
+            out Vector2 hookPrevious,
+            out Vector2 hookResolvedCurrent)
+        {
+            if (hookTransform == null)
+            {
+                hookPrevious = hookCurrent;
+                hookResolvedCurrent = hookCurrent;
+                return;
+            }
+
+            var frame = Time.frameCount;
+            if (_hookCollisionSampleFrame != frame)
+            {
+                _hookCollisionSampleStart = _hasLastHookCollisionPosition
+                    ? _lastHookCollisionPosition
+                    : hookCurrent;
+                _hookCollisionSampleEnd = hookCurrent;
+                _hookCollisionSampleFrame = frame;
+                _lastHookCollisionPosition = hookCurrent;
+                _hasLastHookCollisionPosition = true;
+            }
+
+            hookPrevious = _hookCollisionSampleStart;
+            hookResolvedCurrent = _hookCollisionSampleEnd;
+        }
+
+        private static float ResolvePointToSegmentDistanceSqr(Vector2 point, Vector2 segmentStart, Vector2 segmentEnd)
+        {
+            var segment = segmentEnd - segmentStart;
+            var lengthSqr = segment.sqrMagnitude;
+            if (lengthSqr <= 0.000001f)
+            {
+                return (point - segmentStart).sqrMagnitude;
+            }
+
+            var t = Mathf.Clamp01(Vector2.Dot(point - segmentStart, segment) / lengthSqr);
+            var closest = segmentStart + (segment * t);
+            return (point - closest).sqrMagnitude;
         }
 
         private static float ResolveHookSideSign(float fishX, float hookX)

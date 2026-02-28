@@ -111,7 +111,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel4ReelCameraFollowLerpScale = 1.35f;
         [SerializeField] private float _demoLevel4ReelCameraHookViewportY = 0.3f;
         [SerializeField] private float _demoCameraZoomOutScale = 1.5f;
-        [SerializeField] private float _demoHookCollisionRadius = 0.24f;
+        [SerializeField] private float _demoHookCollisionRadius = 0.28f;
         [SerializeField] private float _demoHookPhaseSailSpeedScale = 0.32f;
         [SerializeField] private float _demoHookPhaseMaxWaitSeconds = 6.5f;
         [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 6.5f;
@@ -1500,7 +1500,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
             }
 
-            var laneSpread = forceNearHook ? 0.08f : 0.22f;
+            var laneSpread = forceNearHook ? 0.04f : 0.1f;
             var laneOffset = Mathf.Lerp(-laneSpread, laneSpread, laneRatio);
             var spawnViewportRatio = Mathf.Clamp01(hookViewportRatio + laneOffset);
             var spawnFromLeft = true;

@@ -44,7 +44,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _requireCollisionHook = true;
         [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
-        [SerializeField] private float _hookCollisionRadius = 0.22f;
+        [SerializeField] private float _hookCollisionRadius = 0.28f;
         [SerializeField] private float _haulCompletionDepthThreshold = 25f;
         [SerializeField] private float _boatArrivalDepthThreshold = 1.1f;
         [SerializeField] private float _hookReactionWindowSeconds = 1.3f;
