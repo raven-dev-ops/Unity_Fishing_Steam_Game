@@ -65,9 +65,13 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            ConfigureTutorialDependencies(tutorial);
+            yield return WaitForFishingDemoAnchors(timeoutSeconds: 20f);
             tutorial.SetAutoplayInBatchModeForTests(true);
             tutorial.BeginTutorialForTests();
             yield return null;
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController after demo begin.");
 
             var outputDirectory = ResolveOutputDirectory();
             Directory.CreateDirectory(outputDirectory);
@@ -172,6 +176,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            ConfigureTutorialDependencies(tutorial);
+            yield return WaitForFishingDemoAnchors(timeoutSeconds: 20f);
             tutorial.SetAutoplayInBatchModeForTests(true);
             tutorial.BeginTutorialForTests();
             yield return null;
@@ -252,6 +258,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
             Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            ConfigureTutorialDependencies(tutorial);
+            yield return WaitForFishingDemoAnchors(timeoutSeconds: 20f);
             tutorial.SetAutoplayInBatchModeForTests(true);
             tutorial.BeginTutorialForTests();
             yield return null;
@@ -267,6 +275,140 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             tutorial.SkipActiveTutorial();
             yield return WaitForDemoSceneStartPhase(tutorial, "Level5DeepDarkInfo", timeoutSeconds: 180f);
             yield return WaitForBackdropFishActivation(backdropController, minimumTrackCount: 3, timeoutSeconds: 8f);
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator FishingTutorialController_SurfaceHookScenes_BackdropFishLayerVisible()
+        {
+            if (Application.isBatchMode)
+            {
+                Assert.Ignore("Surface scene backdrop visibility checks are unstable in batch mode scene routing.");
+            }
+
+            yield return LoadScene(FishingScenePath);
+            yield return null;
+
+            var saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            Assert.That(saveManager, Is.Not.Null, "Expected SaveManager in fishing scene.");
+            saveManager.RequestFishingLoopTutorialReplay();
+            yield return null;
+
+            var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            ConfigureTutorialDependencies(tutorial);
+            yield return WaitForFishingDemoAnchors(timeoutSeconds: 20f);
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
+            yield return null;
+
+            var backdropController = UnityEngine.Object.FindAnyObjectByType<FishingDepthBackdropFishController>(FindObjectsInactive.Include);
+            Assert.That(backdropController, Is.Not.Null, "Expected FishingDepthBackdropFishController in fishing scene.");
+            EnableBackdropControllerForBatchTests(backdropController);
+            yield return null;
+
+            var targetCamera = Camera.main != null
+                ? Camera.main
+                : UnityEngine.Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Include);
+            Assert.That(targetCamera, Is.Not.Null, "Expected camera for backdrop fish visibility checks.");
+
+            yield return WaitForDemoSceneStartPhase(tutorial, "IntroInfo", timeoutSeconds: 60f, allowDuringTransition: true);
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController before scene skip.");
+            tutorial.SkipActiveTutorial();
+            yield return WaitForDemoSceneStartPhase(tutorial, "MoveShipInfo", timeoutSeconds: 60f, allowDuringTransition: true);
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController before scene skip.");
+            tutorial.SkipActiveTutorial();
+            yield return WaitForDemoSceneStartPhase(tutorial, "CastInfo", timeoutSeconds: 60f, allowDuringTransition: true);
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController before scene skip.");
+            tutorial.SkipActiveTutorial();
+            yield return WaitForDemoSceneStartPhase(tutorial, "FishHookInfo", timeoutSeconds: 60f, allowDuringTransition: true);
+            yield return WaitForBackdropFishVisible(backdropController, targetCamera, minimumVisibleTracks: 1, timeoutSeconds: 10f);
+
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController before scene skip.");
+            tutorial.SkipActiveTutorial();
+            yield return WaitForDemoSceneStartPhase(tutorial, "ReelInfo", timeoutSeconds: 60f, allowDuringTransition: true);
+            yield return WaitForBackdropFishVisible(backdropController, targetCamera, minimumVisibleTracks: 1, timeoutSeconds: 10f);
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator FishingTutorialController_IntroTransition_HoldsTitleBeforeSceneOne()
+        {
+            if (Application.isBatchMode)
+            {
+                Assert.Ignore("Intro transition hold verification is unstable in batch mode scene routing.");
+            }
+
+            yield return LoadScene(FishingScenePath);
+            yield return null;
+
+            var saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            Assert.That(saveManager, Is.Not.Null, "Expected SaveManager in fishing scene.");
+            saveManager.RequestFishingLoopTutorialReplay();
+            yield return null;
+
+            var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            ConfigureTutorialDependencies(tutorial);
+            yield return WaitForFishingDemoAnchors(timeoutSeconds: 20f);
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
+            yield return null;
+            tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected active FishingLoopTutorialController after demo begin.");
+
+            var titleText = GameObject.Find("FishingTutorialTransitionTitleText")?.GetComponent<TMP_Text>();
+            Assert.That(titleText, Is.Not.Null, "Expected transition title text object.");
+
+            var timeoutAt = Time.realtimeSinceStartup + 180f;
+            var sawIntroTransition = false;
+            var introSeenStart = 0f;
+            var introSeenEnd = 0f;
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                if (tutorial == null)
+                {
+                    tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+                    if (tutorial == null)
+                    {
+                        yield return null;
+                        continue;
+                    }
+                }
+
+                var introTitleVisible = string.Equals(titleText.text, "Fishing Demo", StringComparison.Ordinal)
+                    && titleText.color.a > 0.05f;
+                if (introTitleVisible)
+                {
+                    if (!sawIntroTransition)
+                    {
+                        sawIntroTransition = true;
+                        introSeenStart = Time.realtimeSinceStartup;
+                    }
+
+                    introSeenEnd = Time.realtimeSinceStartup;
+                    yield return null;
+                    continue;
+                }
+
+                if (sawIntroTransition)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            Assert.That(sawIntroTransition, Is.True, "Expected intro transition/title to appear for demo start.");
+            var introVisibleDuration = Mathf.Max(0f, introSeenEnd - introSeenStart);
+            Assert.That(
+                introVisibleDuration,
+                Is.GreaterThanOrEqualTo(1.9f),
+                $"Expected intro title hold near 2 seconds before scene 1 fade-in, but observed {introVisibleDuration:0.00}s.");
         }
 
         private static string ResolveOutputDirectory()
@@ -303,14 +445,23 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             yield return loadOperation;
         }
 
-        private static IEnumerator WaitForDemoSceneStartPhase(FishingLoopTutorialController tutorial, string phaseName, float timeoutSeconds)
+        private static IEnumerator WaitForDemoSceneStartPhase(
+            FishingLoopTutorialController tutorial,
+            string phaseName,
+            float timeoutSeconds,
+            bool allowDuringTransition = false)
         {
             var timeoutAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, timeoutSeconds);
             while (Time.realtimeSinceStartup < timeoutAt)
             {
+                if (tutorial == null)
+                {
+                    tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+                }
+
                 if (tutorial != null
                     && tutorial.IsDemoActiveForTests()
-                    && !tutorial.IsDemoSceneTransitionActiveForTests()
+                    && (allowDuringTransition || !tutorial.IsDemoSceneTransitionActiveForTests())
                     && string.Equals(tutorial.GetDemoPhaseNameForTests(), phaseName, StringComparison.Ordinal))
                 {
                     yield break;
@@ -320,6 +471,24 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             Assert.Fail($"Timed out waiting for demo phase '{phaseName}' to begin.");
+        }
+
+        private static IEnumerator WaitForFishingDemoAnchors(float timeoutSeconds)
+        {
+            var timeoutAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, timeoutSeconds);
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                var ship = GameObject.Find("FishingShip");
+                var hook = GameObject.Find("FishingHook");
+                if (ship != null && hook != null)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail("Timed out waiting for fishing demo anchors (FishingShip/FishingHook).");
         }
 
         private static IEnumerator WaitForBackdropFishActivation(
@@ -369,6 +538,55 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             }
 
             Assert.Fail($"Timed out waiting for backdrop fish layer readiness (required tracks: {requiredTracks}).");
+        }
+
+        private static IEnumerator WaitForBackdropFishVisible(
+            FishingDepthBackdropFishController backdropController,
+            Camera targetCamera,
+            int minimumVisibleTracks,
+            float timeoutSeconds)
+        {
+            Assert.That(targetCamera, Is.Not.Null, "Expected camera for backdrop visibility check.");
+            var requiredVisibleTracks = Mathf.Max(1, minimumVisibleTracks);
+            var timeoutAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, timeoutSeconds);
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                var tracks = ReadBackdropTracks(backdropController);
+                var visibleTracks = 0;
+                for (var i = 0; i < tracks.Count; i++)
+                {
+                    var track = tracks[i];
+                    var renderer = GetBackdropTrackField<SpriteRenderer>(track, "Renderer");
+                    if (renderer == null || !renderer.enabled)
+                    {
+                        continue;
+                    }
+
+                    if (renderer.color.a <= 0.001f)
+                    {
+                        continue;
+                    }
+
+                    var viewportPoint = targetCamera.WorldToViewportPoint(renderer.transform.position);
+                    if (viewportPoint.z > 0f
+                        && viewportPoint.x >= -0.02f
+                        && viewportPoint.x <= 1.02f
+                        && viewportPoint.y >= -0.02f
+                        && viewportPoint.y <= 1.02f)
+                    {
+                        visibleTracks++;
+                    }
+                }
+
+                if (visibleTracks >= requiredVisibleTracks)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail($"Timed out waiting for visible backdrop fish tracks (required visible tracks: {requiredVisibleTracks}).");
         }
 
         private static List<object> ReadBackdropTracks(FishingDepthBackdropFishController backdropController)

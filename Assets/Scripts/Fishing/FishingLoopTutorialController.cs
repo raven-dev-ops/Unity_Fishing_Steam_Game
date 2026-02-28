@@ -171,6 +171,7 @@ namespace RavenDevOps.Fishing.Fishing
         private string _demoSceneTransitionTitle = string.Empty;
         private string _demoSceneTransitionSubtitle = string.Empty;
         private bool _demoCurrentTransitionStartsBlack;
+        private bool _demoIntroTransitionPlayed;
         private DemoAutoplayPhase _demoQueuedNextPhase = DemoAutoplayPhase.None;
         private float _demoQueuedNextPhaseAt;
         private IFishingHudOverlay _hudOverlay;
@@ -277,11 +278,26 @@ namespace RavenDevOps.Fishing.Fishing
             TMP_Text tutorialTransitionTitleText,
             TMP_Text tutorialTransitionSubtitleText = null)
         {
+            var transitionAlreadyActive = _demoSceneTransitionActive;
             _tutorialTransitionOverlay = tutorialTransitionOverlay;
             _tutorialTransitionFadeImage = tutorialTransitionFadeImage;
             _tutorialTransitionTitleText = tutorialTransitionTitleText;
             _tutorialTransitionSubtitleText = tutorialTransitionSubtitleText;
-            ClearDemoSceneTransition(forceHideOverlay: true);
+            if (!transitionAlreadyActive)
+            {
+                ClearDemoSceneTransition(forceHideOverlay: true);
+            }
+
+            // Component wiring can happen after demo activation on scene bootstrap.
+            // Replay intro transition once overlay refs exist so opening title timing stays deterministic.
+            if (_isActive
+                && _demoActive
+                && !_demoSceneTransitionActive
+                && (!_demoIntroTransitionPlayed || _demoPhase == DemoAutoplayPhase.IntroInfo))
+            {
+                _demoIntroTransitionPlayed = false;
+                StartDemoPhase(DemoAutoplayPhase.IntroInfo);
+            }
         }
 
         private void Awake()
@@ -743,6 +759,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            ResolveTransitionOverlayReferences();
             RefreshDemoAnchors();
             ApplyDemoHookDepthOverride();
             SuppressRuntimeHookCastControllerForDemo();
@@ -755,6 +772,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoCollisionLaneIndex = 0;
             _demoLevel4ReelStartDepthMeters = 0f;
             _demoLevel5ReelStartDepthMeters = 0f;
+            _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
@@ -788,6 +806,25 @@ namespace RavenDevOps.Fishing.Fishing
             if (depthOverrideReapplied)
             {
                 RecoverDemoHookDepthAfterOverrideReset();
+            }
+
+            if (!_demoIntroTransitionPlayed && !_demoSceneTransitionActive)
+            {
+                ResolveTransitionOverlayReferences();
+                if (_tutorialTransitionOverlay != null && _tutorialTransitionFadeImage != null)
+                {
+                    StartDemoPhase(DemoAutoplayPhase.IntroInfo);
+                    return;
+                }
+
+                // Keep scene 1 steady until intro title card resources exist.
+                if (_demoPhase == DemoAutoplayPhase.IntroInfo)
+                {
+                    MoveShipTowardX(_demoShipStartX);
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    return;
+                }
             }
 
             if (TickDemoSceneTransition())
@@ -1235,6 +1272,11 @@ namespace RavenDevOps.Fishing.Fishing
 
             var fadeToBlackSeconds = Mathf.Max(0.05f, _demoTransitionFadeToBlackSeconds);
             var holdSeconds = Mathf.Max(0f, _demoTransitionHoldSeconds);
+            if (_demoCurrentTransitionStartsBlack)
+            {
+                holdSeconds = Mathf.Max(2f, holdSeconds);
+            }
+
             var fadeFromBlackSeconds = Mathf.Max(0.05f, _demoTransitionFadeFromBlackSeconds);
             var elapsed = Time.unscaledTime - _demoSceneTransitionStartedAt;
             var fadeOutEndsAt = _demoCurrentTransitionStartsBlack ? 0f : fadeToBlackSeconds;
@@ -1324,6 +1366,11 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionStartedAt = Time.unscaledTime;
             _demoSceneTransitionTitle = title;
             _demoSceneTransitionSubtitle = BuildDemoSceneSubtitle(phase);
+            if (phase == DemoAutoplayPhase.IntroInfo)
+            {
+                _demoIntroTransitionPlayed = true;
+            }
+
             SetTutorialMessageBoxVisible(false);
             UpdateTransitionOverlayVisual(startFromBlack ? 1f : 0f, title, _demoSceneTransitionSubtitle, forceVisible: true);
             return true;
@@ -1377,6 +1424,49 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             UpdateTransitionOverlayVisual(0f, string.Empty, string.Empty, forceVisible: false);
+        }
+
+        private void ResolveTransitionOverlayReferences()
+        {
+            if (_tutorialTransitionOverlay == null)
+            {
+                _tutorialTransitionOverlay = FindSceneObjectByName("FishingTutorialTransitionPanel");
+            }
+
+            if (_tutorialTransitionFadeImage == null && _tutorialTransitionOverlay != null)
+            {
+                _tutorialTransitionFadeImage = _tutorialTransitionOverlay.GetComponent<Image>();
+            }
+
+            if (_tutorialTransitionTitleText == null)
+            {
+                _tutorialTransitionTitleText = FindSceneObjectByName("FishingTutorialTransitionTitleText")?.GetComponent<TMP_Text>();
+            }
+
+            if (_tutorialTransitionSubtitleText == null)
+            {
+                _tutorialTransitionSubtitleText = FindSceneObjectByName("FishingTutorialTransitionSubtitleText")?.GetComponent<TMP_Text>();
+            }
+        }
+
+        private static GameObject FindSceneObjectByName(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            var transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var transform = transforms[i];
+                if (transform != null && string.Equals(transform.name, objectName, StringComparison.Ordinal))
+                {
+                    return transform.gameObject;
+                }
+            }
+
+            return null;
         }
 
         private void PrepareDemoPhaseVisualStateForTransition(DemoAutoplayPhase phase)
@@ -1761,6 +1851,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
+            _demoIntroTransitionPlayed = false;
             ClearDemoSceneTransition(forceHideOverlay: true);
             ClearQueuedDemoPhaseTransition();
             ResolveDemoFish(caught: false);
@@ -1782,6 +1873,7 @@ namespace RavenDevOps.Fishing.Fishing
         {
             _demoActive = false;
             _demoPhase = DemoAutoplayPhase.None;
+            _demoIntroTransitionPlayed = false;
             ClearDemoSceneTransition(forceHideOverlay: true);
             ClearQueuedDemoPhaseTransition();
             ResolveDemoFish(caught: false);

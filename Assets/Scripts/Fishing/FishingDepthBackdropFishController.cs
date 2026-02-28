@@ -43,7 +43,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _baseSortingOrder = -30;
         [SerializeField] private float _horizontalPadding = 2.6f;
         [SerializeField] private float _minimumDepthMeters = 30f;
-        [SerializeField] private Vector2 _swimSpeedRange = new Vector2(0.24f, 0.78f);
+        [SerializeField] private bool _adaptiveMinimumDepthToViewport = true;
+        [SerializeField] private float _adaptiveMinimumDepthFloorMeters = 2f;
+        [SerializeField] [Range(0.1f, 1.25f)] private float _adaptiveMinimumDepthViewportCoverage = 0.82f;
+        [SerializeField] private Vector2 _swimSpeedRange = new Vector2(0.65f, 1.55f);
         [SerializeField] private Vector2 _speedVarianceRange = new Vector2(0.72f, 1.38f);
         [SerializeField] private Vector2 _scaleRange = new Vector2(0.45f, 0.95f);
         [SerializeField] private Vector2 _nearLayerScaleRange = new Vector2(0.74f, 1.18f);
@@ -52,11 +55,11 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _depthParallaxScale = 1.35f;
         [SerializeField] private float _shipTravelParallax = 0.45f;
         [SerializeField] private Vector3 _layerAlpha = new Vector3(0.6f, 0.35f, 0.12f);
-        [SerializeField] private Vector2 _offscreenSpawnOffsetRange = new Vector2(0.45f, 1.35f);
+        [SerializeField] private Vector2 _offscreenSpawnOffsetRange = new Vector2(0.25f, 0.85f);
         [SerializeField] [Range(0f, 1f)] private float _initialAheadSpawnChance = 0.5f;
         [SerializeField] [Range(0f, 1f)] private float _wrapAheadSpawnChance = 0.75f;
         [SerializeField] [Range(0f, 0.45f)] private float _verticalBandJitterRatio = 0.18f;
-        [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.05f, 0.55f);
+        [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.02f, 0.3f);
         [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(0.22f, 1.25f);
         [SerializeField] private Vector2 _verticalRetargetIntervalRangeSeconds = new Vector2(1.2f, 3.4f);
         [SerializeField] private Vector2 _verticalDriftLerpSpeedRange = new Vector2(0.45f, 1.3f);
@@ -65,6 +68,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _spawnDelayStaggerCycle = 4;
         [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
         [SerializeField] private float _spawnActivationOffscreenBuffer = 0.2f;
+        [SerializeField] private int _minimumVisibleTracks = 1;
+        [SerializeField] private float _visibleTrackRecoverySeconds = 2f;
+        [SerializeField] [Range(0f, 0.2f)] private float _visibleTrackViewportPadding = 0.02f;
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
         private readonly List<BackdropFishTrack> _tracks = new List<BackdropFishTrack>(16);
@@ -74,6 +80,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _lastShipX;
         private float _shipDeltaX;
         private int _spawnSequenceIndex;
+        private float _visibleTrackRecoveryElapsed;
 
         public void Configure(Camera targetCamera, Transform ship, Transform hook)
         {
@@ -304,6 +311,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            _visibleTrackRecoveryElapsed = 0f;
             ResolveViewportHalfSize(out var halfWidth, out _);
             var spawnPadding = Mathf.Max(1f, _horizontalPadding);
             _spawnSequenceIndex = 0;
@@ -374,6 +382,7 @@ namespace RavenDevOps.Fishing.Fishing
             var rightBound = cameraX + (halfWidth + wrapPadding);
             var topBound = cameraY + halfHeight + 1.25f;
             var bottomBound = cameraY - halfHeight - 1.25f;
+            var visibleTracks = 0;
 
             for (var i = 0; i < _tracks.Count; i++)
             {
@@ -443,7 +452,68 @@ namespace RavenDevOps.Fishing.Fishing
 
                 p.y = Mathf.Min(p.y, minimumDepthWorldY - (track.LayerIndex * 0.12f));
                 track.Transform.position = p;
+                if (IsWorldPointVisibleInViewport(p, cameraX, cameraY, halfWidth, halfHeight))
+                {
+                    visibleTracks++;
+                }
             }
+
+            MaintainVisibleTrackCoverage(visibleTracks, cameraX, cameraY, halfWidth, halfHeight, wrapPadding);
+        }
+
+        private void MaintainVisibleTrackCoverage(
+            int visibleTracks,
+            float cameraX,
+            float cameraY,
+            float halfWidth,
+            float halfHeight,
+            float spawnPadding)
+        {
+            var requiredVisibleTracks = Mathf.Clamp(_minimumVisibleTracks, 0, Mathf.Max(0, _tracks.Count));
+            if (requiredVisibleTracks <= 0 || visibleTracks >= requiredVisibleTracks)
+            {
+                _visibleTrackRecoveryElapsed = 0f;
+                return;
+            }
+
+            _visibleTrackRecoveryElapsed += Time.unscaledDeltaTime;
+            var recoverySeconds = Mathf.Max(0.2f, _visibleTrackRecoverySeconds);
+            if (_visibleTrackRecoveryElapsed < recoverySeconds)
+            {
+                return;
+            }
+
+            _visibleTrackRecoveryElapsed = 0f;
+            var requiredRecoveryCount = requiredVisibleTracks - visibleTracks;
+            for (var i = 0; i < _tracks.Count && requiredRecoveryCount > 0; i++)
+            {
+                var track = _tracks[i];
+                if (track == null || track.Transform == null || track.Renderer == null || track.PendingSpawn)
+                {
+                    continue;
+                }
+
+                var p = track.Transform.position;
+                if (IsWorldPointVisibleInViewport(p, cameraX, cameraY, halfWidth, halfHeight))
+                {
+                    continue;
+                }
+
+                QueueTrackSpawn(track, halfWidth, spawnPadding, preferAhead: true, initialSpawn: false);
+                track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.08f, 0.35f));
+                requiredRecoveryCount--;
+            }
+        }
+
+        private bool IsWorldPointVisibleInViewport(Vector3 worldPosition, float cameraX, float cameraY, float halfWidth, float halfHeight)
+        {
+            var viewportPadding = Mathf.Clamp(_visibleTrackViewportPadding, 0f, 0.2f);
+            var paddedHalfWidth = halfWidth * (1f + viewportPadding);
+            var paddedHalfHeight = halfHeight * (1f + viewportPadding);
+            return worldPosition.x >= cameraX - paddedHalfWidth
+                && worldPosition.x <= cameraX + paddedHalfWidth
+                && worldPosition.y >= cameraY - paddedHalfHeight
+                && worldPosition.y <= cameraY + paddedHalfHeight;
         }
 
         private float ResolveLayerBaseWorldY(int layerIndex)
@@ -509,8 +579,31 @@ namespace RavenDevOps.Fishing.Fishing
                 return fallbackCameraY - (fallbackHalfHeight * 0.55f);
             }
 
-            var minDepthWorldY = _ship.position.y - Mathf.Max(0f, _minimumDepthMeters);
-            return minDepthWorldY;
+            var minimumDepthMeters = Mathf.Max(0f, _minimumDepthMeters);
+            if (_adaptiveMinimumDepthToViewport && _targetCamera.orthographic)
+            {
+                ResolveViewportHalfSize(out _, out var halfHeight);
+                var cameraBottomY = _targetCamera.transform.position.y - halfHeight;
+                var visibleDepthMeters = Mathf.Max(0f, _ship.position.y - cameraBottomY);
+                if (visibleDepthMeters > 0.001f)
+                {
+                    var coverage = Mathf.Clamp(_adaptiveMinimumDepthViewportCoverage, 0.1f, 1.25f);
+                    var adaptiveMinimumDepthMeters = Mathf.Max(
+                        0f,
+                        Mathf.Max(_adaptiveMinimumDepthFloorMeters, visibleDepthMeters * coverage));
+                    minimumDepthMeters = Mathf.Min(minimumDepthMeters, adaptiveMinimumDepthMeters);
+                }
+                else
+                {
+                    // Surface framing can keep camera bottom at/above ship Y for short demo scenes.
+                    // Keep backdrop fish near the lower viewport edge instead of pinning them far below.
+                    minimumDepthMeters = Mathf.Min(
+                        minimumDepthMeters,
+                        Mathf.Max(0f, _adaptiveMinimumDepthFloorMeters));
+                }
+            }
+
+            return _ship.position.y - minimumDepthMeters;
         }
 
         private void ResolveViewportHalfSize(out float halfWidth, out float halfHeight)
@@ -811,6 +904,7 @@ namespace RavenDevOps.Fishing.Fishing
         private void RebuildTracks()
         {
             _tracks.Clear();
+            _visibleTrackRecoveryElapsed = 0f;
             if (_visualRoot == null)
             {
                 return;
