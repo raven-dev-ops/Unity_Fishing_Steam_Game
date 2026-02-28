@@ -92,9 +92,14 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoTransitionHoldSeconds = 2f;
         [SerializeField] private float _demoTransitionFadeFromBlackSeconds = 0.32f;
         [SerializeField] private float _demoShipTravelDistance = 2.8f;
-        [SerializeField] private float _demoShipMoveSpeed = 4.8f;
+        [SerializeField] private float _demoShipMoveSpeed = 9.6f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
         [SerializeField] private float _demoCastDepthMeters = 30f;
+        [SerializeField] private float _demoShipUpgradePreviewDepthMinMeters = 1200f;
+        [SerializeField] private float _demoShipUpgradePreviewDepthMaxMeters = 3200f;
+        [SerializeField] private float _demoShipUpgradeDepthCycleSeconds = 2.4f;
+        [SerializeField] private float _demoHookUpgradePreviewDepthMeters = 2800f;
+        [SerializeField] private float _demoHookUpgradeLightPulseSeconds = 1.6f;
         [SerializeField] private float _demoLevel4CastDepthMeters = 4500f;
         [SerializeField] private float _demoLevel5CastDepthMeters = 3300f;
         [SerializeField] private float _demoLevel4ReelTargetDepthMeters = 1000f;
@@ -872,14 +877,12 @@ namespace RavenDevOps.Fishing.Fishing
                     break;
                 case DemoAutoplayPhase.ShipUpgradeInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(false);
-                    SnapDemoHookToDock();
+                    TickShipUpgradeInfoVisual();
                     TickInfoPhase(DemoAutoplayPhase.HookUpgradeInfo, pauseBeforeTransition: true);
                     break;
                 case DemoAutoplayPhase.HookUpgradeInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(false);
-                    SnapDemoHookToDock();
+                    TickHookUpgradeInfoVisual();
                     TickInfoPhase(DemoAutoplayPhase.Level4DarknessInfo, pauseBeforeTransition: true);
                     break;
                 case DemoAutoplayPhase.Level4DarknessInfo:
@@ -1090,7 +1093,22 @@ namespace RavenDevOps.Fishing.Fishing
                 ResolveDemoFish(caught: true);
             }
 
-            if (phase == DemoAutoplayPhase.Level4DarknessInfo)
+            if (phase == DemoAutoplayPhase.ShipUpgradeInfo)
+            {
+                SetDemoHookVisible(true);
+                var minimumDepth = Mathf.Max(1f, Mathf.Min(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
+                SnapDemoHookToDepth(minimumDepth, clampToWorldBounds: false);
+                ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+                ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+            }
+            else if (phase == DemoAutoplayPhase.HookUpgradeInfo)
+            {
+                SetDemoHookVisible(true);
+                SnapDemoHookToDepth(Mathf.Max(1f, _demoHookUpgradePreviewDepthMeters), clampToWorldBounds: false);
+                ApplyTutorialLightPreview(enabled: true, ResolveScene8LightRadiiMeters());
+                ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+            }
+            else if (phase == DemoAutoplayPhase.Level4DarknessInfo)
             {
                 SetDemoHookVisible(true);
                 SnapDemoHookToDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false);
@@ -1356,9 +1374,9 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.ReelInfo:
                     return $"Step 4: Reel with {ResolveMoveHookUpControlHint()}. Secure the fish, then haul it to the boat.";
                 case DemoAutoplayPhase.ShipUpgradeInfo:
-                    return "Ship upgrades expand depth access: Lv3 up to 1,600m, Lv4 from 1,000m to 3,000m, Lv5 from 3,000m to 5,000m.";
+                    return "Ship upgrades expand depth access. This scene sweeps the hook through deeper ship bands to preview operating ranges.";
                 case DemoAutoplayPhase.HookUpgradeInfo:
-                    return "Hook upgrades improve drop speed and special effects as hook level increases.";
+                    return "Hook upgrades increase light radius in dark and deep-dark water. This scene pulses Lv4 and Lv5 light tiers.";
                 case DemoAutoplayPhase.Level4DarknessInfo:
                     var scene8Light = ResolveScene8LightRadiiMeters();
                     return $"Level 4 darkness tutorial: scene starts at {_demoLevel4CastDepthMeters:0,0}m for a full low-visibility pass. Scene 8 light radius is {scene8Light.x:0.#}m in darkness and {scene8Light.y:0.#}m in deep-dark.";
@@ -1500,21 +1518,27 @@ namespace RavenDevOps.Fishing.Fishing
                 }
             }
 
-            var laneSpread = forceNearHook ? 0.04f : 0.1f;
+            var laneSpread = forceNearHook ? 0.015f : 0.05f;
             var laneOffset = Mathf.Lerp(-laneSpread, laneSpread, laneRatio);
             var spawnViewportRatio = Mathf.Clamp01(hookViewportRatio + laneOffset);
             var spawnFromLeft = true;
-            var speedMultiplier = forceNearHook ? 1.5f : 1f;
+            var speedMultiplier = forceNearHook ? 1.25f : 1.1f;
             if (_ambientFishController.PositionBoundFishForDemo(spawnViewportRatio, spawnFromLeft, speedMultiplier))
             {
                 return true;
             }
 
             var hookPosition = _demoHookTransform.position;
-            var fallbackVerticalOffset = Mathf.Lerp(-1.4f, 1.4f, laneRatio);
-            var fallbackHorizontalLead = forceNearHook ? 0.75f : 2.2f;
+            var fallbackVerticalOffset = Mathf.Lerp(-0.45f, 0.45f, laneRatio);
+            var fallbackSpawnX = hookPosition.x - 18f;
+            if (runtimeCamera != null && runtimeCamera.orthographic)
+            {
+                var halfWidth = Mathf.Max(0.5f, runtimeCamera.orthographicSize * Mathf.Max(0.1f, runtimeCamera.aspect));
+                fallbackSpawnX = runtimeCamera.transform.position.x - halfWidth - 1.8f;
+            }
+
             fishTransform.position = new Vector3(
-                hookPosition.x - fallbackHorizontalLead,
+                fallbackSpawnX,
                 hookPosition.y + fallbackVerticalOffset,
                 fishTransform.position.z);
             return true;
@@ -1853,6 +1877,36 @@ namespace RavenDevOps.Fishing.Fishing
             var wave = Mathf.Sin((Time.unscaledTime - _demoPhaseStartedAt) * 2.8f);
             var targetX = _demoShipStartX + (travelSpan * wave);
             MoveShipTowardX(targetX);
+        }
+
+        private void TickShipUpgradeInfoVisual()
+        {
+            SetDemoHookVisible(true);
+            var minimumDepth = Mathf.Max(1f, Mathf.Min(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
+            var maximumDepth = Mathf.Max(minimumDepth + 1f, Mathf.Max(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
+            var cycleSeconds = Mathf.Max(0.35f, _demoShipUpgradeDepthCycleSeconds);
+            var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
+            var blend = Mathf.PingPong(elapsed / cycleSeconds, 1f);
+            blend = blend * blend * (3f - (2f * blend));
+            var targetDepth = Mathf.Lerp(minimumDepth, maximumDepth, blend);
+            MoveHookTowardDepth(targetDepth, clampToWorldBounds: false, _demoDeepCastSpeedMultiplier * 0.55f);
+            ApplyTutorialLightPreview(enabled: false, Vector2.zero);
+            ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
+        }
+
+        private void TickHookUpgradeInfoVisual()
+        {
+            SetDemoHookVisible(true);
+            MoveHookTowardDepth(
+                Mathf.Max(1f, _demoHookUpgradePreviewDepthMeters),
+                clampToWorldBounds: false,
+                _demoDeepCastSpeedMultiplier * 0.75f);
+            var pulseSeconds = Mathf.Max(0.4f, _demoHookUpgradeLightPulseSeconds);
+            var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
+            var pulse = 0.5f + (0.5f * Mathf.Sin((elapsed / pulseSeconds) * Mathf.PI * 2f));
+            var pulsedRadii = Vector2.Lerp(ResolveScene8LightRadiiMeters(), ResolveScene9LightRadiiMeters(), pulse);
+            ApplyTutorialLightPreview(enabled: true, pulsedRadii);
+            ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
         }
 
         private void SailShipLeftDuringHookDemo()
