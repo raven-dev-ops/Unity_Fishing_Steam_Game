@@ -1863,12 +1863,14 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var position = _demoShipTransform.position;
+            // Demo ship should only sail left; never move right while autoplay is active.
+            var constrainedTargetX = Mathf.Min(targetX, position.x);
             position.x = Mathf.MoveTowards(
                 position.x,
-                targetX,
+                constrainedTargetX,
                 Mathf.Max(0.1f, _demoShipMoveSpeed) * Time.deltaTime);
             _demoShipTransform.position = position;
-            return Mathf.Abs(position.x - targetX) <= 0.02f;
+            return Mathf.Abs(position.x - constrainedTargetX) <= 0.02f;
         }
 
         private void MoveShipDuringHookDemo()
