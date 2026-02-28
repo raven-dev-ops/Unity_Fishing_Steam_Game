@@ -54,6 +54,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _verticalRetargetIntervalRangeSeconds = new Vector2(1.2f, 3.4f);
         [SerializeField] private Vector2 _verticalDriftLerpSpeedRange = new Vector2(0.45f, 1.3f);
         [SerializeField] private Vector2 _shipTravelVerticalOffsetPerMeterX = new Vector2(-0.18f, 0.18f);
+        [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.32f;
+        [SerializeField] private int _spawnDelayStaggerCycle = 4;
+        [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
         private readonly List<BackdropFishTrack> _tracks = new List<BackdropFishTrack>(16);
@@ -62,6 +65,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasLastShipX;
         private float _lastShipX;
         private float _shipDeltaX;
+        private int _spawnSequenceIndex;
 
         public void Configure(Camera targetCamera, Transform ship, Transform hook)
         {
@@ -242,6 +246,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportHalfSize(out var halfWidth, out _);
             var spawnPadding = Mathf.Max(1f, _horizontalPadding);
+            _spawnSequenceIndex = 0;
             var layerCount = 3;
             var layerCounts = BuildLayerCounts(Mathf.Clamp(_totalBackdropFish, 3, 24), layerCount);
             for (var layer = 0; layer < layerCount; layer++)
@@ -332,7 +337,7 @@ namespace RavenDevOps.Fishing.Fishing
                 track.RetargetDelaySeconds -= Time.unscaledDeltaTime;
                 if (track.RetargetDelaySeconds <= 0f)
                 {
-                    track.TargetBaseY = ResolveLayerBaseWorldY(track.LayerIndex);
+                    track.TargetBaseY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
                     track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
                 }
 
@@ -349,7 +354,7 @@ namespace RavenDevOps.Fishing.Fishing
                 // Camera depth can shift rapidly between demo scenes; re-seed fish that are now fully outside view.
                 if (p.y < bottomBound || p.y > topBound)
                 {
-                    track.BaseY = ResolveLayerBaseWorldY(track.LayerIndex);
+                    track.BaseY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
                     track.TargetBaseY = track.BaseY;
                     p.y = track.BaseY;
                 }
@@ -513,7 +518,7 @@ namespace RavenDevOps.Fishing.Fishing
             track.Speed = ResolveTrackSpeed(track.LayerIndex);
             var spawnX = ResolveSpawnWorldX(halfWidth, padding, preferAhead);
             track.Direction = ResolveSpawnDirectionForX(spawnX);
-            var spawnY = ResolveLayerBaseWorldY(track.LayerIndex);
+            var spawnY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
             track.BaseY = spawnY;
             track.TargetBaseY = spawnY;
             track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
@@ -527,6 +532,11 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.Transform.position = new Vector3(spawnX, spawnY, track.Transform.position.z);
             track.SpawnDelaySeconds = ResolveSpawnDelaySeconds(initialSpawn);
+            var staggerCycle = Mathf.Max(1, _spawnDelayStaggerCycle);
+            var staggerStep = Mathf.Max(0f, _spawnDelayStaggerStepSeconds);
+            var staggerOffset = (_spawnSequenceIndex % staggerCycle) * staggerStep;
+            _spawnSequenceIndex++;
+            track.SpawnDelaySeconds += staggerOffset;
             track.PendingSpawn = track.SpawnDelaySeconds > 0.01f;
             track.Renderer.enabled = !track.PendingSpawn;
         }
@@ -537,6 +547,50 @@ namespace RavenDevOps.Fishing.Fishing
             var min = Mathf.Max(0f, Mathf.Min(range.x, range.y));
             var max = Mathf.Max(min + 0.01f, Mathf.Max(range.x, range.y));
             return UnityEngine.Random.Range(min, max);
+        }
+
+        private float ResolveLayerBaseWorldYSpaced(int layerIndex, BackdropFishTrack targetTrack)
+        {
+            var attempts = Mathf.Max(2, _spawnYSpacingSampleAttempts);
+            var bestY = ResolveLayerBaseWorldY(layerIndex);
+            var bestScore = EvaluateSpawnYSpacingScore(bestY, targetTrack);
+
+            for (var i = 1; i < attempts; i++)
+            {
+                var candidateY = ResolveLayerBaseWorldY(layerIndex);
+                var score = EvaluateSpawnYSpacingScore(candidateY, targetTrack);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestY = candidateY;
+                }
+            }
+
+            return bestY;
+        }
+
+        private float EvaluateSpawnYSpacingScore(float candidateY, BackdropFishTrack targetTrack)
+        {
+            var nearestDistance = float.MaxValue;
+            var foundComparable = false;
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var track = _tracks[i];
+                if (track == null || track == targetTrack || track.Transform == null || track.Renderer == null)
+                {
+                    continue;
+                }
+
+                foundComparable = true;
+                var referenceY = track.PendingSpawn ? track.TargetBaseY : track.BaseY;
+                var distance = Mathf.Abs(candidateY - referenceY);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                }
+            }
+
+            return foundComparable ? nearestDistance : float.MaxValue;
         }
 
         private float ResolveVerticalRetargetDelaySeconds()
