@@ -60,16 +60,17 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] [Range(0f, 1f)] private float _wrapAheadSpawnChance = 0.75f;
         [SerializeField] [Range(0f, 0.45f)] private float _verticalBandJitterRatio = 0.18f;
         [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.02f, 0.3f);
-        [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(0.22f, 1.25f);
+        [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(0.12f, 0.65f);
         [SerializeField] private Vector2 _verticalRetargetIntervalRangeSeconds = new Vector2(1.2f, 3.4f);
         [SerializeField] private Vector2 _verticalDriftLerpSpeedRange = new Vector2(0.45f, 1.3f);
         [SerializeField] private Vector2 _shipTravelVerticalOffsetPerMeterX = new Vector2(-0.18f, 0.18f);
-        [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.2f;
-        [SerializeField] private int _spawnDelayStaggerCycle = 4;
+        [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.08f;
+        [SerializeField] private int _spawnDelayStaggerCycle = 6;
         [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
         [SerializeField] private float _spawnActivationOffscreenBuffer = 0.2f;
-        [SerializeField] private int _minimumVisibleTracks = 1;
-        [SerializeField] private float _visibleTrackRecoverySeconds = 2f;
+        [SerializeField] private int _minimumVisibleTracks = 2;
+        [SerializeField] private float _visibleTrackRecoverySeconds = 0.45f;
+        [SerializeField] private float _recoveryPendingSpawnMaxDelaySeconds = 0.18f;
         [SerializeField] [Range(0f, 0.2f)] private float _visibleTrackViewportPadding = 0.02f;
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
@@ -484,6 +485,18 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             _visibleTrackRecoveryElapsed = 0f;
+            var pendingSpawnMaxDelay = Mathf.Clamp(_recoveryPendingSpawnMaxDelaySeconds, 0.02f, 0.5f);
+            for (var i = 0; i < _tracks.Count; i++)
+            {
+                var pendingTrack = _tracks[i];
+                if (pendingTrack == null || !pendingTrack.PendingSpawn)
+                {
+                    continue;
+                }
+
+                pendingTrack.SpawnDelaySeconds = Mathf.Min(pendingTrack.SpawnDelaySeconds, pendingSpawnMaxDelay);
+            }
+
             var requiredRecoveryCount = requiredVisibleTracks - visibleTracks;
             for (var i = 0; i < _tracks.Count && requiredRecoveryCount > 0; i++)
             {
@@ -500,7 +513,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 QueueTrackSpawn(track, halfWidth, spawnPadding, preferAhead: true, initialSpawn: false);
-                track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.08f, 0.35f));
+                track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.04f, 0.16f));
                 requiredRecoveryCount--;
             }
         }
@@ -727,6 +740,13 @@ namespace RavenDevOps.Fishing.Fishing
             var staggerOffset = (_spawnSequenceIndex % staggerCycle) * staggerStep;
             _spawnSequenceIndex++;
             track.SpawnDelaySeconds = Mathf.Max(0.02f, track.SpawnDelaySeconds + staggerOffset);
+            if (!initialSpawn)
+            {
+                // Scene transitions can push all tracks into respawn at once. Cap delay so
+                // backdrop fish remain visible through short demo phases.
+                track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, 0.75f);
+            }
+
             track.PendingSpawn = true;
             track.Renderer.enabled = false;
         }
@@ -879,8 +899,9 @@ namespace RavenDevOps.Fishing.Fishing
                 towardCenter = UnityEngine.Random.value < 0.5f ? -1f : 1f;
             }
 
-            // Keep most fish entering toward camera center, with some variance.
-            if (UnityEngine.Random.value < 0.8f)
+            // Keep almost all fish entering toward camera center so short demo scenes
+            // consistently show backdrop motion without long empty windows.
+            if (UnityEngine.Random.value < 0.92f)
             {
                 return towardCenter;
             }
