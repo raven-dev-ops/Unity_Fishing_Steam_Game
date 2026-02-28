@@ -135,6 +135,60 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DepthBackdropFish_LayeredScaleAndOpacity_PreserveDepthCue()
+        {
+            UnityEngine.Random.InitState(66237);
+            var camera = CreateCamera();
+            var ship = CreateTransform("DepthBackdropLayerShip", new Vector3(0f, 0f, 0f));
+            var hook = CreateTransform("DepthBackdropLayerHook", new Vector3(0f, -60f, 0f));
+            CreateFishSpriteTemplate();
+
+            var controller = CreateController();
+            SetPrivateField(controller, "_totalBackdropFish", 12);
+            SetPrivateField(controller, "_initialSpawnDelayRangeSeconds", Vector2.zero);
+            SetPrivateField(controller, "_respawnDelayRangeSeconds", Vector2.zero);
+
+            controller.Configure(camera, ship, hook);
+            yield return null;
+            yield return null;
+
+            var tracks = ReadTracks(controller);
+            Assert.That(tracks.Count, Is.GreaterThanOrEqualTo(9), "Expected layered non-interactive fish tracks.");
+
+            var layerScaleSum = new float[3];
+            var layerAlphaSum = new float[3];
+            var layerCounts = new int[3];
+            for (var i = 0; i < tracks.Count; i++)
+            {
+                var track = tracks[i];
+                var layer = Mathf.Clamp(GetTrackField<int>(track, "LayerIndex"), 0, 2);
+                var transform = GetTrackField<Transform>(track, "Transform");
+                var renderer = GetTrackField<SpriteRenderer>(track, "Renderer");
+                Assert.That(transform, Is.Not.Null);
+                Assert.That(renderer, Is.Not.Null);
+                layerScaleSum[layer] += Mathf.Abs(transform.localScale.x);
+                layerAlphaSum[layer] += Mathf.Clamp01(renderer.color.a);
+                layerCounts[layer]++;
+            }
+
+            Assert.That(layerCounts[0], Is.GreaterThan(0), "Expected near-layer fish.");
+            Assert.That(layerCounts[1], Is.GreaterThan(0), "Expected mid-layer fish.");
+            Assert.That(layerCounts[2], Is.GreaterThan(0), "Expected far-layer fish.");
+
+            var nearScale = layerScaleSum[0] / layerCounts[0];
+            var midScale = layerScaleSum[1] / layerCounts[1];
+            var farScale = layerScaleSum[2] / layerCounts[2];
+            var nearAlpha = layerAlphaSum[0] / layerCounts[0];
+            var midAlpha = layerAlphaSum[1] / layerCounts[1];
+            var farAlpha = layerAlphaSum[2] / layerCounts[2];
+
+            Assert.That(nearAlpha, Is.GreaterThan(midAlpha + 0.02f), "Near layer should be more opaque than mid layer.");
+            Assert.That(midAlpha, Is.GreaterThan(farAlpha + 0.02f), "Mid layer should be more opaque than far layer.");
+            Assert.That(nearScale, Is.GreaterThan(midScale + 0.03f), "Near layer fish should render larger than mid layer fish.");
+            Assert.That(midScale, Is.GreaterThan(farScale + 0.03f), "Mid layer fish should render larger than far layer fish.");
+        }
+
+        [UnityTest]
         public IEnumerator DepthBackdropFish_PendingActivation_DoesNotEnableWhenOnScreen()
         {
             UnityEngine.Random.InitState(91277);
@@ -176,6 +230,38 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 transform.position.x < left || transform.position.x > right,
                 Is.True,
                 "Pending fish should be re-positioned off-screen before it can become visible.");
+        }
+
+        [UnityTest]
+        public IEnumerator DepthBackdropFish_UsesFallbackSprite_WhenFishTokenSpritesUnavailable()
+        {
+            UnityEngine.Random.InitState(31021);
+            var camera = CreateCamera();
+            var ship = CreateTransform("DepthBackdropFallbackShip", new Vector3(0f, 0f, 0f));
+            var hook = CreateTransform("DepthBackdropFallbackHook", new Vector3(0f, -60f, 0f));
+            var fallbackSprite = CreateTestSprite();
+
+            var controller = CreateController();
+            SetPrivateField(controller, "_totalBackdropFish", 8);
+            SetPrivateField(controller, "_fishNameToken", "NoMatchingFishToken");
+            SetPrivateField(controller, "_allowGenericFishNameFallback", false);
+            SetPrivateField(controller, "_fallbackFishSprite", fallbackSprite);
+            SetPrivateField(controller, "_initialSpawnDelayRangeSeconds", Vector2.zero);
+            SetPrivateField(controller, "_respawnDelayRangeSeconds", Vector2.zero);
+
+            controller.Configure(camera, ship, hook);
+            yield return null;
+            yield return null;
+
+            var tracks = ReadTracks(controller);
+            Assert.That(tracks.Count, Is.EqualTo(8), "Fallback fish sprite should allow all configured backdrop tracks to spawn.");
+
+            for (var i = 0; i < tracks.Count; i++)
+            {
+                var renderer = GetTrackField<SpriteRenderer>(tracks[i], "Renderer");
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(renderer.sprite, Is.EqualTo(fallbackSprite), "Backdrop fish should use the configured fallback sprite.");
+            }
         }
 
         private FishingDepthBackdropFishController CreateController()

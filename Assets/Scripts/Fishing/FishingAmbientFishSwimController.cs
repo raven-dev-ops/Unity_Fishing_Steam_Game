@@ -55,7 +55,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
         [SerializeField] private float _edgeBuffer = 1.35f;
-        [SerializeField] private float _offscreenDespawnSeconds = 2.8f;
+        [SerializeField] private float _offscreenDespawnSeconds = 3.4f;
         [SerializeField] private float _offscreenDespawnDistance = 3.25f;
         [SerializeField] private float _spawnFadeInSeconds = 0.5f;
         [SerializeField] private float _bobAmplitude = 0.14f;
@@ -788,8 +788,9 @@ namespace RavenDevOps.Fishing.Fishing
 
                 track.offscreenSeconds += Time.deltaTime;
                 var despawnByDistance = outsideDistance >= Mathf.Max(0.5f, _offscreenDespawnDistance);
-                var despawnByTime = track.offscreenSeconds >= Mathf.Max(0.25f, _offscreenDespawnSeconds);
-                if (despawnByDistance || despawnByTime)
+                var despawnByTime = track.offscreenSeconds >= Mathf.Max(0.5f, _offscreenDespawnSeconds);
+                // Keep fish alive until they have remained off-screen for several seconds.
+                if (despawnByDistance && despawnByTime)
                 {
                     if (track.reserved)
                     {

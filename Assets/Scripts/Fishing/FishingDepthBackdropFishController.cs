@@ -8,6 +8,8 @@ namespace RavenDevOps.Fishing.Fishing
     [DisallowMultipleComponent]
     public sealed class FishingDepthBackdropFishController : MonoBehaviour
     {
+        private const string TutorialSpriteLibraryResourcePath = "Pilot/Tutorial/SO_TutorialSpriteLibrary";
+
         private sealed class BackdropFishTrack
         {
             public Transform Transform;
@@ -34,7 +36,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _allowInBatchMode = false;
         [SerializeField] private bool _searchInactive = true;
         [SerializeField] private string _fishNameToken = "FishingFish";
-        [SerializeField] private int _totalBackdropFish = 6;
+        [SerializeField] private bool _allowGenericFishNameFallback = true;
+        [SerializeField] private Sprite _fallbackFishSprite;
+        [SerializeField] private int _totalBackdropFish = 9;
         [SerializeField] private float _overlayDepthFromCamera = 10f;
         [SerializeField] private int _baseSortingOrder = -30;
         [SerializeField] private float _horizontalPadding = 2.6f;
@@ -42,6 +46,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _swimSpeedRange = new Vector2(0.24f, 0.78f);
         [SerializeField] private Vector2 _speedVarianceRange = new Vector2(0.72f, 1.38f);
         [SerializeField] private Vector2 _scaleRange = new Vector2(0.45f, 0.95f);
+        [SerializeField] private Vector2 _nearLayerScaleRange = new Vector2(0.74f, 1.18f);
+        [SerializeField] private Vector2 _midLayerScaleRange = new Vector2(0.56f, 0.92f);
+        [SerializeField] private Vector2 _farLayerScaleRange = new Vector2(0.38f, 0.72f);
         [SerializeField] private float _depthParallaxScale = 1.35f;
         [SerializeField] private float _shipTravelParallax = 0.45f;
         [SerializeField] private Vector3 _layerAlpha = new Vector3(0.6f, 0.35f, 0.12f);
@@ -49,12 +56,12 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] [Range(0f, 1f)] private float _initialAheadSpawnChance = 0.5f;
         [SerializeField] [Range(0f, 1f)] private float _wrapAheadSpawnChance = 0.75f;
         [SerializeField] [Range(0f, 0.45f)] private float _verticalBandJitterRatio = 0.18f;
-        [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.08f, 1.15f);
-        [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(0.35f, 1.85f);
+        [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.05f, 0.55f);
+        [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(0.22f, 1.25f);
         [SerializeField] private Vector2 _verticalRetargetIntervalRangeSeconds = new Vector2(1.2f, 3.4f);
         [SerializeField] private Vector2 _verticalDriftLerpSpeedRange = new Vector2(0.45f, 1.3f);
         [SerializeField] private Vector2 _shipTravelVerticalOffsetPerMeterX = new Vector2(-0.18f, 0.18f);
-        [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.32f;
+        [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.2f;
         [SerializeField] private int _spawnDelayStaggerCycle = 4;
         [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
         [SerializeField] private float _spawnActivationOffscreenBuffer = 0.2f;
@@ -214,11 +221,63 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                if (seen.Add(renderer.sprite))
+                TryAddSpriteToLibrary(renderer.sprite, seen);
+            }
+
+            if (_spriteLibrary.Count == 0 && _allowGenericFishNameFallback)
+            {
+                for (var i = 0; i < renderers.Length; i++)
                 {
-                    _spriteLibrary.Add(renderer.sprite);
+                    var renderer = renderers[i];
+                    if (renderer == null || renderer.sprite == null || renderer.gameObject.scene != gameObject.scene)
+                    {
+                        continue;
+                    }
+
+                    if (renderer.gameObject.name.IndexOf("Fish", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    TryAddSpriteToLibrary(renderer.sprite, seen);
                 }
             }
+
+            if (_spriteLibrary.Count > 0)
+            {
+                return;
+            }
+
+            if (_fallbackFishSprite != null)
+            {
+                TryAddSpriteToLibrary(_fallbackFishSprite, seen);
+            }
+
+            if (_spriteLibrary.Count > 0)
+            {
+                return;
+            }
+
+            var tutorialSpriteLibrary = Resources.Load<TutorialSpriteLibrary>(TutorialSpriteLibraryResourcePath);
+            if (tutorialSpriteLibrary != null)
+            {
+                TryAddSpriteToLibrary(tutorialSpriteLibrary.FishSprite, seen);
+            }
+        }
+
+        private void TryAddSpriteToLibrary(Sprite sprite, HashSet<Sprite> seen)
+        {
+            if (sprite == null || seen == null)
+            {
+                return;
+            }
+
+            if (!seen.Add(sprite))
+            {
+                return;
+            }
+
+            _spriteLibrary.Add(sprite);
         }
 
         private void EnsureVisualRoot()
@@ -258,11 +317,12 @@ namespace RavenDevOps.Fishing.Fishing
                     go.transform.SetParent(_visualRoot.transform, worldPositionStays: false);
                     var renderer = go.AddComponent<SpriteRenderer>();
                     renderer.sprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
-                    renderer.sortingOrder = _baseSortingOrder + layer;
+                    // Layer 0 is closest (highest alpha/size), layer 2 is farthest.
+                    renderer.sortingOrder = _baseSortingOrder + (2 - layer);
                     renderer.flipX = UnityEngine.Random.value > 0.5f;
                     var alpha = ResolveLayerAlpha(layer);
                     renderer.color = new Color(0.9f, 0.96f, 1f, alpha);
-                    var scale = UnityEngine.Random.Range(_scaleRange.x, _scaleRange.y);
+                    var scale = ResolveLayerScale(layer);
                     go.transform.localScale = new Vector3(scale, scale, 1f);
 
                     var track = new BackdropFishTrack
@@ -516,6 +576,33 @@ namespace RavenDevOps.Fishing.Fishing
             var layerScale = Mathf.Max(0.25f, 1f - (Mathf.Clamp(layerIndex, 0, 2) * 0.18f));
             var speedVariance = UnityEngine.Random.Range(minVariance, maxVariance);
             return Mathf.Max(0.02f, UnityEngine.Random.Range(minSpeed, maxSpeed) * layerScale * speedVariance);
+        }
+
+        private float ResolveLayerScale(int layerIndex)
+        {
+            Vector2 layerRange;
+            switch (Mathf.Clamp(layerIndex, 0, 2))
+            {
+                case 0:
+                    layerRange = _nearLayerScaleRange;
+                    break;
+                case 1:
+                    layerRange = _midLayerScaleRange;
+                    break;
+                default:
+                    layerRange = _farLayerScaleRange;
+                    break;
+            }
+
+            var layerMin = Mathf.Max(0.05f, Mathf.Min(layerRange.x, layerRange.y));
+            var layerMax = Mathf.Max(layerMin + 0.01f, Mathf.Max(layerRange.x, layerRange.y));
+            if (layerMax <= 0.06f)
+            {
+                layerMin = Mathf.Max(0.05f, Mathf.Min(_scaleRange.x, _scaleRange.y));
+                layerMax = Mathf.Max(layerMin + 0.01f, Mathf.Max(_scaleRange.x, _scaleRange.y));
+            }
+
+            return UnityEngine.Random.Range(layerMin, layerMax);
         }
 
         private void QueueTrackSpawn(BackdropFishTrack track, float halfWidth, float padding, bool preferAhead, bool initialSpawn)

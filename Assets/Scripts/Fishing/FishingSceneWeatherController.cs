@@ -18,6 +18,7 @@ namespace RavenDevOps.Fishing.Fishing
             public float BobAmplitude;
             public float BobFrequency;
             public float BaseY;
+            public float WeatherAlpha;
             public bool WeatherEnabled;
         }
 
@@ -52,6 +53,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _skySurfaceYOffset = 0f;
         [SerializeField] private Vector2 _skyBandHeightMeters = new Vector2(1.25f, 7.5f);
         [SerializeField] private float _skyVisibilityBelowBandBuffer = 0.35f;
+        [SerializeField] private float _skyVisibilityFadeDistance = 8f;
 
         private readonly List<DriftSprite> _cloudSprites = new List<DriftSprite>(12);
         private readonly List<DriftSprite> _rainSprites = new List<DriftSprite>(48);
@@ -75,6 +77,12 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _showSkyTintByWeather;
         private bool _showGlobalFogByWeather;
         private bool _skyBandVisible;
+        private float _skyVisibilityFactor = 1f;
+        private Color _skyTintColorByWeather = Color.clear;
+        private Color _globalFogColorByWeather = Color.clear;
+        private Color _sunColorByWeather = Color.clear;
+        private Color _moonColorByWeather = Color.clear;
+        private Color _moonShadowColorByWeather = Color.clear;
 
         public FishingWeatherState CurrentWeather => _currentWeather;
 
@@ -418,7 +426,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             ResolveSkyBandWorldRange(out var minY, out var maxY);
-            var skyBandVisible = _skyBandVisible;
+            var skyVisibility = Mathf.Clamp01(_skyVisibilityFactor);
+            var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
             var leftBound = cameraX - halfWidth - 2f;
             var rightBound = cameraX + halfWidth + 2f;
@@ -454,7 +463,10 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 cloud.Transform.position = p;
-                cloud.Renderer.enabled = skyBandVisible;
+                var color = cloud.Renderer.color;
+                color.a = cloud.WeatherAlpha * skyVisibility;
+                cloud.Renderer.color = color;
+                cloud.Renderer.enabled = skyBandVisible && color.a > 0.001f;
             }
         }
 
@@ -467,7 +479,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
-            var skyBandVisible = _skyBandVisible;
+            var skyVisibility = Mathf.Clamp01(_skyVisibilityFactor);
+            var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
             var leftBound = cameraX - (halfWidth + 1.2f);
             var rightBound = cameraX + (halfWidth + 1.2f);
@@ -506,7 +519,10 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 drop.Transform.position = p;
-                drop.Renderer.enabled = skyBandVisible;
+                var color = drop.Renderer.color;
+                color.a = drop.WeatherAlpha * skyVisibility;
+                drop.Renderer.color = color;
+                drop.Renderer.enabled = skyBandVisible && color.a > 0.001f;
             }
         }
 
@@ -517,9 +533,10 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            ResolveViewportBounds(out var halfWidth, out _);
+            ResolveViewportBounds(out var halfWidth, out var halfHeight);
             ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
-            var skyBandVisible = _skyBandVisible;
+            var skyVisibility = ResolveSkyVisibilityFactor(skyBandMinY, halfHeight);
+            var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
             var leftBound = cameraX - (halfWidth + 3f);
             var rightBound = cameraX + (halfWidth + 3f);
@@ -556,7 +573,10 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 band.Transform.position = p;
-                band.Renderer.enabled = skyBandVisible;
+                var color = band.Renderer.color;
+                color.a = band.WeatherAlpha * skyVisibility;
+                band.Renderer.color = color;
+                band.Renderer.enabled = skyBandVisible && color.a > 0.001f;
             }
         }
 
@@ -583,8 +603,9 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             var lightningColor = new Color(0.94f, 0.98f, 1f, _lightningFlashAlpha);
+            lightningColor.a *= Mathf.Clamp01(_skyVisibilityFactor);
             _lightningOverlay.color = lightningColor;
-            _lightningOverlay.enabled = _skyBandVisible && _lightningFlashAlpha > 0.001f;
+            _lightningOverlay.enabled = lightningColor.a > 0.001f;
         }
 
         private void ApplyWeather(FishingWeatherState weather, bool scheduleNextChange)
@@ -684,25 +705,25 @@ namespace RavenDevOps.Fishing.Fishing
             if (_skyTintOverlay != null)
             {
                 _showSkyTintByWeather = skyTint.a > 0.001f;
-                _skyTintOverlay.color = skyTint;
+                _skyTintColorByWeather = skyTint;
             }
 
             if (_globalFogOverlay != null)
             {
                 _showGlobalFogByWeather = globalFogTint.a > 0.001f;
-                _globalFogOverlay.color = globalFogTint;
+                _globalFogColorByWeather = globalFogTint;
             }
 
             if (_sunRenderer != null)
             {
                 _showSunByWeather = showSun;
-                _sunRenderer.color = new Color(1f, 0.94f, 0.72f, showSun ? 0.82f : 0f);
+                _sunColorByWeather = new Color(1f, 0.94f, 0.72f, showSun ? 0.82f : 0f);
             }
 
             if (_moonRenderer != null)
             {
                 _showMoonByWeather = showMoon;
-                _moonRenderer.color = new Color(0.9f, 0.95f, 1f, showMoon ? 0.88f : 0f);
+                _moonColorByWeather = new Color(0.9f, 0.95f, 1f, showMoon ? 0.88f : 0f);
             }
 
             if (_moonShadowRenderer != null)
@@ -710,7 +731,7 @@ namespace RavenDevOps.Fishing.Fishing
                 var moonColor = skyTint.a > 0f
                     ? new Color(Mathf.Clamp01(0.03f + skyTint.r), Mathf.Clamp01(0.03f + skyTint.g), Mathf.Clamp01(0.07f + skyTint.b), showMoon ? 0.92f : 0f)
                     : new Color(0.03f, 0.04f, 0.08f, showMoon ? 0.92f : 0f);
-                _moonShadowRenderer.color = moonColor;
+                _moonShadowColorByWeather = moonColor;
                 _showMoonShadowByWeather = showMoon && !float.IsNaN(moonShadowOffsetX);
                 if (_moonRenderer != null && !float.IsNaN(moonShadowOffsetX))
                 {
@@ -740,7 +761,10 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             var cameraX = _targetCamera.transform.position.x;
             ResolveSkyBandWorldRange(out var topMin, out var topMax);
-            var skyBandVisible = IsSkyBandVisible(topMin, halfHeight);
+            var skyVisibility = ResolveSkyVisibilityFactor(topMin, halfHeight);
+            var skyBandVisible = skyVisibility > 0.001f;
+            var seedMinX = cameraX - halfWidth - 4f;
+            var seedMaxX = cameraX + halfWidth + 4f;
             for (var i = 0; i < _cloudSprites.Count; i++)
             {
                 var cloud = _cloudSprites[i];
@@ -757,7 +781,8 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                cloud.Renderer.color = cloudColor;
+                cloud.WeatherAlpha = cloudColor.a;
+                cloud.Renderer.color = new Color(cloudColor.r, cloudColor.g, cloudColor.b, cloud.WeatherAlpha * skyVisibility);
                 var scaleX = Random.Range(1.8f, 4f);
                 var scaleY = Random.Range(0.45f, 1.15f);
                 cloud.Renderer.size = new Vector2(scaleX, scaleY);
@@ -767,21 +792,34 @@ namespace RavenDevOps.Fishing.Fishing
                 cloud.BobFrequency = Random.Range(0.12f, 0.42f);
                 cloud.BaseY = Random.Range(topMin, topMax);
                 cloud.Transform.position = new Vector3(
-                    cameraX + halfWidth + Random.Range(2f, 7f),
+                    Random.Range(seedMinX, seedMaxX),
                     cloud.BaseY,
                     0f);
             }
         }
 
-        private bool IsSkyBandVisible(float skyBandMinY, float halfHeight)
+        private float ResolveSkyVisibilityFactor(float skyBandMinY, float halfHeight)
         {
             if (_targetCamera == null)
             {
-                return false;
+                return 0f;
             }
 
             var cameraTopY = _targetCamera.transform.position.y + Mathf.Max(0.5f, halfHeight);
-            return cameraTopY >= skyBandMinY - Mathf.Max(0f, _skyVisibilityBelowBandBuffer);
+            var fadeStartY = skyBandMinY - Mathf.Max(0f, _skyVisibilityBelowBandBuffer);
+            var fadeDistance = Mathf.Max(0.05f, _skyVisibilityFadeDistance);
+            var fadeEndY = fadeStartY - fadeDistance;
+            if (cameraTopY >= fadeStartY)
+            {
+                return 1f;
+            }
+
+            if (cameraTopY <= fadeEndY)
+            {
+                return 0f;
+            }
+
+            return Mathf.InverseLerp(fadeEndY, fadeStartY, cameraTopY);
         }
 
         private void UpdateSkyElementVisibility()
@@ -793,32 +831,31 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out _, out var halfHeight);
             ResolveSkyBandWorldRange(out var skyBandMinY, out _);
-            _skyBandVisible = IsSkyBandVisible(skyBandMinY, halfHeight);
-            var skyBandVisible = _skyBandVisible;
-            if (_skyTintOverlay != null)
+            _skyVisibilityFactor = ResolveSkyVisibilityFactor(skyBandMinY, halfHeight);
+            _skyBandVisible = _skyVisibilityFactor > 0.001f;
+            ApplySkyVisibilityToStaticElements();
+        }
+
+        private void ApplySkyVisibilityToStaticElements()
+        {
+            ApplyStaticWeatherVisibility(_skyTintOverlay, _showSkyTintByWeather, _skyTintColorByWeather);
+            ApplyStaticWeatherVisibility(_globalFogOverlay, _showGlobalFogByWeather, _globalFogColorByWeather);
+            ApplyStaticWeatherVisibility(_sunRenderer, _showSunByWeather, _sunColorByWeather);
+            ApplyStaticWeatherVisibility(_moonRenderer, _showMoonByWeather, _moonColorByWeather);
+            ApplyStaticWeatherVisibility(_moonShadowRenderer, _showMoonShadowByWeather, _moonShadowColorByWeather);
+        }
+
+        private void ApplyStaticWeatherVisibility(SpriteRenderer renderer, bool weatherEnabled, Color weatherColor)
+        {
+            if (renderer == null)
             {
-                _skyTintOverlay.enabled = _showSkyTintByWeather && skyBandVisible;
+                return;
             }
 
-            if (_globalFogOverlay != null)
-            {
-                _globalFogOverlay.enabled = _showGlobalFogByWeather && skyBandVisible;
-            }
-
-            if (_sunRenderer != null)
-            {
-                _sunRenderer.enabled = _showSunByWeather && skyBandVisible;
-            }
-
-            if (_moonRenderer != null)
-            {
-                _moonRenderer.enabled = _showMoonByWeather && skyBandVisible;
-            }
-
-            if (_moonShadowRenderer != null)
-            {
-                _moonShadowRenderer.enabled = _showMoonShadowByWeather && skyBandVisible;
-            }
+            var color = weatherColor;
+            color.a *= Mathf.Clamp01(_skyVisibilityFactor);
+            renderer.color = color;
+            renderer.enabled = weatherEnabled && color.a > 0.001f;
         }
 
         private void ResolveSkyBandWorldRange(out float minY, out float maxY)
@@ -851,7 +888,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out var halfWidth, out _);
             ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
-            var skyBandVisible = _skyBandVisible;
+            var skyVisibility = Mathf.Clamp01(_skyVisibilityFactor);
+            var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
             var spawnMinX = cameraX - (halfWidth + 0.6f);
             var spawnMaxX = cameraX + (halfWidth + 0.6f);
@@ -874,7 +912,8 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                drop.Renderer.color = rainColor;
+                drop.WeatherAlpha = rainColor.a;
+                drop.Renderer.color = new Color(rainColor.r, rainColor.g, rainColor.b, drop.WeatherAlpha * skyVisibility);
                 drop.Renderer.size = new Vector2(Random.Range(0.015f, 0.03f), Random.Range(0.28f, 0.54f));
                 drop.Speed = Random.Range(0.25f, 0.8f);
                 drop.VerticalSpeed = Random.Range(2.6f, 5.4f);
@@ -895,7 +934,8 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
-            var skyBandVisible = _skyBandVisible;
+            var skyVisibility = ResolveSkyVisibilityFactor(skyBandMinY, halfHeight);
+            var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
             var spawnMinX = cameraX - (halfWidth + 1.5f);
             var spawnMaxX = cameraX + (halfWidth + 1.5f);
@@ -918,7 +958,8 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                fog.Renderer.color = fogColor;
+                fog.WeatherAlpha = fogColor.a;
+                fog.Renderer.color = new Color(fogColor.r, fogColor.g, fogColor.b, fog.WeatherAlpha * skyVisibility);
                 fog.Renderer.size = new Vector2(Random.Range(halfWidth * 0.8f, halfWidth * 1.6f), Random.Range(0.4f, 0.95f));
                 fog.Speed = Random.Range(0.05f, 0.18f);
                 fog.BobAmplitude = Random.Range(0.03f, 0.1f);
