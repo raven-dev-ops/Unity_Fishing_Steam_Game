@@ -1183,6 +1183,7 @@ namespace RavenDevOps.Fishing.Core
             }
 
             EnsureEventSystem(scene);
+            HideSceneObjects(scene, "TopBadge");
             var services = ResolveRuntimeServices();
             var sceneReferences = ResolveFishingSceneReferences(scene);
             var canvas = CreateCanvas(root.transform, "FishingCanvas", 245);

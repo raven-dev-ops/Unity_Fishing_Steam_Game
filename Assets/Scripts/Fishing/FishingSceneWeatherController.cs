@@ -48,8 +48,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _rainSpriteCount = 24;
         [SerializeField] private int _fogBandCount = 3;
         [SerializeField] private float _overlayDepthFromCamera = 10f;
-        [SerializeField] private int _baseSortingOrder = -26;
-        [SerializeField] private float _shipTravelParallax = 0.04f;
+        [SerializeField] private int _baseSortingOrder = 48;
         [SerializeField] private float _skySurfaceYOffset = 0f;
         [SerializeField] private Vector2 _skyBandHeightMeters = new Vector2(1.25f, 7.5f);
         [SerializeField] private float _skyVisibilityBelowBandBuffer = 0.35f;
@@ -70,9 +69,6 @@ namespace RavenDevOps.Fishing.Fishing
         private float _lightningFlashAlpha;
         private float _nextLightningAt;
         private bool _lightningActive;
-        private bool _hasLastShipX;
-        private float _lastShipX;
-        private float _shipDeltaX;
         private bool _showSunByWeather;
         private bool _showMoonByWeather;
         private bool _showMoonShadowByWeather;
@@ -140,7 +136,6 @@ namespace RavenDevOps.Fishing.Fishing
             EnsureVisuals();
             UpdateViewportAnchoring();
             UpdateSkyElementVisibility();
-            UpdateShipDeltaX();
             TickWeatherCycle();
             TickClouds();
             TickRain();
@@ -214,27 +209,6 @@ namespace RavenDevOps.Fishing.Fishing
             }
         }
 
-        private void UpdateShipDeltaX()
-        {
-            _shipDeltaX = 0f;
-            if (_ship == null)
-            {
-                _hasLastShipX = false;
-                return;
-            }
-
-            var shipX = _ship.position.x;
-            if (!_hasLastShipX)
-            {
-                _hasLastShipX = true;
-                _lastShipX = shipX;
-                return;
-            }
-
-            _shipDeltaX = shipX - _lastShipX;
-            _lastShipX = shipX;
-        }
-
         private void EnsureVisuals()
         {
             if (_targetCamera == null)
@@ -275,8 +249,8 @@ namespace RavenDevOps.Fishing.Fishing
             _lightningOverlay ??= CreateSprite("WeatherLightning", _baseSortingOrder + 12, _visualRoot.transform);
 
             EnsureDriftSprites(_cloudSprites, Mathf.Clamp(_cloudSpriteCount, 1, 24), "WeatherCloud", _baseSortingOrder + 3, _skyRoot.transform);
-            EnsureDriftSprites(_rainSprites, Mathf.Clamp(_rainSpriteCount, 8, 100), "WeatherRain", _baseSortingOrder + 9, _visualRoot.transform);
-            EnsureDriftSprites(_fogSprites, Mathf.Clamp(_fogBandCount, 1, 10), "WeatherFogBand", _baseSortingOrder + 6, _visualRoot.transform);
+            EnsureDriftSprites(_rainSprites, Mathf.Clamp(_rainSpriteCount, 8, 100), "WeatherRain", _baseSortingOrder + 9, _skyRoot.transform);
+            EnsureDriftSprites(_fogSprites, Mathf.Clamp(_fogBandCount, 1, 10), "WeatherFogBand", _baseSortingOrder + 6, _skyRoot.transform);
         }
 
         private void EnsureDriftSprites(List<DriftSprite> collection, int targetCount, string baseName, int sortingOrder, Transform parent)
@@ -463,9 +437,8 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 var p = cloud.Transform.position;
-                var shipScroll = -_shipDeltaX * Mathf.Max(0f, _shipTravelParallax);
                 var windScroll = cloud.Speed * cloud.HorizontalDirection * Time.unscaledDeltaTime;
-                var horizontalStep = shipScroll + windScroll;
+                var horizontalStep = windScroll;
                 p.x += horizontalStep;
                 var bob = Mathf.Sin((Time.unscaledTime * cloud.BobFrequency) + cloud.Phase) * cloud.BobAmplitude;
                 p.y = Mathf.Clamp(cloud.BaseY + bob, minY, maxY);
@@ -493,7 +466,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
+            ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
             var skyBandVisible = _skyBandVisible;
+            var cameraX = _targetCamera.transform.position.x;
+            var leftBound = cameraX - (halfWidth + 1.2f);
+            var rightBound = cameraX + (halfWidth + 1.2f);
+            var resetTopY = skyBandMaxY + 1.6f;
+            var resetBottomY = skyBandMinY - 1.6f;
             for (var i = 0; i < _rainSprites.Count; i++)
             {
                 var drop = _rainSprites[i];
@@ -508,26 +487,25 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                var p = drop.Transform.localPosition;
-                var horizontalStep = (-_shipDeltaX * Mathf.Max(0f, _shipTravelParallax * 0.7f))
-                    - (drop.Speed * 0.12f * Time.unscaledDeltaTime);
+                var p = drop.Transform.position;
+                var horizontalStep = -(drop.Speed * 0.12f * Time.unscaledDeltaTime);
                 p.x += horizontalStep;
                 p.y -= drop.VerticalSpeed * Time.unscaledDeltaTime;
-                if (p.y < -(halfHeight + 1.6f))
+                if (p.y < resetBottomY)
                 {
-                    p.y = halfHeight + 1.6f;
-                    p.x = Random.Range(-(halfWidth + 0.5f), halfWidth + 0.5f);
+                    p.y = resetTopY;
+                    p.x = Random.Range(leftBound, rightBound);
                 }
-                else if (p.x < -(halfWidth + 1.2f))
+                else if (p.x < leftBound)
                 {
-                    p.x = halfWidth + 1.2f;
+                    p.x = rightBound;
                 }
-                else if (p.x > halfWidth + 1.2f)
+                else if (p.x > rightBound)
                 {
-                    p.x = -(halfWidth + 1.2f);
+                    p.x = leftBound;
                 }
 
-                drop.Transform.localPosition = p;
+                drop.Transform.position = p;
                 drop.Renderer.enabled = skyBandVisible;
             }
         }
@@ -539,8 +517,14 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            ResolveViewportBounds(out var halfWidth, out var halfHeight);
+            ResolveViewportBounds(out var halfWidth, out _);
+            ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
             var skyBandVisible = _skyBandVisible;
+            var cameraX = _targetCamera.transform.position.x;
+            var leftBound = cameraX - (halfWidth + 3f);
+            var rightBound = cameraX + (halfWidth + 3f);
+            var fogMinY = skyBandMinY - 1.1f;
+            var fogMaxY = Mathf.Max(fogMinY + 0.8f, skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f));
             for (var i = 0; i < _fogSprites.Count; i++)
             {
                 var band = _fogSprites[i];
@@ -555,24 +539,23 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                var p = band.Transform.localPosition;
-                var horizontalStep = (-_shipDeltaX * Mathf.Max(0f, _shipTravelParallax * 0.35f))
-                    + (band.Speed * 0.12f * Time.unscaledDeltaTime);
+                var p = band.Transform.position;
+                var horizontalStep = band.Speed * 0.12f * Time.unscaledDeltaTime;
                 p.x += horizontalStep;
                 var bob = Mathf.Sin((Time.unscaledTime * band.BobFrequency) + band.Phase) * band.BobAmplitude;
-                p.y = Mathf.Clamp(band.BaseY + bob, -(halfHeight * 0.35f), halfHeight * 0.4f);
-                if (horizontalStep >= 0f && p.x > halfWidth + 3f)
+                p.y = Mathf.Clamp(band.BaseY + bob, fogMinY, fogMaxY);
+                if (horizontalStep >= 0f && p.x > rightBound)
                 {
-                    p.x = -(halfWidth + 3f);
-                    band.BaseY = Random.Range(-(halfHeight * 0.35f), halfHeight * 0.4f);
+                    p.x = leftBound;
+                    band.BaseY = Random.Range(fogMinY, fogMaxY);
                 }
-                else if (horizontalStep < 0f && p.x < -(halfWidth + 3f))
+                else if (horizontalStep < 0f && p.x < leftBound)
                 {
-                    p.x = halfWidth + 3f;
-                    band.BaseY = Random.Range(-(halfHeight * 0.35f), halfHeight * 0.4f);
+                    p.x = rightBound;
+                    band.BaseY = Random.Range(fogMinY, fogMaxY);
                 }
 
-                band.Transform.localPosition = p;
+                band.Transform.position = p;
                 band.Renderer.enabled = skyBandVisible;
             }
         }
@@ -866,8 +849,14 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            ResolveViewportBounds(out var halfWidth, out var halfHeight);
+            ResolveViewportBounds(out var halfWidth, out _);
+            ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
             var skyBandVisible = _skyBandVisible;
+            var cameraX = _targetCamera.transform.position.x;
+            var spawnMinX = cameraX - (halfWidth + 0.6f);
+            var spawnMaxX = cameraX + (halfWidth + 0.6f);
+            var spawnMinY = skyBandMinY - 1.2f;
+            var spawnMaxY = skyBandMaxY + 1.6f;
             var clampedVisible = Mathf.Clamp(visibleCount, 0, _rainSprites.Count);
             for (var i = 0; i < _rainSprites.Count; i++)
             {
@@ -890,9 +879,9 @@ namespace RavenDevOps.Fishing.Fishing
                 drop.Speed = Random.Range(0.25f, 0.8f);
                 drop.VerticalSpeed = Random.Range(2.6f, 5.4f);
                 drop.Transform.localRotation = Quaternion.Euler(0f, 0f, 18f);
-                drop.Transform.localPosition = new Vector3(
-                    Random.Range(-(halfWidth + 0.6f), halfWidth + 0.6f),
-                    Random.Range(-(halfHeight + 0.6f), halfHeight + 0.6f),
+                drop.Transform.position = new Vector3(
+                    Random.Range(spawnMinX, spawnMaxX),
+                    Random.Range(spawnMinY, spawnMaxY),
                     0f);
             }
         }
@@ -905,7 +894,13 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
+            ResolveSkyBandWorldRange(out var skyBandMinY, out var skyBandMaxY);
             var skyBandVisible = _skyBandVisible;
+            var cameraX = _targetCamera.transform.position.x;
+            var spawnMinX = cameraX - (halfWidth + 1.5f);
+            var spawnMaxX = cameraX + (halfWidth + 1.5f);
+            var fogMinY = skyBandMinY - 1.1f;
+            var fogMaxY = Mathf.Max(fogMinY + 0.8f, skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f));
             var clampedVisible = Mathf.Clamp(visibleCount, 0, _fogSprites.Count);
             for (var i = 0; i < _fogSprites.Count; i++)
             {
@@ -928,9 +923,9 @@ namespace RavenDevOps.Fishing.Fishing
                 fog.Speed = Random.Range(0.05f, 0.18f);
                 fog.BobAmplitude = Random.Range(0.03f, 0.1f);
                 fog.BobFrequency = Random.Range(0.1f, 0.24f);
-                fog.BaseY = Random.Range(-(halfHeight * 0.35f), halfHeight * 0.4f);
-                fog.Transform.localPosition = new Vector3(
-                    Random.Range(-(halfWidth + 1.5f), halfWidth + 1.5f),
+                fog.BaseY = Random.Range(fogMinY, fogMaxY);
+                fog.Transform.position = new Vector3(
+                    Random.Range(spawnMinX, spawnMaxX),
                     fog.BaseY,
                     0f);
             }

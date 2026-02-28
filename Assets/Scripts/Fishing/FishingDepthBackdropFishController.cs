@@ -19,6 +19,12 @@ namespace RavenDevOps.Fishing.Fishing
             public float BobFrequency;
             public float Phase;
             public float BaseY;
+            public float TargetBaseY;
+            public float VerticalDriftLerpSpeed;
+            public float TravelVerticalOffsetPerShipMeter;
+            public float RetargetDelaySeconds;
+            public float SpawnDelaySeconds;
+            public bool PendingSpawn;
         }
 
         [SerializeField] private Camera _targetCamera;
@@ -34,10 +40,20 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _horizontalPadding = 2.6f;
         [SerializeField] private float _minimumDepthMeters = 30f;
         [SerializeField] private Vector2 _swimSpeedRange = new Vector2(0.08f, 0.32f);
+        [SerializeField] private Vector2 _speedVarianceRange = new Vector2(0.72f, 1.38f);
         [SerializeField] private Vector2 _scaleRange = new Vector2(0.45f, 0.95f);
         [SerializeField] private float _depthParallaxScale = 1.35f;
         [SerializeField] private float _shipTravelParallax = 0.45f;
         [SerializeField] private Vector3 _layerAlpha = new Vector3(0.6f, 0.35f, 0.12f);
+        [SerializeField] private Vector2 _offscreenSpawnOffsetRange = new Vector2(1.1f, 3.4f);
+        [SerializeField] [Range(0f, 1f)] private float _initialAheadSpawnChance = 0.5f;
+        [SerializeField] [Range(0f, 1f)] private float _wrapAheadSpawnChance = 0.75f;
+        [SerializeField] [Range(0f, 0.45f)] private float _verticalBandJitterRatio = 0.18f;
+        [SerializeField] private Vector2 _initialSpawnDelayRangeSeconds = new Vector2(0.2f, 2.8f);
+        [SerializeField] private Vector2 _respawnDelayRangeSeconds = new Vector2(1.1f, 3.9f);
+        [SerializeField] private Vector2 _verticalRetargetIntervalRangeSeconds = new Vector2(1.2f, 3.4f);
+        [SerializeField] private Vector2 _verticalDriftLerpSpeedRange = new Vector2(0.45f, 1.3f);
+        [SerializeField] private Vector2 _shipTravelVerticalOffsetPerMeterX = new Vector2(-0.18f, 0.18f);
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
         private readonly List<BackdropFishTrack> _tracks = new List<BackdropFishTrack>(16);
@@ -96,7 +112,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            AnchorToCamera();
+            AlignVisualRootDepth();
             UpdateShipDeltaX();
             TickTracks();
         }
@@ -128,7 +144,7 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (_initialized)
             {
-                AnchorToCamera();
+                AlignVisualRootDepth();
                 return;
             }
 
@@ -207,13 +223,13 @@ namespace RavenDevOps.Fishing.Fishing
                 _visualRoot = new GameObject("FishingDepthBackdropFishRoot");
             }
 
-            if (_targetCamera != null && _visualRoot.transform.parent != _targetCamera.transform)
+            if (_visualRoot.transform.parent != null)
             {
-                _visualRoot.transform.SetParent(_targetCamera.transform, worldPositionStays: false);
+                _visualRoot.transform.SetParent(null, worldPositionStays: true);
             }
 
-            _visualRoot.transform.localPosition = new Vector3(0f, 0f, Mathf.Abs(_overlayDepthFromCamera));
-            _visualRoot.transform.localRotation = Quaternion.identity;
+            _visualRoot.transform.localScale = Vector3.one;
+            AlignVisualRootDepth();
         }
 
         private void BuildTracks()
@@ -224,6 +240,8 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            ResolveViewportHalfSize(out var halfWidth, out _);
+            var spawnPadding = Mathf.Max(1f, _horizontalPadding);
             var layerCount = 3;
             var layerCounts = BuildLayerCounts(Mathf.Clamp(_totalBackdropFish, 3, 24), layerCount);
             for (var layer = 0; layer < layerCount; layer++)
@@ -246,45 +264,50 @@ namespace RavenDevOps.Fishing.Fishing
                         Transform = go.transform,
                         Renderer = renderer,
                         LayerIndex = layer,
-                        Speed = UnityEngine.Random.Range(_swimSpeedRange.x, _swimSpeedRange.y) * (1f - (layer * 0.18f)),
+                        Speed = ResolveTrackSpeed(layer),
                         Direction = UnityEngine.Random.value > 0.5f ? 1f : -1f,
                         BobAmplitude = UnityEngine.Random.Range(0.02f, 0.11f) * (1f + (layer * 0.22f)),
                         BobFrequency = UnityEngine.Random.Range(0.16f, 0.5f),
                         Phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
-                        BaseY = ResolveLayerBaseY(layer)
+                        BaseY = ResolveLayerBaseWorldY(layer, i, layerCounts[layer]),
+                        TargetBaseY = 0f,
+                        VerticalDriftLerpSpeed = ResolveVerticalDriftLerpSpeed(),
+                        TravelVerticalOffsetPerShipMeter = ResolveTravelVerticalOffsetPerShipMeter(),
+                        RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds(),
+                        SpawnDelaySeconds = 0f,
+                        PendingSpawn = false
                     };
 
-                    track.Transform.localPosition = new Vector3(
-                        UnityEngine.Random.Range(-8f, 8f),
-                        track.BaseY,
-                        0f);
-                    track.Renderer.flipX = track.Direction < 0f;
+                    QueueTrackSpawn(track, halfWidth, spawnPadding, preferAhead: false, initialSpawn: true);
                     _tracks.Add(track);
                 }
             }
         }
 
-        private void AnchorToCamera()
+        private void AlignVisualRootDepth()
         {
             if (_targetCamera == null || _visualRoot == null)
             {
                 return;
             }
 
-            if (_visualRoot.transform.parent != _targetCamera.transform)
-            {
-                _visualRoot.transform.SetParent(_targetCamera.transform, worldPositionStays: false);
-            }
-
-            _visualRoot.transform.localPosition = new Vector3(0f, 0f, Mathf.Abs(_overlayDepthFromCamera));
-            _visualRoot.transform.localRotation = Quaternion.identity;
+            var targetZ = _targetCamera.transform.position.z + Mathf.Abs(_overlayDepthFromCamera);
+            var p = _visualRoot.transform.position;
+            p.z = targetZ;
+            _visualRoot.transform.position = p;
         }
 
         private void TickTracks()
         {
             ResolveViewportHalfSize(out var halfWidth, out var halfHeight);
             var wrapPadding = Mathf.Max(1f, _horizontalPadding);
-            var minimumDepthLocalY = ResolveMinimumDepthLocalY();
+            var minimumDepthWorldY = ResolveMinimumDepthWorldY();
+            var cameraX = _targetCamera != null ? _targetCamera.transform.position.x : 0f;
+            var cameraY = _targetCamera != null ? _targetCamera.transform.position.y : 0f;
+            var leftBound = cameraX - (halfWidth + wrapPadding);
+            var rightBound = cameraX + (halfWidth + wrapPadding);
+            var topBound = cameraY + halfHeight + 1.25f;
+            var bottomBound = cameraY - halfHeight - 1.25f;
 
             for (var i = 0; i < _tracks.Count; i++)
             {
@@ -294,67 +317,96 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                track.Renderer.enabled = true;
+                if (track.PendingSpawn)
+                {
+                    track.SpawnDelaySeconds -= Time.unscaledDeltaTime;
+                    if (track.SpawnDelaySeconds > 0f)
+                    {
+                        continue;
+                    }
 
-                var p = track.Transform.localPosition;
-                p.x -= _shipDeltaX * Mathf.Max(0f, _shipTravelParallax * (1f - (track.LayerIndex * 0.14f)));
+                    track.PendingSpawn = false;
+                    track.Renderer.enabled = true;
+                }
+
+                track.RetargetDelaySeconds -= Time.unscaledDeltaTime;
+                if (track.RetargetDelaySeconds <= 0f)
+                {
+                    track.TargetBaseY = ResolveLayerBaseWorldY(track.LayerIndex);
+                    track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
+                }
+
+                var travelOffset = (-_shipDeltaX) * track.TravelVerticalOffsetPerShipMeter;
+                track.TargetBaseY = ClampLayerBaseWorldY(track.LayerIndex, track.TargetBaseY + travelOffset);
+                var baseYBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, track.VerticalDriftLerpSpeed) * Time.unscaledDeltaTime);
+                track.BaseY = Mathf.Lerp(track.BaseY, track.TargetBaseY, baseYBlend);
+
+                var p = track.Transform.position;
                 p.x += track.Speed * track.Direction * Time.unscaledDeltaTime;
                 var bob = Mathf.Sin((Time.unscaledTime * track.BobFrequency) + track.Phase) * track.BobAmplitude;
                 p.y = track.BaseY + bob;
 
                 // Camera depth can shift rapidly between demo scenes; re-seed fish that are now fully outside view.
-                var verticalReseedPadding = 1.25f;
-                if (p.y < -(halfHeight + verticalReseedPadding) || p.y > halfHeight + verticalReseedPadding)
+                if (p.y < bottomBound || p.y > topBound)
                 {
-                    track.BaseY = ResolveLayerBaseY(track.LayerIndex);
+                    track.BaseY = ResolveLayerBaseWorldY(track.LayerIndex);
+                    track.TargetBaseY = track.BaseY;
                     p.y = track.BaseY;
                 }
 
-                var wrapped = false;
-                if (p.x > halfWidth + wrapPadding)
+                if (p.x > rightBound)
                 {
-                    p.x = -(halfWidth + wrapPadding);
-                    wrapped = true;
-                }
-                else if (p.x < -(halfWidth + wrapPadding))
-                {
-                    p.x = halfWidth + wrapPadding;
-                    wrapped = true;
+                    QueueTrackSpawn(track, halfWidth, wrapPadding, preferAhead: true, initialSpawn: false);
+                    continue;
                 }
 
-                if (wrapped)
+                if (p.x < leftBound)
                 {
-                    track.BaseY = ResolveLayerBaseY(track.LayerIndex);
-                    track.Speed = Mathf.Max(0.02f, UnityEngine.Random.Range(_swimSpeedRange.x, _swimSpeedRange.y) * (1f - (track.LayerIndex * 0.18f)));
-                    track.Direction = UnityEngine.Random.value > 0.5f ? 1f : -1f;
-                    track.Renderer.flipX = track.Direction < 0f;
-                    if (_spriteLibrary.Count > 0)
-                    {
-                        track.Renderer.sprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
-                    }
-
-                    p.y = track.BaseY;
+                    QueueTrackSpawn(track, halfWidth, wrapPadding, preferAhead: true, initialSpawn: false);
+                    continue;
                 }
 
-                p.y = Mathf.Min(p.y, minimumDepthLocalY - (track.LayerIndex * 0.12f));
-                track.Transform.localPosition = p;
+                p.y = Mathf.Min(p.y, minimumDepthWorldY - (track.LayerIndex * 0.12f));
+                track.Transform.position = p;
             }
         }
 
-        private float ResolveLayerBaseY(int layerIndex)
+        private float ResolveLayerBaseWorldY(int layerIndex)
+        {
+            return ResolveLayerBaseWorldY(layerIndex, layerTrackIndex: -1, layerTrackCount: 0);
+        }
+
+        private float ResolveLayerBaseWorldY(int layerIndex, int layerTrackIndex, int layerTrackCount)
         {
             ResolveViewportHalfSize(out _, out var halfHeight);
+            var cameraY = _targetCamera != null ? _targetCamera.transform.position.y : 0f;
             var clampedLayer = Mathf.Clamp(layerIndex, 0, 2);
-            var layerRatio = (clampedLayer + 1f) / 4f;
-            var top = halfHeight * 0.12f;
-            var bottom = -halfHeight * 0.86f;
-            var y = Mathf.Lerp(top, bottom, layerRatio);
+            var top = cameraY + (halfHeight * 0.16f);
+            var bottom = cameraY - (halfHeight * 1.08f);
+            var totalBandHeight = Mathf.Max(0.5f, top - bottom);
+            var layerBandHeight = totalBandHeight / 3f;
+            var bandTop = top - (layerBandHeight * clampedLayer);
+            var bandBottom = bandTop - layerBandHeight;
+
+            float bandRatio;
+            if (layerTrackCount > 1 && layerTrackIndex >= 0)
+            {
+                var slotCenterRatio = (layerTrackIndex + 0.5f) / layerTrackCount;
+                bandRatio = Mathf.Clamp01(slotCenterRatio + UnityEngine.Random.Range(-0.24f, 0.24f));
+            }
+            else
+            {
+                bandRatio = UnityEngine.Random.Range(0.08f, 0.92f);
+            }
+
+            var y = Mathf.Lerp(bandTop, bandBottom, bandRatio);
+            var jitterRange = halfHeight * Mathf.Clamp(_verticalBandJitterRatio, 0f, 0.45f);
+            y += UnityEngine.Random.Range(-jitterRange, jitterRange);
             var depthMeters = ResolveCurrentDepthMeters();
             var depthRatio = Mathf.Clamp01(depthMeters / 5000f);
             y -= depthRatio * Mathf.Max(0f, _depthParallaxScale) * (0.4f + (clampedLayer * 0.35f));
-            var minimumDepthLocalY = ResolveMinimumDepthLocalY();
-            y = Mathf.Min(y, minimumDepthLocalY - (clampedLayer * 0.12f));
-            y += UnityEngine.Random.Range(-0.35f, 0.35f);
+            var minimumDepthWorldY = ResolveMinimumDepthWorldY();
+            y = Mathf.Min(y, minimumDepthWorldY - (clampedLayer * 0.12f));
             return y;
         }
 
@@ -373,16 +425,17 @@ namespace RavenDevOps.Fishing.Fishing
             return 0f;
         }
 
-        private float ResolveMinimumDepthLocalY()
+        private float ResolveMinimumDepthWorldY()
         {
             if (_ship == null || _targetCamera == null)
             {
                 ResolveViewportHalfSize(out _, out var fallbackHalfHeight);
-                return -(fallbackHalfHeight * 0.55f);
+                var fallbackCameraY = _targetCamera != null ? _targetCamera.transform.position.y : 0f;
+                return fallbackCameraY - (fallbackHalfHeight * 0.55f);
             }
 
             var minDepthWorldY = _ship.position.y - Mathf.Max(0f, _minimumDepthMeters);
-            return minDepthWorldY - _targetCamera.transform.position.y;
+            return minDepthWorldY;
         }
 
         private void ResolveViewportHalfSize(out float halfWidth, out float halfHeight)
@@ -396,6 +449,151 @@ namespace RavenDevOps.Fishing.Fishing
 
             halfWidth = 10f;
             halfHeight = 6f;
+        }
+
+        private float ResolveSpawnWorldX(float halfWidth, float padding, bool preferAhead)
+        {
+            var offscreenOffsetMin = Mathf.Max(0.35f, Mathf.Min(_offscreenSpawnOffsetRange.x, _offscreenSpawnOffsetRange.y));
+            var offscreenOffsetMax = Mathf.Max(offscreenOffsetMin + 0.05f, Mathf.Max(_offscreenSpawnOffsetRange.x, _offscreenSpawnOffsetRange.y));
+            var offset = UnityEngine.Random.Range(offscreenOffsetMin, offscreenOffsetMax) + (Mathf.Max(0f, padding) * 0.2f);
+            var aheadDirection = ResolveShipTravelDirection();
+            var aheadChance = preferAhead
+                ? Mathf.Clamp01(_wrapAheadSpawnChance)
+                : Mathf.Clamp01(_initialAheadSpawnChance);
+
+            if (_targetCamera == null)
+            {
+                var spawnLeftFallback = UnityEngine.Random.value < 0.5f;
+                return spawnLeftFallback
+                    ? -(halfWidth + offset)
+                    : (halfWidth + offset);
+            }
+
+            var cameraX = _targetCamera.transform.position.x;
+            var leftEdge = cameraX - halfWidth;
+            var rightEdge = cameraX + halfWidth;
+            var spawnLeft = UnityEngine.Random.value < aheadChance
+                ? aheadDirection < 0f
+                : UnityEngine.Random.value < 0.5f;
+
+            return spawnLeft
+                ? leftEdge - offset
+                : rightEdge + offset;
+        }
+
+        private float ResolveShipTravelDirection()
+        {
+            if (_ship != null && Mathf.Abs(_shipDeltaX) > 0.0001f)
+            {
+                return Mathf.Sign(_shipDeltaX);
+            }
+
+            // Demo flow is leftward by design; default to left-side spawn-ahead.
+            return -1f;
+        }
+
+        private float ResolveTrackSpeed(int layerIndex)
+        {
+            var minSpeed = Mathf.Min(_swimSpeedRange.x, _swimSpeedRange.y);
+            var maxSpeed = Mathf.Max(_swimSpeedRange.x, _swimSpeedRange.y);
+            var minVariance = Mathf.Max(0.2f, Mathf.Min(_speedVarianceRange.x, _speedVarianceRange.y));
+            var maxVariance = Mathf.Max(minVariance + 0.01f, Mathf.Max(_speedVarianceRange.x, _speedVarianceRange.y));
+            var layerScale = Mathf.Max(0.25f, 1f - (Mathf.Clamp(layerIndex, 0, 2) * 0.18f));
+            var speedVariance = UnityEngine.Random.Range(minVariance, maxVariance);
+            return Mathf.Max(0.02f, UnityEngine.Random.Range(minSpeed, maxSpeed) * layerScale * speedVariance);
+        }
+
+        private void QueueTrackSpawn(BackdropFishTrack track, float halfWidth, float padding, bool preferAhead, bool initialSpawn)
+        {
+            if (track == null || track.Transform == null || track.Renderer == null)
+            {
+                return;
+            }
+
+            track.Speed = ResolveTrackSpeed(track.LayerIndex);
+            var spawnX = ResolveSpawnWorldX(halfWidth, padding, preferAhead);
+            track.Direction = ResolveSpawnDirectionForX(spawnX);
+            var spawnY = ResolveLayerBaseWorldY(track.LayerIndex);
+            track.BaseY = spawnY;
+            track.TargetBaseY = spawnY;
+            track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
+            track.VerticalDriftLerpSpeed = ResolveVerticalDriftLerpSpeed();
+            track.TravelVerticalOffsetPerShipMeter = ResolveTravelVerticalOffsetPerShipMeter();
+            track.Renderer.flipX = track.Direction < 0f;
+            if (_spriteLibrary.Count > 0)
+            {
+                track.Renderer.sprite = _spriteLibrary[UnityEngine.Random.Range(0, _spriteLibrary.Count)];
+            }
+
+            track.Transform.position = new Vector3(spawnX, spawnY, track.Transform.position.z);
+            track.SpawnDelaySeconds = ResolveSpawnDelaySeconds(initialSpawn);
+            track.PendingSpawn = track.SpawnDelaySeconds > 0.01f;
+            track.Renderer.enabled = !track.PendingSpawn;
+        }
+
+        private float ResolveSpawnDelaySeconds(bool initialSpawn)
+        {
+            var range = initialSpawn ? _initialSpawnDelayRangeSeconds : _respawnDelayRangeSeconds;
+            var min = Mathf.Max(0f, Mathf.Min(range.x, range.y));
+            var max = Mathf.Max(min + 0.01f, Mathf.Max(range.x, range.y));
+            return UnityEngine.Random.Range(min, max);
+        }
+
+        private float ResolveVerticalRetargetDelaySeconds()
+        {
+            var min = Mathf.Max(0.1f, Mathf.Min(_verticalRetargetIntervalRangeSeconds.x, _verticalRetargetIntervalRangeSeconds.y));
+            var max = Mathf.Max(min + 0.05f, Mathf.Max(_verticalRetargetIntervalRangeSeconds.x, _verticalRetargetIntervalRangeSeconds.y));
+            return UnityEngine.Random.Range(min, max);
+        }
+
+        private float ResolveVerticalDriftLerpSpeed()
+        {
+            var min = Mathf.Max(0.05f, Mathf.Min(_verticalDriftLerpSpeedRange.x, _verticalDriftLerpSpeedRange.y));
+            var max = Mathf.Max(min + 0.01f, Mathf.Max(_verticalDriftLerpSpeedRange.x, _verticalDriftLerpSpeedRange.y));
+            return UnityEngine.Random.Range(min, max);
+        }
+
+        private float ResolveTravelVerticalOffsetPerShipMeter()
+        {
+            var min = Mathf.Min(_shipTravelVerticalOffsetPerMeterX.x, _shipTravelVerticalOffsetPerMeterX.y);
+            var max = Mathf.Max(_shipTravelVerticalOffsetPerMeterX.x, _shipTravelVerticalOffsetPerMeterX.y);
+            return UnityEngine.Random.Range(min, max);
+        }
+
+        private float ClampLayerBaseWorldY(int layerIndex, float candidateY)
+        {
+            ResolveViewportHalfSize(out _, out var halfHeight);
+            var cameraY = _targetCamera != null ? _targetCamera.transform.position.y : 0f;
+            var top = cameraY + (halfHeight * 0.2f);
+            var bottom = cameraY - (halfHeight * 1.12f);
+            var minimumDepthWorldY = ResolveMinimumDepthWorldY();
+            var depthFloor = minimumDepthWorldY - (Mathf.Clamp(layerIndex, 0, 2) * 0.12f);
+            var clampedTop = Mathf.Min(top, depthFloor);
+            var clampedBottom = Mathf.Min(bottom, clampedTop - 0.15f);
+            return Mathf.Clamp(candidateY, clampedBottom, clampedTop);
+        }
+
+        private float ResolveSpawnDirectionForX(float spawnX)
+        {
+            if (_targetCamera == null)
+            {
+                return UnityEngine.Random.value > 0.5f ? 1f : -1f;
+            }
+
+            var cameraX = _targetCamera.transform.position.x;
+            var towardCenter = Mathf.Sign(cameraX - spawnX);
+            if (Mathf.Abs(towardCenter) < 0.01f)
+            {
+                towardCenter = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+            }
+
+            // Keep most fish entering toward camera center, with some variance.
+            if (UnityEngine.Random.value < 0.8f)
+            {
+                return towardCenter;
+            }
+
+            return -towardCenter;
         }
 
         private float ResolveLayerAlpha(int layerIndex)
