@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: RavenDevOps.Fishing.Core::RavenDevOps.Fishing.Core.TutorialSpriteLibrary
   _harborShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
   _fishingShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
-  _hookSprite: {fileID: 5216407504019009018, guid: 41902eec228b6d247a1e38d19812d49f, type: 3}
+  _hookSprite: {fileID: 5660389902983393525, guid: 8a76c6389af2eb547b4945dc23fa9b72, type: 3}
   _fishSprite: {fileID: -9138808155490551278, guid: 5ec2e5bf54f18f9438a69d9ea9c4c450, type: 3}

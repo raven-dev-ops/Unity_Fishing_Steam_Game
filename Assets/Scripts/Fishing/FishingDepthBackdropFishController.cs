@@ -55,7 +55,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _depthParallaxScale = 1.35f;
         [SerializeField] private float _shipTravelParallax = 0.45f;
         [SerializeField] private Vector3 _layerAlpha = new Vector3(0.6f, 0.35f, 0.12f);
-        [SerializeField] private Vector2 _offscreenSpawnOffsetRange = new Vector2(0.25f, 0.85f);
+        [SerializeField] private Vector2 _offscreenSpawnOffsetRange = new Vector2(0.12f, 0.55f);
         [SerializeField] [Range(0f, 1f)] private float _initialAheadSpawnChance = 0.5f;
         [SerializeField] [Range(0f, 1f)] private float _wrapAheadSpawnChance = 0.75f;
         [SerializeField] [Range(0f, 0.45f)] private float _verticalBandJitterRatio = 0.18f;
@@ -68,8 +68,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _spawnDelayStaggerCycle = 6;
         [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
         [SerializeField] private float _spawnActivationOffscreenBuffer = 0.2f;
-        [SerializeField] private int _minimumVisibleTracks = 2;
-        [SerializeField] private float _visibleTrackRecoverySeconds = 0.45f;
+        [SerializeField] private int _minimumVisibleTracks = 3;
+        [SerializeField] private float _visibleTrackRecoverySeconds = 0.3f;
         [SerializeField] private float _recoveryPendingSpawnMaxDelaySeconds = 0.18f;
         [SerializeField] [Range(0f, 0.2f)] private float _visibleTrackViewportPadding = 0.02f;
 
@@ -229,6 +229,11 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
+                if (!IsSpriteUsableForFish(renderer.sprite))
+                {
+                    continue;
+                }
+
                 TryAddSpriteToLibrary(renderer.sprite, seen);
             }
 
@@ -243,6 +248,11 @@ namespace RavenDevOps.Fishing.Fishing
                     }
 
                     if (renderer.gameObject.name.IndexOf("Fish", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    if (!IsSpriteUsableForFish(renderer.sprite))
                     {
                         continue;
                     }
@@ -275,7 +285,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private void TryAddSpriteToLibrary(Sprite sprite, HashSet<Sprite> seen)
         {
-            if (sprite == null || seen == null)
+            if (sprite == null || seen == null || !IsSpriteUsableForFish(sprite))
             {
                 return;
             }
@@ -431,12 +441,13 @@ namespace RavenDevOps.Fishing.Fishing
                 var bob = Mathf.Sin((Time.unscaledTime * track.BobFrequency) + track.Phase) * track.BobAmplitude;
                 p.y = track.BaseY + bob;
 
-                // Camera depth can shift rapidly between demo scenes; re-seed fish that are now fully outside view.
-                if (p.y < bottomBound || p.y > topBound)
+                // Avoid snapping fish to camera-space bands each frame during deep camera travel.
+                // Only force-respawn when a track drifts far outside the vertical play window.
+                var verticalRespawnMargin = Mathf.Max(1.5f, halfHeight * 0.55f);
+                if (p.y < bottomBound - verticalRespawnMargin || p.y > topBound + verticalRespawnMargin)
                 {
-                    track.BaseY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
-                    track.TargetBaseY = track.BaseY;
-                    p.y = track.BaseY;
+                    QueueTrackSpawn(track, halfWidth, wrapPadding, preferAhead: true, initialSpawn: false);
+                    continue;
                 }
 
                 if (p.x > rightBound)
@@ -516,6 +527,66 @@ namespace RavenDevOps.Fishing.Fishing
                 track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.04f, 0.16f));
                 requiredRecoveryCount--;
             }
+
+            if (requiredRecoveryCount <= 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _tracks.Count && requiredRecoveryCount > 0; i++)
+            {
+                var track = _tracks[i];
+                if (track == null || track.Transform == null || track.Renderer == null || !track.PendingSpawn)
+                {
+                    continue;
+                }
+
+                PrimePendingTrackForVisibilityRecovery(track, cameraX, cameraY, halfWidth, halfHeight);
+                requiredRecoveryCount--;
+            }
+        }
+
+        private void PrimePendingTrackForVisibilityRecovery(
+            BackdropFishTrack track,
+            float cameraX,
+            float cameraY,
+            float halfWidth,
+            float halfHeight)
+        {
+            if (track == null || track.Transform == null || track.Renderer == null)
+            {
+                return;
+            }
+
+            var visibleLeft = cameraX - halfWidth;
+            var visibleRight = cameraX + halfWidth;
+            var shipTravelDirection = ResolveShipTravelDirection();
+            var spawnOnLeft = shipTravelDirection < 0f
+                ? true
+                : shipTravelDirection > 0f
+                    ? false
+                    : UnityEngine.Random.value < 0.5f;
+
+            var halfSpriteWidth = ResolveTrackHalfWidth(track) + Mathf.Max(0.05f, _spawnActivationOffscreenBuffer);
+            var edgeInset = UnityEngine.Random.Range(0.04f, 0.18f);
+            var p = track.Transform.position;
+            p.x = spawnOnLeft
+                ? visibleLeft - halfSpriteWidth - edgeInset
+                : visibleRight + halfSpriteWidth + edgeInset;
+            track.Direction = spawnOnLeft ? 1f : -1f;
+            track.Renderer.flipX = track.Direction < 0f;
+
+            var lowerVisibleBand = cameraY - halfHeight + 0.24f;
+            var upperVisibleBand = cameraY + (halfHeight * 0.2f);
+            var candidateY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
+            var minimumDepthWorldY = ResolveMinimumDepthWorldY() - (Mathf.Clamp(track.LayerIndex, 0, 2) * 0.12f);
+            var recoveryTop = Mathf.Max(lowerVisibleBand, Mathf.Min(upperVisibleBand, minimumDepthWorldY));
+            p.y = Mathf.Clamp(candidateY, lowerVisibleBand, recoveryTop);
+
+            track.BaseY = p.y;
+            track.TargetBaseY = p.y;
+            track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.02f, 0.08f));
+            track.Transform.position = p;
         }
 
         private bool IsWorldPointVisibleInViewport(Vector3 worldPosition, float cameraX, float cameraY, float halfWidth, float halfHeight)
@@ -615,7 +686,6 @@ namespace RavenDevOps.Fishing.Fishing
                         Mathf.Max(0f, _adaptiveMinimumDepthFloorMeters));
                 }
             }
-
             return _ship.position.y - minimumDepthMeters;
         }
 
@@ -634,7 +704,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         private float ResolveSpawnWorldX(float halfWidth, float padding, bool preferAhead)
         {
-            var offscreenOffsetMin = Mathf.Max(0.35f, Mathf.Min(_offscreenSpawnOffsetRange.x, _offscreenSpawnOffsetRange.y));
+            var offscreenOffsetMin = Mathf.Max(0.08f, Mathf.Min(_offscreenSpawnOffsetRange.x, _offscreenSpawnOffsetRange.y));
             var offscreenOffsetMax = Mathf.Max(offscreenOffsetMin + 0.05f, Mathf.Max(_offscreenSpawnOffsetRange.x, _offscreenSpawnOffsetRange.y));
             var offset = UnityEngine.Random.Range(offscreenOffsetMin, offscreenOffsetMax) + (Mathf.Max(0f, padding) * 0.2f);
             var aheadDirection = ResolveShipTravelDirection();
@@ -989,6 +1059,33 @@ namespace RavenDevOps.Fishing.Fishing
 
             _shipDeltaX = shipX - _lastShipX;
             _lastShipX = shipX;
+        }
+
+        private static bool IsSpriteUsableForFish(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return false;
+            }
+
+            var spriteName = string.IsNullOrWhiteSpace(sprite.name)
+                ? string.Empty
+                : sprite.name.Trim().ToLowerInvariant();
+            var textureName = sprite.texture != null && !string.IsNullOrWhiteSpace(sprite.texture.name)
+                ? sprite.texture.name.Trim().ToLowerInvariant()
+                : string.Empty;
+
+            if (spriteName.Contains("icon") || textureName.Contains("icons_"))
+            {
+                return false;
+            }
+
+            if (spriteName.Contains("invalid"))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

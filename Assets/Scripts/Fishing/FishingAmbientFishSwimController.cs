@@ -257,8 +257,11 @@ namespace RavenDevOps.Fishing.Fishing
 
                 if (renderer.sprite != null)
                 {
-                    _spriteLibrary.Add(renderer.sprite);
-                    RegisterFishSpriteFromName(renderer.sprite);
+                    if (IsSpriteUsableForFish(renderer.sprite))
+                    {
+                        _spriteLibrary.Add(renderer.sprite);
+                        RegisterFishSpriteFromName(renderer.sprite);
+                    }
                 }
 
                 var sway = go.GetComponent<SpriteSwayMotion2D>();
@@ -1295,13 +1298,16 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                RegisterFishSprite(fishId, pair.Value.icon);
+                if (IsSpriteUsableForFish(pair.Value.icon))
+                {
+                    RegisterFishSprite(fishId, pair.Value.icon);
+                }
             }
         }
 
         private void RegisterFishSpriteFromName(Sprite sprite)
         {
-            if (sprite == null)
+            if (!IsSpriteUsableForFish(sprite))
             {
                 return;
             }
@@ -1339,7 +1345,7 @@ namespace RavenDevOps.Fishing.Fishing
         private void RegisterFishSprite(string fishId, Sprite sprite)
         {
             fishId = NormalizeFishId(fishId);
-            if (string.IsNullOrEmpty(fishId) || sprite == null)
+            if (string.IsNullOrEmpty(fishId) || !IsSpriteUsableForFish(sprite))
             {
                 return;
             }
@@ -1453,6 +1459,33 @@ namespace RavenDevOps.Fishing.Fishing
                 ? fishId.Substring(5)
                 : fishId;
             return !string.IsNullOrEmpty(shortId) && tokenizedName.Contains(shortId);
+        }
+
+        private static bool IsSpriteUsableForFish(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return false;
+            }
+
+            var spriteName = string.IsNullOrWhiteSpace(sprite.name)
+                ? string.Empty
+                : sprite.name.Trim().ToLowerInvariant();
+            var textureName = sprite.texture != null && !string.IsNullOrWhiteSpace(sprite.texture.name)
+                ? sprite.texture.name.Trim().ToLowerInvariant()
+                : string.Empty;
+
+            if (spriteName.Contains("icon") || textureName.Contains("icons_"))
+            {
+                return false;
+            }
+
+            if (spriteName.Contains("invalid"))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void UpdateDynamicWaterBand()
