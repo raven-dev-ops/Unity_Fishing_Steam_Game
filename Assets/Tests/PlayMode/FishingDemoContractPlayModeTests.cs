@@ -81,6 +81,30 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(120000)]
+        public IEnumerator DemoContract_FishPopulationDensity_StaysWithinExpectedBudget()
+        {
+            yield return LoadFishingScene();
+            yield return null;
+
+            var ambientController = UnityEngine.Object.FindAnyObjectByType<FishingAmbientFishSwimController>(FindObjectsInactive.Include);
+            var backdropController = UnityEngine.Object.FindAnyObjectByType<FishingDepthBackdropFishController>(FindObjectsInactive.Include);
+            Assert.That(ambientController, Is.Not.Null, "Expected FishingAmbientFishSwimController in fishing scene.");
+            Assert.That(backdropController, Is.Not.Null, "Expected FishingDepthBackdropFishController in fishing scene.");
+
+            EnableBackdropControllerForBatchTests(backdropController);
+            yield return null;
+
+            var interactiveCount = GetPrivateField<int>(ambientController, "_maxConcurrentFish");
+            var nonInteractiveCount = GetPrivateField<int>(backdropController, "_totalBackdropFish");
+            var totalCount = interactiveCount + nonInteractiveCount;
+
+            Assert.That(interactiveCount, Is.InRange(2, 3), "Interactive fish count should remain in the tuned range.");
+            Assert.That(nonInteractiveCount, Is.InRange(3, 7), "Backdrop fish count should remain in the tuned range.");
+            Assert.That(totalCount, Is.InRange(6, 9), "Total fish budget should stay bounded to avoid density regressions.");
+        }
+
+        [UnityTest]
         public IEnumerator AmbientFish_OffscreenDespawn_RequiresSeveralSecondsOffscreen()
         {
             UnityEngine.Random.InitState(99141);
@@ -210,6 +234,27 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             if (camera != null)
             {
                 weatherController.Configure(camera, conditionController: condition, ship: ship);
+            }
+        }
+
+        private static void EnableBackdropControllerForBatchTests(FishingDepthBackdropFishController backdropController)
+        {
+            if (backdropController == null)
+            {
+                return;
+            }
+
+            SetPrivateField(backdropController, "_allowInBatchMode", true);
+            backdropController.enabled = true;
+
+            var targetCamera = Camera.main != null
+                ? Camera.main
+                : UnityEngine.Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Include);
+            var ship = GameObject.Find("FishingShip")?.transform;
+            var hook = GameObject.Find("FishingHook")?.transform;
+            if (targetCamera != null && ship != null && hook != null)
+            {
+                backdropController.Configure(targetCamera, ship, hook);
             }
         }
 
@@ -351,6 +396,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Expected private field '{fieldName}'.");
             field.SetValue(instance, value);
+        }
+
+        private static T GetPrivateField<T>(object instance, string fieldName)
+        {
+            Assert.That(instance, Is.Not.Null, "Expected instance for private field read.");
+            var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Expected private field '{fieldName}'.");
+            return (T)field.GetValue(instance);
         }
     }
 }

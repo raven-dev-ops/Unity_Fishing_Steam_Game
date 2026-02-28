@@ -2447,12 +2447,12 @@ namespace RavenDevOps.Fishing.Core
             FishingAmbientFishSwimController ambientFishController,
             FishingDepthBackdropFishController depthBackdropFishController)
         {
-            var totalFishBudget = Random.Range(9, 12);
+            var totalFishBudget = Random.Range(6, 10);
             var interactiveTarget = Mathf.Clamp(
-                Mathf.RoundToInt(totalFishBudget * Random.Range(0.28f, 0.38f)),
+                Mathf.RoundToInt(totalFishBudget * Random.Range(0.42f, 0.56f)),
                 2,
                 3);
-            var nonInteractiveTarget = Mathf.Max(6, totalFishBudget - interactiveTarget);
+            var nonInteractiveTarget = Mathf.Max(3, totalFishBudget - interactiveTarget);
             if (interactiveTarget + nonInteractiveTarget > totalFishBudget)
             {
                 interactiveTarget = Mathf.Clamp(totalFishBudget - nonInteractiveTarget, 2, 3);
@@ -2461,7 +2461,7 @@ namespace RavenDevOps.Fishing.Core
             if (interactiveTarget < 2)
             {
                 interactiveTarget = 2;
-                nonInteractiveTarget = Mathf.Max(6, totalFishBudget - interactiveTarget);
+                nonInteractiveTarget = Mathf.Max(3, totalFishBudget - interactiveTarget);
             }
 
             if (ambientFishController != null)

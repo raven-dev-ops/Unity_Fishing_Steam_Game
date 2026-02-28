@@ -38,7 +38,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private string _fishNameToken = "FishingFish";
         [SerializeField] private bool _allowGenericFishNameFallback = true;
         [SerializeField] private Sprite _fallbackFishSprite;
-        [SerializeField] private int _totalBackdropFish = 9;
+        [SerializeField] private int _totalBackdropFish = 6;
         [SerializeField] private float _overlayDepthFromCamera = 10f;
         [SerializeField] private int _baseSortingOrder = -30;
         [SerializeField] private float _horizontalPadding = 2.6f;
