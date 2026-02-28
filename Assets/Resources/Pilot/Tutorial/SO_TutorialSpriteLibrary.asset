@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c09173a4fa83f2478822c4cb2c1dd94, type: 3}
   m_Name: SO_TutorialSpriteLibrary
   m_EditorClassIdentifier: RavenDevOps.Fishing.Core::RavenDevOps.Fishing.Core.TutorialSpriteLibrary
-  _harborShipSprite: {fileID: 8259967691659168871, guid: ff8349ade8acc5a44a15ff3d6c88e406, type: 3}
-  _fishingShipSprite: {fileID: -8932834205246741337, guid: ff8349ade8acc5a44a15ff3d6c88e406, type: 3}
+  _harborShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
+  _fishingShipSprite: {fileID: 5840015927477935489, guid: 726c38d6bd69819488bc3c8a82a8aaa3, type: 3}
   _hookSprite: {fileID: 5216407504019009018, guid: 41902eec228b6d247a1e38d19812d49f, type: 3}
   _fishSprite: {fileID: -852516553367231794, guid: 0e0c4380f080df54fb1f1020486c5590, type: 3}
