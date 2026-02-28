@@ -57,6 +57,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _spawnDelayStaggerStepSeconds = 0.32f;
         [SerializeField] private int _spawnDelayStaggerCycle = 4;
         [SerializeField] private int _spawnYSpacingSampleAttempts = 7;
+        [SerializeField] private float _spawnActivationOffscreenBuffer = 0.2f;
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
         private readonly List<BackdropFishTrack> _tracks = new List<BackdropFishTrack>(16);
@@ -330,6 +331,15 @@ namespace RavenDevOps.Fishing.Fishing
                         continue;
                     }
 
+                    if (!IsTrackOffscreenForActivation(track, cameraX, halfWidth))
+                    {
+                        SnapTrackToActivationOffscreenX(track, cameraX, halfWidth);
+                        track.SpawnDelaySeconds = Mathf.Max(
+                            0.05f,
+                            Mathf.Min(0.35f, ResolveSpawnDelaySeconds(initialSpawn: false) * 0.2f));
+                        continue;
+                    }
+
                     track.PendingSpawn = false;
                     track.Renderer.enabled = true;
                 }
@@ -536,9 +546,9 @@ namespace RavenDevOps.Fishing.Fishing
             var staggerStep = Mathf.Max(0f, _spawnDelayStaggerStepSeconds);
             var staggerOffset = (_spawnSequenceIndex % staggerCycle) * staggerStep;
             _spawnSequenceIndex++;
-            track.SpawnDelaySeconds += staggerOffset;
-            track.PendingSpawn = track.SpawnDelaySeconds > 0.01f;
-            track.Renderer.enabled = !track.PendingSpawn;
+            track.SpawnDelaySeconds = Mathf.Max(0.02f, track.SpawnDelaySeconds + staggerOffset);
+            track.PendingSpawn = true;
+            track.Renderer.enabled = false;
         }
 
         private float ResolveSpawnDelaySeconds(bool initialSpawn)
@@ -547,6 +557,54 @@ namespace RavenDevOps.Fishing.Fishing
             var min = Mathf.Max(0f, Mathf.Min(range.x, range.y));
             var max = Mathf.Max(min + 0.01f, Mathf.Max(range.x, range.y));
             return UnityEngine.Random.Range(min, max);
+        }
+
+        private bool IsTrackOffscreenForActivation(BackdropFishTrack track, float cameraX, float halfWidth)
+        {
+            if (track == null || track.Transform == null)
+            {
+                return true;
+            }
+
+            var x = track.Transform.position.x;
+            var halfSpriteWidth = ResolveTrackHalfWidth(track) + Mathf.Max(0f, _spawnActivationOffscreenBuffer);
+            var visibleLeft = cameraX - halfWidth;
+            var visibleRight = cameraX + halfWidth;
+            return (x + halfSpriteWidth) < visibleLeft || (x - halfSpriteWidth) > visibleRight;
+        }
+
+        private void SnapTrackToActivationOffscreenX(BackdropFishTrack track, float cameraX, float halfWidth)
+        {
+            if (track == null || track.Transform == null)
+            {
+                return;
+            }
+
+            var halfSpriteWidth = ResolveTrackHalfWidth(track) + Mathf.Max(0.05f, _spawnActivationOffscreenBuffer);
+            var leftOffscreen = cameraX - halfWidth - halfSpriteWidth;
+            var rightOffscreen = cameraX + halfWidth + halfSpriteWidth;
+            var spawnOnLeft = track.Direction > 0f;
+            var p = track.Transform.position;
+            p.x = spawnOnLeft ? leftOffscreen : rightOffscreen;
+            track.Transform.position = p;
+        }
+
+        private static float ResolveTrackHalfWidth(BackdropFishTrack track)
+        {
+            if (track == null || track.Transform == null)
+            {
+                return 0.35f;
+            }
+
+            var sprite = track.Renderer != null ? track.Renderer.sprite : null;
+            if (sprite == null)
+            {
+                return 0.35f;
+            }
+
+            var scaleX = Mathf.Abs(track.Transform.lossyScale.x);
+            var halfWidth = sprite.bounds.extents.x * Mathf.Max(0.01f, scaleX);
+            return Mathf.Max(0.25f, halfWidth);
         }
 
         private float ResolveLayerBaseWorldYSpaced(int layerIndex, BackdropFishTrack targetTrack)

@@ -134,6 +134,50 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(changedTracks, Is.GreaterThanOrEqualTo(4), "Fish vertical positions should drift/retarget over travel, not stay locked.");
         }
 
+        [UnityTest]
+        public IEnumerator DepthBackdropFish_PendingActivation_DoesNotEnableWhenOnScreen()
+        {
+            UnityEngine.Random.InitState(91277);
+            var camera = CreateCamera();
+            var ship = CreateTransform("DepthBackdropActivationShip", new Vector3(0f, 0f, 0f));
+            var hook = CreateTransform("DepthBackdropActivationHook", new Vector3(0f, -60f, 0f));
+            CreateFishSpriteTemplate();
+
+            var controller = CreateController();
+            SetPrivateField(controller, "_totalBackdropFish", 6);
+            SetPrivateField(controller, "_initialSpawnDelayRangeSeconds", new Vector2(0.35f, 0.35f));
+
+            controller.Configure(camera, ship, hook);
+            yield return null;
+            yield return null;
+
+            var tracks = ReadTracks(controller);
+            Assert.That(tracks.Count, Is.GreaterThanOrEqualTo(1));
+            var track = tracks[0];
+            var transform = GetTrackField<Transform>(track, "Transform");
+            var renderer = GetTrackField<SpriteRenderer>(track, "Renderer");
+            Assert.That(transform, Is.Not.Null);
+            Assert.That(renderer, Is.Not.Null);
+
+            // Simulate a delayed spawn that drifts into the camera view before activation.
+            transform.position = new Vector3(camera.transform.position.x, transform.position.y, transform.position.z);
+            SetTrackField(track, "PendingSpawn", true);
+            SetTrackField(track, "SpawnDelaySeconds", 0f);
+            renderer.enabled = false;
+
+            yield return null;
+
+            var stillPending = GetTrackField<bool>(track, "PendingSpawn");
+            Assert.That(stillPending, Is.True, "Track should remain pending if activation would happen on-screen.");
+            Assert.That(renderer.enabled, Is.False, "Renderer should stay disabled until the fish is off-screen.");
+
+            ResolveCameraBounds(camera, out var left, out var right);
+            Assert.That(
+                transform.position.x < left || transform.position.x > right,
+                Is.True,
+                "Pending fish should be re-positioned off-screen before it can become visible.");
+        }
+
         private FishingDepthBackdropFishController CreateController()
         {
             var go = new GameObject("DepthBackdropFishControllerTest");
@@ -219,6 +263,14 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             var field = track.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Missing field '{fieldName}' on backdrop track.");
             return (T)field.GetValue(track);
+        }
+
+        private static void SetTrackField<T>(object track, string fieldName, T value)
+        {
+            Assert.That(track, Is.Not.Null, "Expected non-null track.");
+            var field = track.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Missing field '{fieldName}' on backdrop track.");
+            field.SetValue(track, value);
         }
 
         private static float[] ReadTrackFloatArray(IReadOnlyList<object> tracks, string fieldName)
