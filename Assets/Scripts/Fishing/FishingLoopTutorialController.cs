@@ -91,6 +91,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoTransitionFadeToBlackSeconds = 0.32f;
         [SerializeField] private float _demoTransitionHoldSeconds = 2f;
         [SerializeField] private float _demoTransitionFadeFromBlackSeconds = 0.32f;
+        [SerializeField] private float _demoTransitionPostPrepareBlackSeconds = 0.2f;
         [SerializeField] private float _demoShipTravelDistance = 2.8f;
         [SerializeField] private float _demoShipMoveSpeed = 9.6f;
         [SerializeField] private float _demoHookMoveSpeed = 7.5f;
@@ -159,6 +160,7 @@ namespace RavenDevOps.Fishing.Fishing
         private DemoAutoplayPhase _demoPendingTransitionPhase = DemoAutoplayPhase.None;
         private bool _demoPendingTransitionPhasePrepared;
         private float _demoSceneTransitionStartedAt;
+        private float _demoPendingTransitionPhasePreparedAt;
         private string _demoSceneTransitionTitle = string.Empty;
         private string _demoSceneTransitionSubtitle = string.Empty;
         private bool _demoCurrentTransitionStartsBlack;
@@ -949,15 +951,23 @@ namespace RavenDevOps.Fishing.Fishing
                         0f,
                         Mathf.Max(0f, _demoLevel4CastDepthMeters));
                     var level4ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel4ReelSpeedMultiplier);
-                    MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, level4ReelSpeedMultiplier);
+                    var level4ReelComplete = MoveHookTowardDepth(level4ReelUpTargetDepth, clampToWorldBounds: false, level4ReelSpeedMultiplier);
                     ApplyScene8CameraFollowOverride(active: true);
                     ApplyTutorialLightPreview(enabled: true, ResolveScene8LightRadiiMeters());
                     var level4CurrentDepth = ResolveDemoHookDepthMeters();
                     ApplyTutorialDepthPreview(enabled: true, level4CurrentDepth);
                     var level4ReeledDistance = Mathf.Max(0f, level4ReelStartDepth - level4CurrentDepth);
                     var level4TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level4ReelSpeedMultiplier);
-                    if (level4ReeledDistance >= Mathf.Max(0f, level4ReelDistanceBeforeTransition - level4TransitionLeadMeters)
-                        || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds)))
+                    var level4RequiredReelDistance = Mathf.Max(0f, level4ReelDistanceBeforeTransition - level4TransitionLeadMeters);
+                    var level4MinimumVisibleReelDistance = Mathf.Min(
+                        level4RequiredReelDistance,
+                        Mathf.Max(1.5f, level4ReelDistanceBeforeTransition * 0.35f));
+                    var level4SoftTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel4ReelMaxPhaseSeconds));
+                    var level4HardTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(1f, _demoLevel4ReelMaxPhaseSeconds * 2f));
+                    if (level4ReeledDistance >= level4RequiredReelDistance
+                        || (level4SoftTimeoutElapsed && level4ReeledDistance >= level4MinimumVisibleReelDistance)
+                        || (level4ReelComplete && level4ReeledDistance >= level4MinimumVisibleReelDistance)
+                        || level4HardTimeoutElapsed)
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level5DeepDarkInfo);
                     }
@@ -1027,7 +1037,7 @@ namespace RavenDevOps.Fishing.Fishing
                         0f,
                         Mathf.Max(0f, _demoLevel5CastDepthMeters));
                     var level5ReelSpeedMultiplier = ResolveDeepReelSpeedMultiplier(_demoLevel5ReelSpeedMultiplier);
-                    MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, level5ReelSpeedMultiplier);
+                    var level5ReelComplete = MoveHookTowardDepth(level5ReelUpTargetDepth, clampToWorldBounds: false, level5ReelSpeedMultiplier);
                     ApplyScene8CameraFollowOverride(active: true);
                     ApplyTutorialLightPreview(enabled: true, ResolveScene9LightRadiiMeters());
                     var level5CurrentDepth = ResolveDemoHookDepthMeters();
@@ -1035,10 +1045,18 @@ namespace RavenDevOps.Fishing.Fishing
                     UpdateDemoHookedFishFade(level5ReelStartDepth, level5ReelUpTargetDepth, level5ReelSpeedMultiplier);
                     var level5ReeledDistance = Mathf.Max(0f, level5ReelStartDepth - level5CurrentDepth);
                     var level5TransitionLeadMeters = ResolveDemoReelTransitionLeadMeters(level5ReelSpeedMultiplier);
-                    if (level5ReeledDistance >= Mathf.Max(0f, level5ReelDistanceBeforeTransition - level5TransitionLeadMeters)
-                        || IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel5ReelMaxPhaseSeconds)))
+                    var level5RequiredReelDistance = Mathf.Max(0f, level5ReelDistanceBeforeTransition - level5TransitionLeadMeters);
+                    var level5MinimumVisibleReelDistance = Mathf.Min(
+                        level5RequiredReelDistance,
+                        Mathf.Max(1.5f, level5ReelDistanceBeforeTransition * 0.35f));
+                    var level5SoftTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(0.25f, _demoLevel5ReelMaxPhaseSeconds));
+                    var level5HardTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(1f, _demoLevel5ReelMaxPhaseSeconds * 2f));
+                    if (level5ReeledDistance >= level5RequiredReelDistance
+                        || (level5SoftTimeoutElapsed && level5ReeledDistance >= level5MinimumVisibleReelDistance)
+                        || (level5ReelComplete && level5ReeledDistance >= level5MinimumVisibleReelDistance)
+                        || level5HardTimeoutElapsed)
                     {
-                        StartDemoPhase(DemoAutoplayPhase.FinishInfo);
+                        QueueDemoPhaseTransition(DemoAutoplayPhase.FinishInfo, _demoSceneEndPauseSeconds);
                     }
                     break;
                 case DemoAutoplayPhase.FinishInfo:
@@ -1200,12 +1218,25 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 StartDemoPhaseImmediate(_demoPendingTransitionPhase);
                 _demoPendingTransitionPhasePrepared = true;
+                _demoPendingTransitionPhasePreparedAt = Time.unscaledTime;
+                PrepareDemoPhaseVisualStateForTransition(_demoPendingTransitionPhase);
             }
 
             if (elapsed < holdEndsAt)
             {
                 UpdateTransitionOverlayVisual(1f, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
                 return true;
+            }
+
+            if (_demoPendingTransitionPhasePrepared)
+            {
+                var postPrepareHoldSeconds = Mathf.Max(0f, _demoTransitionPostPrepareBlackSeconds);
+                var postPrepareWaitComplete = Time.unscaledTime >= _demoPendingTransitionPhasePreparedAt + postPrepareHoldSeconds;
+                if (!postPrepareWaitComplete || !IsDemoPhaseVisualReadyForFadeIn(_demoPhase))
+                {
+                    UpdateTransitionOverlayVisual(1f, _demoSceneTransitionTitle, _demoSceneTransitionSubtitle, forceVisible: true);
+                    return true;
+                }
             }
 
             if (elapsed < fadeInEndsAt)
@@ -1239,6 +1270,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionActive = true;
             _demoPendingTransitionPhase = phase;
             _demoPendingTransitionPhasePrepared = false;
+            _demoPendingTransitionPhasePreparedAt = 0f;
             var startFromBlack = phase == DemoAutoplayPhase.IntroInfo;
             _demoCurrentTransitionStartsBlack = startFromBlack;
             _demoSceneTransitionStartedAt = Time.unscaledTime;
@@ -1285,6 +1317,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoSceneTransitionActive = false;
             _demoPendingTransitionPhase = DemoAutoplayPhase.None;
             _demoPendingTransitionPhasePrepared = false;
+            _demoPendingTransitionPhasePreparedAt = 0f;
             _demoSceneTransitionStartedAt = 0f;
             _demoSceneTransitionTitle = string.Empty;
             _demoSceneTransitionSubtitle = string.Empty;
@@ -1296,6 +1329,52 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             UpdateTransitionOverlayVisual(0f, string.Empty, string.Empty, forceVisible: false);
+        }
+
+        private void PrepareDemoPhaseVisualStateForTransition(DemoAutoplayPhase phase)
+        {
+            switch (phase)
+            {
+                case DemoAutoplayPhase.FinishInfo:
+                case DemoAutoplayPhase.Finish:
+                    SetDemoHookVisible(false);
+                    SnapDemoHookToDock();
+                    break;
+                case DemoAutoplayPhase.ShipUpgradeInfo:
+                    TickShipUpgradeInfoVisual();
+                    break;
+                case DemoAutoplayPhase.HookUpgradeInfo:
+                    TickHookUpgradeInfoVisual();
+                    break;
+                case DemoAutoplayPhase.Level4ReelUp:
+                case DemoAutoplayPhase.Level5ReelUp:
+                    EnsureDemoFishHookedVisual();
+                    break;
+            }
+        }
+
+        private bool IsDemoPhaseVisualReadyForFadeIn(DemoAutoplayPhase phase)
+        {
+            RefreshDemoAnchors();
+            if (_demoShipTransform == null)
+            {
+                return false;
+            }
+
+            if (_demoHookTransform == null)
+            {
+                return phase == DemoAutoplayPhase.FinishInfo || phase == DemoAutoplayPhase.Finish;
+            }
+
+            if (phase == DemoAutoplayPhase.FinishInfo || phase == DemoAutoplayPhase.Finish)
+            {
+                var hookRendererReady = _demoHookRenderer == null || !_demoHookRenderer.enabled;
+                var dockY = ResolveDemoDockY();
+                var hookNearDock = Mathf.Abs(_demoHookTransform.position.y - dockY) <= 0.25f;
+                return hookRendererReady && hookNearDock;
+            }
+
+            return true;
         }
 
         private bool TickQueuedDemoPhaseTransition()
