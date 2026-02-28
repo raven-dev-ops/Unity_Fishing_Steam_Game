@@ -15,7 +15,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _xBounds = new Vector2(-10f, 10f);
         [SerializeField] private bool _limitHorizontalRange = false;
         [SerializeField] private Vector2 _yBounds = new Vector2(-7f, 6f);
-        [SerializeField] private float _minOrthoSize = 5.6f;
+        [SerializeField] private float _minOrthoSize = 6.8f;
         [SerializeField] private float _maxOrthoSize = 11f;
         [SerializeField] private float _maxTrackedDepth = 18f;
         [SerializeField] private float _shipViewportY = 0.5f;
