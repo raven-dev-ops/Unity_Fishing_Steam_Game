@@ -78,6 +78,9 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _showGlobalFogByWeather;
         private bool _skyBandVisible;
         private float _skyVisibilityFactor = 1f;
+        private bool _hasLastCameraX;
+        private float _lastCameraX;
+        private float _cameraDeltaX;
         private Color _skyTintColorByWeather = Color.clear;
         private Color _globalFogColorByWeather = Color.clear;
         private Color _sunColorByWeather = Color.clear;
@@ -143,6 +146,7 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveShipReference();
             EnsureVisuals();
             UpdateViewportAnchoring();
+            UpdateCameraDeltaX();
             UpdateSkyElementVisibility();
             TickWeatherCycle();
             TickClouds();
@@ -448,15 +452,26 @@ namespace RavenDevOps.Fishing.Fishing
                 var p = cloud.Transform.position;
                 var windScroll = cloud.Speed * cloud.HorizontalDirection * Time.unscaledDeltaTime;
                 var horizontalStep = windScroll;
+                var viewportStep = horizontalStep - _cameraDeltaX;
                 p.x += horizontalStep;
                 var bob = Mathf.Sin((Time.unscaledTime * cloud.BobFrequency) + cloud.Phase) * cloud.BobAmplitude;
                 p.y = Mathf.Clamp(cloud.BaseY + bob, minY, maxY);
-                if (horizontalStep <= 0f && p.x < leftBound)
+                if (viewportStep <= 0f && p.x < leftBound)
                 {
                     p.x = rightBound + Random.Range(2f, 7f);
                     cloud.BaseY = Random.Range(minY, maxY);
                 }
-                else if (horizontalStep > 0f && p.x > rightBound)
+                else if (viewportStep > 0f && p.x > rightBound)
+                {
+                    p.x = leftBound - Random.Range(2f, 7f);
+                    cloud.BaseY = Random.Range(minY, maxY);
+                }
+                else if (p.x < leftBound - 12f)
+                {
+                    p.x = rightBound + Random.Range(2f, 7f);
+                    cloud.BaseY = Random.Range(minY, maxY);
+                }
+                else if (p.x > rightBound + 12f)
                 {
                     p.x = leftBound - Random.Range(2f, 7f);
                     cloud.BaseY = Random.Range(minY, maxY);
@@ -502,12 +517,21 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var p = drop.Transform.position;
                 var horizontalStep = -(drop.Speed * 0.12f * Time.unscaledDeltaTime);
+                var viewportStep = horizontalStep - _cameraDeltaX;
                 p.x += horizontalStep;
                 p.y -= drop.VerticalSpeed * Time.unscaledDeltaTime;
                 if (p.y < resetBottomY)
                 {
                     p.y = resetTopY;
                     p.x = Random.Range(leftBound, rightBound);
+                }
+                else if (viewportStep <= 0f && p.x < leftBound)
+                {
+                    p.x = rightBound;
+                }
+                else if (viewportStep > 0f && p.x > rightBound)
+                {
+                    p.x = leftBound;
                 }
                 else if (p.x < leftBound)
                 {
@@ -558,17 +582,28 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var p = band.Transform.position;
                 var horizontalStep = band.Speed * 0.12f * Time.unscaledDeltaTime;
+                var viewportStep = horizontalStep - _cameraDeltaX;
                 p.x += horizontalStep;
                 var bob = Mathf.Sin((Time.unscaledTime * band.BobFrequency) + band.Phase) * band.BobAmplitude;
                 p.y = Mathf.Clamp(band.BaseY + bob, fogMinY, fogMaxY);
-                if (horizontalStep >= 0f && p.x > rightBound)
+                if (viewportStep >= 0f && p.x > rightBound)
                 {
                     p.x = leftBound;
                     band.BaseY = Random.Range(fogMinY, fogMaxY);
                 }
-                else if (horizontalStep < 0f && p.x < leftBound)
+                else if (viewportStep < 0f && p.x < leftBound)
                 {
                     p.x = rightBound;
+                    band.BaseY = Random.Range(fogMinY, fogMaxY);
+                }
+                else if (p.x < leftBound - 10f)
+                {
+                    p.x = rightBound;
+                    band.BaseY = Random.Range(fogMinY, fogMaxY);
+                }
+                else if (p.x > rightBound + 10f)
+                {
+                    p.x = leftBound;
                     band.BaseY = Random.Range(fogMinY, fogMaxY);
                 }
 
@@ -995,6 +1030,28 @@ namespace RavenDevOps.Fishing.Fishing
             var minSeconds = Mathf.Max(20f, Mathf.Min(_weatherChangeIntervalSeconds.x, _weatherChangeIntervalSeconds.y));
             var maxSeconds = Mathf.Max(minSeconds, Mathf.Max(_weatherChangeIntervalSeconds.x, _weatherChangeIntervalSeconds.y));
             _nextWeatherChangeAt = Time.unscaledTime + Random.Range(minSeconds, maxSeconds);
+        }
+
+        private void UpdateCameraDeltaX()
+        {
+            if (_targetCamera == null)
+            {
+                _hasLastCameraX = false;
+                _cameraDeltaX = 0f;
+                return;
+            }
+
+            var cameraX = _targetCamera.transform.position.x;
+            if (!_hasLastCameraX)
+            {
+                _hasLastCameraX = true;
+                _lastCameraX = cameraX;
+                _cameraDeltaX = 0f;
+                return;
+            }
+
+            _cameraDeltaX = cameraX - _lastCameraX;
+            _lastCameraX = cameraX;
         }
 
         private static bool IsMoonPhase(FishingWeatherState weather)
