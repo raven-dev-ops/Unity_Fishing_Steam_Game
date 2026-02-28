@@ -32,6 +32,8 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _tutorialHookFollowOverrideActive;
         private float _tutorialFollowLerpScale = 1f;
         private float _tutorialHookViewportYOverride = -1f;
+        private bool _tutorialZoomOverrideActive;
+        private float _tutorialZoomScale = 1f;
 
         private void Awake()
         {
@@ -105,6 +107,14 @@ namespace RavenDevOps.Fishing.Fishing
                 : -1f;
         }
 
+        public void SetTutorialZoomOverride(bool enabled, float zoomScale = 1f)
+        {
+            _tutorialZoomOverrideActive = enabled;
+            _tutorialZoomScale = enabled
+                ? Mathf.Max(0.25f, zoomScale)
+                : 1f;
+        }
+
         private float ResolveTargetOrthoSize()
         {
             var depthFromShip = Mathf.Max(0f, _ship.position.y - _hook.position.y);
@@ -118,7 +128,15 @@ namespace RavenDevOps.Fishing.Fishing
             var depthRatio = Mathf.Clamp01(depthFromShip / Mathf.Max(0.1f, _maxTrackedDepth));
             var depthSize = Mathf.Lerp(_minOrthoSize, _maxOrthoSize, depthRatio);
             var targetSize = Mathf.Max(_minOrthoSize, requiredByDepthWithPadding, requiredByHorizontal, depthSize);
-            return Mathf.Clamp(targetSize, _minOrthoSize, _maxOrthoSize);
+            if (_tutorialZoomOverrideActive)
+            {
+                targetSize *= _tutorialZoomScale;
+            }
+
+            var maxSize = _tutorialZoomOverrideActive
+                ? Mathf.Max(_maxOrthoSize, _maxOrthoSize * _tutorialZoomScale)
+                : _maxOrthoSize;
+            return Mathf.Clamp(targetSize, _minOrthoSize, maxSize);
         }
 
         private float ResolveTargetCameraY(float orthoSize, out float hookAlignedY)

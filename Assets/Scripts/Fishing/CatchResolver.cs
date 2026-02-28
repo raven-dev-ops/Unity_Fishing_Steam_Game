@@ -41,6 +41,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         [SerializeField] private int _currentDistanceTier = 1;
         [SerializeField] private float _minimumFishSpawnDepth = 20f;
+        [SerializeField] private bool _requireCollisionHook = true;
         [SerializeField] private Vector2 _hookStationaryAttractionDelayRangeSeconds = new Vector2(5f, 15f);
         [SerializeField] private float _hookStationaryMovementThreshold = 0.015f;
         [SerializeField] private float _hookCollisionRadius = 0.22f;
@@ -685,6 +686,16 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            if (_requireCollisionHook)
+            {
+                if (!_targetFishBoundToAmbient)
+                {
+                    BindAmbientFishToTarget();
+                }
+
+                return;
+            }
+
             var baitAttractionEnabled = IsBaitAttractionEnabled() && _targetFishBoundToAmbient;
             if (baitAttractionEnabled)
             {
@@ -1208,6 +1219,20 @@ namespace RavenDevOps.Fishing.Fishing
             _inWaterElapsedSeconds = 0f;
             _biteApproachStarted = false;
             ResetHookStationaryAttractionTimer(reseedDelay: true);
+            if (_requireCollisionHook)
+            {
+                if (_targetFishBoundToAmbient)
+                {
+                    _hudOverlay?.SetFishingStatus($"Fish spotted at {depth:0}m. Keep the hook in lane so collision hooks the fish.");
+                }
+                else
+                {
+                    _hudOverlay?.SetFishingStatus($"Fish detected at {depth:0}m. Keep searching and collide with fish to hook.");
+                }
+
+                return true;
+            }
+
             var baitAttractionEnabled = IsBaitAttractionEnabled() && _targetFishBoundToAmbient;
             if (pityActivated)
             {

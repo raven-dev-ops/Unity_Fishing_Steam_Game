@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using RavenDevOps.Fishing.Core;
 using UnityEngine;
 
@@ -78,7 +79,7 @@ namespace RavenDevOps.Fishing.Fishing
 
         public string GetConditionLabel()
         {
-            return $"{_timeOfDay} | {_weather}";
+            return $"{FormatLabel(_timeOfDay.ToString())} | {FormatLabel(_weather.ToString())}";
         }
 
         public FishConditionModifier GetCombinedModifier()
@@ -127,11 +128,27 @@ namespace RavenDevOps.Fishing.Fishing
             switch (value)
             {
                 case FishingWeatherState.Clear:
+                    return FishingWeatherState.Sunny;
+                case FishingWeatherState.Sunny:
+                    return FishingWeatherState.PartlyCloudy;
+                case FishingWeatherState.PartlyCloudy:
+                    return FishingWeatherState.Clouds;
+                case FishingWeatherState.Clouds:
                     return FishingWeatherState.Overcast;
                 case FishingWeatherState.Overcast:
+                    return FishingWeatherState.Foggy;
+                case FishingWeatherState.Foggy:
                     return FishingWeatherState.Rain;
                 case FishingWeatherState.Rain:
+                    return FishingWeatherState.Thunderstorm;
+                case FishingWeatherState.Thunderstorm:
                     return FishingWeatherState.Storm;
+                case FishingWeatherState.Storm:
+                    return FishingWeatherState.QuarterMoon;
+                case FishingWeatherState.QuarterMoon:
+                    return FishingWeatherState.HalfMoon;
+                case FishingWeatherState.HalfMoon:
+                    return FishingWeatherState.FullMoon;
                 default:
                     return FishingWeatherState.Clear;
             }
@@ -177,6 +194,25 @@ namespace RavenDevOps.Fishing.Fishing
         {
             switch (weather)
             {
+                case FishingWeatherState.Sunny:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 0.98f,
+                        biteDelayMultiplier = 1.02f,
+                        fightStaminaMultiplier = 0.98f,
+                        pullIntensityMultiplier = 0.98f,
+                        escapeSecondsMultiplier = 1.02f
+                    };
+                case FishingWeatherState.PartlyCloudy:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 1.03f,
+                        biteDelayMultiplier = 0.97f,
+                        fightStaminaMultiplier = 1f,
+                        pullIntensityMultiplier = 1f,
+                        escapeSecondsMultiplier = 1.02f
+                    };
+                case FishingWeatherState.Clouds:
                 case FishingWeatherState.Overcast:
                     return new FishConditionModifier
                     {
@@ -185,6 +221,15 @@ namespace RavenDevOps.Fishing.Fishing
                         fightStaminaMultiplier = 1f,
                         pullIntensityMultiplier = 1f,
                         escapeSecondsMultiplier = 1.03f
+                    };
+                case FishingWeatherState.Foggy:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 1.06f,
+                        biteDelayMultiplier = 0.94f,
+                        fightStaminaMultiplier = 1.04f,
+                        pullIntensityMultiplier = 1.02f,
+                        escapeSecondsMultiplier = 1f
                     };
                 case FishingWeatherState.Rain:
                     return new FishConditionModifier
@@ -195,6 +240,7 @@ namespace RavenDevOps.Fishing.Fishing
                         pullIntensityMultiplier = 1.08f,
                         escapeSecondsMultiplier = 1f
                     };
+                case FishingWeatherState.Thunderstorm:
                 case FishingWeatherState.Storm:
                     return new FishConditionModifier
                     {
@@ -204,9 +250,58 @@ namespace RavenDevOps.Fishing.Fishing
                         pullIntensityMultiplier = 1.2f,
                         escapeSecondsMultiplier = 0.9f
                     };
+                case FishingWeatherState.QuarterMoon:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 1.06f,
+                        biteDelayMultiplier = 0.95f,
+                        fightStaminaMultiplier = 1.02f,
+                        pullIntensityMultiplier = 1.02f,
+                        escapeSecondsMultiplier = 1f
+                    };
+                case FishingWeatherState.HalfMoon:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 1.1f,
+                        biteDelayMultiplier = 0.92f,
+                        fightStaminaMultiplier = 1.05f,
+                        pullIntensityMultiplier = 1.05f,
+                        escapeSecondsMultiplier = 0.98f
+                    };
+                case FishingWeatherState.FullMoon:
+                    return new FishConditionModifier
+                    {
+                        rarityWeightMultiplier = 1.14f,
+                        biteDelayMultiplier = 0.89f,
+                        fightStaminaMultiplier = 1.08f,
+                        pullIntensityMultiplier = 1.08f,
+                        escapeSecondsMultiplier = 0.96f
+                    };
                 default:
                     return FishConditionModifier.Identity;
             }
+        }
+
+        private static string FormatLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder(value.Length + 4);
+            for (var i = 0; i < value.Length; i++)
+            {
+                var c = value[i];
+                if (i > 0 && char.IsUpper(c) && !char.IsWhiteSpace(value[i - 1]))
+                {
+                    builder.Append(' ');
+                }
+
+                builder.Append(c);
+            }
+
+            return builder.ToString();
         }
     }
 }

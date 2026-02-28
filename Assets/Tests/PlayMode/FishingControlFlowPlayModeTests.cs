@@ -155,7 +155,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BiteAttraction_RequiresHookToRemainStationary()
+        public IEnumerator InWater_WithoutCollision_DoesNotAutoHookAfterStationaryDelay()
         {
             var root = new GameObject("FishingControlFlow_StationaryAttraction");
             var stateMachine = root.AddComponent<FishingActionStateMachine>();
@@ -223,12 +223,15 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.InWater), "Hook movement should reset the attraction delay.");
 
             var timeoutAt = Time.realtimeSinceStartup + 1.2f;
-            while (stateMachine.State != FishingActionState.Hooked && Time.realtimeSinceStartup < timeoutAt)
+            while (Time.realtimeSinceStartup < timeoutAt)
             {
                 yield return null;
             }
 
-            Assert.That(stateMachine.State, Is.EqualTo(FishingActionState.Hooked), "Fish should hook after the hook remains still for the configured delay.");
+            Assert.That(
+                stateMachine.State,
+                Is.EqualTo(FishingActionState.InWater),
+                "Fish should not auto-hook without collision, even after stationary delay.");
 
             Object.Destroy(root);
             Object.Destroy(ship.gameObject);

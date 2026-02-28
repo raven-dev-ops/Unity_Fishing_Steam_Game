@@ -24,6 +24,9 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _shipVelocitySmoothing = 9f;
         [SerializeField] private float _shipDragTowardHookBias = 1.8f;
         [SerializeField, Range(0f, 1f)] private float _movingWaveSuppression = 0.85f;
+        [SerializeField] private HookMovementController _hookMovement;
+        [SerializeField] private float _depthCurvePer500Meters = 0.22f;
+        [SerializeField] private float _maxDepthCurveMultiplier = 4.2f;
 
         private LineRenderer _renderer;
         private SpriteRenderer _hookRenderer;
@@ -40,6 +43,7 @@ namespace RavenDevOps.Fishing.Fishing
             _shipOffsetY = shipOffsetY;
             _hasRecordedShipX = false;
             _smoothedShipVelocityX = 0f;
+            _hookMovement = hook != null ? hook.GetComponent<HookMovementController>() : _hookMovement;
         }
 
         private void Awake()
@@ -58,6 +62,8 @@ namespace RavenDevOps.Fishing.Fishing
             _shipVelocitySmoothing = Mathf.Max(0.1f, _shipVelocitySmoothing);
             _shipDragTowardHookBias = Mathf.Max(1f, _shipDragTowardHookBias);
             _movingWaveSuppression = Mathf.Clamp01(_movingWaveSuppression);
+            _depthCurvePer500Meters = Mathf.Max(0f, _depthCurvePer500Meters);
+            _maxDepthCurveMultiplier = Mathf.Max(1f, _maxDepthCurveMultiplier);
             if (!Application.isPlaying)
             {
                 CacheRenderer();
@@ -106,12 +112,31 @@ namespace RavenDevOps.Fishing.Fishing
             var shipVelocityX = ResolveSmoothedShipVelocityX();
             var velocityRatio = Mathf.Clamp01(Mathf.Abs(shipVelocityX) / Mathf.Max(0.1f, _shipDragSlackMaxVelocity));
             var normalizedLength = Mathf.Clamp01(length / 3.5f);
+            if (_hookMovement == null && _hook != null)
+            {
+                _hookMovement = _hook.GetComponent<HookMovementController>();
+            }
+
+            var depthMeters = ResolveDepthMeters(start, end);
+            var depthGradientPer500m = Mathf.Max(0f, depthMeters / 500f);
+            var depthCurveMultiplier = Mathf.Clamp(
+                1f + (depthGradientPer500m * Mathf.Max(0f, _depthCurvePer500Meters)),
+                1f,
+                Mathf.Max(1f, _maxDepthCurveMultiplier));
+            var depthCurveRatio = Mathf.Clamp01(
+                (depthCurveMultiplier - 1f) / Mathf.Max(0.001f, Mathf.Max(1f, _maxDepthCurveMultiplier) - 1f));
+            var velocityWakeBoost = 1f + (velocityRatio * 1.45f);
+            var depthWakeBoost = 1f + (depthCurveRatio * depthCurveRatio * 2.2f);
+            var wakeCurveMultiplier = velocityWakeBoost * depthWakeBoost;
             var sag = Mathf.Sin(Mathf.Clamp01(length / 4.5f) * Mathf.PI * 0.5f) * _sagAmount;
-            sag += _shipDragSlackSag * velocityRatio * normalizedLength;
+            sag += _shipDragSlackSag * velocityRatio * normalizedLength * Mathf.Lerp(1f, 1.35f, velocityRatio);
+            sag *= depthCurveMultiplier;
+            sag *= Mathf.Lerp(1f, 1.6f, depthCurveRatio);
             var waveMotionScale = Mathf.Lerp(1f, 1f - Mathf.Clamp01(_movingWaveSuppression), velocityRatio);
             var wave = _waveAmplitude * Mathf.Clamp01(length / 6f) * Mathf.Max(0.05f, waveMotionScale);
+            wave *= Mathf.Lerp(1f, 1.18f, Mathf.Clamp01(depthCurveMultiplier - 1f));
             var wavePhase = Time.time * _waveSpeed;
-            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * normalizedLength;
+            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * normalizedLength * depthCurveMultiplier * wakeCurveMultiplier;
             var dragBiasPower = Mathf.Max(1f, _shipDragTowardHookBias);
 
             for (var i = 0; i < segments; i++)
@@ -131,8 +156,8 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var point = Vector3.Lerp(start, end, t);
                 var centerWeight = Mathf.Sin(t * Mathf.PI);
-                var dragWeight = centerWeight * Mathf.Pow(t, dragBiasPower);
-                point.y -= centerWeight * sag;
+                var dragWeight = centerWeight * Mathf.Pow(t, dragBiasPower) * Mathf.Lerp(1f, 1.4f, velocityRatio);
+                point.y -= centerWeight * sag * Mathf.Lerp(1f, 1.2f, velocityRatio);
                 point.x += dragOffsetX * dragWeight;
                 point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave * centerWeight);
                 _renderer.SetPosition(i, point);
@@ -163,9 +188,13 @@ namespace RavenDevOps.Fishing.Fishing
                 _shipMovement = _ship.GetComponent<ShipMovementController>();
             }
 
-            var rawVelocityX = _shipMovement != null
+            var measuredVelocityX = (shipX - _lastShipX) / deltaTime;
+            var controllerVelocityX = _shipMovement != null
                 ? _shipMovement.CurrentHorizontalVelocity
-                : (shipX - _lastShipX) / deltaTime;
+                : measuredVelocityX;
+            var rawVelocityX = Mathf.Abs(measuredVelocityX) > Mathf.Abs(controllerVelocityX)
+                ? measuredVelocityX
+                : controllerVelocityX;
             _lastShipX = shipX;
 
             var blend = 1f - Mathf.Exp(-Mathf.Max(0.1f, _shipVelocitySmoothing) * deltaTime);
@@ -204,6 +233,16 @@ namespace RavenDevOps.Fishing.Fishing
             _renderer.positionCount = Mathf.Clamp(_segmentCount, 2, 32);
             _renderer.startWidth = _lineThickness;
             _renderer.endWidth = _lineThickness;
+        }
+
+        private float ResolveDepthMeters(Vector3 start, Vector3 end)
+        {
+            if (_hookMovement != null)
+            {
+                return Mathf.Max(0f, _hookMovement.CurrentDepth);
+            }
+
+            return Mathf.Max(0f, start.y - end.y);
         }
     }
 }

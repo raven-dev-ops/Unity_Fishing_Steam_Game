@@ -1015,6 +1015,8 @@ namespace RavenDevOps.Fishing.Core
 
             var interactionController = GetOrAddComponent<HarborInteractionController>(root);
             interactionController.Configure(player.transform, null, interactables, tutorialController);
+            var harborWeatherController = GetOrAddComponent<FishingSceneWeatherController>(root);
+            harborWeatherController.Configure(Camera.main, null, player != null ? player.transform : null);
 
             var hookShop = GetOrAddComponent<HookShopController>(root);
             hookShop.ConfigureItems(new List<ShopItem>
@@ -1466,6 +1468,11 @@ namespace RavenDevOps.Fishing.Core
             var environmentSliceController = GetOrAddComponent<FishingEnvironmentSliceController>(root);
             environmentSliceController.Configure(shipObject.transform, hookObject.transform);
             var conditionController = GetOrAddComponent<FishingConditionController>(root);
+            var fishingWeatherController = GetOrAddComponent<FishingSceneWeatherController>(root);
+            fishingWeatherController.Configure(Camera.main, conditionController, shipObject.transform);
+            var depthBackdropFishController = GetOrAddComponent<FishingDepthBackdropFishController>(root);
+            depthBackdropFishController.Configure(Camera.main, shipObject.transform, hookObject.transform);
+            ConfigureRandomFishPopulationDensity(ambientFishController, depthBackdropFishController);
             spawner.SetConditionController(conditionController);
 
             resolver.ConfigureDependencies(
@@ -2432,6 +2439,32 @@ namespace RavenDevOps.Fishing.Core
                 hardwareTier: "minimum",
                 emitSampleLogs: Application.isBatchMode,
                 maxSampleLogsPerScene: 6);
+        }
+
+        private static void ConfigureRandomFishPopulationDensity(
+            FishingAmbientFishSwimController ambientFishController,
+            FishingDepthBackdropFishController depthBackdropFishController)
+        {
+            var totalFishBudget = Random.Range(5, 8);
+            var interactiveTarget = Mathf.Clamp(
+                Mathf.RoundToInt(totalFishBudget * Random.Range(0.46f, 0.54f)),
+                2,
+                3);
+            var nonInteractiveTarget = Mathf.Max(3, totalFishBudget - interactiveTarget);
+            if (interactiveTarget + nonInteractiveTarget > totalFishBudget)
+            {
+                interactiveTarget = Mathf.Clamp(totalFishBudget - nonInteractiveTarget, 2, 3);
+            }
+
+            if (ambientFishController != null)
+            {
+                ambientFishController.SetMaxConcurrentFish(interactiveTarget);
+            }
+
+            if (depthBackdropFishController != null)
+            {
+                depthBackdropFishController.SetTotalBackdropFish(nonInteractiveTarget);
+            }
         }
 
         private static List<DialogueLine> CreateHarborTutorialDialogueLines()

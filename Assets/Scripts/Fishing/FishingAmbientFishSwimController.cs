@@ -28,6 +28,8 @@ namespace RavenDevOps.Fishing.Fishing
             public bool approaching;
             public bool settled;
             public float offscreenSeconds;
+            public float spawnFadeDuration;
+            public float spawnFadeElapsed;
         }
 
         [SerializeField] private string _fishNameToken = "FishingFish";
@@ -37,7 +39,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private bool _dynamicHorizontalBand = true;
         [SerializeField] private float _horizontalHalfSpan = 9.8f;
         [SerializeField] private float _bandTopOffsetBelowShip = 1.15f;
-        [SerializeField] private float _minimumAmbientSpawnDepth = 20f;
+        [SerializeField] private float _minimumAmbientSpawnDepth = 30f;
         [SerializeField] private float _bandBottomOffsetBelowHook = 1.1f;
         [SerializeField] private float _minBandHeight = 3.4f;
         [SerializeField] private float _maxBandHeight = 90f;
@@ -53,6 +55,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _edgeBuffer = 1.35f;
         [SerializeField] private float _offscreenDespawnSeconds = 2.8f;
         [SerializeField] private float _offscreenDespawnDistance = 3.25f;
+        [SerializeField] private float _spawnFadeInSeconds = 0.5f;
         [SerializeField] private float _bobAmplitude = 0.14f;
         [SerializeField] private float _bobFrequency = 1.45f;
         [SerializeField] private int _maxConcurrentFish = 3;
@@ -276,7 +279,9 @@ namespace RavenDevOps.Fishing.Fishing
                     hookedOffsetSign = 1f,
                     spawnDelay = RandomSpawnDelay(),
                     phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f),
-                    offscreenSeconds = 0f
+                    offscreenSeconds = 0f,
+                    spawnFadeDuration = 0f,
+                    spawnFadeElapsed = 0f
                 };
 
                 renderer.enabled = false;
@@ -292,6 +297,11 @@ namespace RavenDevOps.Fishing.Fishing
             _hook = hook;
             _hasLastHookY = false;
             _isHookDescending = false;
+        }
+
+        public void SetMaxConcurrentFish(int maxConcurrentFish)
+        {
+            _maxConcurrentFish = Mathf.Clamp(maxConcurrentFish, 1, 12);
         }
 
         public bool TryBindFish(string fishId, out Transform fishTransform)
@@ -339,11 +349,62 @@ namespace RavenDevOps.Fishing.Fishing
             track.approaching = false;
             track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
             track.renderer.enabled = true;
+            CompleteSpawnFade(track);
             track.hookedOffsetSign = track.direction >= 0f ? 1f : -1f;
 
             _boundTrack = track;
             _boundHookTransform = null;
             fishTransform = track.transform;
+            return true;
+        }
+
+        public bool PositionBoundFishForDemo(float verticalViewportRatio, bool spawnFromLeft, float speedMultiplier = 1f)
+        {
+            if (_boundTrack == null || _boundTrack.transform == null || _boundTrack.renderer == null)
+            {
+                return false;
+            }
+
+            if (!TryResolveCameraWorldBounds(out var cameraLeft, out var cameraRight, out var cameraBottom, out var cameraTop))
+            {
+                return false;
+            }
+
+            var edgeBuffer = Mathf.Max(0.75f, Mathf.Abs(_edgeBuffer));
+            var clampedRatio = Mathf.Clamp01(verticalViewportRatio);
+            var targetY = Mathf.Lerp(
+                cameraBottom + (edgeBuffer * 0.35f),
+                cameraTop - (edgeBuffer * 0.35f),
+                clampedRatio);
+
+            if (_ship != null)
+            {
+                var minimumDepthTopY = _ship.position.y - Mathf.Abs(_minimumAmbientSpawnDepth);
+                targetY = Mathf.Min(targetY, minimumDepthTopY - 0.15f);
+            }
+
+            _boundTrack.baseY = targetY;
+            _boundTrack.phase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            _boundTrack.direction = spawnFromLeft ? 1f : -1f;
+            var minSpeed = Mathf.Min(_speedRange.x, _speedRange.y);
+            var maxSpeed = Mathf.Max(_speedRange.x, _speedRange.y);
+            _boundTrack.speed = UnityEngine.Random.Range(minSpeed, maxSpeed) * Mathf.Max(0.8f, speedMultiplier);
+            _boundTrack.active = true;
+            _boundTrack.reserved = true;
+            _boundTrack.hooked = false;
+            _boundTrack.approaching = false;
+            _boundTrack.settled = false;
+            _boundTrack.offscreenSeconds = 0f;
+            _boundTrack.spawnDelay = RandomSpawnDelay();
+            _boundTrack.hookedOffsetSign = _boundTrack.direction >= 0f ? 1f : -1f;
+            _boundTrack.renderer.enabled = true;
+            _boundTrack.renderer.flipX = _boundTrack.direction < 0f;
+            _boundTrack.renderer.color = Color.Lerp(_boundTrack.baseColor, Color.white, 0.22f);
+
+            var spawnX = spawnFromLeft
+                ? cameraLeft - edgeBuffer
+                : cameraRight + edgeBuffer;
+            _boundTrack.transform.position = new Vector3(spawnX, targetY, _boundTrack.transform.position.z);
             return true;
         }
 
@@ -364,6 +425,7 @@ namespace RavenDevOps.Fishing.Fishing
             _boundTrack.hookedOffsetSign = ResolveHookSideSign(_boundTrack.transform.position.x, hookTransform.position.x);
             _boundTrack.renderer.enabled = true;
             _boundTrack.renderer.color = Color.Lerp(_boundTrack.baseColor, Color.white, 0.34f);
+            CompleteSpawnFade(_boundTrack);
             return true;
         }
 
@@ -393,6 +455,7 @@ namespace RavenDevOps.Fishing.Fishing
             var hookedColor = Color.Lerp(_boundTrack.baseColor, Color.white, 0.35f);
             hookedColor.a = _boundTrack.baseColor.a;
             _boundTrack.renderer.color = hookedColor;
+            CompleteSpawnFade(_boundTrack);
             _boundHookTransform = hookTransform;
             if (hookTransform != null)
             {
@@ -416,6 +479,7 @@ namespace RavenDevOps.Fishing.Fishing
             var settledColor = Color.Lerp(_boundTrack.baseColor, Color.white, 0.35f);
             settledColor.a = _boundTrack.baseColor.a;
             _boundTrack.renderer.color = settledColor;
+            CompleteSpawnFade(_boundTrack);
             if (hookTransform != null)
             {
                 _boundHookTransform = hookTransform;
@@ -590,6 +654,7 @@ namespace RavenDevOps.Fishing.Fishing
             collidedTrack.settled = false;
             collidedTrack.renderer.enabled = true;
             collidedTrack.renderer.color = Color.Lerp(collidedTrack.baseColor, Color.white, 0.34f);
+            CompleteSpawnFade(collidedTrack);
             collidedTrack.hookedOffsetSign = ResolveHookSideSign(collidedTrack.transform.position.x, hookTransform.position.x);
             fishId = NormalizeFishId(collidedTrack.fishId);
             return true;
@@ -675,6 +740,7 @@ namespace RavenDevOps.Fishing.Fishing
             p.x += track.direction * track.speed * speedScale * Time.deltaTime;
             p.y = track.baseY + Mathf.Sin((now * _bobFrequency) + track.phase) * _bobAmplitude;
             track.transform.position = p;
+            UpdateSpawnFade(track);
 
             if (TryResolveDistanceOutsideViewport(p, out var outsideDistance))
             {
@@ -697,6 +763,7 @@ namespace RavenDevOps.Fishing.Fishing
                         track.approaching = false;
                         track.offscreenSeconds = 0f;
                         track.renderer.color = Color.Lerp(track.baseColor, Color.white, 0.2f);
+                        CompleteSpawnFade(track);
                         return;
                     }
 
@@ -885,6 +952,66 @@ namespace RavenDevOps.Fishing.Fishing
 
             track.active = true;
             track.renderer.enabled = true;
+            BeginSpawnFade(track);
+        }
+
+        private void BeginSpawnFade(SwimTrack track)
+        {
+            if (track == null || track.renderer == null)
+            {
+                return;
+            }
+
+            var fadeDuration = Mathf.Max(0f, _spawnFadeInSeconds);
+            track.spawnFadeElapsed = 0f;
+            track.spawnFadeDuration = fadeDuration;
+            if (fadeDuration <= 0.001f)
+            {
+                CompleteSpawnFade(track);
+                return;
+            }
+
+            var color = track.baseColor;
+            color.a = 0f;
+            track.renderer.color = color;
+        }
+
+        private void UpdateSpawnFade(SwimTrack track)
+        {
+            if (track == null || track.renderer == null || track.spawnFadeDuration <= 0.001f)
+            {
+                return;
+            }
+
+            if (track.reserved || track.hooked || track.approaching)
+            {
+                CompleteSpawnFade(track);
+                return;
+            }
+
+            track.spawnFadeElapsed += Time.deltaTime;
+            var progress = Mathf.Clamp01(track.spawnFadeElapsed / track.spawnFadeDuration);
+            var color = track.renderer.color;
+            color.a = Mathf.Lerp(0f, track.baseColor.a, progress);
+            track.renderer.color = color;
+            if (progress >= 0.999f)
+            {
+                CompleteSpawnFade(track);
+            }
+        }
+
+        private static void CompleteSpawnFade(SwimTrack track)
+        {
+            if (track == null || track.renderer == null)
+            {
+                return;
+            }
+
+            track.spawnFadeElapsed = 0f;
+            track.spawnFadeDuration = 0f;
+            var color = track.renderer.color;
+            color.a = track.baseColor.a;
+            track.renderer.color = color;
         }
 
         private bool IsCatchableSpawnEnforcementActive()
@@ -968,6 +1095,8 @@ namespace RavenDevOps.Fishing.Fishing
             track.approaching = false;
             track.hooked = false;
             track.settled = false;
+            track.spawnFadeDuration = 0f;
+            track.spawnFadeElapsed = 0f;
             if (track.renderer != null)
             {
                 track.renderer.enabled = false;

@@ -110,6 +110,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoLevel4ReelMaxPhaseSeconds = 4.5f;
         [SerializeField] private float _demoLevel4ReelCameraFollowLerpScale = 1.35f;
         [SerializeField] private float _demoLevel4ReelCameraHookViewportY = 0.3f;
+        [SerializeField] private float _demoCameraZoomOutScale = 1.5f;
+        [SerializeField] private float _demoHookCollisionRadius = 0.24f;
+        [SerializeField] private float _demoHookPhaseSailSpeedScale = 0.32f;
+        [SerializeField] private float _demoHookPhaseMaxWaitSeconds = 6.5f;
         [SerializeField] private float _demoLevel5ReelMaxPhaseSeconds = 6.5f;
         [SerializeField] private float _demoReelTransitionLeadSeconds = 0.05f;
         [SerializeField] private Vector2 _demoLevel4LightRadiiMeters = new Vector2(16f, 8f);
@@ -171,6 +175,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoLevel5ReelStartDepthMeters;
         private bool _demoHookDepthOverrideApplied;
         private float _demoHookPreviousMaxDepthMeters;
+        private int _demoCollisionLaneIndex;
         private bool _dependenciesInitialized;
         private bool _missingDependencyLogEmitted;
 
@@ -733,6 +738,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoFishApproachStarted = false;
             _demoFishBound = false;
             _demoFishHookVisualReady = false;
+            _demoCollisionLaneIndex = 0;
             _demoLevel4ReelStartDepthMeters = 0f;
             _demoLevel5ReelStartDepthMeters = 0f;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
@@ -742,6 +748,7 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            ApplyDemoCameraZoomOverride(active: true);
             StartDemoPhase(DemoAutoplayPhase.IntroInfo);
         }
 
@@ -827,12 +834,20 @@ namespace RavenDevOps.Fishing.Fishing
                     TickInfoPhase(DemoAutoplayPhase.FishHook);
                     break;
                 case DemoAutoplayPhase.FishHook:
-                    MoveShipDuringHookDemo();
+                    SailShipLeftDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoCastDepthMeters), clampToWorldBounds: false);
                     TickDemoFishHookVisual();
-                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
-                        || IsDemoPhaseElapsed(3.4f))
+                    var fishHookTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(2f, _demoHookPhaseMaxWaitSeconds));
+                    if (fishHookTimeoutElapsed && !_demoFishHookVisualReady)
+                    {
+                        if (SeedDemoCollisionFish(forceNearHook: true))
+                        {
+                            _demoPhaseStartedAt = Time.unscaledTime - 0.9f;
+                        }
+                    }
+
+                    if (_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
                     {
                         QueueDemoPhaseTransition(DemoAutoplayPhase.ReelInfo, _demoSceneEndPauseSeconds);
                     }
@@ -889,14 +904,22 @@ namespace RavenDevOps.Fishing.Fishing
                     }
                     break;
                 case DemoAutoplayPhase.Level4FishHook:
-                    MoveShipDuringHookDemo();
+                    SailShipLeftDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel4CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, ResolveScene8LightRadiiMeters());
                     ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
                     TickDemoFishHookVisual();
-                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
-                        || IsDemoPhaseElapsed(3.8f))
+                    var level4FishHookTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(2.5f, _demoHookPhaseMaxWaitSeconds));
+                    if (level4FishHookTimeoutElapsed && !_demoFishHookVisualReady)
+                    {
+                        if (SeedDemoCollisionFish(forceNearHook: true))
+                        {
+                            _demoPhaseStartedAt = Time.unscaledTime - 0.9f;
+                        }
+                    }
+
+                    if (_demoFishHookVisualReady && IsDemoPhaseElapsed(1.2f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level4ReelInfo);
                     }
@@ -959,14 +982,22 @@ namespace RavenDevOps.Fishing.Fishing
                     }
                     break;
                 case DemoAutoplayPhase.Level5FishHook:
-                    MoveShipDuringHookDemo();
+                    SailShipLeftDuringHookDemo();
                     SetDemoHookVisible(true);
                     MoveHookTowardDepth(Mathf.Max(1f, _demoLevel5CastDepthMeters), clampToWorldBounds: false, _demoDeepCastSpeedMultiplier);
                     ApplyTutorialLightPreview(enabled: true, ResolveScene9LightRadiiMeters());
                     ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
                     TickDemoFishHookVisual();
-                    if ((_demoFishHookVisualReady && IsDemoPhaseElapsed(1.25f))
-                        || IsDemoPhaseElapsed(3.9f))
+                    var level5FishHookTimeoutElapsed = IsDemoPhaseElapsed(Mathf.Max(2.75f, _demoHookPhaseMaxWaitSeconds));
+                    if (level5FishHookTimeoutElapsed && !_demoFishHookVisualReady)
+                    {
+                        if (SeedDemoCollisionFish(forceNearHook: true))
+                        {
+                            _demoPhaseStartedAt = Time.unscaledTime - 0.9f;
+                        }
+                    }
+
+                    if (_demoFishHookVisualReady && IsDemoPhaseElapsed(1.25f))
                     {
                         StartDemoPhase(DemoAutoplayPhase.Level5ReelInfo);
                     }
@@ -1413,23 +1444,80 @@ namespace RavenDevOps.Fishing.Fishing
             if (!_demoFishApproachStarted)
             {
                 _demoFishApproachStarted = true;
-                if (_ambientFishController.TryBindFish(string.Empty, out _))
-                {
-                    _demoFishBound = true;
-                    _ambientFishController.BeginBoundFishApproach(_demoHookTransform);
-                }
-
+                _demoFishBound = SeedDemoCollisionFish(forceNearHook: false);
                 return;
             }
 
-            if (_demoFishBound
-                && !_demoFishHookVisualReady
-                && _ambientFishController.IsBoundFishApproachComplete())
+            if (_demoFishHookVisualReady)
+            {
+                return;
+            }
+
+            var collisionRadius = Mathf.Max(0.05f, _demoHookCollisionRadius);
+            if (_ambientFishController.TryBindCollidingFishToHook(_demoHookTransform, collisionRadius, out _))
+            {
+                _demoFishBound = true;
+                _ambientFishController.SetBoundFishHooked(_demoHookTransform);
+                _ambientFishController.SetBoundFishVisualFade(1f);
+                _demoFishHookVisualReady = true;
+                return;
+            }
+
+            if (_demoFishBound && _ambientFishController.IsBoundFishCollidingWithHook(_demoHookTransform, collisionRadius))
             {
                 _ambientFishController.SetBoundFishHooked(_demoHookTransform);
                 _ambientFishController.SetBoundFishVisualFade(1f);
                 _demoFishHookVisualReady = true;
             }
+        }
+
+        private bool SeedDemoCollisionFish(bool forceNearHook)
+        {
+            if (_ambientFishController == null || _demoHookTransform == null)
+            {
+                return false;
+            }
+
+            if (!_ambientFishController.TryBindFish(string.Empty, out var fishTransform) || fishTransform == null)
+            {
+                return false;
+            }
+
+            var laneCount = 5;
+            var laneIndex = Mathf.Abs(_demoCollisionLaneIndex++);
+            var laneRatio = laneCount <= 1
+                ? 0.5f
+                : (laneIndex % laneCount) / (float)(laneCount - 1);
+
+            var runtimeCamera = Camera.main;
+            var hookViewportRatio = 0.5f;
+            if (runtimeCamera != null)
+            {
+                var hookViewportPosition = runtimeCamera.WorldToViewportPoint(_demoHookTransform.position);
+                if (hookViewportPosition.z > 0f)
+                {
+                    hookViewportRatio = Mathf.Clamp01(hookViewportPosition.y);
+                }
+            }
+
+            var laneSpread = forceNearHook ? 0.08f : 0.22f;
+            var laneOffset = Mathf.Lerp(-laneSpread, laneSpread, laneRatio);
+            var spawnViewportRatio = Mathf.Clamp01(hookViewportRatio + laneOffset);
+            var spawnFromLeft = true;
+            var speedMultiplier = forceNearHook ? 1.5f : 1f;
+            if (_ambientFishController.PositionBoundFishForDemo(spawnViewportRatio, spawnFromLeft, speedMultiplier))
+            {
+                return true;
+            }
+
+            var hookPosition = _demoHookTransform.position;
+            var fallbackVerticalOffset = Mathf.Lerp(-1.4f, 1.4f, laneRatio);
+            var fallbackHorizontalLead = forceNearHook ? 0.75f : 2.2f;
+            fishTransform.position = new Vector3(
+                hookPosition.x - fallbackHorizontalLead,
+                hookPosition.y + fallbackVerticalOffset,
+                fishTransform.position.z);
+            return true;
         }
 
         private float ResolveDemoHookDepthMeters()
@@ -1526,6 +1614,7 @@ namespace RavenDevOps.Fishing.Fishing
             RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
             ApplyScene8CameraFollowOverride(active: false);
+            ApplyDemoCameraZoomOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
@@ -1545,6 +1634,7 @@ namespace RavenDevOps.Fishing.Fishing
             RestoreDemoHookDepthOverride();
             RestoreRuntimeHookCastController();
             ApplyScene8CameraFollowOverride(active: false);
+            ApplyDemoCameraZoomOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
             SetTutorialMessageBoxVisible(false);
@@ -1714,6 +1804,19 @@ namespace RavenDevOps.Fishing.Fishing
             _fishingCameraController.SetTutorialHookFollowOverride(active, followLerpScale, hookViewportY);
         }
 
+        private void ApplyDemoCameraZoomOverride(bool active)
+        {
+            if (_fishingCameraController == null)
+            {
+                return;
+            }
+
+            var zoomScale = active
+                ? Mathf.Max(1f, _demoCameraZoomOutScale)
+                : 1f;
+            _fishingCameraController.SetTutorialZoomOverride(active, zoomScale);
+        }
+
         private void RestoreDemoHookDepthOverride()
         {
             if (_hookMovement == null || !_demoHookDepthOverrideApplied)
@@ -1749,6 +1852,20 @@ namespace RavenDevOps.Fishing.Fishing
             var travelSpan = Mathf.Max(0.5f, _demoShipTravelDistance * 0.55f);
             var wave = Mathf.Sin((Time.unscaledTime - _demoPhaseStartedAt) * 2.8f);
             var targetX = _demoShipStartX + (travelSpan * wave);
+            MoveShipTowardX(targetX);
+        }
+
+        private void SailShipLeftDuringHookDemo()
+        {
+            if (_demoShipTransform == null)
+            {
+                return;
+            }
+
+            var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
+            var travelBase = Mathf.Max(0.5f, _demoShipTravelDistance);
+            var sailSpeed = Mathf.Max(0.1f, _demoShipMoveSpeed) * Mathf.Clamp(_demoHookPhaseSailSpeedScale, 0.1f, 1f);
+            var targetX = _demoShipStartX - travelBase - (elapsed * sailSpeed);
             MoveShipTowardX(targetX);
         }
 
