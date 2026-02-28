@@ -69,9 +69,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
                 var scenePath = ScenePaths[i];
                 Assert.That(File.Exists(scenePath), Is.True, $"Scene path not found: {scenePath}");
 
-                var loadOperation = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
-                Assert.That(loadOperation, Is.Not.Null, $"Failed to start load for scene: {scenePath}");
-                yield return loadOperation;
+                yield return LoadScene(scenePath);
                 yield return null;
 
                 var sceneName = Path.GetFileNameWithoutExtension(scenePath);

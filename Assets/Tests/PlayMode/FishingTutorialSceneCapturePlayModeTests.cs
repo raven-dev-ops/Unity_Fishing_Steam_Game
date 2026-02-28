@@ -9,6 +9,7 @@ using RavenDevOps.Fishing.Fishing;
 using RavenDevOps.Fishing.Input;
 using RavenDevOps.Fishing.Save;
 using RavenDevOps.Fishing.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
@@ -36,6 +37,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
         private static MethodInfo _imageConversionEncodeToPngMethod;
         private static bool _imageConversionLookupCompleted;
+        private static MethodInfo _runtimeServicesEnsureBootstrapMethod;
+        private static bool _runtimeServicesBootstrapLookupCompleted;
 
         [TearDown]
         public void ResetTimeScale()
@@ -155,6 +158,117 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
             Assert.That(tutorial.GetStepNameForTests(), Is.EqualTo("Complete"), "Tutorial step should be Complete after success.");
         }
 
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator FishingTutorialController_DemoTransitions_UseExpectedSceneTitlesInOrder()
+        {
+            yield return LoadScene(FishingScenePath);
+            yield return null;
+
+            var saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            Assert.That(saveManager, Is.Not.Null, "Expected SaveManager in fishing scene.");
+            saveManager.RequestFishingLoopTutorialReplay();
+            yield return null;
+
+            var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
+            yield return null;
+
+            var transitionTitleText = GameObject.Find("FishingTutorialTransitionTitleText")?.GetComponent<TMP_Text>();
+            var transitionSubtitleText = GameObject.Find("FishingTutorialTransitionSubtitleText")?.GetComponent<TMP_Text>();
+            Assert.That(transitionTitleText, Is.Not.Null, "Expected transition title text object.");
+            Assert.That(transitionSubtitleText, Is.Not.Null, "Expected transition subtitle text object.");
+
+            var expectedScenes = new (string Phase, string Title, string Subtitle)[]
+            {
+                ("IntroInfo", "Fishing Demo", "Loading guided tutorial flow"),
+                ("MoveShipInfo", "Scene 2: Auto Sail", "Baseline ship motion"),
+                ("CastInfo", "Scene 3: Cast", "Hook deployment"),
+                ("FishHookInfo", "Scene 4: Hook", "Fish approach and collision"),
+                ("ReelInfo", "Scene 5: Reel", "Reel mechanics"),
+                ("ShipUpgradeInfo", "Scene 6: Ship Depth Bands", "Depth range progression"),
+                ("HookUpgradeInfo", "Scene 7: Hook Light Tiers", "Hook tier abilities"),
+                ("Level4DarknessInfo", "Scene 8: Darkness Catch", "Low visibility at 4,500m"),
+                ("Level5DeepDarkInfo", "Scene 9: Deep-Dark Catch", "Deep-dark pass at 3,300m"),
+                ("FinishInfo", "Scene 10: Your Turn", "Transition to player control")
+            };
+
+            var sceneIndex = 0;
+            var sawExpectedTransitionTitle = false;
+            var timeoutAt = Time.realtimeSinceStartup + 180f;
+            while (Time.realtimeSinceStartup < timeoutAt && sceneIndex < expectedScenes.Length)
+            {
+                if (tutorial == null)
+                {
+                    break;
+                }
+
+                var transitionActive = tutorial.IsDemoSceneTransitionActiveForTests();
+                var currentPhase = tutorial.GetDemoPhaseNameForTests();
+                var expected = expectedScenes[sceneIndex];
+                if (transitionActive)
+                {
+                    if (string.Equals(transitionTitleText.text, expected.Title, StringComparison.Ordinal)
+                        && string.Equals(transitionSubtitleText.text, expected.Subtitle, StringComparison.Ordinal))
+                    {
+                        sawExpectedTransitionTitle = true;
+                    }
+                }
+                else if (sawExpectedTransitionTitle
+                    && string.Equals(currentPhase, expected.Phase, StringComparison.Ordinal))
+                {
+                    sceneIndex++;
+                    sawExpectedTransitionTitle = false;
+
+                    if (sceneIndex < expectedScenes.Length
+                        && !string.Equals(currentPhase, "FinishInfo", StringComparison.Ordinal))
+                    {
+                        tutorial.SkipActiveTutorial();
+                    }
+                }
+
+                yield return null;
+            }
+
+            Assert.That(
+                sceneIndex,
+                Is.EqualTo(expectedScenes.Length),
+                $"Expected full ordered transition/title flow. Completed {sceneIndex}/{expectedScenes.Length} scenes.");
+        }
+
+        [UnityTest]
+        [Timeout(300000)]
+        public IEnumerator FishingTutorialController_DepthScenes_BackdropFishLayerStaysActive()
+        {
+            yield return LoadScene(FishingScenePath);
+            yield return null;
+
+            var saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>(FindObjectsInactive.Include);
+            Assert.That(saveManager, Is.Not.Null, "Expected SaveManager in fishing scene.");
+            saveManager.RequestFishingLoopTutorialReplay();
+            yield return null;
+
+            var tutorial = UnityEngine.Object.FindAnyObjectByType<FishingLoopTutorialController>(FindObjectsInactive.Include);
+            Assert.That(tutorial, Is.Not.Null, "Expected FishingLoopTutorialController in fishing scene.");
+            tutorial.SetAutoplayInBatchModeForTests(true);
+            tutorial.BeginTutorialForTests();
+            yield return null;
+
+            var backdropController = UnityEngine.Object.FindAnyObjectByType<FishingDepthBackdropFishController>(FindObjectsInactive.Include);
+            Assert.That(backdropController, Is.Not.Null, "Expected FishingDepthBackdropFishController in fishing scene.");
+            EnableBackdropControllerForBatchTests(backdropController);
+            yield return null;
+
+            yield return WaitForDemoSceneStartPhase(tutorial, "Level4DarknessInfo", timeoutSeconds: 180f);
+            yield return WaitForBackdropFishActivation(backdropController, minimumTrackCount: 3, timeoutSeconds: 8f);
+
+            tutorial.SkipActiveTutorial();
+            yield return WaitForDemoSceneStartPhase(tutorial, "Level5DeepDarkInfo", timeoutSeconds: 180f);
+            yield return WaitForBackdropFishActivation(backdropController, minimumTrackCount: 3, timeoutSeconds: 8f);
+        }
+
         private static string ResolveOutputDirectory()
         {
             var workspace = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
@@ -169,10 +283,163 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private static IEnumerator LoadScene(string scenePath)
         {
             Assert.That(File.Exists(scenePath), Is.True, $"Scene path not found: {scenePath}");
+            if (string.Equals(scenePath, FishingScenePath, StringComparison.Ordinal))
+            {
+                var previousIgnoreLogs = LogAssert.ignoreFailingMessages;
+                LogAssert.ignoreFailingMessages = true;
+                try
+                {
+                    EnsureRuntimeServicesBootstrap();
+                }
+                finally
+                {
+                    LogAssert.ignoreFailingMessages = previousIgnoreLogs;
+                }
+            }
+
             Time.timeScale = 1f;
             var loadOperation = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
             Assert.That(loadOperation, Is.Not.Null, $"Failed to start load for scene: {scenePath}");
             yield return loadOperation;
+        }
+
+        private static IEnumerator WaitForDemoSceneStartPhase(FishingLoopTutorialController tutorial, string phaseName, float timeoutSeconds)
+        {
+            var timeoutAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, timeoutSeconds);
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                if (tutorial != null
+                    && tutorial.IsDemoActiveForTests()
+                    && !tutorial.IsDemoSceneTransitionActiveForTests()
+                    && string.Equals(tutorial.GetDemoPhaseNameForTests(), phaseName, StringComparison.Ordinal))
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail($"Timed out waiting for demo phase '{phaseName}' to begin.");
+        }
+
+        private static IEnumerator WaitForBackdropFishActivation(
+            FishingDepthBackdropFishController backdropController,
+            int minimumTrackCount,
+            float timeoutSeconds)
+        {
+            var requiredTracks = Mathf.Max(1, minimumTrackCount);
+            var timeoutAt = Time.realtimeSinceStartup + Mathf.Max(0.1f, timeoutSeconds);
+            while (Time.realtimeSinceStartup < timeoutAt)
+            {
+                var tracks = ReadBackdropTracks(backdropController);
+                var populatedTracks = 0;
+                var enabledTracks = 0;
+                var pendingTracks = 0;
+                var layerMask = 0;
+                for (var i = 0; i < tracks.Count; i++)
+                {
+                    var track = tracks[i];
+                    var renderer = GetBackdropTrackField<SpriteRenderer>(track, "Renderer");
+                    var layerIndex = Mathf.Clamp(GetBackdropTrackField<int>(track, "LayerIndex"), 0, 2);
+                    var pendingSpawn = GetBackdropTrackField<bool>(track, "PendingSpawn");
+                    layerMask |= 1 << layerIndex;
+                    if (renderer != null)
+                    {
+                        populatedTracks++;
+                        if (renderer.enabled && !pendingSpawn)
+                        {
+                            enabledTracks++;
+                        }
+                        else if (pendingSpawn)
+                        {
+                            pendingTracks++;
+                        }
+                    }
+                }
+
+                var hasAllBackdropLayers = (layerMask & 0b111) == 0b111;
+                if (populatedTracks >= requiredTracks
+                    && hasAllBackdropLayers
+                    && (enabledTracks + pendingTracks) >= requiredTracks)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            Assert.Fail($"Timed out waiting for backdrop fish layer readiness (required tracks: {requiredTracks}).");
+        }
+
+        private static List<object> ReadBackdropTracks(FishingDepthBackdropFishController backdropController)
+        {
+            Assert.That(backdropController, Is.Not.Null, "Expected backdrop fish controller.");
+            var field = typeof(FishingDepthBackdropFishController).GetField("_tracks", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, "Unable to read depth backdrop tracks.");
+            var enumerable = field.GetValue(backdropController) as System.Collections.IEnumerable;
+            Assert.That(enumerable, Is.Not.Null, "Backdrop fish track list is unavailable.");
+
+            var tracks = new List<object>(24);
+            foreach (var item in enumerable)
+            {
+                if (item != null)
+                {
+                    tracks.Add(item);
+                }
+            }
+
+            return tracks;
+        }
+
+        private static T GetBackdropTrackField<T>(object track, string fieldName)
+        {
+            Assert.That(track, Is.Not.Null, "Expected non-null backdrop track.");
+            var field = track.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Missing field '{fieldName}' on backdrop track.");
+            return (T)field.GetValue(track);
+        }
+
+        private static void EnableBackdropControllerForBatchTests(FishingDepthBackdropFishController backdropController)
+        {
+            if (backdropController == null)
+            {
+                return;
+            }
+
+            SetPrivateField(backdropController, "_allowInBatchMode", true);
+            backdropController.enabled = true;
+
+            var targetCamera = Camera.main != null
+                ? Camera.main
+                : UnityEngine.Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Include);
+            var ship = GameObject.Find("FishingShip")?.transform;
+            var hook = GameObject.Find("FishingHook")?.transform;
+            if (targetCamera != null && ship != null && hook != null)
+            {
+                backdropController.Configure(targetCamera, ship, hook);
+            }
+        }
+
+        private static void SetPrivateField<T>(object instance, string fieldName, T value)
+        {
+            Assert.That(instance, Is.Not.Null, "Expected instance for private field set.");
+            var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, $"Expected private field '{fieldName}'.");
+            field.SetValue(instance, value);
+        }
+
+        private static void EnsureRuntimeServicesBootstrap()
+        {
+            if (!_runtimeServicesBootstrapLookupCompleted)
+            {
+                _runtimeServicesBootstrapLookupCompleted = true;
+                _runtimeServicesEnsureBootstrapMethod = typeof(RuntimeServicesBootstrap).GetMethod(
+                    "EnsureBootstrap",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+            }
+
+            Assert.That(_runtimeServicesEnsureBootstrapMethod, Is.Not.Null, "Expected RuntimeServicesBootstrap.EnsureBootstrap method.");
+            _runtimeServicesEnsureBootstrapMethod?.Invoke(null, null);
         }
 
         private static void CaptureScenePng(string outputPath)
