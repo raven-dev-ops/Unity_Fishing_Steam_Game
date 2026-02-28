@@ -100,7 +100,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoShipUpgradePreviewDepthMaxMeters = 3200f;
         [SerializeField] private float _demoShipUpgradeDepthCycleSeconds = 2.4f;
         [SerializeField] private float _demoShipUpgradeSceneDurationSeconds = 10f;
-        [SerializeField] private float _demoShipUpgradeHookSpeedMultiplier = 0.45f;
+        [SerializeField] private float _demoShipUpgradeHookSpeedMultiplier = 1.2f;
         [SerializeField] private Vector2 _demoShipUpgradeHookLightRadiiMeters = new Vector2(24f, 12f);
         [SerializeField] private float _demoShipUpgradeCameraFollowLerpScale = 2.2f;
         [SerializeField] private float _demoShipUpgradeCameraHookViewportY = 0.26f;
@@ -1146,6 +1146,8 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 ApplyShipUpgradeCameraFollowOverride(active: true);
                 SetDemoHookVisible(true);
+                var minimumDepth = Mathf.Max(1f, Mathf.Min(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
+                SnapDemoHookToDepth(minimumDepth, clampToWorldBounds: false);
                 ApplyTutorialLightPreview(enabled: true, ResolveShipUpgradeLightRadiiMeters());
                 ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());
             }
@@ -1387,6 +1389,8 @@ namespace RavenDevOps.Fishing.Fishing
                     SnapDemoHookToDock();
                     break;
                 case DemoAutoplayPhase.ShipUpgradeInfo:
+                    var minimumDepth = Mathf.Max(1f, Mathf.Min(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
+                    SnapDemoHookToDepth(minimumDepth, clampToWorldBounds: false);
                     TickShipUpgradeInfoVisual();
                     break;
                 case DemoAutoplayPhase.HookUpgradeInfo:
@@ -1524,7 +1528,7 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "How To Play: Demo";
+                    return "Fishing Demo";
                 case DemoAutoplayPhase.MoveShipInfo:
                     return "Scene 2: Auto Sail";
                 case DemoAutoplayPhase.CastInfo:
@@ -2052,11 +2056,15 @@ namespace RavenDevOps.Fishing.Fishing
             var maximumDepth = Mathf.Max(minimumDepth + 1f, Mathf.Max(_demoShipUpgradePreviewDepthMinMeters, _demoShipUpgradePreviewDepthMaxMeters));
             var sceneDurationSeconds = Mathf.Max(10f, _demoShipUpgradeSceneDurationSeconds);
             var cycleSeconds = Mathf.Max(0.35f, Mathf.Max(_demoShipUpgradeDepthCycleSeconds, sceneDurationSeconds));
+            var speedMultiplier = Mathf.Max(0.1f, _demoShipUpgradeHookSpeedMultiplier);
+            var reachableRangeMeters = Mathf.Max(
+                220f,
+                _demoHookMoveSpeed * speedMultiplier * cycleSeconds * 0.72f);
+            var effectiveMaximumDepth = Mathf.Clamp(minimumDepth + reachableRangeMeters, minimumDepth + 1f, maximumDepth);
             var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
             var blend = Mathf.PingPong(elapsed / cycleSeconds, 1f);
             blend = blend * blend * (3f - (2f * blend));
-            var targetDepth = Mathf.Lerp(minimumDepth, maximumDepth, blend);
-            var speedMultiplier = Mathf.Max(0.1f, _demoShipUpgradeHookSpeedMultiplier);
+            var targetDepth = Mathf.Lerp(minimumDepth, effectiveMaximumDepth, blend);
             MoveHookTowardDepth(targetDepth, clampToWorldBounds: false, speedMultiplier);
             ApplyTutorialLightPreview(enabled: true, ResolveShipUpgradeLightRadiiMeters());
             ApplyTutorialDepthPreview(enabled: true, ResolveDemoHookDepthMeters());

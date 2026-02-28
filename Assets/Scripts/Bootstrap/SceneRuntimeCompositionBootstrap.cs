@@ -485,14 +485,14 @@ namespace RavenDevOps.Fishing.Core
             CreatePanel(canvas.transform, "MainMenuPanel", new Vector2(0f, 0f), new Vector2(620f, 520f), new Color(0.05f, 0.11f, 0.18f, 0.74f));
             CreateText(canvas.transform, "MainMenuTitle", "Harbor Command", 38, TextAnchor.MiddleCenter, new Vector2(0f, 186f), new Vector2(560f, 88f));
 
-            var startButton = CreateButton(canvas.transform, "StartButton", "Start Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
+            var startButton = CreateButton(canvas.transform, "StartButton", "Voyage", new Vector2(0f, 88f), new Vector2(300f, 56f));
             var demoButton = CreateButton(canvas.transform, "DemoButton", "Demo", new Vector2(0f, 20f), new Vector2(300f, 56f));
             var settingsButton = CreateButton(canvas.transform, "SettingsButton", "Settings", new Vector2(0f, -48f), new Vector2(300f, 56f));
             var exitButton = CreateButton(canvas.transform, "ExitButton", "Exit", new Vector2(0f, -116f), new Vector2(300f, 56f));
             CreateTopLeftTmpText(
                 canvas.transform,
                 "DemoHintText",
-                "Demo starts the guided fishing tutorial reel. Start Voyage heads to Harbor.",
+                "Demo starts the guided fishing tutorial reel. Voyage heads to Harbor.",
                 15,
                 TextAlignmentOptions.TopLeft,
                 new Vector2(22f, 324f),

@@ -13,7 +13,7 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         {
             var phase = ResolveDemoPhaseValue("IntroInfo");
             var title = InvokePrivateStatic<string>("BuildDemoSceneTitle", phase);
-            Assert.That(title, Is.EqualTo("How To Play: Demo"));
+            Assert.That(title, Is.EqualTo("Fishing Demo"));
         }
 
         [Test]
