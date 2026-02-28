@@ -1214,23 +1214,24 @@ namespace RavenDevOps.Fishing.Core
             var fishingTutorialMessagePanel = CreatePanel(
                 canvas.transform,
                 "FishingTutorialMessagePanel",
-                new Vector2(0f, -248f),
-                new Vector2(1160f, 152f),
-                new Color(0.02f, 0.07f, 0.12f, 0.86f));
+                new Vector2(0f, -472f),
+                new Vector2(1680f, 112f),
+                new Color(0f, 0f, 0f, 0f));
             var fishingTutorialMessagePanelImage = fishingTutorialMessagePanel.GetComponent<Image>();
             if (fishingTutorialMessagePanelImage != null)
             {
                 fishingTutorialMessagePanelImage.raycastTarget = false;
+                fishingTutorialMessagePanelImage.enabled = false;
             }
 
-            var fishingTutorialMessageText = CreateTopLeftText(
+            var fishingTutorialMessageText = CreateText(
                 fishingTutorialMessagePanel.transform,
                 "FishingTutorialMessageText",
                 string.Empty,
-                24,
-                TextAnchor.UpperLeft,
-                new Vector2(28f, 18f),
-                new Vector2(1104f, 116f));
+                27,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, 0f),
+                new Vector2(1600f, 104f));
             fishingTutorialMessageText.raycastTarget = false;
             fishingTutorialMessagePanel.SetActive(false);
             var fishingTutorialTransitionPanel = new GameObject("FishingTutorialTransitionPanel");
