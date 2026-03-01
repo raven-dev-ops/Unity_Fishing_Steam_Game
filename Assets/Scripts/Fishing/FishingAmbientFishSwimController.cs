@@ -51,6 +51,7 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _descendingAheadMinimumActiveFish = 2;
         [SerializeField] private float _descendingSpawnCadenceMultiplier = 2.5f;
         [SerializeField] private float _descendingDetectionMinMetersPerSecond = 0.08f;
+        [SerializeField] private float _resumeSpawnDelayAfterDescentStopsSeconds = 3f;
         [SerializeField] private Vector2 _speedRange = new Vector2(1.15f, 2.45f);
         [SerializeField] private Vector2 _spawnIntervalRange = new Vector2(0.4f, 1.4f);
         [SerializeField] private Vector2 _scaleMultiplierRange = new Vector2(0.85f, 1.15f);
@@ -97,6 +98,7 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasLastHookY;
         private float _lastHookY;
         private bool _isHookDescending;
+        private float _spawnResumeAtUnscaledTime;
         private bool _hasLastHookCollisionPosition;
         private Vector2 _lastHookCollisionPosition;
         private int _hookCollisionSampleFrame = -1;
@@ -153,6 +155,7 @@ namespace RavenDevOps.Fishing.Fishing
             UpdateHookDescentState();
             UpdateDynamicWaterBand();
             var allowAmbientPresence = IsAmbientPresenceAllowed();
+            var spawnBlockedByHookMotion = IsSpawnBlockedByHookMotion();
             var descendingSpawnCadenceMultiplier = ResolveDescendingSpawnCadenceMultiplier();
 
             if (_boundTrack != null && (_boundTrack.transform == null || _boundTrack.renderer == null))
@@ -190,7 +193,7 @@ namespace RavenDevOps.Fishing.Fishing
                 }
                 else
                 {
-                    if (!track.reserved)
+                    if (!track.reserved && !spawnBlockedByHookMotion)
                     {
                         track.spawnDelay -= Time.deltaTime * descendingSpawnCadenceMultiplier;
                     }
@@ -207,6 +210,11 @@ namespace RavenDevOps.Fishing.Fishing
                 }
 
                 if (activeCount >= Mathf.Max(1, _maxConcurrentFish))
+                {
+                    break;
+                }
+
+                if (spawnBlockedByHookMotion)
                 {
                     break;
                 }
@@ -305,6 +313,7 @@ namespace RavenDevOps.Fishing.Fishing
             _hook = hook;
             _hasLastHookY = false;
             _isHookDescending = false;
+            _spawnResumeAtUnscaledTime = 0f;
             _hasLastHookCollisionPosition = false;
             _hookCollisionSampleFrame = -1;
         }
@@ -342,6 +351,11 @@ namespace RavenDevOps.Fishing.Fishing
 
             if (!track.active)
             {
+                if (IsSpawnBlockedByHookMotion())
+                {
+                    return false;
+                }
+
                 SpawnTrack(track, normalizedFishId);
             }
             else if (!string.IsNullOrEmpty(normalizedFishId))
@@ -1620,6 +1634,7 @@ namespace RavenDevOps.Fishing.Fishing
                 _isHookDescending = false;
                 _hasLastHookY = false;
                 _lastHookY = 0f;
+                _spawnResumeAtUnscaledTime = 0f;
                 return;
             }
 
@@ -1636,6 +1651,15 @@ namespace RavenDevOps.Fishing.Fishing
             var velocityY = (currentHookY - _lastHookY) / deltaTime;
             _lastHookY = currentHookY;
             _isHookDescending = velocityY <= -Mathf.Max(0.05f, _descendingDetectionMinMetersPerSecond);
+            if (_isHookDescending)
+            {
+                _spawnResumeAtUnscaledTime = Time.unscaledTime + Mathf.Max(0f, _resumeSpawnDelayAfterDescentStopsSeconds);
+            }
+        }
+
+        private bool IsSpawnBlockedByHookMotion()
+        {
+            return _isHookDescending || Time.unscaledTime < _spawnResumeAtUnscaledTime;
         }
 
         private float ResolveSpawnY(float bottom, float top)
