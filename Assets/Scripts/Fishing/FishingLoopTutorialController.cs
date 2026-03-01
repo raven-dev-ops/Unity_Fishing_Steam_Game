@@ -174,7 +174,6 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoPhaseStartedAt;
         private float _demoShipStartX;
         private float _demoShipWavePhase;
-        private float _demoSurfaceWaveOffsetY;
         private SpriteRenderer _demoShipRenderer;
         private Transform _demoShipVisualProxyTransform;
         private SpriteRenderer _demoShipVisualProxyRenderer;
@@ -796,7 +795,6 @@ namespace RavenDevOps.Fishing.Fishing
             _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-            _demoSurfaceWaveOffsetY = 0f;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -2315,7 +2313,6 @@ namespace RavenDevOps.Fishing.Fishing
             _demoShipVisualBaseLocalPosition = Vector3.zero;
             _demoShipVisualBaseLocalPositionCaptured = false;
             _demoShipVisualProxyRuntimeCreated = false;
-            _demoSurfaceWaveOffsetY = 0f;
         }
 
         private void ApplyDemoShipWavePath()
@@ -2330,7 +2327,6 @@ namespace RavenDevOps.Fishing.Fishing
             var localPosition = _demoShipVisualProxyTransform.localPosition;
             if (!IsSurfaceWaveDemoPhase())
             {
-                _demoSurfaceWaveOffsetY = 0f;
                 localPosition.y = _demoShipVisualBaseLocalPosition.y;
                 _demoShipVisualProxyTransform.localPosition = localPosition;
                 return;
@@ -2338,12 +2334,10 @@ namespace RavenDevOps.Fishing.Fishing
 
             var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
             var amplitude = ResolveDemoShipWaveAmplitude();
-            // Frequency values are in cycles/second so scene 1 and 2 complete several
-            // visible up/down wave cycles during each title card duration.
-            var rhythmFrequency = Mathf.Max(1.1f, _demoSurfaceWaveFrequency);
+            // Frequency values are in cycles/second; keep motion slow and repeating.
+            var rhythmFrequency = Mathf.Max(0.45f, _demoSurfaceWaveFrequency * 0.5f);
             var primary = Mathf.Sin((elapsed * rhythmFrequency * Mathf.PI * 2f) + _demoShipWavePhase);
-            _demoSurfaceWaveOffsetY = primary * amplitude;
-            localPosition.y = _demoShipVisualBaseLocalPosition.y + _demoSurfaceWaveOffsetY;
+            localPosition.y = _demoShipVisualBaseLocalPosition.y + (primary * amplitude);
             _demoShipVisualProxyTransform.localPosition = localPosition;
         }
 
@@ -2370,6 +2364,7 @@ namespace RavenDevOps.Fishing.Fishing
                 amplitude *= 1.35f;
             }
 
+            amplitude *= 0.5f;
             return Mathf.Clamp(amplitude, 0f, Mathf.Max(0.01f, _demoSurfaceWaveMaxAmplitude));
         }
 
@@ -2498,24 +2493,12 @@ namespace RavenDevOps.Fishing.Fishing
         {
             if (_hookMovement != null)
             {
-                var dockY = _hookMovement.GetDockedY(_demoDockOffsetY);
-                if (_demoActive && IsSurfaceWaveDemoPhase())
-                {
-                    dockY += _demoSurfaceWaveOffsetY;
-                }
-
-                return dockY;
+                return _hookMovement.GetDockedY(_demoDockOffsetY);
             }
 
             if (_demoShipTransform != null)
             {
-                var dockY = _demoShipTransform.position.y - Mathf.Abs(_demoDockOffsetY);
-                if (_demoActive && IsSurfaceWaveDemoPhase())
-                {
-                    dockY += _demoSurfaceWaveOffsetY;
-                }
-
-                return dockY;
+                return _demoShipTransform.position.y - Mathf.Abs(_demoDockOffsetY);
             }
 
             return _demoHookTransform != null ? _demoHookTransform.position.y : 0f;
