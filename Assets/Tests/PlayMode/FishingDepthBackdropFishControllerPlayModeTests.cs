@@ -267,6 +267,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private FishingDepthBackdropFishController CreateController()
         {
             var go = new GameObject("DepthBackdropFishControllerTest");
+            UnityEngine.Object.DontDestroyOnLoad(go);
             _cleanup.Add(go);
             go.SetActive(false);
             var controller = go.AddComponent<FishingDepthBackdropFishController>();
@@ -278,6 +279,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private Camera CreateCamera()
         {
             var go = new GameObject("DepthBackdropFishTestCamera");
+            UnityEngine.Object.DontDestroyOnLoad(go);
             _cleanup.Add(go);
             var camera = go.AddComponent<Camera>();
             camera.orthographic = true;
@@ -290,6 +292,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private Transform CreateTransform(string name, Vector3 position)
         {
             var go = new GameObject(name);
+            UnityEngine.Object.DontDestroyOnLoad(go);
             _cleanup.Add(go);
             go.transform.position = position;
             return go.transform;
@@ -298,6 +301,7 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         private void CreateFishSpriteTemplate()
         {
             var template = new GameObject("FishingFishTemplate");
+            UnityEngine.Object.DontDestroyOnLoad(template);
             _cleanup.Add(template);
             var renderer = template.AddComponent<SpriteRenderer>();
             renderer.sprite = CreateTestSprite();

@@ -427,12 +427,15 @@ namespace RavenDevOps.Fishing.Fishing
                 track.RetargetDelaySeconds -= Time.unscaledDeltaTime;
                 if (track.RetargetDelaySeconds <= 0f)
                 {
-                    track.TargetBaseY = ResolveLayerBaseWorldYSpaced(track.LayerIndex, track);
+                    track.TargetBaseY = ResolveRetargetBaseWorldY(track, minimumDepthWorldY, halfHeight);
                     track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
                 }
 
                 var travelOffset = (-_shipDeltaX) * track.TravelVerticalOffsetPerShipMeter;
-                track.TargetBaseY = ClampLayerBaseWorldY(track.LayerIndex, track.TargetBaseY + travelOffset);
+                var targetWithTravel = track.TargetBaseY + travelOffset;
+                var depthCeilingY = minimumDepthWorldY - (Mathf.Clamp(track.LayerIndex, 0, 2) * 0.12f);
+                var depthFloorY = depthCeilingY - Mathf.Max(1.2f, halfHeight * 1.35f);
+                track.TargetBaseY = Mathf.Clamp(targetWithTravel, depthFloorY, depthCeilingY);
                 var baseYBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, track.VerticalDriftLerpSpeed) * Time.unscaledDeltaTime);
                 track.BaseY = Mathf.Lerp(track.BaseY, track.TargetBaseY, baseYBlend);
 
@@ -443,7 +446,7 @@ namespace RavenDevOps.Fishing.Fishing
 
                 // Avoid snapping fish to camera-space bands each frame during deep camera travel.
                 // Only force-respawn when a track drifts far outside the vertical play window.
-                var verticalRespawnMargin = Mathf.Max(1.5f, halfHeight * 0.55f);
+                var verticalRespawnMargin = Mathf.Max(8f, halfHeight * 2.8f);
                 if (p.y < bottomBound - verticalRespawnMargin || p.y > topBound + verticalRespawnMargin)
                 {
                     QueueTrackSpawn(track, halfWidth, wrapPadding, preferAhead: true, initialSpawn: false);
@@ -587,6 +590,23 @@ namespace RavenDevOps.Fishing.Fishing
             track.TargetBaseY = p.y;
             track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.02f, 0.08f));
             track.Transform.position = p;
+        }
+
+        private float ResolveRetargetBaseWorldY(BackdropFishTrack track, float minimumDepthWorldY, float halfHeight)
+        {
+            if (track == null)
+            {
+                return minimumDepthWorldY;
+            }
+
+            var clampedLayer = Mathf.Clamp(track.LayerIndex, 0, 2);
+            var currentBaseY = track.BaseY;
+            var retargetRange = Mathf.Max(0.5f, halfHeight * (0.18f + (clampedLayer * 0.06f)));
+            var candidateY = currentBaseY + UnityEngine.Random.Range(-retargetRange, retargetRange);
+            var depthCeilingY = minimumDepthWorldY - (clampedLayer * 0.12f);
+            var depthFloorY = depthCeilingY - Mathf.Max(1.2f, halfHeight * 1.35f);
+            candidateY = Mathf.Min(candidateY, depthCeilingY);
+            return Mathf.Clamp(candidateY, depthFloorY, depthCeilingY);
         }
 
         private bool IsWorldPointVisibleInViewport(Vector3 worldPosition, float cameraX, float cameraY, float halfWidth, float halfHeight)
