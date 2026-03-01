@@ -27,6 +27,16 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private HookMovementController _hookMovement;
         [SerializeField] private float _depthCurvePer500Meters = 0.22f;
         [SerializeField] private float _maxDepthCurveMultiplier = 4.2f;
+        [SerializeField] private float _minimumMovingLag = 0.3f;
+        [SerializeField] private float _wakeLagResponse = 6.5f;
+        [SerializeField] private float _wakeLagRecovery = 2.4f;
+        [SerializeField] private float _wakeLagMaxDistance = 5f;
+        [SerializeField] private float _movingVelocityThreshold = 0.08f;
+        [SerializeField] private FishingSceneWeatherController _weatherController;
+        [SerializeField] private float _weatherWaveToLineScale = 0.05f;
+        [SerializeField] private float _weatherFogToLineScale = 0.035f;
+        [SerializeField] private float _weatherLineBobFrequency = 0.62f;
+        [SerializeField] private float _weatherLineBobSecondaryFrequency = 1.08f;
 
         private LineRenderer _renderer;
         private SpriteRenderer _hookRenderer;
@@ -34,6 +44,9 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasRecordedShipX;
         private float _lastShipX;
         private float _smoothedShipVelocityX;
+        private float _wakeLagOffsetX;
+        private bool _hasLineWeatherPhase;
+        private float _lineWeatherPhase;
 
         public void Configure(Transform ship, Transform hook, float lineThickness = 0.05f, float shipOffsetY = -0.36f)
         {
@@ -43,6 +56,7 @@ namespace RavenDevOps.Fishing.Fishing
             _shipOffsetY = shipOffsetY;
             _hasRecordedShipX = false;
             _smoothedShipVelocityX = 0f;
+            _wakeLagOffsetX = 0f;
             _hookMovement = hook != null ? hook.GetComponent<HookMovementController>() : _hookMovement;
         }
 
@@ -50,6 +64,8 @@ namespace RavenDevOps.Fishing.Fishing
         {
             CacheRenderer();
             ConfigureRenderer();
+            ResolveWeatherController();
+            EnsureLineWeatherPhase();
         }
 
         private void OnValidate()
@@ -64,6 +80,15 @@ namespace RavenDevOps.Fishing.Fishing
             _movingWaveSuppression = Mathf.Clamp01(_movingWaveSuppression);
             _depthCurvePer500Meters = Mathf.Max(0f, _depthCurvePer500Meters);
             _maxDepthCurveMultiplier = Mathf.Max(1f, _maxDepthCurveMultiplier);
+            _minimumMovingLag = Mathf.Max(0f, _minimumMovingLag);
+            _wakeLagResponse = Mathf.Max(0.1f, _wakeLagResponse);
+            _wakeLagRecovery = Mathf.Max(0.1f, _wakeLagRecovery);
+            _wakeLagMaxDistance = Mathf.Max(0.01f, _wakeLagMaxDistance);
+            _movingVelocityThreshold = Mathf.Max(0.001f, _movingVelocityThreshold);
+            _weatherWaveToLineScale = Mathf.Max(0f, _weatherWaveToLineScale);
+            _weatherFogToLineScale = Mathf.Max(0f, _weatherFogToLineScale);
+            _weatherLineBobFrequency = Mathf.Max(0.01f, _weatherLineBobFrequency);
+            _weatherLineBobSecondaryFrequency = Mathf.Max(0.01f, _weatherLineBobSecondaryFrequency);
             if (!Application.isPlaying)
             {
                 CacheRenderer();
@@ -86,7 +111,10 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
+            ResolveWeatherController();
+            EnsureLineWeatherPhase();
             var start = _ship.position + new Vector3(0f, _shipOffsetY, 0f);
+            start.y += ResolveWeatherLineBobOffsetY();
             var end = _hook.position;
             var delta = end - start;
             var length = delta.magnitude;
@@ -136,7 +164,26 @@ namespace RavenDevOps.Fishing.Fishing
             var wave = _waveAmplitude * Mathf.Clamp01(length / 6f) * Mathf.Max(0.05f, waveMotionScale);
             wave *= Mathf.Lerp(1f, 1.18f, Mathf.Clamp01(depthCurveMultiplier - 1f));
             var wavePhase = Time.time * _waveSpeed;
-            var dragOffsetX = -Mathf.Sign(shipVelocityX) * _shipDragSlackHorizontal * velocityRatio * normalizedLength * depthCurveMultiplier * wakeCurveMultiplier;
+            var movingThreshold = Mathf.Max(0.001f, _movingVelocityThreshold);
+            var moving = Mathf.Abs(shipVelocityX) >= movingThreshold;
+            var travelLagBias = moving
+                ? Mathf.Max(0f, _minimumMovingLag) * normalizedLength * Mathf.Lerp(1f, 1.35f, depthCurveRatio)
+                : 0f;
+            var dynamicLag = _shipDragSlackHorizontal * velocityRatio * normalizedLength * depthCurveMultiplier * wakeCurveMultiplier;
+            var targetLagMagnitude = Mathf.Clamp(
+                travelLagBias + dynamicLag,
+                0f,
+                Mathf.Max(0.01f, _wakeLagMaxDistance));
+            var targetLag = moving
+                ? -Mathf.Sign(shipVelocityX) * targetLagMagnitude
+                : 0f;
+            var lagResponse = moving
+                ? Mathf.Max(0.1f, _wakeLagResponse)
+                : Mathf.Max(0.1f, _wakeLagRecovery);
+            var lagBlend = 1f - Mathf.Exp(-lagResponse * Time.unscaledDeltaTime);
+            _wakeLagOffsetX = Mathf.Lerp(_wakeLagOffsetX, targetLag, lagBlend);
+            var dragOffsetX = _wakeLagOffsetX;
+            var wakeLagRatio = Mathf.Clamp01(Mathf.Abs(_wakeLagOffsetX) / Mathf.Max(0.01f, _wakeLagMaxDistance));
             var dragBiasPower = Mathf.Max(1f, _shipDragTowardHookBias);
 
             for (var i = 0; i < segments; i++)
@@ -156,8 +203,8 @@ namespace RavenDevOps.Fishing.Fishing
 
                 var point = Vector3.Lerp(start, end, t);
                 var centerWeight = Mathf.Sin(t * Mathf.PI);
-                var dragWeight = centerWeight * Mathf.Pow(t, dragBiasPower) * Mathf.Lerp(1f, 1.4f, velocityRatio);
-                point.y -= centerWeight * sag * Mathf.Lerp(1f, 1.2f, velocityRatio);
+                var dragWeight = centerWeight * Mathf.Pow(t, dragBiasPower) * Mathf.Lerp(1f, 1.85f, velocityRatio);
+                point.y -= centerWeight * sag * Mathf.Lerp(1f, 1.28f, Mathf.Max(velocityRatio, wakeLagRatio));
                 point.x += dragOffsetX * dragWeight;
                 point += normal * (Mathf.Sin((t * _waveFrequency * Mathf.PI) + wavePhase) * wave * centerWeight);
                 _renderer.SetPosition(i, point);
@@ -170,6 +217,7 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 _hasRecordedShipX = false;
                 _smoothedShipVelocityX = 0f;
+                _wakeLagOffsetX = 0f;
                 return 0f;
             }
 
@@ -243,6 +291,45 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             return Mathf.Max(0f, start.y - end.y);
+        }
+
+        private void ResolveWeatherController()
+        {
+            if (_weatherController != null)
+            {
+                return;
+            }
+
+            _weatherController = FindAnyObjectByType<FishingSceneWeatherController>(FindObjectsInactive.Exclude);
+        }
+
+        private void EnsureLineWeatherPhase()
+        {
+            if (_hasLineWeatherPhase)
+            {
+                return;
+            }
+
+            _lineWeatherPhase = Random.Range(0f, Mathf.PI * 2f);
+            _hasLineWeatherPhase = true;
+        }
+
+        private float ResolveWeatherLineBobOffsetY()
+        {
+            if (_weatherController == null)
+            {
+                return 0f;
+            }
+
+            var waveMeters = Mathf.Max(0f, _weatherController.CurrentSurfaceWaveVerticalMeters);
+            var fogMeters = Mathf.Max(0f, _weatherController.CurrentFogVerticalMeters);
+            var primary = Mathf.Sin((Time.unscaledTime * Mathf.Max(0.01f, _weatherLineBobFrequency)) + _lineWeatherPhase)
+                * waveMeters
+                * Mathf.Max(0f, _weatherWaveToLineScale);
+            var secondary = Mathf.Sin((Time.unscaledTime * Mathf.Max(0.01f, _weatherLineBobSecondaryFrequency)) + (_lineWeatherPhase * 1.37f))
+                * fogMeters
+                * Mathf.Max(0f, _weatherFogToLineScale);
+            return primary + secondary;
         }
     }
 }

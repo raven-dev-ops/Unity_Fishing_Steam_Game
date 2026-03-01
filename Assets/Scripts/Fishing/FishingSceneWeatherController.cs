@@ -54,6 +54,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private Vector2 _skyBandHeightMeters = new Vector2(1.25f, 7.5f);
         [SerializeField] private float _skyVisibilityBelowBandBuffer = 0.35f;
         [SerializeField] private float _skyVisibilityFadeDistance = 8f;
+        [SerializeField] private Vector2 _surfaceWaveVerticalRangeMeters = new Vector2(0f, 15f);
+        [SerializeField] private Vector2 _fogVerticalRangeMeters = new Vector2(0f, 5f);
+        [SerializeField] private float _surfaceWaveBobToCloudScale = 0.06f;
+        [SerializeField] private float _fogWaveBobToFogScale = 0.18f;
 
         private readonly List<DriftSprite> _cloudSprites = new List<DriftSprite>(12);
         private readonly List<DriftSprite> _rainSprites = new List<DriftSprite>(48);
@@ -81,6 +85,8 @@ namespace RavenDevOps.Fishing.Fishing
         private bool _hasLastCameraX;
         private float _lastCameraX;
         private float _cameraDeltaX;
+        private float _currentSurfaceWaveVerticalMeters;
+        private float _currentFogVerticalMeters;
         private Color _skyTintColorByWeather = Color.clear;
         private Color _globalFogColorByWeather = Color.clear;
         private Color _sunColorByWeather = Color.clear;
@@ -88,6 +94,8 @@ namespace RavenDevOps.Fishing.Fishing
         private Color _moonShadowColorByWeather = Color.clear;
 
         public FishingWeatherState CurrentWeather => _currentWeather;
+        public float CurrentSurfaceWaveVerticalMeters => _currentSurfaceWaveVerticalMeters;
+        public float CurrentFogVerticalMeters => _currentFogVerticalMeters;
 
         public void Configure(Camera targetCamera, FishingConditionController conditionController = null, Transform ship = null)
         {
@@ -430,6 +438,9 @@ namespace RavenDevOps.Fishing.Fishing
 
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             ResolveSkyBandWorldRange(out var minY, out var maxY);
+            var cloudVerticalPad = Mathf.Abs(_currentSurfaceWaveVerticalMeters) * 0.08f;
+            minY -= cloudVerticalPad;
+            maxY += cloudVerticalPad;
             var skyVisibility = Mathf.Clamp01(_skyVisibilityFactor);
             var skyBandVisible = skyVisibility > 0.001f;
             var cameraX = _targetCamera.transform.position.x;
@@ -564,8 +575,11 @@ namespace RavenDevOps.Fishing.Fishing
             var cameraX = _targetCamera.transform.position.x;
             var leftBound = cameraX - (halfWidth + 3f);
             var rightBound = cameraX + (halfWidth + 3f);
-            var fogMinY = skyBandMinY - 1.1f;
-            var fogMaxY = Mathf.Max(fogMinY + 0.8f, skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f));
+            var fogVerticalPad = Mathf.Abs(_currentFogVerticalMeters) * 0.15f;
+            var fogMinY = skyBandMinY - 1.1f - fogVerticalPad;
+            var fogMaxY = Mathf.Max(
+                fogMinY + 0.8f + (fogVerticalPad * 0.35f),
+                skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f) + fogVerticalPad);
             for (var i = 0; i < _fogSprites.Count; i++)
             {
                 var band = _fogSprites[i];
@@ -737,6 +751,13 @@ namespace RavenDevOps.Fishing.Fishing
                     break;
             }
 
+            _currentSurfaceWaveVerticalMeters = ResolveWeatherWaveMeters(
+                _surfaceWaveVerticalRangeMeters,
+                ResolveSurfaceWaveSeverity(weather));
+            _currentFogVerticalMeters = ResolveWeatherWaveMeters(
+                _fogVerticalRangeMeters,
+                ResolveFogWaveSeverity(weather));
+
             if (_skyTintOverlay != null)
             {
                 _showSkyTintByWeather = skyTint.a > 0.001f;
@@ -796,10 +817,15 @@ namespace RavenDevOps.Fishing.Fishing
             ResolveViewportBounds(out var halfWidth, out var halfHeight);
             var cameraX = _targetCamera.transform.position.x;
             ResolveSkyBandWorldRange(out var topMin, out var topMax);
+            var cloudVerticalPad = Mathf.Abs(_currentSurfaceWaveVerticalMeters) * 0.08f;
+            topMin -= cloudVerticalPad;
+            topMax += cloudVerticalPad;
             var skyVisibility = ResolveSkyVisibilityFactor(topMin, halfHeight);
             var skyBandVisible = skyVisibility > 0.001f;
             var seedMinX = cameraX - halfWidth - 4f;
             var seedMaxX = cameraX + halfWidth + 4f;
+            var cloudWeatherBobAmplitude = Mathf.Abs(_currentSurfaceWaveVerticalMeters)
+                * Mathf.Max(0f, _surfaceWaveBobToCloudScale);
             for (var i = 0; i < _cloudSprites.Count; i++)
             {
                 var cloud = _cloudSprites[i];
@@ -823,7 +849,7 @@ namespace RavenDevOps.Fishing.Fishing
                 cloud.Renderer.size = new Vector2(scaleX, scaleY);
                 cloud.Speed = Random.Range(0.025f, 0.085f);
                 cloud.HorizontalDirection = -1f;
-                cloud.BobAmplitude = Random.Range(0.008f, 0.05f);
+                cloud.BobAmplitude = Random.Range(0.008f, Mathf.Max(0.05f, 0.05f + cloudWeatherBobAmplitude));
                 cloud.BobFrequency = Random.Range(0.12f, 0.42f);
                 cloud.BaseY = Random.Range(topMin, topMax);
                 cloud.Transform.position = new Vector3(
@@ -974,9 +1000,14 @@ namespace RavenDevOps.Fishing.Fishing
             var cameraX = _targetCamera.transform.position.x;
             var spawnMinX = cameraX - (halfWidth + 1.5f);
             var spawnMaxX = cameraX + (halfWidth + 1.5f);
-            var fogMinY = skyBandMinY - 1.1f;
-            var fogMaxY = Mathf.Max(fogMinY + 0.8f, skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f));
+            var fogVerticalPad = Mathf.Abs(_currentFogVerticalMeters) * 0.15f;
+            var fogMinY = skyBandMinY - 1.1f - fogVerticalPad;
+            var fogMaxY = Mathf.Max(
+                fogMinY + 0.8f + (fogVerticalPad * 0.35f),
+                skyBandMinY + ((skyBandMaxY - skyBandMinY) * 0.45f) + fogVerticalPad);
             var clampedVisible = Mathf.Clamp(visibleCount, 0, _fogSprites.Count);
+            var fogWeatherBobAmplitude = Mathf.Abs(_currentFogVerticalMeters)
+                * Mathf.Max(0f, _fogWaveBobToFogScale);
             for (var i = 0; i < _fogSprites.Count; i++)
             {
                 var fog = _fogSprites[i];
@@ -997,13 +1028,79 @@ namespace RavenDevOps.Fishing.Fishing
                 fog.Renderer.color = new Color(fogColor.r, fogColor.g, fogColor.b, fog.WeatherAlpha * skyVisibility);
                 fog.Renderer.size = new Vector2(Random.Range(halfWidth * 0.8f, halfWidth * 1.6f), Random.Range(0.4f, 0.95f));
                 fog.Speed = Random.Range(0.05f, 0.18f);
-                fog.BobAmplitude = Random.Range(0.03f, 0.1f);
+                fog.BobAmplitude = Random.Range(0.03f, Mathf.Max(0.1f, 0.1f + fogWeatherBobAmplitude));
                 fog.BobFrequency = Random.Range(0.1f, 0.24f);
                 fog.BaseY = Random.Range(fogMinY, fogMaxY);
                 fog.Transform.position = new Vector3(
                     Random.Range(spawnMinX, spawnMaxX),
                     fog.BaseY,
                     0f);
+            }
+        }
+
+        private static float ResolveWeatherWaveMeters(Vector2 rangeMeters, float severity)
+        {
+            var minMeters = Mathf.Min(rangeMeters.x, rangeMeters.y);
+            var maxMeters = Mathf.Max(rangeMeters.x, rangeMeters.y);
+            if (maxMeters - minMeters <= 0.001f)
+            {
+                return minMeters;
+            }
+
+            return Mathf.Lerp(minMeters, maxMeters, Mathf.Clamp01(severity));
+        }
+
+        private static float ResolveSurfaceWaveSeverity(FishingWeatherState weather)
+        {
+            switch (weather)
+            {
+                case FishingWeatherState.Storm:
+                case FishingWeatherState.Thunderstorm:
+                    return 1f;
+                case FishingWeatherState.Rain:
+                    return 0.72f;
+                case FishingWeatherState.Clouds:
+                case FishingWeatherState.Overcast:
+                    return 0.45f;
+                case FishingWeatherState.Foggy:
+                    return 0.35f;
+                case FishingWeatherState.PartlyCloudy:
+                    return 0.28f;
+                case FishingWeatherState.QuarterMoon:
+                case FishingWeatherState.HalfMoon:
+                case FishingWeatherState.FullMoon:
+                    return 0.2f;
+                case FishingWeatherState.Sunny:
+                case FishingWeatherState.Clear:
+                default:
+                    return 0.12f;
+            }
+        }
+
+        private static float ResolveFogWaveSeverity(FishingWeatherState weather)
+        {
+            switch (weather)
+            {
+                case FishingWeatherState.Foggy:
+                    return 1f;
+                case FishingWeatherState.Storm:
+                case FishingWeatherState.Thunderstorm:
+                    return 0.75f;
+                case FishingWeatherState.Rain:
+                    return 0.55f;
+                case FishingWeatherState.Clouds:
+                case FishingWeatherState.Overcast:
+                    return 0.35f;
+                case FishingWeatherState.PartlyCloudy:
+                    return 0.22f;
+                case FishingWeatherState.QuarterMoon:
+                case FishingWeatherState.HalfMoon:
+                case FishingWeatherState.FullMoon:
+                    return 0.12f;
+                case FishingWeatherState.Sunny:
+                case FishingWeatherState.Clear:
+                default:
+                    return 0.08f;
             }
         }
 
