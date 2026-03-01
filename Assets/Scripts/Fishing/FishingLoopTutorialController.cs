@@ -172,6 +172,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _nextPromptRefreshAt;
         private DemoAutoplayPhase _demoPhase = DemoAutoplayPhase.None;
         private float _demoPhaseStartedAt;
+        private float _demoWaveStartedAt;
         private float _demoShipStartX;
         private float _demoShipWavePhase;
         private SpriteRenderer _demoShipRenderer;
@@ -795,6 +796,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            _demoWaveStartedAt = Time.unscaledTime;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -1607,9 +1609,9 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Scene 1 baseline: calm surface weather shows default ship wave motion and line drag behavior.";
+                    return "Scene 1 baseline: calm weather introduces ship wave bob as the core demo motion pattern.";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Scene 2 weather example: storm conditions increase surface wave motion so ship bob and line movement are visibly stronger than Scene 1.";
+                    return "Scene 2 weather example: storm conditions increase ship bob intensity. This wave motion continues through the remaining demo scenes.";
                 case DemoAutoplayPhase.CastInfo:
                     return $"Step 2: Cast with {ResolveMoveHookDownControlHint()}. The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
@@ -2332,19 +2334,19 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
             var amplitude = ResolveDemoShipWaveAmplitude();
             // Frequency values are in cycles/second; keep motion slow and repeating.
             var rhythmFrequency = Mathf.Max(0.45f, _demoSurfaceWaveFrequency * 0.5f);
-            var primary = Mathf.Sin((elapsed * rhythmFrequency * Mathf.PI * 2f) + _demoShipWavePhase);
+            var waveElapsed = Mathf.Max(0f, Time.unscaledTime - _demoWaveStartedAt);
+            var primary = Mathf.Sin((waveElapsed * rhythmFrequency * Mathf.PI * 2f) + _demoShipWavePhase);
             localPosition.y = _demoShipVisualBaseLocalPosition.y + (primary * amplitude);
             _demoShipVisualProxyTransform.localPosition = localPosition;
         }
 
         private bool IsSurfaceWaveDemoPhase()
         {
-            return _demoPhase == DemoAutoplayPhase.IntroInfo
-                || _demoPhase == DemoAutoplayPhase.MoveShipInfo;
+            return _demoActive
+                && _demoPhase != DemoAutoplayPhase.None;
         }
 
         private float ResolveDemoShipWaveAmplitude()
