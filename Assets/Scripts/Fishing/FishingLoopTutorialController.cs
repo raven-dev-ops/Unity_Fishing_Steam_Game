@@ -147,6 +147,18 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private FishingWeatherState _demoScene1BaselineWeather = FishingWeatherState.Sunny;
         [SerializeField] private FishingWeatherState _demoScene2WeatherExample = FishingWeatherState.Thunderstorm;
         [SerializeField] private FishingWeatherState _demoSurfaceDefaultWeather = FishingWeatherState.PartlyCloudy;
+        [SerializeField] private bool _demoRandomizeWeatherByScene = true;
+        [SerializeField] private FishingWeatherState[] _demoVariableSceneWeatherPool = new[]
+        {
+            FishingWeatherState.PartlyCloudy,
+            FishingWeatherState.Clouds,
+            FishingWeatherState.Foggy,
+            FishingWeatherState.Rain,
+            FishingWeatherState.Thunderstorm,
+            FishingWeatherState.QuarterMoon,
+            FishingWeatherState.HalfMoon,
+            FishingWeatherState.FullMoon
+        };
 
         public sealed class DependencyBundle
         {
@@ -181,6 +193,8 @@ namespace RavenDevOps.Fishing.Fishing
         private Vector3 _demoShipVisualBaseLocalPosition;
         private bool _demoShipVisualBaseLocalPositionCaptured;
         private bool _demoShipVisualProxyRuntimeCreated;
+        private DemoAutoplayPhase _demoWeatherSceneStartPhase = DemoAutoplayPhase.None;
+        private FishingWeatherState _demoWeatherSceneState = FishingWeatherState.PartlyCloudy;
         private bool _demoFishApproachStarted;
         private bool _demoFishBound;
         private bool _demoFishHookVisualReady;
@@ -797,6 +811,8 @@ namespace RavenDevOps.Fishing.Fishing
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             _demoWaveStartedAt = Time.unscaledTime;
+            _demoWeatherSceneStartPhase = DemoAutoplayPhase.None;
+            _demoWeatherSceneState = _demoSurfaceDefaultWeather;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -1705,31 +1721,65 @@ namespace RavenDevOps.Fishing.Fishing
                 return;
             }
 
-            FishingWeatherState targetWeather;
-            switch (phase)
+            var sceneStartPhase = ResolveDemoSceneStartPhase(phase);
+            if (sceneStartPhase == DemoAutoplayPhase.None)
             {
-                case DemoAutoplayPhase.IntroInfo:
-                    targetWeather = _demoScene1BaselineWeather;
-                    break;
-                case DemoAutoplayPhase.MoveShipInfo:
-                    targetWeather = _demoScene2WeatherExample;
-                    break;
-                case DemoAutoplayPhase.CastInfo:
-                case DemoAutoplayPhase.CastDrop:
-                case DemoAutoplayPhase.FishHookInfo:
-                case DemoAutoplayPhase.FishHook:
-                case DemoAutoplayPhase.ReelInfo:
-                case DemoAutoplayPhase.ReelUp:
-                    targetWeather = _demoSurfaceDefaultWeather;
-                    break;
-                default:
-                    return;
+                return;
             }
 
+            var targetWeather = ResolveDemoSurfaceWeatherForScene(sceneStartPhase);
             if (_sceneWeatherController.CurrentWeather != targetWeather)
             {
                 _sceneWeatherController.SetWeather(targetWeather);
             }
+        }
+
+        private FishingWeatherState ResolveDemoSurfaceWeatherForScene(DemoAutoplayPhase sceneStartPhase)
+        {
+            switch (sceneStartPhase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    _demoWeatherSceneStartPhase = sceneStartPhase;
+                    _demoWeatherSceneState = _demoScene1BaselineWeather;
+                    return _demoScene1BaselineWeather;
+                case DemoAutoplayPhase.MoveShipInfo:
+                    _demoWeatherSceneStartPhase = sceneStartPhase;
+                    _demoWeatherSceneState = _demoScene2WeatherExample;
+                    return _demoScene2WeatherExample;
+                default:
+                    if (!_demoRandomizeWeatherByScene)
+                    {
+                        _demoWeatherSceneStartPhase = sceneStartPhase;
+                        _demoWeatherSceneState = _demoSurfaceDefaultWeather;
+                        return _demoSurfaceDefaultWeather;
+                    }
+
+                    if (_demoWeatherSceneStartPhase != sceneStartPhase)
+                    {
+                        _demoWeatherSceneStartPhase = sceneStartPhase;
+                        _demoWeatherSceneState = ResolveRandomDemoSurfaceWeather();
+                    }
+
+                    return _demoWeatherSceneState;
+            }
+        }
+
+        private FishingWeatherState ResolveRandomDemoSurfaceWeather()
+        {
+            if (_demoVariableSceneWeatherPool == null || _demoVariableSceneWeatherPool.Length == 0)
+            {
+                return _demoSurfaceDefaultWeather;
+            }
+
+            var length = _demoVariableSceneWeatherPool.Length;
+            var nextWeather = _demoVariableSceneWeatherPool[UnityEngine.Random.Range(0, length)];
+            if (length > 1 && nextWeather == _demoWeatherSceneState)
+            {
+                var offset = UnityEngine.Random.Range(1, length);
+                nextWeather = _demoVariableSceneWeatherPool[(Array.IndexOf(_demoVariableSceneWeatherPool, nextWeather) + offset) % length];
+            }
+
+            return nextWeather;
         }
 
         private void ResolveSceneWeatherController()
@@ -2359,11 +2409,6 @@ namespace RavenDevOps.Fishing.Fishing
                 var fogWaveMeters = Mathf.Max(0f, _sceneWeatherController.CurrentFogVerticalMeters);
                 amplitude += surfaceWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromSurfaceWeatherScale);
                 amplitude += fogWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromFogWeatherScale);
-            }
-
-            if (_demoPhase == DemoAutoplayPhase.MoveShipInfo)
-            {
-                amplitude *= 1.35f;
             }
 
             amplitude *= 0.5f;
