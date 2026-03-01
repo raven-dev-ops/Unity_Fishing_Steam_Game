@@ -1293,7 +1293,8 @@ namespace RavenDevOps.Fishing.Core
                 shipObject = new GameObject("FishingShip");
                 SceneManager.MoveGameObjectToScene(shipObject, scene);
                 var renderer = shipObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = tutorialFishingShipSprite != null ? tutorialFishingShipSprite : GetSolidSprite();
+                renderer.sprite = tutorialFishingShipSprite;
+                renderer.enabled = tutorialFishingShipSprite != null;
                 renderer.color = new Color(0.95f, 0.99f, 1f, 0.95f);
                 renderer.sortingOrder = 20;
                 shipObject.transform.localScale = new Vector3(1.15f, 0.72f, 1f);
@@ -1307,7 +1308,8 @@ namespace RavenDevOps.Fishing.Core
                 hookObject = new GameObject("FishingHook");
                 SceneManager.MoveGameObjectToScene(hookObject, scene);
                 var renderer = hookObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = tutorialHookSprite != null ? tutorialHookSprite : GetSolidSprite();
+                renderer.sprite = tutorialHookSprite;
+                renderer.enabled = tutorialHookSprite != null;
                 renderer.color = new Color(0.88f, 0.95f, 1f, 0.95f);
                 renderer.sortingOrder = 20;
                 hookObject.transform.localScale = new Vector3(0.55f, 0.55f, 1f);
@@ -1339,16 +1341,10 @@ namespace RavenDevOps.Fishing.Core
             }
 
             var shipSpriteRenderer = shipObject.GetComponent<SpriteRenderer>();
-            if (shipSpriteRenderer != null && tutorialFishingShipSprite != null)
-            {
-                shipSpriteRenderer.sprite = tutorialFishingShipSprite;
-            }
+            ApplyFishingActorSprite(shipSpriteRenderer, tutorialFishingShipSprite);
 
             var hookSpriteRenderer = hookObject.GetComponent<SpriteRenderer>();
-            if (hookSpriteRenderer != null && tutorialHookSprite != null)
-            {
-                hookSpriteRenderer.sprite = tutorialHookSprite;
-            }
+            ApplyFishingActorSprite(hookSpriteRenderer, tutorialHookSprite);
 
             var shipPosition = shipObject.transform.position;
             shipPosition.y = 0f;
@@ -2271,6 +2267,31 @@ namespace RavenDevOps.Fishing.Core
                 }
 
                 renderer.sprite = tutorialFishSprite;
+            }
+        }
+
+        private static void ApplyFishingActorSprite(SpriteRenderer renderer, Sprite preferredSprite)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            if (preferredSprite != null)
+            {
+                renderer.sprite = preferredSprite;
+                renderer.enabled = true;
+                return;
+            }
+
+            if (renderer.sprite == _solidSprite)
+            {
+                // Do not show generated white square placeholders in fishing mode.
+                renderer.enabled = false;
+            }
+            else if (renderer.sprite != null)
+            {
+                renderer.enabled = true;
             }
         }
 
