@@ -134,6 +134,13 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
         [SerializeField] private float _demoHookedFishFadeDelaySeconds = 0.65f;
         [SerializeField] private float _demoDockOffsetY = 0.65f;
+        [SerializeField] private float _demoSurfaceWaveBaseAmplitude = 0.22f;
+        [SerializeField] private float _demoSurfaceWaveFromSurfaceWeatherScale = 0.055f;
+        [SerializeField] private float _demoSurfaceWaveFromFogWeatherScale = 0.06f;
+        [SerializeField] private float _demoSurfaceWaveFrequency = 0.82f;
+        [SerializeField] private float _demoSurfaceWaveSecondaryFrequency = 1.47f;
+        [SerializeField] private float _demoSurfaceWaveSecondaryAmplitudeRatio = 0.36f;
+        [SerializeField] private float _demoSurfaceWaveMaxAmplitude = 1.5f;
         [SerializeField] private FishingSceneWeatherController _sceneWeatherController;
         [SerializeField] private FishingWeatherState _demoScene1BaselineWeather = FishingWeatherState.Sunny;
         [SerializeField] private FishingWeatherState _demoScene2WeatherExample = FishingWeatherState.Thunderstorm;
@@ -164,6 +171,8 @@ namespace RavenDevOps.Fishing.Fishing
         private DemoAutoplayPhase _demoPhase = DemoAutoplayPhase.None;
         private float _demoPhaseStartedAt;
         private float _demoShipStartX;
+        private float _demoShipStartY;
+        private float _demoShipWavePhase;
         private bool _demoFishApproachStarted;
         private bool _demoFishBound;
         private bool _demoFishHookVisualReady;
@@ -778,6 +787,8 @@ namespace RavenDevOps.Fishing.Fishing
             _demoLevel5ReelStartDepthMeters = 0f;
             _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
+            _demoShipStartY = _demoShipTransform != null ? _demoShipTransform.position.y : 0f;
+            _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -2179,8 +2190,46 @@ namespace RavenDevOps.Fishing.Fishing
                 position.x,
                 constrainedTargetX,
                 Mathf.Max(0.1f, _demoShipMoveSpeed) * Time.deltaTime);
+            ApplyDemoShipWavePath(ref position);
             _demoShipTransform.position = position;
             return Mathf.Abs(position.x - constrainedTargetX) <= 0.02f;
+        }
+
+        private void ApplyDemoShipWavePath(ref Vector3 position)
+        {
+            if (!IsSurfaceWaveDemoPhase())
+            {
+                return;
+            }
+
+            var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
+            var amplitude = ResolveDemoShipWaveAmplitude();
+            var primary = Mathf.Sin((elapsed * Mathf.Max(0.01f, _demoSurfaceWaveFrequency)) + _demoShipWavePhase);
+            var secondary = Mathf.Sin((elapsed * Mathf.Max(0.01f, _demoSurfaceWaveSecondaryFrequency)) + (_demoShipWavePhase * 1.73f))
+                * Mathf.Max(0f, _demoSurfaceWaveSecondaryAmplitudeRatio);
+            var waveY = _demoShipStartY + ((primary + secondary) * amplitude);
+            position.y = waveY;
+        }
+
+        private bool IsSurfaceWaveDemoPhase()
+        {
+            return _demoPhase == DemoAutoplayPhase.IntroInfo
+                || _demoPhase == DemoAutoplayPhase.MoveShipInfo;
+        }
+
+        private float ResolveDemoShipWaveAmplitude()
+        {
+            var amplitude = Mathf.Max(0f, _demoSurfaceWaveBaseAmplitude);
+            ResolveSceneWeatherController();
+            if (_sceneWeatherController != null)
+            {
+                var surfaceWaveMeters = Mathf.Max(0f, _sceneWeatherController.CurrentSurfaceWaveVerticalMeters);
+                var fogWaveMeters = Mathf.Max(0f, _sceneWeatherController.CurrentFogVerticalMeters);
+                amplitude += surfaceWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromSurfaceWeatherScale);
+                amplitude += fogWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromFogWeatherScale);
+            }
+
+            return Mathf.Clamp(amplitude, 0f, Mathf.Max(0.01f, _demoSurfaceWaveMaxAmplitude));
         }
 
         private void MoveShipDuringHookDemo()
