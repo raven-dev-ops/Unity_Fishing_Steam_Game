@@ -1097,7 +1097,7 @@ namespace RavenDevOps.Fishing.Fishing
                 case DemoAutoplayPhase.Level5ReelUp:
                     if (TickLevel5ReelUpPhase(allowSceneAdvance: true))
                     {
-                        QueueDemoPhaseTransition(DemoAutoplayPhase.FinishInfo, _demoSceneEndPauseSeconds);
+                        StartDemoPhase(DemoAutoplayPhase.FinishInfo);
                     }
                     break;
                 case DemoAutoplayPhase.FinishInfo:
