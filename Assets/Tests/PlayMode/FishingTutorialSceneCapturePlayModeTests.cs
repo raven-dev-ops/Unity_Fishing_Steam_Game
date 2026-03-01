@@ -189,8 +189,8 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
 
             var expectedScenes = new (string Phase, string Title, string Subtitle)[]
             {
-                ("IntroInfo", "Fishing Demo", "Loading guided tutorial flow"),
-                ("MoveShipInfo", "Scene 2: Auto Sail", "Baseline ship motion"),
+                ("IntroInfo", "Fishing Demo", "Scene 1 baseline wave motion"),
+                ("MoveShipInfo", "Scene 2: Auto Sail", "Scene 2 weather-amplified waves"),
                 ("CastInfo", "Scene 3: Cast", "Hook deployment"),
                 ("FishHookInfo", "Scene 4: Hook", "Fish approach and collision"),
                 ("ReelInfo", "Scene 5: Reel", "Reel mechanics"),

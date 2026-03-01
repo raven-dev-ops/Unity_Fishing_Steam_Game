@@ -134,6 +134,10 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private float _demoHookedFishFadeDelayMeters = 20f;
         [SerializeField] private float _demoHookedFishFadeDelaySeconds = 0.65f;
         [SerializeField] private float _demoDockOffsetY = 0.65f;
+        [SerializeField] private FishingSceneWeatherController _sceneWeatherController;
+        [SerializeField] private FishingWeatherState _demoScene1BaselineWeather = FishingWeatherState.Sunny;
+        [SerializeField] private FishingWeatherState _demoScene2WeatherExample = FishingWeatherState.Thunderstorm;
+        [SerializeField] private FishingWeatherState _demoSurfaceDefaultWeather = FishingWeatherState.PartlyCloudy;
 
         public sealed class DependencyBundle
         {
@@ -1164,6 +1168,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoPhaseStartedAt = Time.unscaledTime;
             _demoFishHookVisualReady = false;
             ApplyScene8CameraFollowOverride(active: phase == DemoAutoplayPhase.Level4ReelUp || phase == DemoAutoplayPhase.Level5ReelUp);
+            ApplyDemoSurfaceWeatherPreset(phase);
 
             if (phase == DemoAutoplayPhase.FishHook
                 || phase == DemoAutoplayPhase.Level4FishHook
@@ -1583,9 +1588,9 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Fishing tutorial demo. Each scene pauses before transitions so you can track the full loop.";
+                    return "Scene 1 baseline: calm surface weather shows default ship wave motion and line drag behavior.";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Step 1: Ship auto-sails left continuously and drags the hook line for you.";
+                    return "Scene 2 weather example: storm conditions increase surface wave motion so ship bob and line movement are visibly stronger than Scene 1.";
                 case DemoAutoplayPhase.CastInfo:
                     return $"Step 2: Cast with {ResolveMoveHookDownControlHint()}. The hook descends to 30m.";
                 case DemoAutoplayPhase.FishHookInfo:
@@ -1647,9 +1652,9 @@ namespace RavenDevOps.Fishing.Fishing
             switch (phase)
             {
                 case DemoAutoplayPhase.IntroInfo:
-                    return "Loading guided tutorial flow";
+                    return "Scene 1 baseline wave motion";
                 case DemoAutoplayPhase.MoveShipInfo:
-                    return "Baseline ship motion";
+                    return "Scene 2 weather-amplified waves";
                 case DemoAutoplayPhase.CastInfo:
                     return "Hook deployment";
                 case DemoAutoplayPhase.FishHookInfo:
@@ -1669,6 +1674,51 @@ namespace RavenDevOps.Fishing.Fishing
                 default:
                     return string.Empty;
             }
+        }
+
+        private void ApplyDemoSurfaceWeatherPreset(DemoAutoplayPhase phase)
+        {
+            ResolveSceneWeatherController();
+            if (_sceneWeatherController == null)
+            {
+                return;
+            }
+
+            FishingWeatherState targetWeather;
+            switch (phase)
+            {
+                case DemoAutoplayPhase.IntroInfo:
+                    targetWeather = _demoScene1BaselineWeather;
+                    break;
+                case DemoAutoplayPhase.MoveShipInfo:
+                    targetWeather = _demoScene2WeatherExample;
+                    break;
+                case DemoAutoplayPhase.CastInfo:
+                case DemoAutoplayPhase.CastDrop:
+                case DemoAutoplayPhase.FishHookInfo:
+                case DemoAutoplayPhase.FishHook:
+                case DemoAutoplayPhase.ReelInfo:
+                case DemoAutoplayPhase.ReelUp:
+                    targetWeather = _demoSurfaceDefaultWeather;
+                    break;
+                default:
+                    return;
+            }
+
+            if (_sceneWeatherController.CurrentWeather != targetWeather)
+            {
+                _sceneWeatherController.SetWeather(targetWeather);
+            }
+        }
+
+        private void ResolveSceneWeatherController()
+        {
+            if (_sceneWeatherController != null)
+            {
+                return;
+            }
+
+            _sceneWeatherController = FindAnyObjectByType<FishingSceneWeatherController>(FindObjectsInactive.Include);
         }
 
         private void TickDemoFishHookVisual()

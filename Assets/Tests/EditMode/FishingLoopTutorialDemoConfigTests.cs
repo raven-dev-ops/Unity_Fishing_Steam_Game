@@ -21,7 +21,7 @@ namespace RavenDevOps.Fishing.Tests.EditMode
         {
             var phase = ResolveDemoPhaseValue("IntroInfo");
             var subtitle = InvokePrivateStatic<string>("BuildDemoSceneSubtitle", phase);
-            Assert.That(subtitle, Is.EqualTo("Loading guided tutorial flow"));
+            Assert.That(subtitle, Is.EqualTo("Scene 1 baseline wave motion"));
         }
 
         [Test]
