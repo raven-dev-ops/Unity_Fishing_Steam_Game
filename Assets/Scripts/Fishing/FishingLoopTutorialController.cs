@@ -174,6 +174,7 @@ namespace RavenDevOps.Fishing.Fishing
         private float _demoPhaseStartedAt;
         private float _demoShipStartX;
         private float _demoShipWavePhase;
+        private float _demoSurfaceWaveOffsetY;
         private SpriteRenderer _demoShipRenderer;
         private Transform _demoShipVisualProxyTransform;
         private SpriteRenderer _demoShipVisualProxyRenderer;
@@ -795,6 +796,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
             _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            _demoSurfaceWaveOffsetY = 0f;
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
@@ -844,7 +846,7 @@ namespace RavenDevOps.Fishing.Fishing
                 if (_demoPhase == DemoAutoplayPhase.IntroInfo)
                 {
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(false);
+                    SetDemoHookVisible(true);
                     SnapDemoHookToDock();
                     return;
                 }
@@ -864,13 +866,13 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 case DemoAutoplayPhase.IntroInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(false);
+                    SetDemoHookVisible(true);
                     SnapDemoHookToDock();
                     TickInfoPhase(DemoAutoplayPhase.MoveShipInfo, pauseBeforeTransition: true);
                     break;
                 case DemoAutoplayPhase.MoveShipInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(false);
+                    SetDemoHookVisible(true);
                     SnapDemoHookToDock();
                     TickInfoPhase(DemoAutoplayPhase.CastInfo, pauseBeforeTransition: true);
                     break;
@@ -2265,10 +2267,8 @@ namespace RavenDevOps.Fishing.Fishing
             }
 
             CopyShipRendererState(_demoShipRenderer, _demoShipVisualProxyRenderer);
-            if (_demoShipRenderer.enabled)
-            {
-                _demoShipRenderer.enabled = false;
-            }
+            _demoShipVisualProxyRenderer.enabled = true;
+            _demoShipRenderer.enabled = false;
         }
 
         private static void CopyShipRendererState(SpriteRenderer source, SpriteRenderer destination)
@@ -2289,7 +2289,6 @@ namespace RavenDevOps.Fishing.Fishing
             destination.maskInteraction = source.maskInteraction;
             destination.spriteSortPoint = source.spriteSortPoint;
             destination.sharedMaterial = source.sharedMaterial;
-            destination.enabled = source.enabled;
         }
 
         private void RestoreDemoShipVisualProxy()
@@ -2316,6 +2315,7 @@ namespace RavenDevOps.Fishing.Fishing
             _demoShipVisualBaseLocalPosition = Vector3.zero;
             _demoShipVisualBaseLocalPositionCaptured = false;
             _demoShipVisualProxyRuntimeCreated = false;
+            _demoSurfaceWaveOffsetY = 0f;
         }
 
         private void ApplyDemoShipWavePath()
@@ -2330,6 +2330,7 @@ namespace RavenDevOps.Fishing.Fishing
             var localPosition = _demoShipVisualProxyTransform.localPosition;
             if (!IsSurfaceWaveDemoPhase())
             {
+                _demoSurfaceWaveOffsetY = 0f;
                 localPosition.y = _demoShipVisualBaseLocalPosition.y;
                 _demoShipVisualProxyTransform.localPosition = localPosition;
                 return;
@@ -2341,7 +2342,8 @@ namespace RavenDevOps.Fishing.Fishing
             // visible up/down wave cycles during each title card duration.
             var rhythmFrequency = Mathf.Max(1.1f, _demoSurfaceWaveFrequency);
             var primary = Mathf.Sin((elapsed * rhythmFrequency * Mathf.PI * 2f) + _demoShipWavePhase);
-            localPosition.y = _demoShipVisualBaseLocalPosition.y + (primary * amplitude);
+            _demoSurfaceWaveOffsetY = primary * amplitude;
+            localPosition.y = _demoShipVisualBaseLocalPosition.y + _demoSurfaceWaveOffsetY;
             _demoShipVisualProxyTransform.localPosition = localPosition;
         }
 
@@ -2496,12 +2498,24 @@ namespace RavenDevOps.Fishing.Fishing
         {
             if (_hookMovement != null)
             {
-                return _hookMovement.GetDockedY(_demoDockOffsetY);
+                var dockY = _hookMovement.GetDockedY(_demoDockOffsetY);
+                if (_demoActive && IsSurfaceWaveDemoPhase())
+                {
+                    dockY += _demoSurfaceWaveOffsetY;
+                }
+
+                return dockY;
             }
 
             if (_demoShipTransform != null)
             {
-                return _demoShipTransform.position.y - Mathf.Abs(_demoDockOffsetY);
+                var dockY = _demoShipTransform.position.y - Mathf.Abs(_demoDockOffsetY);
+                if (_demoActive && IsSurfaceWaveDemoPhase())
+                {
+                    dockY += _demoSurfaceWaveOffsetY;
+                }
+
+                return dockY;
             }
 
             return _demoHookTransform != null ? _demoHookTransform.position.y : 0f;
