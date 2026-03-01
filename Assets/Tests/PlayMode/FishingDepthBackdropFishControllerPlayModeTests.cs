@@ -135,6 +135,82 @@ namespace RavenDevOps.Fishing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DepthBackdropFish_CameraVerticalTravel_DoesNotDragFishBaseY()
+        {
+            UnityEngine.Random.InitState(15731);
+            var camera = CreateCamera();
+            camera.transform.position = new Vector3(0f, 0f, -10f);
+            var ship = CreateTransform("DepthBackdropCameraTravelShip", new Vector3(0f, 0f, 0f));
+            var hook = CreateTransform("DepthBackdropCameraTravelHook", new Vector3(0f, -6f, 0f));
+            CreateFishSpriteTemplate();
+
+            var controller = CreateController();
+            SetPrivateField(controller, "_totalBackdropFish", 9);
+            SetPrivateField(controller, "_initialSpawnDelayRangeSeconds", Vector2.zero);
+            SetPrivateField(controller, "_respawnDelayRangeSeconds", Vector2.zero);
+            SetPrivateField(controller, "_swimSpeedRange", Vector2.zero);
+            SetPrivateField(controller, "_speedVarianceRange", Vector2.one);
+            SetPrivateField(controller, "_verticalRetargetIntervalRangeSeconds", new Vector2(60f, 90f));
+            SetPrivateField(controller, "_shipTravelVerticalOffsetPerMeterX", Vector2.zero);
+            SetPrivateField(controller, "_cameraMotionFreezeThresholdPerFrame", 0.35f);
+            SetPrivateField(controller, "_cameraMotionRecoveryPauseSeconds", 1.2f);
+
+            controller.Configure(camera, ship, hook);
+            yield return null;
+            yield return null;
+            yield return null;
+
+            for (var frame = 0; frame < 24; frame++)
+            {
+                var pendingTracks = 0;
+                var tracks = ReadTracks(controller);
+                for (var i = 0; i < tracks.Count; i++)
+                {
+                    if (GetTrackField<bool>(tracks[i], "PendingSpawn"))
+                    {
+                        pendingTracks++;
+                    }
+                }
+
+                if (pendingTracks == 0)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            var beforeTracks = ReadTracks(controller);
+            var beforeBaseYs = ReadTrackFloatArray(beforeTracks, "BaseY");
+            Assert.That(beforeBaseYs.Length, Is.GreaterThanOrEqualTo(6), "Expected backdrop tracks before camera movement.");
+
+            var moveUntil = Time.realtimeSinceStartup + 0.6f;
+            while (Time.realtimeSinceStartup < moveUntil)
+            {
+                camera.transform.position += Vector3.down * (6f * Time.unscaledDeltaTime);
+                yield return null;
+            }
+
+            var afterTracks = ReadTracks(controller);
+            var afterBaseYs = ReadTrackFloatArray(afterTracks, "BaseY");
+            var compared = Mathf.Min(beforeBaseYs.Length, afterBaseYs.Length);
+            Assert.That(compared, Is.GreaterThanOrEqualTo(6), "Expected backdrop tracks after camera movement.");
+
+            var sumDelta = 0f;
+            var maxDelta = 0f;
+            for (var i = 0; i < compared; i++)
+            {
+                var delta = Mathf.Abs(afterBaseYs[i] - beforeBaseYs[i]);
+                sumDelta += delta;
+                maxDelta = Mathf.Max(maxDelta, delta);
+            }
+
+            var averageDelta = sumDelta / Mathf.Max(1, compared);
+            Assert.That(averageDelta, Is.LessThan(0.22f), "Camera vertical movement should not drag backdrop fish base Y positions.");
+            Assert.That(maxDelta, Is.LessThan(0.6f), "Backdrop fish base Y outliers should remain stable during camera vertical travel.");
+        }
+
+        [UnityTest]
         public IEnumerator DepthBackdropFish_LayeredScaleAndOpacity_PreserveDepthCue()
         {
             UnityEngine.Random.InitState(66237);

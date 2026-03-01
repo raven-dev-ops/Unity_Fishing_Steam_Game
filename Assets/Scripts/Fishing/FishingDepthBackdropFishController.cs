@@ -71,6 +71,8 @@ namespace RavenDevOps.Fishing.Fishing
         [SerializeField] private int _minimumVisibleTracks = 3;
         [SerializeField] private float _visibleTrackRecoverySeconds = 0.3f;
         [SerializeField] private float _recoveryPendingSpawnMaxDelaySeconds = 0.18f;
+        [SerializeField] private float _cameraMotionFreezeThresholdPerFrame = 1.1f;
+        [SerializeField] private float _cameraMotionRecoveryPauseSeconds = 0.75f;
         [SerializeField] [Range(0f, 0.2f)] private float _visibleTrackViewportPadding = 0.02f;
 
         private readonly List<Sprite> _spriteLibrary = new List<Sprite>(16);
@@ -82,6 +84,9 @@ namespace RavenDevOps.Fishing.Fishing
         private float _shipDeltaX;
         private int _spawnSequenceIndex;
         private float _visibleTrackRecoveryElapsed;
+        private bool _hasLastCameraY;
+        private float _lastCameraY;
+        private float _cameraAlignedRecoveryPauseRemainingSeconds;
 
         public void Configure(Camera targetCamera, Transform ship, Transform hook)
         {
@@ -89,6 +94,9 @@ namespace RavenDevOps.Fishing.Fishing
             _ship = ship;
             _hook = hook;
             _hookMovement = hook != null ? hook.GetComponent<HookMovementController>() : _hookMovement;
+            _hasLastCameraY = false;
+            _lastCameraY = 0f;
+            _cameraAlignedRecoveryPauseRemainingSeconds = 0f;
             _initialized = false;
             TryInitialize();
         }
@@ -389,6 +397,8 @@ namespace RavenDevOps.Fishing.Fishing
             var minimumDepthWorldY = ResolveMinimumDepthWorldY();
             var cameraX = _targetCamera != null ? _targetCamera.transform.position.x : 0f;
             var cameraY = _targetCamera != null ? _targetCamera.transform.position.y : 0f;
+            UpdateCameraMotionRecoveryPause(cameraY);
+            var cameraMotionRecoveryPaused = _cameraAlignedRecoveryPauseRemainingSeconds > 0f;
             var leftBound = cameraX - (halfWidth + wrapPadding);
             var rightBound = cameraX + (halfWidth + wrapPadding);
             var topBound = cameraY + halfHeight + 1.25f;
@@ -424,20 +434,27 @@ namespace RavenDevOps.Fishing.Fishing
                     track.Renderer.enabled = true;
                 }
 
-                track.RetargetDelaySeconds -= Time.unscaledDeltaTime;
-                if (track.RetargetDelaySeconds <= 0f)
+                if (!cameraMotionRecoveryPaused)
                 {
-                    track.TargetBaseY = ResolveRetargetBaseWorldY(track, minimumDepthWorldY, halfHeight);
-                    track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
-                }
+                    track.RetargetDelaySeconds -= Time.unscaledDeltaTime;
+                    if (track.RetargetDelaySeconds <= 0f)
+                    {
+                        track.TargetBaseY = ResolveRetargetBaseWorldY(track, minimumDepthWorldY, halfHeight);
+                        track.RetargetDelaySeconds = ResolveVerticalRetargetDelaySeconds();
+                    }
 
-                var travelOffset = (-_shipDeltaX) * track.TravelVerticalOffsetPerShipMeter;
-                var targetWithTravel = track.TargetBaseY + travelOffset;
-                var depthCeilingY = minimumDepthWorldY - (Mathf.Clamp(track.LayerIndex, 0, 2) * 0.12f);
-                var depthFloorY = depthCeilingY - Mathf.Max(1.2f, halfHeight * 1.35f);
-                track.TargetBaseY = Mathf.Clamp(targetWithTravel, depthFloorY, depthCeilingY);
-                var baseYBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, track.VerticalDriftLerpSpeed) * Time.unscaledDeltaTime);
-                track.BaseY = Mathf.Lerp(track.BaseY, track.TargetBaseY, baseYBlend);
+                    var travelOffset = (-_shipDeltaX) * track.TravelVerticalOffsetPerShipMeter;
+                    var targetWithTravel = track.TargetBaseY + travelOffset;
+                    var depthCeilingY = minimumDepthWorldY - (Mathf.Clamp(track.LayerIndex, 0, 2) * 0.12f);
+                    var depthFloorY = depthCeilingY - Mathf.Max(1.2f, halfHeight * 1.35f);
+                    track.TargetBaseY = Mathf.Clamp(targetWithTravel, depthFloorY, depthCeilingY);
+                    var baseYBlend = 1f - Mathf.Exp(-Mathf.Max(0.1f, track.VerticalDriftLerpSpeed) * Time.unscaledDeltaTime);
+                    track.BaseY = Mathf.Lerp(track.BaseY, track.TargetBaseY, baseYBlend);
+                }
+                else
+                {
+                    track.TargetBaseY = track.BaseY;
+                }
 
                 var p = track.Transform.position;
                 p.x += track.Speed * track.Direction * Time.unscaledDeltaTime;
@@ -447,7 +464,8 @@ namespace RavenDevOps.Fishing.Fishing
                 // Avoid snapping fish to camera-space bands each frame during deep camera travel.
                 // Only force-respawn when a track drifts far outside the vertical play window.
                 var verticalRespawnMargin = Mathf.Max(8f, halfHeight * 2.8f);
-                if (p.y < bottomBound - verticalRespawnMargin || p.y > topBound + verticalRespawnMargin)
+                if (!cameraMotionRecoveryPaused
+                    && (p.y < bottomBound - verticalRespawnMargin || p.y > topBound + verticalRespawnMargin))
                 {
                     QueueTrackSpawn(track, halfWidth, wrapPadding, preferAhead: true, initialSpawn: false);
                     continue;
@@ -465,7 +483,11 @@ namespace RavenDevOps.Fishing.Fishing
                     continue;
                 }
 
-                p.y = Mathf.Min(p.y, minimumDepthWorldY - (track.LayerIndex * 0.12f));
+                if (!cameraMotionRecoveryPaused)
+                {
+                    p.y = Mathf.Min(p.y, minimumDepthWorldY - (track.LayerIndex * 0.12f));
+                }
+
                 track.Transform.position = p;
                 if (IsWorldPointVisibleInViewport(p, cameraX, cameraY, halfWidth, halfHeight))
                 {
@@ -484,6 +506,12 @@ namespace RavenDevOps.Fishing.Fishing
             float halfHeight,
             float spawnPadding)
         {
+            if (_cameraAlignedRecoveryPauseRemainingSeconds > 0f)
+            {
+                _visibleTrackRecoveryElapsed = 0f;
+                return;
+            }
+
             var requiredVisibleTracks = Mathf.Clamp(_minimumVisibleTracks, 0, Mathf.Max(0, _tracks.Count));
             if (requiredVisibleTracks <= 0 || visibleTracks >= requiredVisibleTracks)
             {
@@ -590,6 +618,35 @@ namespace RavenDevOps.Fishing.Fishing
             track.TargetBaseY = p.y;
             track.SpawnDelaySeconds = Mathf.Min(track.SpawnDelaySeconds, UnityEngine.Random.Range(0.02f, 0.08f));
             track.Transform.position = p;
+        }
+
+        private void UpdateCameraMotionRecoveryPause(float cameraY)
+        {
+            var thresholdPerSecond = Mathf.Max(0.05f, _cameraMotionFreezeThresholdPerFrame);
+            var pauseSeconds = Mathf.Max(0.1f, _cameraMotionRecoveryPauseSeconds);
+            if (!_hasLastCameraY)
+            {
+                _hasLastCameraY = true;
+                _lastCameraY = cameraY;
+                _cameraAlignedRecoveryPauseRemainingSeconds = Mathf.Max(
+                    0f,
+                    _cameraAlignedRecoveryPauseRemainingSeconds - Time.unscaledDeltaTime);
+                return;
+            }
+
+            var cameraDeltaY = cameraY - _lastCameraY;
+            _lastCameraY = cameraY;
+            _cameraAlignedRecoveryPauseRemainingSeconds = Mathf.Max(
+                0f,
+                _cameraAlignedRecoveryPauseRemainingSeconds - Time.unscaledDeltaTime);
+            var deltaTime = Mathf.Max(0.0001f, Time.unscaledDeltaTime);
+            var cameraSpeedPerSecond = Mathf.Abs(cameraDeltaY) / deltaTime;
+            if (cameraSpeedPerSecond >= thresholdPerSecond)
+            {
+                _cameraAlignedRecoveryPauseRemainingSeconds = Mathf.Max(
+                    _cameraAlignedRecoveryPauseRemainingSeconds,
+                    pauseSeconds);
+            }
         }
 
         private float ResolveRetargetBaseWorldY(BackdropFishTrack track, float minimumDepthWorldY, float halfHeight)
