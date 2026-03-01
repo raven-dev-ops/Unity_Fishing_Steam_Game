@@ -13,6 +13,8 @@ namespace RavenDevOps.Fishing.Fishing
 {
     public sealed class FishingLoopTutorialController : MonoBehaviour
     {
+        private const string DemoShipVisualProxyName = "__DemoShipVisualProxy";
+
         private enum TutorialStep
         {
             None = 0,
@@ -171,8 +173,13 @@ namespace RavenDevOps.Fishing.Fishing
         private DemoAutoplayPhase _demoPhase = DemoAutoplayPhase.None;
         private float _demoPhaseStartedAt;
         private float _demoShipStartX;
-        private float _demoShipStartY;
         private float _demoShipWavePhase;
+        private SpriteRenderer _demoShipRenderer;
+        private Transform _demoShipVisualProxyTransform;
+        private SpriteRenderer _demoShipVisualProxyRenderer;
+        private Vector3 _demoShipVisualBaseLocalPosition;
+        private bool _demoShipVisualBaseLocalPositionCaptured;
+        private bool _demoShipVisualProxyRuntimeCreated;
         private bool _demoFishApproachStarted;
         private bool _demoFishBound;
         private bool _demoFishHookVisualReady;
@@ -787,13 +794,14 @@ namespace RavenDevOps.Fishing.Fishing
             _demoLevel5ReelStartDepthMeters = 0f;
             _demoIntroTransitionPlayed = false;
             _demoShipStartX = _demoShipTransform != null ? _demoShipTransform.position.x : 0f;
-            _demoShipStartY = _demoShipTransform != null ? _demoShipTransform.position.y : 0f;
             _demoShipWavePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
             if (_demoShipTransform == null || _demoHookTransform == null)
             {
                 EndDemoSequence();
                 return;
             }
+
+            EnsureDemoShipVisualProxy();
 
             ApplyDemoCameraZoomOverride(active: true);
             // Preserve IntroInfo state immediately when demo starts so flow checks
@@ -1923,6 +1931,7 @@ namespace RavenDevOps.Fishing.Fishing
             ApplyDemoCameraZoomOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
+            RestoreDemoShipVisualProxy();
             SetTutorialMessageBoxVisible(false);
             SetDemoHookVisible(false);
             _step = TutorialStep.MoveShip;
@@ -1945,6 +1954,7 @@ namespace RavenDevOps.Fishing.Fishing
             ApplyDemoCameraZoomOverride(active: false);
             ApplyTutorialLightPreview(enabled: false, Vector2.zero);
             ApplyTutorialDepthPreview(enabled: false, 0f);
+            RestoreDemoShipVisualProxy();
             SetTutorialMessageBoxVisible(false);
             if (resetHookToDock)
             {
@@ -2190,25 +2200,149 @@ namespace RavenDevOps.Fishing.Fishing
                 position.x,
                 constrainedTargetX,
                 Mathf.Max(0.1f, _demoShipMoveSpeed) * Time.deltaTime);
-            ApplyDemoShipWavePath(ref position);
             _demoShipTransform.position = position;
+            ApplyDemoShipWavePath();
             return Mathf.Abs(position.x - constrainedTargetX) <= 0.02f;
         }
 
-        private void ApplyDemoShipWavePath(ref Vector3 position)
+        private void EnsureDemoShipVisualProxy()
         {
+            if (_demoShipTransform == null)
+            {
+                return;
+            }
+
+            if (_demoShipRenderer == null || _demoShipRenderer.transform != _demoShipTransform)
+            {
+                _demoShipRenderer = _demoShipTransform.GetComponent<SpriteRenderer>();
+            }
+
+            if (_demoShipRenderer == null)
+            {
+                RestoreDemoShipVisualProxy();
+                return;
+            }
+
+            if (_demoShipVisualProxyTransform == null || _demoShipVisualProxyRenderer == null)
+            {
+                var proxy = _demoShipTransform.Find(DemoShipVisualProxyName);
+                if (proxy == null)
+                {
+                    var proxyObject = new GameObject(DemoShipVisualProxyName);
+                    proxy = proxyObject.transform;
+                    proxy.SetParent(_demoShipTransform, worldPositionStays: false);
+                    proxy.localPosition = Vector3.zero;
+                    proxy.localRotation = Quaternion.identity;
+                    proxy.localScale = Vector3.one;
+                    _demoShipVisualProxyRuntimeCreated = true;
+                }
+                else
+                {
+                    _demoShipVisualProxyRuntimeCreated = true;
+                }
+
+                _demoShipVisualProxyTransform = proxy;
+                _demoShipVisualProxyRenderer = proxy.GetComponent<SpriteRenderer>();
+                if (_demoShipVisualProxyRenderer == null)
+                {
+                    _demoShipVisualProxyRenderer = proxy.gameObject.AddComponent<SpriteRenderer>();
+                }
+            }
+
+            SyncDemoShipVisualProxyRenderer();
+            if (!_demoShipVisualBaseLocalPositionCaptured && _demoShipVisualProxyTransform != null)
+            {
+                _demoShipVisualBaseLocalPosition = _demoShipVisualProxyTransform.localPosition;
+                _demoShipVisualBaseLocalPositionCaptured = true;
+            }
+        }
+
+        private void SyncDemoShipVisualProxyRenderer()
+        {
+            if (_demoShipRenderer == null || _demoShipVisualProxyRenderer == null)
+            {
+                return;
+            }
+
+            CopyShipRendererState(_demoShipRenderer, _demoShipVisualProxyRenderer);
+            if (_demoShipRenderer.enabled)
+            {
+                _demoShipRenderer.enabled = false;
+            }
+        }
+
+        private static void CopyShipRendererState(SpriteRenderer source, SpriteRenderer destination)
+        {
+            if (source == null || destination == null)
+            {
+                return;
+            }
+
+            destination.sprite = source.sprite;
+            destination.color = source.color;
+            destination.flipX = source.flipX;
+            destination.flipY = source.flipY;
+            destination.drawMode = source.drawMode;
+            destination.size = source.size;
+            destination.sortingLayerID = source.sortingLayerID;
+            destination.sortingOrder = source.sortingOrder;
+            destination.maskInteraction = source.maskInteraction;
+            destination.spriteSortPoint = source.spriteSortPoint;
+            destination.sharedMaterial = source.sharedMaterial;
+            destination.enabled = source.enabled;
+        }
+
+        private void RestoreDemoShipVisualProxy()
+        {
+            if (_demoShipVisualProxyTransform != null && _demoShipVisualBaseLocalPositionCaptured)
+            {
+                var restored = _demoShipVisualProxyTransform.localPosition;
+                restored.y = _demoShipVisualBaseLocalPosition.y;
+                _demoShipVisualProxyTransform.localPosition = restored;
+            }
+
+            if (_demoShipRenderer != null)
+            {
+                _demoShipRenderer.enabled = true;
+            }
+
+            if (_demoShipVisualProxyRuntimeCreated && _demoShipVisualProxyTransform != null)
+            {
+                Destroy(_demoShipVisualProxyTransform.gameObject);
+            }
+
+            _demoShipVisualProxyTransform = null;
+            _demoShipVisualProxyRenderer = null;
+            _demoShipVisualBaseLocalPosition = Vector3.zero;
+            _demoShipVisualBaseLocalPositionCaptured = false;
+            _demoShipVisualProxyRuntimeCreated = false;
+        }
+
+        private void ApplyDemoShipWavePath()
+        {
+            EnsureDemoShipVisualProxy();
+            if (_demoShipVisualProxyTransform == null || !_demoShipVisualBaseLocalPositionCaptured)
+            {
+                return;
+            }
+
+            SyncDemoShipVisualProxyRenderer();
+            var localPosition = _demoShipVisualProxyTransform.localPosition;
             if (!IsSurfaceWaveDemoPhase())
             {
+                localPosition.y = _demoShipVisualBaseLocalPosition.y;
+                _demoShipVisualProxyTransform.localPosition = localPosition;
                 return;
             }
 
             var elapsed = Mathf.Max(0f, Time.unscaledTime - _demoPhaseStartedAt);
             var amplitude = ResolveDemoShipWaveAmplitude();
-            var primary = Mathf.Sin((elapsed * Mathf.Max(0.01f, _demoSurfaceWaveFrequency)) + _demoShipWavePhase);
-            var secondary = Mathf.Sin((elapsed * Mathf.Max(0.01f, _demoSurfaceWaveSecondaryFrequency)) + (_demoShipWavePhase * 1.73f))
-                * Mathf.Max(0f, _demoSurfaceWaveSecondaryAmplitudeRatio);
-            var waveY = _demoShipStartY + ((primary + secondary) * amplitude);
-            position.y = waveY;
+            // Frequency values are in cycles/second so scene 1 and 2 complete several
+            // visible up/down wave cycles during each title card duration.
+            var rhythmFrequency = Mathf.Max(1.1f, _demoSurfaceWaveFrequency);
+            var primary = Mathf.Sin((elapsed * rhythmFrequency * Mathf.PI * 2f) + _demoShipWavePhase);
+            localPosition.y = _demoShipVisualBaseLocalPosition.y + (primary * amplitude);
+            _demoShipVisualProxyTransform.localPosition = localPosition;
         }
 
         private bool IsSurfaceWaveDemoPhase()
@@ -2227,6 +2361,11 @@ namespace RavenDevOps.Fishing.Fishing
                 var fogWaveMeters = Mathf.Max(0f, _sceneWeatherController.CurrentFogVerticalMeters);
                 amplitude += surfaceWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromSurfaceWeatherScale);
                 amplitude += fogWaveMeters * Mathf.Max(0f, _demoSurfaceWaveFromFogWeatherScale);
+            }
+
+            if (_demoPhase == DemoAutoplayPhase.MoveShipInfo)
+            {
+                amplitude *= 1.35f;
             }
 
             return Mathf.Clamp(amplitude, 0f, Mathf.Max(0.01f, _demoSurfaceWaveMaxAmplitude));
