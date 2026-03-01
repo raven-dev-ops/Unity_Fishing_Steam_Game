@@ -849,6 +849,9 @@ namespace RavenDevOps.Fishing.Fishing
                 RecoverDemoHookDepthAfterOverrideReset();
             }
 
+            // Keep demo ship bobbing continuous even while title-card transitions are active.
+            ApplyDemoShipWavePath();
+
             if (!_demoIntroTransitionPlayed && !_demoSceneTransitionActive)
             {
                 ResolveTransitionOverlayReferences();
@@ -862,7 +865,7 @@ namespace RavenDevOps.Fishing.Fishing
                 if (_demoPhase == DemoAutoplayPhase.IntroInfo)
                 {
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(true);
+                    SetDemoHookVisible(false);
                     SnapDemoHookToDock();
                     return;
                 }
@@ -882,13 +885,13 @@ namespace RavenDevOps.Fishing.Fishing
             {
                 case DemoAutoplayPhase.IntroInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(true);
+                    SetDemoHookVisible(false);
                     SnapDemoHookToDock();
                     TickInfoPhase(DemoAutoplayPhase.MoveShipInfo, pauseBeforeTransition: true);
                     break;
                 case DemoAutoplayPhase.MoveShipInfo:
                     MoveShipTowardX(_demoShipStartX);
-                    SetDemoHookVisible(true);
+                    SetDemoHookVisible(false);
                     SnapDemoHookToDock();
                     TickInfoPhase(DemoAutoplayPhase.CastInfo, pauseBeforeTransition: true);
                     break;
